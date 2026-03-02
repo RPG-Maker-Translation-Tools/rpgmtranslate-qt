@@ -1,0 +1,7 @@
+/build
+/.clangd
+/.cache
+/.vscode
+/dist
+/docs/mkdocs/site
+/rust/Cargo.lock

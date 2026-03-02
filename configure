@@ -1,0 +1,90 @@
+#!/usr/bin/env sh
+
+CMAKE_FILE="CMakeLists.txt"
+
+show_help() {
+    echo "Usage: ./configure [OPTIONS]"
+    echo
+    echo "Standard options:"
+    echo "  --fresh                                  Fresh reconfigure"
+    echo "  -B=DIR --dir=DIR --build-dir=DIR         Build directory (./ by default)"
+    echo "  -G=GEN --generator=GEN                   CMake generator (Ninja, Unix Makefiles, etc.)"
+    echo "  --cc=PATH                                C compiler"
+    echo "  --cxx=PATH                               C++ compiler"
+    echo "  --ld=PATH                                Linker"
+    echo "  --ar=PATH                                Archiver"
+    echo "  --cflags=FLAGS                           C compiler flags"
+    echo "  --cxxflags=FLAGS                         C++ compiler flags"
+    echo "  --ldflags=FLAGS                          Linker flags"
+    echo
+    echo "Project options (from $CMAKE_FILE):"
+    echo
+
+    awk '
+        {
+            if ($0 ~ /^[[:space:]]*option[[:space:]]*\(/) {
+                line = $0
+                match(line, /option[[:space:]]*\(([A-Za-z0-9_]+)[[:space:]]*"([^"]*)"[[:space:]]*([A-Za-z0-9_]*)/, arr)
+                name = arr[1]
+                desc = arr[2]
+                def  = arr[3]
+                printf("  %-22s %s", name, desc)
+                if (def != "") printf(" (default: %s)", def)
+                printf("\n")
+            }
+        }
+    ' "$CMAKE_FILE"
+
+    echo
+    exit 0
+}
+
+# Initialize variables
+FRESH=false
+BUILDDIR=""
+GENERATOR=""
+CC=""
+CXX=""
+LD=""
+AR=""
+CFLAGS=""
+CXXFLAGS=""
+LDFLAGS=""
+CMAKE_EXTRA=""
+
+# Parse arguments
+for arg in "$@"; do
+    case "$arg" in
+        --help|-h) show_help ;;
+        --fresh) FRESH=true ;;
+        -B=*|--dir=*|--build-dir=*) BUILDDIR="${arg#*=}" ;;
+        --generator=*) GENERATOR="${arg#*=}" ;;
+        --cc=*) CC="${arg#*=}" ;;
+        --cxx=*) CXX="${arg#*=}" ;;
+        --ld=*) LD="${arg#*=}" ;;
+        --ar=*) AR="${arg#*=}" ;;
+        --cflags=*) CFLAGS="${arg#*=}" ;;
+        --cxxflags=*) CXXFLAGS="${arg#*=}" ;;
+        --ldflags=*) LDFLAGS="${arg#*=}" ;;
+        *)
+            CMAKE_EXTRA="$CMAKE_EXTRA -D$arg"
+            ;;
+    esac
+done
+
+# Build CMake flags
+CMAKE_FLAGS=""
+
+[ -n "$FRESH" ] && CMAKE_FLAGS="$CMAKE_FLAGS --fresh"
+[ -n "$BUILDDIR" ] && CMAKE_FLAGS="$CMAKE_FLAGS -B \"$BUILDDIR\""
+[ -n "$GENERATOR" ] && CMAKE_FLAGS="$CMAKE_FLAGS -G \"$GENERATOR\""
+[ -n "$CC" ]      && CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_C_COMPILER=$CC"
+[ -n "$CXX" ]     && CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_CXX_COMPILER=$CXX"
+[ -n "$LD" ]      && CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_LINKER=$LD"
+[ -n "$AR" ]      && CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_LINKER=$AR"
+[ -n "$CFLAGS" ]  && CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_C_FLAGS='$CFLAGS'"
+[ -n "$CXXFLAGS" ]&& CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_CXX_FLAGS='$CXXFLAGS'"
+[ -n "$LDFLAGS" ] && CMAKE_FLAGS="$CMAKE_FLAGS -DCMAKE_EXE_LINKER_FLAGS='$LDFLAGS'"
+
+# Finally execute CMake
+eval cmake -S . -B build $CMAKE_FLAGS $CMAKE_EXTRA

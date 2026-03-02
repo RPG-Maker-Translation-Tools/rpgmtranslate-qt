@@ -1,0 +1,43 @@
+language = "C++"
+pragma_once = true
+include_version = true
+cpp_compat = true
+
+[parse]
+parse_deps = false
+clean = true
+
+[export]
+include = ["FFIString", "ByteBuffer", "LogCallback"]
+exclude = ["TranslationEndpoint", "MatchModeInfo", "Bitset2048", "Selected", "ReadMode"]
+item_types = ["functions", "structs", "enums", "typedefs", "constants"]
+
+[layout]
+packed = "assert"
+aligned_n = "assert"
+
+[enum]
+rename_variants = "PascalCase"
+add_sentinel = false
+
+[fn]
+rename_args = "snake_case"
+must_use = "error"
+
+[struct]
+rename_fields = "snake_case"
+derive_constructor = false
+derive_eq = false
+derive_neq = false
+derive_lt = false
+derive_lte = false
+derive_gt = false
+derive_gte = false
+
+[macro_expansion]
+bitflags = true
+
+[defines]
+"target_os = windows" = "CBINDGEN_WINDOWS"
+"target_os = macos" = "CBINDGEN_MACOS"
+"target_os = linux" = "CBINDGEN_LINUX"

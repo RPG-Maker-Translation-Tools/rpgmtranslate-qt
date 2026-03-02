@@ -1,0 +1,40 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/add.svg</file>
+        <file>icons/arrow_downward.svg</file>
+        <file>icons/book_3.svg</file>
+        <file>icons/bookmark_add.svg</file>
+        <file>icons/bookmark.svg</file>
+        <file>icons/bookmarks.svg</file>
+        <file>icons/close_small.svg</file>
+        <file>icons/close.svg</file>
+        <file>icons/comment.svg</file>
+        <file>icons/construction.svg</file>
+        <file>icons/dock.svg</file>
+        <file>icons/document_search.svg</file>
+        <file>icons/edit_arrow_down.svg</file>
+        <file>icons/edit_arrow_up.svg</file>
+        <file>icons/edit.svg</file>
+        <file>icons/files.svg</file>
+        <file>icons/folder_open.svg</file>
+        <file>icons/lab_profile.svg</file>
+        <file>icons/location_on.svg</file>
+        <file>icons/manufacturing.svg</file>
+        <file>icons/match_case.svg</file>
+        <file>icons/match_word.svg</file>
+        <file>icons/menu_book.svg</file>
+        <file>icons/menu.svg</file>
+        <file>icons/mop.svg</file>
+        <file>icons/regular_expression.svg</file>
+        <file>icons/save.svg</file>
+        <file>icons/search.svg</file>
+        <file>icons/settings.svg</file>
+        <file>icons/subtitles.svg</file>
+        <file>icons/swap_vert.svg</file>
+        <file>icons/swipe_down.svg</file>
+        <file>icons/translate.svg</file>
+        <file>icons/rpgmtranslate-logo.png</file>
+        <file alias="ru.qm">build/rpgmtranslate.ru.qm</file>
+        <file alias="en.qm">build/rpgmtranslate.en.qm</file>
+    </qresource>
+</RCC>
