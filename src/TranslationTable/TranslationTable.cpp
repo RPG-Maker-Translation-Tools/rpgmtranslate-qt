@@ -276,12 +276,17 @@ void TranslationTable::init(
     const bool* const enabled
 ) const {
     delegate->init(algorithm, hint, enabled);
+
+#ifdef ENABLE_HUNSPELL
     delegate->initializeDictionary();
+#endif
 }
 
+#ifdef ENABLE_HUNSPELL
 void TranslationTable::initializeDictionary() const {
     delegate->initializeDictionary();
 };
+#endif
 
 void TranslationTable::addRow(
     const QStringView source,

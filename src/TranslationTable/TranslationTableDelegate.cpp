@@ -1,11 +1,14 @@
 #include "TranslationTableDelegate.hpp"
 
 #include "Aliases.hpp"
-#include "SpellHighlighter.hpp"
 #include "TranslationInput.hpp"
 #include "TranslationTable.hpp"
 #include "TranslationTableModel.hpp"
 #include "WhitespaceHighlighter.hpp"
+
+#ifdef ENABLE_NUSPELL
+#include "SpellHighlighter.hpp"
+#endif
 
 #include <QModelIndex>
 #include <QTimer>
@@ -25,7 +28,11 @@ auto TranslationTableDelegate::createEditor(
     const QModelIndex& index
 ) const -> QWidget* {
     auto* const editor = new TranslationInput(&lengthHint, parent);
+
+#ifdef ENABLE_NUSPELL
     new SpellHighlighter(&dictionary, &algorithm, editor->document());
+#endif
+
     new WhitespaceHighlighter(
         &whitespaceHighlightingEnabled,
         editor->document()
@@ -260,6 +267,7 @@ auto TranslationTableDelegate::eventFilter(
     return QStyledItemDelegate::eventFilter(editor, event);
 }
 
+#ifdef ENABLE_NUSPELL
 void TranslationTableDelegate::initializeDictionary() {
     // TODO: Delete unpacked dictionary
 
@@ -348,3 +356,4 @@ void TranslationTableDelegate::initializeDictionary() {
             break;
     }
 }
+#endif

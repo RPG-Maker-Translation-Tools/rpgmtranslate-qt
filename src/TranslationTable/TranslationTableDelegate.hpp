@@ -3,7 +3,9 @@
 #include "Enums.hpp"
 #include "FWD.hpp"
 
+#ifdef ENABLE_NUSPELL
 #include <nuspell/dictionary.hxx>
+#endif
 
 #include <QStyledItemDelegate>
 
@@ -13,7 +15,9 @@ class TranslationTableDelegate final : public QStyledItemDelegate {
    public:
     explicit TranslationTableDelegate(QObject* parent = nullptr);
 
+#ifdef ENABLE_NUSPELL
     void initializeDictionary();
+#endif
 
     void init(
         const Algorithm* const algorithm,
@@ -49,7 +53,9 @@ class TranslationTableDelegate final : public QStyledItemDelegate {
     void textChanged(const QString& text);
 
    private:
+#ifdef ENABLE_NUSPELL
     mutable nuspell::Dictionary dictionary;
+#endif
 
     const Algorithm* algorithm;
     const u16* lengthHint;

@@ -862,6 +862,7 @@ pub unsafe extern "C" fn rpgm_count_words(
     }
 }
 
+#[cfg(feature = "languagetool")]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rpgm_language_tool_lint(
     text: FFIString,

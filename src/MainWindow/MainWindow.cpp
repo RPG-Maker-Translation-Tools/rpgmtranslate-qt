@@ -1399,7 +1399,9 @@ void MainWindow::loadSettings() {
     actionTranslationsMenu->setShortcut(settings->controls.translationsMenu);
 
     if (projectSettings != nullptr) {
+#ifdef ENABLE_NUSPELL
         ui->translationTable->initializeDictionary();
+#endif
     }
 
     retranslate(settings->appearance.language);

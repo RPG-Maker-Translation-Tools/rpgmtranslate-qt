@@ -1,5 +1,7 @@
+
 #pragma once
 
+#ifdef ENABLE_NUSPELL
 #include "Enums.hpp"
 
 #include <nuspell/dictionary.hxx>
@@ -28,3 +30,4 @@ class SpellHighlighter final : public QSyntaxHighlighter {
 
     const QRegularExpression wordRegex;
 };
+#endif

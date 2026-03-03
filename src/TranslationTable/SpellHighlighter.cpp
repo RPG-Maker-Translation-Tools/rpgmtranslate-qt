@@ -1,3 +1,5 @@
+
+#ifdef ENABLE_NUSPELL
 #include "SpellHighlighter.hpp"
 
 #include "Aliases.hpp"
@@ -46,3 +48,4 @@ auto SpellHighlighter::isMisspelled(const QString& word) const -> bool {
         std::string_view(utf8Word.data(), utf8Word.size())
     );
 }
+#endif

@@ -6,6 +6,10 @@ set(PROJECT_NAME rpgmtranslate)
 set(PROJECT_VERSION "1.0.0")
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 
+option(ENABLE_NUSPELL       "Enable Nuspell integration"       OFF)
+option(ENABLE_LANGUAGETOOL  "Enable LanguageTool integration"  OFF)
+option(ENABLE_LIBGIT2       "Enable libgit2 integration"       OFF)
+
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined,leak -fsanitize-address-use-after-scope")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined,leak -fsanitize-address-use-after-scope")
 set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address,undefined,leak -fsanitize-address-use-after-scope")
@@ -33,9 +37,25 @@ if (LINUX)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-# Find required packages
-find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent Gui Network LinguistTools)
-find_package(Nuspell)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent Gui Svg Network LinguistTools)
+
+if (ENABLE_NUSPELL)
+    find_package(Nuspell REQUIRED)
+endif()
+
+if (ENABLE_LIBGIT2)
+    find_package(libgit2 CONFIG QUIET)
+
+    if (NOT libgit2_FOUND)
+        find_package(PkgConfig QUIET)
+
+        if (PKG_CONFIG_FOUND)
+            pkg_check_modules(LIBGIT2 REQUIRED libgit2)
+        else()
+            message(FATAL_ERROR "ENABLE_LIBGIT2=ON but neither libgit2 Config package nor pkg-config is available.")
+        endif()
+    endif()
+endif()
 
 find_path(RAPIDHASH_INCLUDE_DIRS "rapidhash.h")
 if(NOT RAPIDHASH_INCLUDE_DIRS)
@@ -79,7 +99,6 @@ qt_add_translations(
 )
 
 qt_add_resources(resources.qrc)
-
 target_sources(${PROJECT_NAME} PRIVATE resources.qrc)
 
 # Build mode macros for usage in C++
@@ -87,7 +106,14 @@ target_compile_definitions(${PROJECT_NAME}
     PRIVATE
         $<$<CONFIG:Debug>:DEBUG_BUILD>
         $<$<CONFIG:Release>:RELEASE_BUILD>
+
+        $<$<BOOL:${ENABLE_NUSPELL}>:ENABLE_NUSPELL>
+        $<$<BOOL:${ENABLE_LANGUAGETOOL}>:ENABLE_LANGUAGETOOL>
+        $<$<BOOL:${ENABLE_LIBGIT2}>:ENABLE_LIBGIT2>
 )
+
+# Include file/line information in debug messages
+target_compile_definitions(${PROJECT_NAME} PRIVATE QT_MESSAGELOGCONTEXT)
 
 # Set properties (e.g., no console window for Windows app)
 set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
@@ -112,8 +138,27 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Widgets
     Qt6::Concurrent
     Qt6::Network
-    Nuspell::nuspell
+    Qt6::Svg
 )
+
+if(ENABLE_NUSPELL)
+    if(TARGET Nuspell::nuspell)
+        target_link_libraries(${PROJECT_NAME} PRIVATE Nuspell::nuspell)
+    else()
+        message(FATAL_ERROR "Nuspell found, but Nuspell::nuspell target not provided by your package config.")
+    endif()
+endif()
+
+if (ENABLE_LIBGIT2)
+    if (TARGET libgit2::libgit2)
+        target_link_libraries(${PROJECT_NAME} PRIVATE libgit2::libgit2)
+    elseif (DEFINED LIBGIT2_LIBRARIES)
+        target_include_directories(${PROJECT_NAME} PRIVATE ${LIBGIT2_INCLUDE_DIRS})
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBGIT2_LIBRARIES})
+    else()
+        message(FATAL_ERROR "ENABLE_LIBGIT2=ON but libgit2 could not be linked (no target and no pkg-config variables).")
+    endif()
+endif()
 
 if (WIN32)
     find_library(BIT7Z_LIBRARY bit7z)
@@ -125,17 +170,65 @@ if (WIN32)
     )
 endif()
 
-# Libraries to link on Linux
 if (LINUX)
-    find_package(Qt6 REQUIRED COMPONENTS Svg WaylandClient)
+    find_package(Qt6 REQUIRED COMPONENTS WaylandClient)
 
     target_link_libraries(${PROJECT_NAME} PRIVATE
-        Qt6::Svg
         Qt6::WaylandClient
         -lssl
         -lcrypto
     )
 endif()
+
+# Build the Rust library
+set(RUST_CRATE_DIR "${CMAKE_SOURCE_DIR}/rust")
+set(GENERATED_DIR  "${CMAKE_CURRENT_BINARY_DIR}")
+set(RPGMTRANSLATE_RUST_HEADER "${GENERATED_DIR}/rpgmtranslate.h")
+
+include(FetchContent)
+FetchContent_Declare(
+    Corrosion
+    GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
+    GIT_TAG v0.6.1
+)
+FetchContent_MakeAvailable(Corrosion)
+
+set(RPGMTRANSLATE_RUST_FEATURES "")
+if(ENABLE_LANGUAGETOOL)
+    list(APPEND RPGMTRANSLATE_RUST_FEATURES "languagetool")
+endif()
+
+corrosion_import_crate(
+    MANIFEST_PATH "${RUST_CRATE_DIR}/Cargo.toml"
+    FEATURES ${RPGMTRANSLATE_RUST_FEATURES}
+)
+
+file(GLOB_RECURSE RUST_SOURCES
+    CONFIGURE_DEPENDS
+    "${RUST_CRATE_DIR}/src/*.rs"
+    "${RUST_CRATE_DIR}/Cargo.toml"
+    "${RUST_CRATE_DIR}/Cargo.lock"
+    "${RUST_CRATE_DIR}/cbindgen.toml"
+)
+
+add_custom_command(
+    OUTPUT "${RPGMTRANSLATE_RUST_HEADER}"
+    COMMAND cbindgen
+            --config "${RUST_CRATE_DIR}/cbindgen.toml"
+            --output "${RPGMTRANSLATE_RUST_HEADER}"
+    DEPENDS ${RUST_SOURCES}
+    WORKING_DIRECTORY "${RUST_CRATE_DIR}"
+    VERBATIM
+)
+
+add_custom_target(rpgmtranslate_rust_header
+    DEPENDS "${RPGMTRANSLATE_RUST_HEADER}"
+)
+
+add_dependencies(${PROJECT_NAME} rpgmtranslate_rust_header)
+target_include_directories(${PROJECT_NAME} PRIVATE "${GENERATED_DIR}")
+
+target_link_libraries(${PROJECT_NAME} PRIVATE rpgmtranslate_rs)
 
 # Install the built executable
 include(GNUInstallDirs)
@@ -143,96 +236,5 @@ install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .
 )
 
-# Rust shit
-# TODO: Remove cringe comments
-# ---- Rust build integration (Ninja Multi-Config safe) ----
-
-set(RUST_CRATE_DIR     "${CMAKE_SOURCE_DIR}/rust")
-set(CARGO_TARGET_DIR   "${CMAKE_BINARY_DIR}/cargo-target")
-set(GENERATED_DIR      "${CMAKE_CURRENT_BINARY_DIR}") # where rpgmtranslate.h will be generated
-set(RPGMTRANSLATE_RUST_HEADER "${GENERATED_DIR}/rpgmtranslate.h")
-
-# Rust staticlib name differs by toolchain on Windows
-if(MSVC)
-  set(RUST_LIB_NAME "rpgmtranslate.lib")
-else()
-  set(RUST_LIB_NAME "librpgmtranslate.a")
-endif()
-
-# Cargo puts outputs in:
-#   ${CARGO_TARGET_DIR}/debug/...
-#   ${CARGO_TARGET_DIR}/release/...
-set(RUST_LIB_PATH_DEBUG   "${CARGO_TARGET_DIR}/debug/${RUST_LIB_NAME}")
-set(RUST_LIB_PATH_RELEASE "${CARGO_TARGET_DIR}/release/${RUST_LIB_NAME}")
-
-# Track Rust inputs so CMake knows when it must re-run cbindgen / cargo build target
-file(GLOB_RECURSE RUST_SOURCES
-  CONFIGURE_DEPENDS
-  "${RUST_CRATE_DIR}/src/*.rs"
-  "${RUST_CRATE_DIR}/Cargo.toml"
-  "${RUST_CRATE_DIR}/Cargo.lock"
-  "${RUST_CRATE_DIR}/cbindgen.toml"
-)
-
-# --- Header generation (config-independent => safe as an OUTPUT) ---
-add_custom_command(
-  OUTPUT  "${RPGMTRANSLATE_RUST_HEADER}"
-  COMMAND cbindgen
-          --config "${RUST_CRATE_DIR}/cbindgen.toml"
-          --output "${RPGMTRANSLATE_RUST_HEADER}"
-  DEPENDS ${RUST_SOURCES}
-  WORKING_DIRECTORY "${RUST_CRATE_DIR}"
-  VERBATIM
-)
-
-add_custom_target(rpgmtranslate_rust_header
-  DEPENDS "${RPGMTRANSLATE_RUST_HEADER}"
-)
-
-# --- Rust build (DO NOT use OUTPUT with $<CONFIG> for Ninja Multi-Config) ---
-# Build Debug => cargo build
-# Build Release/RelWithDebInfo/MinSizeRel => cargo build --release
-add_custom_target(rpgmtranslate_rust_build
-  COMMAND "${CMAKE_COMMAND}" -E env
-          "CARGO_TARGET_DIR=${CARGO_TARGET_DIR}"
-          cargo build $<$<NOT:$<CONFIG:Debug>>:--release>
-  DEPENDS ${RUST_SOURCES}
-  WORKING_DIRECTORY "${RUST_CRATE_DIR}"
-  VERBATIM
-  COMMAND_EXPAND_LISTS
-)
-
-# --- Imported library target with per-config locations ---
-add_library(rust_rpgmtranslate STATIC IMPORTED GLOBAL)
-
-# Tell CMake exactly where the library will be for each config.
-# RelWithDebInfo and MinSizeRel are mapped to Cargo's "release" directory.
-set_target_properties(rust_rpgmtranslate PROPERTIES
-  IMPORTED_CONFIGURATIONS "Debug;Release;RelWithDebInfo;MinSizeRel"
-  IMPORTED_LOCATION_DEBUG        "${RUST_LIB_PATH_DEBUG}"
-  IMPORTED_LOCATION_RELEASE      "${RUST_LIB_PATH_RELEASE}"
-  IMPORTED_LOCATION_RELWITHDEBINFO "${RUST_LIB_PATH_RELEASE}"
-  IMPORTED_LOCATION_MINSIZEREL   "${RUST_LIB_PATH_RELEASE}"
-)
-
-# Make sure the Rust build runs before anything links against the imported lib.
-add_dependencies(rust_rpgmtranslate
-  rpgmtranslate_rust_build
-  rpgmtranslate_rust_header
-)
-
-# Expose the generated header directory to consumers
-target_include_directories(rust_rpgmtranslate INTERFACE "${GENERATED_DIR}")
-
-# Link into your main target and ensure build order
-target_link_libraries(${PROJECT_NAME} PRIVATE rust_rpgmtranslate)
-target_include_directories(${PROJECT_NAME} PRIVATE "${GENERATED_DIR}")
-add_dependencies(${PROJECT_NAME}
-  rpgmtranslate_rust_build
-  rpgmtranslate_rust_header
-)
-
-
 # Finalize the Qt executable setup
 qt_finalize_executable(${PROJECT_NAME})
-

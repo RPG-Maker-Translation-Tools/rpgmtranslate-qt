@@ -3,6 +3,7 @@ use language_tokenizer::{
     Algorithm, MatchMode, MatchResult, find_all_matches as find_all_matches_,
     tokenize,
 };
+#[cfg(feature = "languagetool")]
 use languagetool_rust::api::{
     check::Request as LTRequest, server::ServerClient,
 };
@@ -136,6 +137,7 @@ pub(crate) enum Error {
     DeepLLangConvert(#[from] deepl::LangConvertError),
     #[error(transparent)]
     LanguageTokenizer(#[from] language_tokenizer::Error),
+    #[cfg(feature = "languagetool")]
     #[error(transparent)]
     LanguageTool(#[from] languagetool_rust::error::Error),
 }
@@ -862,6 +864,7 @@ pub(crate) fn count_words(
 }
 
 // TODO
+#[cfg(feature = "languagetool")]
 pub(crate) async fn language_tool_lint(
     text: &str,
     base_url: &str,
