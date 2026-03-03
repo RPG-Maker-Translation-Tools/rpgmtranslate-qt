@@ -2698,10 +2698,15 @@ start:
             auto fields = QStringList(model->columnCount());
 
             for (const u8 column : range<u8>(0, model->columnCount())) {
-                // FIXME: This sometimes cause nullptr exception, but it
-                // only happens, if files are malformed.
-                fields[column] =
-                    model->item(row, column)->text().replace('\n', NEW_LINE);
+                const auto* const item = model->item(row, column);
+
+                if (item == nullptr) {
+                    qWarning() << u"Item at row %1 and column %2 is nullptr."_s
+                                      .arg(row, column);
+                    continue;
+                }
+
+                fields[column] = item->text().replace('\n', NEW_LINE);
             }
 
             *stream << fields.join(SEPARATORL1);
