@@ -20,7 +20,7 @@ A complete rewrite of the [original RPGMTranslate application](https://github.co
 - [x] Convenience-oriented user experience with bookmarks, shortcuts, and highly customizable features.
 - [x] Built-in batch processing of files, including batch translation, batch trim and batch text wrap.
 - [x] Integrated APIs for Google Translate, Yandex Translate, DeepL, ChatGPT, Claude, DeepSeek, Gemini, Ollama, and any OpenAI-compatible endpoints (e.g. koboldcpp).
-- [] **WIP** Integrated spell-checking and advanced linting, including LanguageTool, custom dictionaries, whitespace highlighting etc.
+- [ ] **WIP** Integrated spell-checking and advanced linting, including LanguageTool, custom dictionaries, whitespace highlighting etc.
 
 **Please, request features!** It's possible to implement virtually anything in Rust and C++. Request features that you and others would benefit from, and we will implement them.
 
