@@ -96,17 +96,6 @@ constexpr auto range(const T from, const T dest) {
     return views::iota(from, dest);
 }
 
-template <ranges::input_range R, typename T>
-constexpr auto find_index(const R& range, const T& value) -> isize {
-    const auto item = ranges::find(range, value);
-
-    if (item == ranges::end(range)) {
-        return -1;
-    }
-
-    return ranges::distance(ranges::begin(range), item);
-}
-
 // Concatenation compatibility
 #if QT_VERSION_MINOR >= 9
 constexpr auto operator""_qssv(const char16_t* chr, const size_t size)
