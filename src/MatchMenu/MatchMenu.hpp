@@ -2,6 +2,7 @@
 
 #include "Aliases.hpp"
 #include "FWD.hpp"
+#include "MatchTable.hpp"
 
 #include <QDockWidget>
 
@@ -21,10 +22,10 @@ class MatchMenu final : public QDockWidget {
         ByteBuffer matches
     );
 
-    void init(QPushButton* clearButton, QTableWidget* matchTable);
+    void init(QPushButton* clearButton, MatchTable* matchTable);
     void clear();
 
    private:
     QPushButton* clearButton;
-    QTableWidget* matchTable;
+    MatchTable* matchTable;
 };

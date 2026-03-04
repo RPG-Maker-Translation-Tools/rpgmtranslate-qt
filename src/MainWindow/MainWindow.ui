@@ -889,7 +889,7 @@
       <number>8</number>
      </property>
      <item>
-      <widget class="QTableWidget" name="matchMenuTable">
+      <widget class="MatchTable" name="matchMenuTable">
        <property name="editTriggers">
         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
        </property>
@@ -914,56 +914,6 @@
        <property name="showGrid">
         <bool>true</bool>
        </property>
-       <property name="supportedDragActions">
-        <set>Qt::DropAction::IgnoreAction</set>
-       </property>
-       <attribute name="horizontalHeaderVisible">
-        <bool>true</bool>
-       </attribute>
-       <attribute name="horizontalHeaderHighlightSections">
-        <bool>false</bool>
-       </attribute>
-       <attribute name="verticalHeaderVisible">
-        <bool>false</bool>
-       </attribute>
-       <attribute name="verticalHeaderHighlightSections">
-        <bool>false</bool>
-       </attribute>
-       <column>
-        <property name="text">
-         <string>File</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Row</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Term Occurrences</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Translation Occurrences</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Term Matches</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Translation Matches</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string>Info</string>
-        </property>
-       </column>
       </widget>
      </item>
      <item>
@@ -1095,6 +1045,11 @@
    <class>SearchResultList</class>
    <extends>QListView</extends>
    <header>SearchResultList.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>MatchTable</class>
+   <extends>QTableView</extends>
+   <header>MatchTable.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>
