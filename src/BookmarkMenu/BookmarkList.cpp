@@ -95,7 +95,7 @@ void BookmarkList::mousePressEvent(QMouseEvent* const event) {
 
 [[nodiscard]] auto BookmarkListModel::rowCount(const QModelIndex& parent) const
     -> i32 {
-    return bookmarks.size();
+    return i32(bookmarks.size());
 }
 
 [[nodiscard]] auto BookmarkListModel::flags(const QModelIndex& idx) const
@@ -104,7 +104,7 @@ void BookmarkList::mousePressEvent(QMouseEvent* const event) {
 }
 
 void BookmarkListModel::removeRow(const u32 row) {
-    beginRemoveRows(QModelIndex(), row, row);
+    beginRemoveRows(QModelIndex(), i32(row), i32(row));
     bookmarks.removeAt(row);
     endRemoveRows();
 }
@@ -114,7 +114,7 @@ void BookmarkListModel::appendRow(
     const QStringView description,
     const u32 row
 ) {
-    array<char, 13> filename;
+    FilenameArray filename;
     const auto filenameUtf8 = file.toUtf8();
 
     memcpy(filename.data(), filenameUtf8.constData(), filenameUtf8.size());

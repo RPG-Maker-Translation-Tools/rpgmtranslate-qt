@@ -289,7 +289,7 @@ void TaskWorker::search(
 
     const auto regexp = QRegularExpression(pattern, options);
 
-    HashMap<array<char, 13>, vector<CellMatch>> searchMatches;
+    HashMap<FilenameArray, vector<CellMatch>> searchMatches;
     searchMatches.reserve(tabCount);
 
     const auto closure = [&regexp,
@@ -298,7 +298,7 @@ void TaskWorker::search(
                           searchFlags,
                           searchColumnIndex,
                           action](
-                             const array<char, 13> filename,
+                             const FilenameArray filename,
                              const QStringView line,
                              const u32 rowIndex,
                              const u32 columnIndex
@@ -636,7 +636,7 @@ void TaskWorker::performBatchAction(
 };
 
 void TaskWorker::replace(
-    const HashMap<array<char, 13>, vector<CellMatch>> searchMatches,
+    const HashMap<FilenameArray, vector<CellMatch>>& searchMatches,
     const Selected selected,
     const SearchMenu::Action action,
     const QString& searchText,
@@ -848,11 +848,11 @@ void TaskWorker::translateSingle(
     array<QString, TRANSLATION_ENDPOINT_COUNT> translations;
 
     TranslationEndpoint endpoint;
-QString localContext;
+    QString localContext;
 
-if (projectSettings->fileContexts.contains(filename)) {
-    const QString localContext = projectSettings->fileContexts[filename];
-}
+    if (projectSettings->fileContexts.contains(filename)) {
+        const QString localContext = projectSettings->fileContexts[filename];
+    }
 
     const auto glossaryJSON =
         QJsonDocument(glossary.toJSON()).toJson(QJsonDocument::Compact);

@@ -93,6 +93,7 @@ struct LLMSettings {
     static auto fromJSON(const QJsonObject& obj) -> LLMSettings;
 };
 
+// TODO: LanguageTool & Spell-check
 struct TranslationSettings {
     GoogleEndpointSettings google;
     YandexEndpointSettings yandex;

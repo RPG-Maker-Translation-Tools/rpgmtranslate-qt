@@ -39,6 +39,9 @@
 // TODO: Display entry in search panel/bookmark menu, but make it optional
 // through settings.
 // TODO: Button to open the current project in explorer.
+// TODO: Built-in asset inspector.
+// TODO: Built-in git client.
+// TODO: Thinking budget in settings.
 
 MainWindow::MainWindow(QWidget* const parent) :
     QMainWindow(parent),
@@ -482,7 +485,7 @@ MainWindow::MainWindow(QWidget* const parent) :
              replaceText,
              searchLocation,
              columnIndex,
-             searchFlags](HashMap<array<char, 13>, vector<CellMatch>> results)
+             searchFlags](HashMap<FilenameArray, vector<CellMatch>> results)
                 -> void {
             if (action == SearchMenu::Action::Search) {
                 ui->searchPanel->showMatches(

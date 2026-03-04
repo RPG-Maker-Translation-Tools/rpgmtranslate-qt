@@ -20,7 +20,7 @@ SearchPanelDock::~SearchPanelDock() {
 }
 
 void SearchPanelDock::showMatches(
-    HashMap<array<char, 13>, vector<CellMatch>>&& matches,
+    HashMap<FilenameArray, vector<CellMatch>> matches,
     HashMap<u16, QString>& mapSections,
     shared_ptr<ProjectSettings> projectSettings
 ) {
@@ -76,7 +76,11 @@ void SearchPanelDock::showMatches(
             }
 
             items.emplace_back(
-                qsvReplace(parts.at(cellMatch.colIndex()), '\n', QChar(0x2028)),
+                qsvReplace(
+                    parts.at(cellMatch.colIndex()),
+                    '\n',
+                    LINE_SEPARATOR
+                ),
                 tr("File %1 / Row %2 / Column %3 (%4)")
                     .arg(filename)
                     .arg(cellMatch.rowIndex() + 1)

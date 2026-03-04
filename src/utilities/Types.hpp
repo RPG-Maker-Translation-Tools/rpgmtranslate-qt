@@ -228,8 +228,8 @@ struct Selected {
     }
 
     [[nodiscard]] auto filenames(const EngineType engineType) const
-        -> vector<array<char, 13>> {
-        vector<array<char, 13>> filenames;
+        -> vector<FilenameArray> {
+        vector<FilenameArray> filenames;
 
         u16 mapFileCount = 0;
 
@@ -273,7 +273,7 @@ struct Selected {
             }
 
             if (mapIndices[dense]) {
-                array<char, 13> name;
+                FilenameArray name;
 
                 name[0] = 'm';
                 name[1] = 'a';
@@ -298,7 +298,7 @@ struct Selected {
                 continue;
             }
 
-            array<char, 13> name;
+            FilenameArray name;
 
             switch (flag) {
                 case FileFlags::Actors:

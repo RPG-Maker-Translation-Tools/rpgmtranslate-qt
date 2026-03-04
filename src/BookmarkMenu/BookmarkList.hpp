@@ -9,7 +9,7 @@
 
 struct Bookmark {
     QString description;
-    array<char, 13> filename;
+    FilenameArray filename;
     u32 row;
     bool hidden;
 };

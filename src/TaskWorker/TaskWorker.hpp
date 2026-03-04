@@ -92,7 +92,7 @@ class TaskWorker final : public QObject {
     );
 
     void replace(
-        HashMap<array<char, 13>, vector<CellMatch>> searchMatches,
+        const HashMap<FilenameArray, vector<CellMatch>>& searchMatches,
         Selected selected,
         SearchMenu::Action action,
         const QString& searchText,
@@ -136,7 +136,7 @@ class TaskWorker final : public QObject {
     void extractFinished(FFIString error);
     void writeFinished(std::tuple<FFIString, f32> results);
     void purgeFinished(FFIString error);
-    void searchFinished(HashMap<array<char, 13>, vector<CellMatch>> results);
+    void searchFinished(HashMap<FilenameArray, vector<CellMatch>> results);
     void singleTranslateFinished(
         const array<QString, TRANSLATION_ENDPOINT_COUNT>& translations
     );

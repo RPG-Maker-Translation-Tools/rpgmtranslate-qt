@@ -21,7 +21,7 @@ class SearchPanelDock final : public QDockWidget {
     ~SearchPanelDock() override;
 
     void showMatches(
-        HashMap<array<char, 13>, vector<CellMatch>>&& matches,
+        HashMap<FilenameArray, vector<CellMatch>> matches,
         HashMap<u16, QString>& mapSections,
         shared_ptr<ProjectSettings> projectSettings
     );
@@ -48,7 +48,7 @@ class SearchPanelDock final : public QDockWidget {
    private:
     inline void clearList();
 
-    HashMap<array<char, 13>, vector<CellMatch>> matches;
+    HashMap<FilenameArray, vector<CellMatch>> matches;
     shared_ptr<ProjectSettings> projectSettings;
 
     QComboBox* fileSelect;

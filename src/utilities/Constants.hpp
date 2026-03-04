@@ -47,7 +47,4 @@ constexpr f32 DEFAULT_FUZZY_THRESHOLD = 0.8;
 
 constexpr u8 MAX_RECENT_PROJECTS = 10;
 
-constexpr u16 ABOUT_WINDOW_WIDTH = 480;
-constexpr u16 ABOUT_WINDOW_HEIGHT = 640;
-
-constexpr u16 DEFAULT_SEARCH_PANEL_WIDTH = 256;
+constexpr QChar LINE_SEPARATOR = QChar(0x2028);

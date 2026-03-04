@@ -95,3 +95,7 @@ class BookmarkListDelegate;
 class BookmarkListModel;
 class BookmarkProxy;
 class BookmarkList;
+
+class MatchTable;
+class MatchTableModel;
+class MatchTableDelegate;

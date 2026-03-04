@@ -146,3 +146,5 @@ class HashSet : public rapidhashset<E> {
    public:
     using rapidhashset<E>::rapidhashset;
 };
+
+using FilenameArray = array<char, 13>;
