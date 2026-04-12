@@ -3,7 +3,8 @@ pragma_once = true
 include_version = false
 no_includes = true
 cpp_compat = true
-includes = ["cstdint", "FWD.hpp", "Enums.hpp"]
+includes = ["FWD.hpp", "Enums.hpp"]
+sys_includes = ["cstdint"]
 
 braces = "SameLine"
 line_length = 80
@@ -59,6 +60,6 @@ bitflags = true
 
 [defines]
 "feature = languagetool" = "ENABLE_LANGUAGETOOL"
-"feature = json-highligthing" = "ENABLE_JSON_HIGHLIGHTING"
-"feature = js-highligthing" = "ENABLE_JS_HIGHLIGHTING"
-"feature = ruby-highligthing" = "ENABLE_RUBY_HIGHLIGHTING"
+"feature = json-highlighting" = "ENABLE_JSON_HIGHLIGHTING"
+"feature = js-highlighting" = "ENABLE_JS_HIGHLIGHTING"
+"feature = ruby-highlighting" = "ENABLE_RUBY_HIGHLIGHTING"
