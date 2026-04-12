@@ -86,24 +86,17 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
     });
 
     connect(&beautifyButton, &QPushButton::clicked, this, [this] -> void {
-#ifdef ENABLE_JSON_HIGHLIGHTING
-        QMessageBox::warning(
-            this,
-            tr("Highlighting is disabled"),
-            tr("JSON highlighting was disabled during compilation.")
-        );
-#else
         FFIString beautified;
         rpgm_beautify_json(toffistr(codeUtf8), &beautified);
         const QByteArray jsonCode = codeViewer.toPlainText().toUtf8();
 
-        ByteBuffer highlights;
-        rpgm_highlight_code(beautified, HighlightLanguage::JSON, &highlights);
-
         codeViewer.setPlainText(
             QString::fromUtf8(beautified.ptr, beautified.len)
         );
-        rpgm_string_free(beautified);
+
+#ifdef ENABLE_JSON_HIGHLIGHTING
+        ByteBuffer highlights;
+        rpgm_highlight_code(beautified, HighlightLanguage::JSON, &highlights);
 
         highlighter->setHighlights(
             span<const HighlightToken>(
@@ -111,7 +104,15 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
                 highlights.len
             )
         );
+#else
+        QMessageBox::warning(
+            this,
+            tr("Highlighting is disabled"),
+            tr("JSON highlighting was disabled during compilation.")
+        );
 #endif
+
+        rpgm_string_free(beautified);
     });
 }
 
@@ -424,7 +425,7 @@ void AssetPreviewWidget::loadAudioAsset(const QString& path) {
     }
 #else
     showPage(
-        Page::Empty,
+        Page::Error,
         tr("Asset playback is disabled. You can open asset in the default app.")
     );
 #endif
@@ -441,7 +442,7 @@ void AssetPreviewWidget::loadVideoAsset(const QString& path) {
     }
 #else
     showPage(
-        Page::Empty,
+        Page::Error,
         tr("Asset playback is disabled. You can open asset in the default app.")
     );
 #endif

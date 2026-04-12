@@ -114,6 +114,8 @@ void CodeViewer::updateLineNumberArea(const QRect& rect, const i32 dy) {
     }
 }
 
+#if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || \
+    defined(ENABLE_RUBY_HIGHLIGHTING)
 TreeSitterHighlighter::~TreeSitterHighlighter() {
     if (highlights.data() != nullptr) {
         rpgm_buffer_free(
@@ -258,3 +260,4 @@ auto TreeSitterHighlighter::highlightColor(const HighlightType type) -> QColor {
             return qRgb(0xAB, 0xB2, 0xBF);
     }
 }
+#endif

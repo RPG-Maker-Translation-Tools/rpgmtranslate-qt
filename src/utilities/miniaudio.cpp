@@ -1,3 +1,4 @@
+#ifdef ENABLE_ASSET_PLAYBACK
 #define MINIAUDIO_IMPLEMENTATION
 #define MA_NO_WAV
 #define MA_NO_MP3
@@ -14,3 +15,4 @@
 #define MA_DEBUG_OUTPUT
 #define MA_NO_GENERATION
 #include "miniaudio.h"
+#endif
