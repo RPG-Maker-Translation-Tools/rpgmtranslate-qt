@@ -101,7 +101,7 @@ void TranslationInput::performAutoReplacements() {
         { ">>"_L1, u"»" },
         { "--"_L1, u"—" },
         { ",,"_L1, u"„" },
-        { "u''"_L1, u"“" }
+        { "''"_L1, u"“" }
     };
 
     for (const auto& pair : replacements) {
