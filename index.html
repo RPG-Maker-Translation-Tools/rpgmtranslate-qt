@@ -26,7 +26,7 @@
         
       
       
-      <link rel="icon" href="assets/icon.png">
+      <link rel="icon" href="assets/rpgmtranslate-logo.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
@@ -98,7 +98,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="." title="RPGMTranslate Documentation" class="md-header__button md-logo" aria-label="RPGMTranslate Documentation" data-md-component="logo">
       
-  <img src="assets/icon.png" alt="logo">
+  <img src="assets/rpgmtranslate-logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -396,7 +396,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="." title="RPGMTranslate Documentation" class="md-nav__button md-logo" aria-label="RPGMTranslate Documentation" data-md-component="logo">
       
-  <img src="assets/icon.png" alt="logo">
+  <img src="assets/rpgmtranslate-logo.png" alt="logo">
 
     </a>
     RPGMTranslate Documentation
@@ -490,6 +490,23 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#read-only-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -801,6 +818,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#read-only-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read-only directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -889,6 +923,9 @@
 <li>Portable version for Windows (rpgmtranslate.exe).</li>
 <li>Portable version for Linux (rpgmtranslate).</li>
 </ul>
+<h3 id="read-only-directory">Read-only directory</h3>
+<p>If you installed the application into a read-only directory (e.g. /usr/bin), it <a href="https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/issues/7">won't be able to write its data</a>. Application is designed to be portable-only.</p>
+<p>By default, the application will fall back to <code>RPGMTRANSLATE_DATA_DIR</code> if set, and to <a href="https://doc.qt.io/qt-6/qstandardpaths.html"><code>AppLocalDataLocation</code></a> if not set.</p>
 <h2 id="interface">Interface</h2>
 <p>When you open the program for the first time, you'll have to open a project using the corresponding button.</p>
 <p>Once the project is opened, the whole UI will become available to you. Overall, UI contains:</p>
@@ -904,6 +941,7 @@
 <li>If the folder already contains an <code>.rpgmtranslate</code> directory, project will be loaded right away. Else, you will be prompted with the dialog to read game files.</li>
 <li>Project will open, from here you can start your translation.</li>
 </ol>
+<p>Note that application doesn't use the source <code>data</code> or <code>Data</code> directory when translating - instead it tracks a baseline at <code>.rpgmtranslate/baseline-data</code>. This is made for consistency, to avoid issues when the source data was updated. Program will check changes between source data at startup, and you can manually run a check using <code>File &gt; Check for source file changes</code> entry.</p>
 <p>In case of crashes or incorrect behavior, the application provides the log file beside the executable.</p>
 
 

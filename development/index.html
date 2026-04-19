@@ -26,7 +26,7 @@
         
       
       
-      <link rel="icon" href="../assets/icon.png">
+      <link rel="icon" href="../assets/rpgmtranslate-logo.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
@@ -98,7 +98,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="RPGMTranslate Documentation" class="md-header__button md-logo" aria-label="RPGMTranslate Documentation" data-md-component="logo">
       
-  <img src="../assets/icon.png" alt="logo">
+  <img src="../assets/rpgmtranslate-logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -396,7 +396,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="RPGMTranslate Documentation" class="md-nav__button md-logo" aria-label="RPGMTranslate Documentation" data-md-component="logo">
       
-  <img src="../assets/icon.png" alt="logo">
+  <img src="../assets/rpgmtranslate-logo.png" alt="logo">
 
     </a>
     RPGMTranslate Documentation
@@ -1228,8 +1228,6 @@
 <ul>
 <li>Qt6</li>
 <li>libarchive (LZMA only)</li>
-<li>rapidhash</li>
-<li>magic_enum</li>
 </ul>
 <h4 id="qt6-682">Qt6 (≥ 6.8.2)</h4>
 <p>Required modules:</p>
@@ -1291,16 +1289,12 @@
 </li>
 </ul>
 </li>
-<li>
-<p>miniaudio</p>
-</li>
 </ul>
 <h4 id="git-integration-enable_libgit2">Git Integration (<code>ENABLE_LIBGIT2</code>)</h4>
 <ul>
 <li>libgit2</li>
 </ul>
 <h3 id="getting-development-headers-on-linux">Getting development headers on Linux</h3>
-<p>Note that <code>rapidhash</code>, <code>magic_enum</code> and <code>miniaudio</code> are <strong>HEADER ONLY</strong> libraries - rather than installing them from your package manager, you should manually acquire a header.</p>
 <h4 id="debian">Debian</h4>
 <p>Project's baseline is Debian 13 (Trixie). Ubuntu has slightly older packages, so compilation is not guaranteed to succeed.</p>
 <pre><code class="language-bash">sudo apt update &amp;&amp; sudo apt install -y \
@@ -1321,11 +1315,9 @@
 </code></pre>
 <h4 id="arch">Arch</h4>
 <pre><code class="language-bash">sudo pacman -Syu --needed \
-  git cmake gcc clang \
+  git cmake gcc clang glibc pkgconf \
   qt6-base qt6-tools qt6-svg qt6-wayland \
-  libarchive \
-  libgit2 nuspell glibc \
-  pkgconf openssl
+  openssl libarchive libgit2 nuspell ffmpeg
 </code></pre>
 <h4 id="alpine">Alpine</h4>
 <pre><code class="language-bash">sudo apk update &amp;&amp; sudo apk add \
