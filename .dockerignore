@@ -1,0 +1,6 @@
+/build
+/rust/target
+/.zed
+/.vscode
+/.cache
+/.github
