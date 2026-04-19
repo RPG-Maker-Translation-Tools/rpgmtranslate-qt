@@ -135,7 +135,8 @@ include(FindPackageHandleStandardArgs)
 if (ENABLE_ASSET_PLAYBACK)
     find_path(FFMPEG_INCLUDE_DIR
         NAMES libavcodec/avcodec.h
-        HINTS ${FFMPEG_ROOT} ${FFMPEG_ROOT}/include
+        PATHS /usr/include /usr/local/include
+        PATH_SUFFIXES ffmpeg
     )
 
     foreach(_lib avfilter avformat avcodec avutil swresample swscale)
@@ -143,7 +144,8 @@ if (ENABLE_ASSET_PLAYBACK)
 
         find_library(${_LIB_UPPER}_LIBRARY
             NAMES ${_lib}
-            HINTS ${FFMPEG_ROOT} ${FFMPEG_ROOT}/lib
+            HINTS ${FFMPEG_ROOT}
+            PATHS /usr/lib64 /usr/lib
         )
     endforeach()
 
@@ -262,6 +264,7 @@ file(GLOB ICONS icons/*)
 # Include paths
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${SUBDIRS}
+    ${FFMPEG_INCLUDE_DIR}
 )
 
 # Link libraries
