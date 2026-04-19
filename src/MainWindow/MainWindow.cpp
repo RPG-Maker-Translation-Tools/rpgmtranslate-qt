@@ -3295,7 +3295,7 @@ void MainWindow::saveBackup() {
         archive_entry_set_pathname(aentry, filename.toStdString().c_str());
 
         archive_entry_set_filetype(aentry, AE_IFREG);
-        archive_entry_set_perm(aentry, 0o644);
+        archive_entry_set_perm(aentry, 0644);
         archive_entry_set_size(aentry, entry.size());
 
         if (archive_write_header(arch, aentry) != ARCHIVE_OK) {
