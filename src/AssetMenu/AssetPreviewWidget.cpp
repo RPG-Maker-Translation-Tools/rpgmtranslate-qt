@@ -1,77 +1,187 @@
 #include "AssetPreviewWidget.hpp"
 
+#include "GraphicsAssetViewer.hpp"
 #include "Utils.hpp"
 #include "rpgmtranslate.h"
 
 #include <QDesktopServices>
 #include <QDir>
 #include <QFontDatabase>
+#include <QGraphicsScene>
 #include <QGraphicsTextItem>
-#include <QJsonDocument>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QRegularExpression>
+#include <QSlider>
+#include <QSpinBox>
+#include <QStackedWidget>
 #include <QTemporaryFile>
 #include <QUrl>
 
-// TODO: Let user type their own sample text for font inspection
-
 AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
     QWidget(parent),
-    errorLabel(&stack),
-    graphicsViewer(&graphicsScene, &stack) {
-    errorLabel.setAlignment(Qt::AlignCenter);
-    graphicsViewer.setAlignment(Qt::AlignCenter);
+#ifdef ENABLE_ASSET_PLAYBACK
+    mediaPlayer(new MediaPlayer(this)),
+#endif
 
-    stack.addWidget(&errorLabel);
-    stack.addWidget(&graphicsViewer);
+    codeViewer(new CodeViewer(this)),
+
+    graphicsScene(new QGraphicsScene(this)),
+    graphicsViewer(new GraphicsAssetViewer(graphicsScene, stack)),
+
+    stack(new QStackedWidget(this)),
+
+    errorLabel(new QLabel(stack)),
+    supportedWritingSystemsLabel(new QLabel(this)),
+
+    toolbar(new QWidget(this)),
+    locateButton(new QPushButton(tr("Locate file"), toolbar)),
+    openButton(new QPushButton(tr("Open in default app"), toolbar)),
+
+    // JSON
+    beautifyButton(new QPushButton(tr("Beautify"), toolbar)),
+
+    // Code
+    searchContainer(new QWidget(toolbar)),
+    searchContainerLayout(new QHBoxLayout(searchContainer)),
+    searchInput(new QLineEdit(searchContainer)),
+    regularExpressionButton(new QPushButton(
+        QIcon(u":/icons/regular_expression.svg"_s),
+        QString(),
+        searchContainer
+    )),
+    matchWholeButton(new QPushButton(
+        QIcon(u":/icons/match_word.svg"_s),
+        QString(),
+        searchContainer
+    )),
+    matchCaseButton(new QPushButton(
+        QIcon(u":/icons/match_case.svg"_s),
+        QString(),
+        searchContainer
+    )),
+    searchButton(new QPushButton(
+        QIcon(u":/icons/search.svg"_s),
+        QString(),
+        searchContainer
+    )),
+    searchResultsLabel(new QLabel(searchContainer)),
+    searchPrevButton(new QPushButton(
+        QIcon(u":/icons/arrow_upward.svg"_s),
+        QString(),
+        searchContainer
+    )),
+    searchNextButton(new QPushButton(
+        QIcon(u":/icons/arrow_downward.svg"_s),
+        QString(),
+        searchContainer
+    )),
+
+    // Images
+    scaleContainer(new QWidget(toolbar)),
+    scaleContainerLayout(new QHBoxLayout(scaleContainer)),
+    scaleSlider(new QSlider(Qt::Horizontal, scaleContainer)),
+    scaleLabel(new QLabel(scaleContainer)),
+
+    // Fonts
+    fontSampleContainer(new QWidget(toolbar)),
+    fontSampleContainerLayout(new QHBoxLayout(fontSampleContainer)),
+    fontSampleInput(new QLineEdit(fontSampleContainer)),
+    fontSizeInput(new QSpinBox(fontSampleContainer)),
+
+    toolbarLayout(new QHBoxLayout(toolbar)),
+    mainLayout(new QVBoxLayout(this)) {
+    errorLabel->setAlignment(Qt::AlignCenter);
+    graphicsViewer->setAlignment(Qt::AlignCenter);
+
+    // Min scale: 1%, max scale: 1000%
+    scaleSlider->setRange(1, 1000);
+    scaleSlider->setSingleStep(1);
+
+    stack->addWidget(errorLabel);
+    stack->addWidget(graphicsViewer);
 
 #ifdef ENABLE_ASSET_PLAYBACK
-    stack.addWidget(&mediaPlayer);
+    stack->addWidget(mediaPlayer);
 #else
     auto* const mediaPlaceholder =
         new QLabel(tr("Media playback not available"), &stack);
     mediaPlaceholder->setAlignment(Qt::AlignCenter);
-    stack.addWidget(mediaPlaceholder);
+    stack->addWidget(mediaPlaceholder);
 #endif
 
-    stack.addWidget(&codeViewer);
+    stack->addWidget(codeViewer);
 
-    toolbarLayout.setContentsMargins(0, 0, 0, 0);
-    toolbarLayout.setSpacing(4);
-    toolbarLayout.addWidget(&locateButton);
-    toolbarLayout.addWidget(&openButton);
-    toolbarLayout.addWidget(&beautifyButton);
+    matchCaseButton->setCheckable(true);
+    matchWholeButton->setCheckable(true);
+    regularExpressionButton->setCheckable(true);
 
-    graphicsViewer.setScene(&graphicsScene);
-    graphicsViewer.setDragMode(QGraphicsView::ScrollHandDrag);
-    graphicsViewer.setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
-    graphicsViewer.setResizeAnchor(QGraphicsView::AnchorUnderMouse);
-    graphicsViewer.setRenderHints(
+    fontSampleInput->setPlaceholderText(
+        tr("The quick brown fox jumps over the lazy dog")
+    );
+    fontSizeInput->setRange(6, 288);
+    fontSizeInput->setValue(24);
+    fontSizeInput->setSuffix(tr(" pt"));
+
+    fontSampleContainerLayout->addWidget(fontSampleInput);
+    fontSampleContainerLayout->addWidget(fontSizeInput);
+
+    searchContainerLayout->addWidget(searchInput);
+    searchContainerLayout->addWidget(matchCaseButton);
+    searchContainerLayout->addWidget(matchWholeButton);
+    searchContainerLayout->addWidget(regularExpressionButton);
+    searchContainerLayout->addWidget(searchButton);
+    searchContainerLayout->addWidget(searchResultsLabel);
+    searchContainerLayout->addWidget(searchPrevButton);
+    searchContainerLayout->addWidget(searchNextButton);
+
+    scaleContainerLayout->addWidget(scaleSlider);
+    scaleContainerLayout->addWidget(scaleLabel);
+
+    toolbarLayout->setContentsMargins(0, 0, 0, 0);
+    toolbarLayout->setSpacing(4);
+    toolbarLayout->addWidget(locateButton);
+    toolbarLayout->addWidget(openButton);
+    toolbarLayout->addWidget(beautifyButton);
+    toolbarLayout->addWidget(searchContainer);
+    toolbarLayout->addWidget(scaleContainer);
+    toolbarLayout->addWidget(fontSampleContainer);
+
+    graphicsViewer->setScene(graphicsScene);
+    graphicsViewer->setDragMode(QGraphicsView::ScrollHandDrag);
+    graphicsViewer->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    graphicsViewer->setResizeAnchor(QGraphicsView::AnchorUnderMouse);
+    graphicsViewer->setRenderHints(
         QPainter::Antialiasing | QPainter::SmoothPixmapTransform
     );
 
-    codeViewer.setReadOnly(true);
+    codeViewer->setReadOnly(true);
 
     auto monoFont = QFont(u"Monospace"_s);
     monoFont.setStyleHint(QFont::TypeWriter);
     monoFont.setPointSize(10);
-    codeViewer.setFont(monoFont);
+    codeViewer->setFont(monoFont);
 
 #if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || \
     defined(ENABLE_RUBY_HIGHLIGHTING)
-    highlighter = new TreeSitterHighlighter(codeViewer.document());
+    highlighter = new TreeSitterHighlighter(codeViewer->document());
 #endif
 
-    supportedWritingSystemsLabel.setWordWrap(true);
+    supportedWritingSystemsLabel->setWordWrap(true);
 
-    mainLayout.setContentsMargins(4, 4, 4, 4);
-    mainLayout.setSpacing(8);
-    mainLayout.addWidget(&stack);
-    mainLayout.addWidget(&supportedWritingSystemsLabel);
-    mainLayout.addWidget(&toolbar);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
+    mainLayout->setSpacing(8);
+    mainLayout->addWidget(stack);
+    mainLayout->addWidget(supportedWritingSystemsLabel);
+    mainLayout->addWidget(toolbar);
 
-    resize(screen()->geometry().width() / 2, screen()->geometry().height() / 2);
+    const QRect screenGeometry = screen()->geometry();
+    resize(screenGeometry.width() / 2, screenGeometry.height() / 2);
 
-    connect(&locateButton, &QPushButton::clicked, this, [this] -> void {
+    connect(locateButton, &QPushButton::clicked, this, [this] -> void {
         if (!currentPath.isEmpty()) {
             QDesktopServices::openUrl(
                 QUrl::fromLocalFile(QFileInfo(currentPath).absolutePath())
@@ -79,18 +189,69 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
         }
     });
 
-    connect(&openButton, &QPushButton::clicked, this, [this] -> void {
+    connect(openButton, &QPushButton::clicked, this, [this] -> void {
         if (!currentPath.isEmpty()) {
             QDesktopServices::openUrl(QUrl::fromLocalFile(currentPath));
         }
     });
 
-    connect(&beautifyButton, &QPushButton::clicked, this, [this] -> void {
-        FFIString beautified;
-        rpgm_beautify_json(toffistr(codeUtf8), &beautified);
-        const QByteArray jsonCode = codeViewer.toPlainText().toUtf8();
+    connect(searchInput, &QLineEdit::returnPressed, this, [this] -> void {
+        performSearch();
+    });
 
-        codeViewer.setPlainText(
+    connect(searchButton, &QPushButton::clicked, this, [this] -> void {
+        performSearch();
+    });
+
+    connect(searchPrevButton, &QPushButton::clicked, this, [this] -> void {
+        navigateSearch(-1);
+    });
+
+    connect(searchNextButton, &QPushButton::clicked, this, [this] -> void {
+        navigateSearch(+1);
+    });
+
+    connect(
+        scaleSlider,
+        &QSlider::valueChanged,
+        this,
+        [this](const i32 scale) -> void {
+        graphicsViewer->setScaleFactor(f32(scale) / 100.0F);
+
+        array<char, 16> scaleString = itos(scale);
+        scaleString[strlen(scaleString.data())] = '%';
+        scaleLabel->setText(QL1SV(scaleString.data()));
+    }
+    );
+
+    connect(
+        graphicsViewer,
+        &GraphicsAssetViewer::rescaled,
+        this,
+        [this] -> void {
+        const i32 scale = i32(roundf(graphicsViewer->currentScale() * 100));
+        scaleSlider->setValue(scale);
+
+        array<char, 16> scaleString = itos(scale);
+        scaleString[strlen(scaleString.data())] = '%';
+        scaleLabel->setText(QL1SV(scaleString.data()));
+    }
+    );
+
+    connect(fontSampleInput, &QLineEdit::textChanged, this, [this] -> void {
+        updateFontPreview();
+    });
+
+    connect(fontSizeInput, &QSpinBox::valueChanged, this, [this] -> void {
+        updateFontPreview();
+    });
+
+    connect(beautifyButton, &QPushButton::clicked, this, [this] -> void {
+        FFIString beautified;
+        rpgm_beautify_json(strtoffi(codeUtf8), &beautified);
+        const QByteArray jsonCode = codeViewer->toPlainText().toUtf8();
+
+        codeViewer->setPlainText(
             QString::fromUtf8(beautified.ptr, beautified.len)
         );
 
@@ -124,40 +285,53 @@ AssetPreviewWidget::~AssetPreviewWidget() {
 
 void AssetPreviewWidget::clear() {
     currentPath.clear();
-    graphicsScene.clear();
-    codeViewer.clear();
+    graphicsScene->clear();
+    codeViewer->clear();
+    currentPath.clear();
+    currentFontID = -1;
+    graphicsScene->clear();
+    codeViewer->clear();
 }
 
 void AssetPreviewWidget::showAsset(const QString& path) {
     currentPath = path;
 
-    supportedWritingSystemsLabel.hide();
-    beautifyButton.hide();
+    supportedWritingSystemsLabel->hide();
+    beautifyButton->hide();
+    scaleContainer->hide();
+    searchContainer->hide();
+    fontSampleContainer->hide();
 
     if (!lastTempFile.isEmpty()) {
         QFile::remove(lastTempFile);
         lastTempFile = QString();
     }
 
-    if (path.endsWith(".png_"_L1) || path.endsWith(".rpgmvp"_L1) ||
-        path.endsWith(".png"_L1) || path.endsWith(".jpg"_L1)) {
-        loadGraphicsAsset(path);
-    } else if (path.endsWith(".ttf"_L1) || path.endsWith(".otf"_L1)) {
+    const QString extension = path.sliced(path.lastIndexOf(u'.') + 1).toLower();
+
+    if (extension == "png_"_L1 || extension == "rpgmvp"_L1 ||
+        extension == "png"_L1 || extension == "jpg"_L1) {
+        scaleContainer->show();
+        loadGraphicsAsset(path, extension);
+    } else if (extension == "ttf"_L1 || extension == "otf"_L1) {
+        fontSampleContainer->show();
+        searchContainer->show();
         loadFontAsset(path);
     } else if (
-        path.endsWith(".ogg_"_L1) || path.endsWith(".m4a_"_L1) ||
-        path.endsWith(".rpgmvo"_L1) || path.endsWith(".rpgmvm"_L1) ||
-        path.endsWith(".ogg"_L1) || path.endsWith(".m4a"_L1)
+        extension == "ogg_"_L1 || extension == "m4a_"_L1 ||
+        extension == "rpgmvo"_L1 || extension == "rpgmvm"_L1 ||
+        extension == "ogg"_L1 || extension == "m4a"_L1
     ) {
-        loadAudioAsset(path);
-    } else if (path.endsWith(".webm"_L1) || path.endsWith(".mp4"_L1)) {
+        loadAudioAsset(path, extension);
+    } else if (extension == "webm"_L1 || extension == "mp4"_L1) {
         loadVideoAsset(path);
     } else if (
-        path.endsWith(".js"_L1) || path.endsWith(".json"_L1) ||
-        path.endsWith(".rxdata"_L1) || path.endsWith(".rvdata"_L1) ||
-        path.endsWith(".rvdata2"_L1)
+        extension == "js"_L1 || extension == "json"_L1 ||
+        extension == "rxdata"_L1 || extension == "rvdata"_L1 ||
+        extension == "rvdata2"_L1
     ) {
-        loadTextAsset(path);
+        searchContainer->show();
+        loadTextAsset(path, extension);
     } else {
         showPage(Page::Error, tr("Extension is unsupported."));
     }
@@ -168,23 +342,28 @@ void AssetPreviewWidget::showAsset(const QString& path) {
 
 void AssetPreviewWidget::showPage(const Page page, const QString& error) {
     if (!error.isEmpty()) {
-        errorLabel.setText(error);
+        errorLabel->setText(error);
     }
 
-    stack.setCurrentIndex(u8(page));
+    stack->setCurrentIndex(u8(page));
 }
 
-void AssetPreviewWidget::loadGraphicsAsset(const QString& path) {
+void AssetPreviewWidget::loadGraphicsAsset(
+    const QString& path,
+    const QString& extension
+) {
     const QByteArray utf8Path = path.toUtf8();
     QPixmap pixmap;
     bool loaded;
 
-    if (path.endsWith("png"_L1) || path.endsWith("jpg"_L1)) {
+    if (extension == "png"_L1 || extension == "jpg"_L1) {
         auto imageFile = QFile(path);
 
         if (!imageFile.open(QFile::ReadOnly)) {
-            qCritical() << "Failed to load asset" << path << ':'
-                        << imageFile.errorString();
+            qCritical() << "Failed to load asset %1: %2"_L1.arg(
+                path,
+                imageFile.errorString()
+            );
             return;
         }
 
@@ -192,18 +371,16 @@ void AssetPreviewWidget::loadGraphicsAsset(const QString& path) {
         loaded = pixmap.loadFromData(imageData);
     } else {
         ByteBuffer imageData;
-        const FFIString error =
-            rpgm_decrypt_asset(toffistr(utf8Path), &imageData);
+        const bool success = rpgm_decrypt_asset(strtoffi(utf8Path), &imageData);
 
-        if (error.ptr != nullptr) {
-            qCritical() << "Failed to decrypt asset"_L1 << path << ':'
-                        << fromffistr(error);
+        if (!success) {
+            const QUtf8SV error = ffitostr(rpgm_error());
+
+            qCritical() << "Failed to decrypt asset %1: %2"_L1.arg(path, error);
             showPage(
                 Page::Error,
-                tr("Failed to decrypt asset %1: %2")
-                    .arg(path, fromffistr(error))
+                tr("Failed to decrypt asset %1: %2").arg(path, error)
             );
-            rpgm_string_free(error);
             return;
         }
 
@@ -215,35 +392,41 @@ void AssetPreviewWidget::loadGraphicsAsset(const QString& path) {
     }
 
     if (!loaded) {
-        qCritical() << "Failed to load pixmap from"_L1 << path;
+        qCritical() << "Failed to load pixmap from %1"_L1.arg(path);
         showPage(Page::Error, tr("Failed to load pixmap from %1").arg(path));
         return;
     }
 
-    graphicsScene.clear();
-    const auto* const item = graphicsScene.addPixmap(pixmap);
+    graphicsScene->clear();
+    const auto* const item = graphicsScene->addPixmap(pixmap);
     showPage(Page::Graphics);
-    graphicsViewer.fitInView(item, Qt::KeepAspectRatio);
+    graphicsViewer->fitInView(item, Qt::KeepAspectRatio);
+
+    const i32 scale = i32(roundf(graphicsViewer->currentScale() * 100));
+    scaleSlider->setValue(scale);
+
+    array<char, 16> scaleString = itos(scale);
+    scaleString[strlen(scaleString.data())] = '%';
+    scaleLabel->setText(QL1SV(scaleString.data()));
 }
 
 void AssetPreviewWidget::loadFontAsset(const QString& path) {
     const i32 fontID = QFontDatabase::addApplicationFont(path);
 
     if (fontID == -1) {
-        qCritical() << "Failed to load font"_L1 << path;
+        qCritical() << "Failed to load font %1"_L1.arg(path);
         showPage(Page::Error, tr("Failed to load font %1").arg(path));
         return;
     }
 
     const QString family =
         QFontDatabase::applicationFontFamilies(fontID).value(0);
-    auto* const textItem = graphicsScene.addText(
-        u"The quick brown fox jumps over the lazy dog\n1234567890"_s
-    );
-    auto font = QFont(family, 24);
-    textItem->setFont(font);
+    currentFontID = fontID;
+    fontSizeInput->setValue(24);
+    updateFontPreview();
 
-    const auto writingSystems = QFontDatabase::writingSystems(font.family());
+    const auto writingSystems =
+        QFontDatabase::writingSystems(QFont(family, 24).family());
     QStringList stringWritingSystems;
     stringWritingSystems.reserve(writingSystems.size());
 
@@ -356,32 +539,40 @@ void AssetPreviewWidget::loadFontAsset(const QString& path) {
         }
     }
 
-    supportedWritingSystemsLabel.setText(
+    supportedWritingSystemsLabel->setText(
         tr("Supported writing systems: ") + stringWritingSystems.join(", "_L1)
     );
 
     showPage(Page::Graphics);
-    graphicsViewer.fitInView(textItem, Qt::KeepAspectRatio);
-    supportedWritingSystemsLabel.show();
+
+    const i32 scale = i32(roundf(graphicsViewer->currentScale() * 100));
+    scaleSlider->setValue(scale);
+
+    array<char, 16> scaleString = itos(scale);
+    scaleString[strlen(scaleString.data())] = '%';
+    scaleLabel->setText(QL1SV(scaleString.data()));
+
+    supportedWritingSystemsLabel->show();
 }
 
-void AssetPreviewWidget::loadAudioAsset(const QString& path) {
-    if (!path.endsWith("ogg"_L1) && !path.endsWith("m4a"_L1)) {
+void AssetPreviewWidget::loadAudioAsset(
+    const QString& path,
+    const QString& extension
+) {
+    if (extension != "ogg"_L1 && extension != "m4a"_L1) {
         const QByteArray utf8Path = path.toUtf8();
 
         ByteBuffer decryptedData;
-        const FFIString error =
-            rpgm_decrypt_asset(toffistr(utf8Path), &decryptedData);
+        const bool success =
+            rpgm_decrypt_asset(strtoffi(utf8Path), &decryptedData);
 
-        if (error.ptr != nullptr) {
-            qCritical() << "Failed to decrypt asset"_L1 << path << ':'
-                        << fromffistr(error);
+        if (!success) {
+            const QUtf8SV error = ffitostr(rpgm_error());
+            qCritical() << "Failed to decrypt asset %1: %2"_L1.arg(path, error);
             showPage(
                 Page::Error,
-                tr("Failed to decrypt asset %1: %2")
-                    .arg(path, fromffistr(error))
+                tr("Failed to decrypt asset %1: %2").arg(path, error)
             );
-            rpgm_string_free(error);
             return;
         }
 
@@ -390,8 +581,10 @@ void AssetPreviewWidget::loadAudioAsset(const QString& path) {
         );
 
         if (!tempFile.open()) {
-            qCritical() << "Failed to open temporary file"_L1
-                        << tempFile.fileName() << ':' << tempFile.errorString();
+            qCritical() << "Failed to open temporary file %1: %2"_L1.arg(
+                tempFile.fileName(),
+                tempFile.errorString()
+            );
             rpgm_buffer_free(decryptedData);
             showPage(
                 Page::Error,
@@ -413,11 +606,10 @@ void AssetPreviewWidget::loadAudioAsset(const QString& path) {
     }
 
 #ifdef ENABLE_ASSET_PLAYBACK
-    if (const auto result = mediaPlayer.open(
-            path.endsWith("ogg"_L1) || path.endsWith("m4a"_L1) ? path
-                                                               : lastTempFile
+    if (const auto result = mediaPlayer->open(
+            extension == "ogg"_L1 || extension == "m4a"_L1 ? path : lastTempFile
         )) {
-        mediaPlayer.play();
+        mediaPlayer->play();
         showPage(Page::Media);
     } else {
         qCritical() << result.error();
@@ -433,8 +625,8 @@ void AssetPreviewWidget::loadAudioAsset(const QString& path) {
 
 void AssetPreviewWidget::loadVideoAsset(const QString& path) {
 #ifdef ENABLE_ASSET_PLAYBACK
-    if (const auto result = mediaPlayer.open(path)) {
-        mediaPlayer.play();
+    if (const auto result = mediaPlayer->open(path)) {
+        mediaPlayer->play();
         showPage(Page::Media);
     } else {
         qCritical() << result.error();
@@ -448,12 +640,17 @@ void AssetPreviewWidget::loadVideoAsset(const QString& path) {
 #endif
 }
 
-void AssetPreviewWidget::loadTextAsset(const QString& path) {
+void AssetPreviewWidget::loadTextAsset(
+    const QString& path,
+    const QString& extension
+) {
     auto file = QFile(path);
 
     if (!file.open(QFile::ReadOnly)) {
-        qCritical() << "Failed to open file"_L1 << path << ':'
-                    << file.errorString();
+        qCritical() << "Failed to open file %1: %2"_L1.arg(
+            path,
+            file.errorString()
+        );
         showPage(
             Page::Error,
             tr("Failed to open file %1: %2").arg(path, file.errorString())
@@ -470,24 +667,25 @@ void AssetPreviewWidget::loadTextAsset(const QString& path) {
     ByteBuffer highlights;
 #endif
 
-    if (path.endsWith(".rxdata"_L1) || path.endsWith(".rvdata"_L1) ||
-        path.endsWith(".rvdata2"_L1)) {
+    if (extension == "rxdata"_L1 || extension == "rvdata"_L1 ||
+        extension == "rvdata2"_L1) {
         FFIString json;
         const QByteArray filename = lastPathComponent(path).toUtf8();
 
-        const FFIString error =
-            rpgm_generate_json(toffistr(codeUtf8), toffistr(filename), &json);
+        const bool success =
+            rpgm_generate_json(strtoffi(codeUtf8), strtoffi(filename), &json);
 
-        if (error.ptr != nullptr) {
-            qCritical() << "Failed to generate JSON for file"_L1 << path << ':'
-                        << QUtf8SV(error.ptr, isize(error.len));
+        if (!success) {
+            const QUtf8SV error = ffitostr(rpgm_error());
+            qCritical() << "Failed to generate JSON for file %1: %2"_L1.arg(
+                path,
+                error
+            );
             QMessageBox::critical(
                 this,
                 tr("Failed to generate JSON"),
-                tr("Failed to generate JSON for file %1: %2")
-                    .arg(path, QUtf8SV(error.ptr, isize(error.len)))
+                tr("Failed to generate JSON for file %1: %2").arg(path, error)
             );
-            rpgm_string_free(error);
             return;
         }
 
@@ -500,7 +698,7 @@ void AssetPreviewWidget::loadTextAsset(const QString& path) {
             rpgm_highlight_code(json, HighlightLanguage::JSON, &highlights);
 #endif
 
-            beautifyButton.show();
+            beautifyButton->show();
         }
 
         code = QString::fromUtf8(json.ptr, isize(json.len));
@@ -516,20 +714,20 @@ void AssetPreviewWidget::loadTextAsset(const QString& path) {
             codeView = codeUtf8;
         }
 
-        if (path.endsWith("json"_L1)) {
+        if (extension == "json"_L1) {
 #ifdef ENABLE_JSON_HIGHLIGHTING
             rpgm_highlight_code(
-                toffistr(codeView),
+                strtoffi(codeView),
                 HighlightLanguage::JSON,
                 &highlights
             );
 #endif
 
-            beautifyButton.show();
+            beautifyButton->show();
         } else {
 #ifdef ENABLE_JS_HIGHLIGHTING
             rpgm_highlight_code(
-                toffistr(codeView),
+                strtoffi(codeView),
                 HighlightLanguage::JS,
                 &highlights
             );
@@ -539,7 +737,7 @@ void AssetPreviewWidget::loadTextAsset(const QString& path) {
         code = QString::fromUtf8(codeView);
     }
 
-    codeViewer.setPlainText(code);
+    codeViewer->setPlainText(code);
 
 #if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || \
     defined(ENABLE_RUBY_HIGHLIGHTING)
@@ -552,4 +750,140 @@ void AssetPreviewWidget::loadTextAsset(const QString& path) {
 #endif
 
     showPage(Page::Text);
+}
+
+void AssetPreviewWidget::performSearch() {
+    searchResults.clear();
+    currentSearchIndex = -1;
+    searchResultsLabel->clear();
+
+    const QString query = searchInput->text();
+    if (query.isEmpty()) {
+        codeViewer->setExtraSelections({});
+        return;
+    }
+
+    QTextDocument* const doc = codeViewer->document();
+
+    QTextDocument::FindFlags flags;
+
+    if (matchCaseButton->isChecked()) {
+        flags |= QTextDocument::FindCaseSensitively;
+    }
+
+    if (matchWholeButton->isChecked()) {
+        flags |= QTextDocument::FindWholeWords;
+    }
+
+    if (regularExpressionButton->isChecked()) {
+        auto regexp = QRegularExpression(query);
+
+        if (!regexp.isValid()) {
+            searchResultsLabel->setText(tr("Invalid regex"));
+            return;
+        }
+
+        if (!matchCaseButton->isChecked()) {
+            regexp.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+        }
+
+        QTextCursor cursor = doc->find(regexp, 0, flags);
+
+        while (!cursor.isNull()) {
+            searchResults.append(cursor);
+            cursor = doc->find(regexp, cursor, flags);
+        }
+    } else {
+        QTextCursor cursor = doc->find(query, 0, flags);
+
+        while (!cursor.isNull()) {
+            searchResults.append(cursor);
+            cursor = doc->find(query, cursor, flags);
+        }
+    }
+
+    if (searchResults.isEmpty()) {
+        searchResultsLabel->setText(tr("No results"));
+        codeViewer->setExtraSelections({});
+        return;
+    }
+
+    const QColor allMatchColor = QColor(255, 220, 0, 80);
+    QList<QTextEdit::ExtraSelection> allHighlights;
+    allHighlights.reserve(searchResults.size());
+
+    for (const QTextCursor& cursor : searchResults) {
+        QTextEdit::ExtraSelection sel;
+        sel.cursor = cursor;
+        sel.format.setBackground(allMatchColor);
+        allHighlights.append(sel);
+    }
+
+    codeViewer->setExtraSelections(allHighlights);
+
+    currentSearchIndex = 0;
+    navigateSearch(0);
+}
+
+void AssetPreviewWidget::navigateSearch(const int delta) {
+    if (searchResults.isEmpty()) {
+        return;
+    }
+
+    currentSearchIndex = (currentSearchIndex + delta + searchResults.size()) %
+                         searchResults.size();
+
+    searchResultsLabel->setText("%1/%2"_L1.arg(
+        itos(currentSearchIndex + 1).data(),
+        itos(searchResults.size()).data()
+    ));
+
+    const QColor allMatchColor = QColor(255, 220, 0, 80);
+    const QColor currentMatchColor = QColor(255, 160, 0, 180);
+
+    QList<QTextEdit::ExtraSelection> highlights;
+    highlights.reserve(searchResults.size());
+
+    for (const auto i : range(0, searchResults.size())) {
+        QTextEdit::ExtraSelection sel;
+        sel.cursor = searchResults[i];
+        sel.format.setBackground(
+            i == currentSearchIndex ? currentMatchColor : allMatchColor
+        );
+        highlights.append(sel);
+    }
+
+    codeViewer->setExtraSelections(highlights);
+
+    QTextCursor cursor = searchResults[currentSearchIndex];
+    codeViewer->setTextCursor(cursor);
+    codeViewer->ensureCursorVisible();
+}
+
+void AssetPreviewWidget::updateFontPreview() {
+    if (currentFontID == -1) {
+        return;
+    }
+
+    const QString family =
+        QFontDatabase::applicationFontFamilies(currentFontID).value(0);
+
+    const QString sampleText =
+        fontSampleInput->text().isEmpty()
+            ? u"The quick brown fox jumps over the lazy dog\n1234567890"_s
+            : fontSampleInput->text();
+
+    graphicsScene->clear();
+    auto* const textItem = graphicsScene->addText(sampleText);
+    textItem->setFont(QFont(family, fontSizeInput->value()));
+
+    showPage(Page::Graphics);
+    graphicsViewer->fitInView(textItem, Qt::KeepAspectRatio);
+
+    const i32 scale = i32(roundf(graphicsViewer->currentScale() * 100));
+    scaleSlider->setValue(scale);
+
+    array<char, 16> scaleString = itos(scale);
+    scaleString[strlen(scaleString.data())] = '%';
+    scaleLabel->setText(QL1SV(scaleString.data()));
 }

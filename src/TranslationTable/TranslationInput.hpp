@@ -1,21 +1,28 @@
 #pragma once
 
 #include "Aliases.hpp"
+#include "LintTooltip.hpp"
 
 #include <QPlainTextEdit>
+#include <QTimer>
 
 class TranslationInput final : public QPlainTextEdit {
     Q_OBJECT
 
    public:
-    explicit TranslationInput(u16 hint, QWidget* parent = nullptr);
+    explicit TranslationInput(
+        const ProjectSettings* projectSettings,
+        QWidget* parent = nullptr
+    );
 
    protected:
     void keyPressEvent(QKeyEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void leaveEvent(QEvent* event) override;
 
    signals:
-    void contentHeightChanged(i32 height);
+    void contentHeightChanged(u32 height);
     void editingFinished();
 
    private:
@@ -28,11 +35,24 @@ class TranslationInput final : public QPlainTextEdit {
     void onTextChanged();
     void updateContentHeight();
     void performAutoReplacements();
+    void showPendingTooltip();
+
+    LintTooltip tooltip;
+
+    QString pendingTooltipText;
+    QString pendingTooltipCaptured;
 
     vector<Replacement> lastReplacements;
 
-    u16 lengthHint;
+    QTimer tooltipDelayTimer;
+    QPoint pendingTooltipPos;
 
-    i32 lastContentHeight = 0;
+    const ProjectSettings* projectSettings;
+
+    u32 lastContentHeight = 0;
+
+    i32 hoveredRangeStart = -1;
+    i32 hoveredRangeEnd = -1;
+
     bool blockTextChanged = false;
 };

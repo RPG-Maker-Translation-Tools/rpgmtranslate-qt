@@ -10,17 +10,18 @@ constexpr QL1SV LINE_FEED = "\n"_L1;
 constexpr QL1SV SEPARATORL1 = "<#>"_L1;
 constexpr QStringView SEPARATOR = u"<#>";
 
-constexpr QL1SV SETTINGS_PATH = "/settings.json"_L1;
-constexpr QL1SV PROGRAM_DATA_DIRECTORY = "/.rpgmtranslate"_L1;
-constexpr QL1SV MATCHES_DIRECTORY = "/matches"_L1;
-constexpr QL1SV TRANSLATION_DIRECTORY = "/translation"_L1;
-constexpr QL1SV TEMP_MAPS_DIRECTORY = "/temp-maps"_L1;
-constexpr QL1SV LOG_FILE = "/replacement-log.json"_L1;
-constexpr QL1SV PROJECT_SETTINGS_FILE = "/project-settings.json"_L1;
-constexpr QL1SV BACKUP_DIRECTORY = "/backups"_L1;
-constexpr QL1SV GLOSSARY_FILE = "/glossary.json"_L1;
-constexpr QL1SV OUTPUT_DIRECTORY = "/output"_L1;
-constexpr QL1SV RVPACKER_METADATA_FILE = "/.rvpacker-metadata"_L1;
+constexpr QStringView SETTINGS_PATH = u"/settings.json";
+constexpr QStringView PROGRAM_DATA_DIRECTORY = u"/.rpgmtranslate";
+constexpr QStringView MATCHES_DIRECTORY = u"/matches";
+constexpr QStringView BASELINE_DATA_DIRECTORY = u"/baseline-data";
+constexpr QStringView TRANSLATION_DIRECTORY = u"/translation";
+constexpr QStringView TEMP_MAPS_DIRECTORY = u"/temp-maps";
+constexpr QStringView LOG_FILE = u"/replacement-log.json";
+constexpr QStringView PROJECT_SETTINGS_FILE = u"/project-settings.json";
+constexpr QStringView BACKUP_DIRECTORY = u"/backups";
+constexpr QStringView GLOSSARY_FILE = u"/glossary.json";
+constexpr QStringView OUTPUT_DIRECTORY = u"/output";
+constexpr QStringView RVPACKER_METADATA_FILE = u"/.rvpacker-metadata";
 
 constexpr u8 PERCENT_MULTIPLIER = 100;
 

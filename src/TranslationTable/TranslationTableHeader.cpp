@@ -2,9 +2,7 @@
 
 #include "LabelInput.hpp"
 
-#include <QAbstractItemModel>
 #include <QKeyEvent>
-#include <QMouseEvent>
 #include <QPainter>
 
 TranslationTableHeader::TranslationTableHeader(QWidget* const parent) :

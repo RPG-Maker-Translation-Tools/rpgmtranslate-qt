@@ -46,6 +46,7 @@ class QStandardItemModel;
 class QGridLayout;
 class QPlainTextEdit;
 class QTableWidget;
+class QGraphicsScene;
 
 class AboutWindow;
 

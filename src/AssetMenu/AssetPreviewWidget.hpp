@@ -8,13 +8,6 @@
 #include "MediaPlayer.hpp"
 #endif
 
-#include <QGraphicsScene>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QPushButton>
-#include <QStackedWidget>
-#include <QString>
-#include <QVBoxLayout>
 #include <QWidget>
 
 // TODO: JS/Ruby beautifier. Claude should vibe-code it so I don't have to
@@ -40,43 +33,78 @@ class AssetPreviewWidget final : public QWidget {
 
     void showPage(Page page, const QString& error = QString());
 
-    void loadGraphicsAsset(const QString& path);
+    void loadGraphicsAsset(const QString& path, const QString& extension);
     void loadFontAsset(const QString& path);
-    void loadAudioAsset(const QString& path);
+    void loadAudioAsset(const QString& path, const QString& extension);
     void loadVideoAsset(const QString& path);
-    void loadTextAsset(const QString& path);
+    void loadTextAsset(const QString& path, const QString& extension);
+
+    void performSearch();
+    void navigateSearch(int delta);  // +1 = next, -1 = prev
+
+    void updateFontPreview();
 
     constexpr static u8 HEADER_LENGTH = 16;
-
-#ifdef ENABLE_ASSET_PLAYBACK
-    MediaPlayer mediaPlayer;
-#endif
-
-    CodeViewer codeViewer;
-
-    QStackedWidget stack = QStackedWidget(this);
-
-    QLabel errorLabel;
-    QLabel supportedWritingSystemsLabel;
-
-    QWidget toolbar = QWidget(this);
-    QPushButton locateButton = QPushButton(tr("Locate file"), &toolbar);
-    QPushButton openButton = QPushButton(tr("Open in default app"), &toolbar);
-    QPushButton beautifyButton = QPushButton(tr("Beautify"), &toolbar);
-
-    QHBoxLayout toolbarLayout = QHBoxLayout(&toolbar);
-    QVBoxLayout mainLayout = QVBoxLayout(this);
 
     QString currentPath;
     QString lastTempFile;
 
     QByteArray codeUtf8;
+    QList<QTextCursor> searchResults;
 
-    QGraphicsScene graphicsScene;
-    GraphicsAssetViewer graphicsViewer;
+#ifdef ENABLE_ASSET_PLAYBACK
+    MediaPlayer* const mediaPlayer;
+#endif
+
+    CodeViewer* const codeViewer;
+
+    QStackedWidget* const stack;
+
+    QLabel* const errorLabel;
+    QLabel* const supportedWritingSystemsLabel;
+
+    QWidget* const toolbar;
+    QPushButton* const locateButton;
+    QPushButton* const openButton;
+
+    // JSON
+    QPushButton* const beautifyButton;
+
+    // Code
+    QWidget* const searchContainer;
+    QHBoxLayout* const searchContainerLayout;
+    QLineEdit* const searchInput;
+    QPushButton* const regularExpressionButton;
+    QPushButton* const matchWholeButton;
+    QPushButton* const matchCaseButton;
+    QPushButton* const searchButton;
+    QLabel* const searchResultsLabel;
+    QPushButton* const searchPrevButton;
+    QPushButton* const searchNextButton;
+
+    // Images
+    QWidget* const scaleContainer;
+    QHBoxLayout* const scaleContainerLayout;
+    QSlider* const scaleSlider;
+    QLabel* const scaleLabel;
+
+    // Fonts
+    QWidget* const fontSampleContainer;
+    QHBoxLayout* const fontSampleContainerLayout;
+    QLineEdit* const fontSampleInput;
+    QSpinBox* const fontSizeInput;
+
+    QHBoxLayout* const toolbarLayout;
+    QVBoxLayout* const mainLayout;
+
+    QGraphicsScene* const graphicsScene;
+    GraphicsAssetViewer* const graphicsViewer;
 
 #if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || \
     defined(ENABLE_RUBY_HIGHLIGHTING)
     TreeSitterHighlighter* highlighter = nullptr;
 #endif
+
+    int currentFontID = -1;
+    int currentSearchIndex = -1;
 };

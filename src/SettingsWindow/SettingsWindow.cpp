@@ -2,11 +2,10 @@
 
 #include "ProjectSettings.hpp"
 #include "Settings.hpp"
+#include "rpgmtranslate.h"
 #include "ui_SettingsWindow.h"
 
-#include <QDir>
 #include <QDirListing>
-#include <QDoubleValidator>
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QStringListModel>
@@ -14,7 +13,8 @@
 #include <QStyleHints>
 
 [[nodiscard]] auto listSpellcheckDictionaries() -> QStringList {
-    const auto dictionariesPath = qApp->applicationDirPath() + u"/dictionaries";
+    const auto dictionariesPath =
+        qApp->property("data-location").toString() + u"/dictionaries";
 
     if (!QFile::exists(dictionariesPath)) {
         return {};
@@ -132,6 +132,8 @@ SettingsWindow::SettingsWindow(
             endpointListModel->index(index, 0),
             tr("Endpoint %1").arg(index + 1)
         );
+
+        onTypeChange(TranslationEndpoint::Google);
     }
     );
 
@@ -182,41 +184,7 @@ SettingsWindow::SettingsWindow(
         &QComboBox::currentIndexChanged,
         this,
         [this](const u8 index) -> void {
-        const auto endpoint = TranslationEndpoint(index);
-        ui->baseURLInput->setEnabled(true);
-
-        // TODO: Update also when a new endpoint is created.
-        switch (endpoint) {
-            case TranslationEndpoint::Google:
-                ui->typeDescriptionLabel->setText(tr(
-                    "Google Translate. Free and unlimited. Configured options don't work with this endpoint."
-                ));
-                break;
-            case TranslationEndpoint::Yandex:
-                ui->typeDescriptionLabel->setText(tr(
-                    "Yandex Translate. Requires API key and folder ID. Configured options don't work with this endpoint."
-                ));
-                break;
-            case TranslationEndpoint::DeepL:
-                ui->typeDescriptionLabel->setText(tr(
-                    "DeepL. Requires API key and folder ID. Configured options don't work with this endpoint, except glossary usage."
-                ));
-                ui->baseURLInput->setEnabled(false);
-                break;
-            default:
-                setDefaultBaseURL(endpoint);
-
-                ui->typeDescriptionLabel->setText(tr(
-                    "LLM endpoint with pre-defined base URL. Don't change the base URL, unless you know what you're doing. Configured options will affect this endpoint."
-                ));
-
-                if (endpoint == TranslationEndpoint::OpenAICompatible) {
-                    ui->typeDescriptionLabel->setText(tr(
-                        "OpenAI-compatible endpoint. This category fits many providers, including OpenAI itself, DeepSeek, Mistral, and local providers, such as llama.cpp and koboldcpp. Requires valid base URL, that should probably end with '/v1'. Configured options will affect this endpoint."
-                    ));
-                }
-                break;
-        }
+        onTypeChange(TranslationEndpoint(index));
     }
     );
 
@@ -258,14 +226,11 @@ SettingsWindow::SettingsWindow(
             );
         }
 
-        // TODO: Query and populate models, if model is set
-
         auto& endpointSettings = settings->translation.endpoints[current.row()];
 
         ui->apiKeyInput->setText(endpointSettings.apiKey);
         ui->yandexFolderIDInput->setText(endpointSettings.yandexFolderID);
         ui->baseURLInput->setText(endpointSettings.baseUrl);
-        ui->modelSelect->setCurrentText(endpointSettings.model);
         ui->systemPromptInput->setPlainText(endpointSettings.systemPrompt);
         ui->singleSystemPromptInput->setPlainText(
             endpointSettings.singleTranslateSystemPrompt
@@ -317,6 +282,30 @@ SettingsWindow::SettingsWindow(
             endpointSettings.singleTranslation
         );
         ui->typeSelect->setCurrentIndex(u8(endpointSettings.type));
+
+        if (!endpointSettings.model.isEmpty()) {
+            checkKey();
+
+            bool modelFound = false;
+
+            for (const auto idx : range(0, ui->modelSelect->count())) {
+                if (ui->modelSelect->itemText(idx) == endpointSettings.model) {
+                    ui->modelSelect->setCurrentIndex(idx);
+                    modelFound = true;
+                }
+            }
+
+            if (!modelFound) {
+                QMessageBox::warning(
+                    this,
+                    tr("Couldn't select model"),
+                    tr(
+                        "Model that was previously selected for translation: %1 is not longer in the list of models provided by the endpoint."
+                    )
+                        .arg(endpointSettings.model)
+                );
+            }
+        }
     }
     );
 
@@ -400,65 +389,20 @@ SettingsWindow::SettingsWindow(
     );
 
     connect(ui->checkKeyButton, &QPushButton::pressed, this, [this] -> void {
-        const auto endpoint =
-            TranslationEndpoint(ui->typeSelect->currentIndex());
-
-        if (endpoint <= TranslationEndpoint::DeepL) {
-            // TODO: Check somehow?
-            return;
-        }
-
-        ByteBuffer out;
-
-        const QByteArray apiKey = ui->apiKeyInput->text().toUtf8();
-        const QByteArray baseUrl = ui->baseURLInput->text().toUtf8();
-
-        const FFIString error = rpgm_get_models(
-            endpoint,
-            toffistr(apiKey),
-            toffistr(baseUrl),
-            &out
-        );
-
-        if (error.ptr != nullptr) {
-            QMessageBox::warning(
-                this,
-                tr("Failed to validate key"),
-                tr("Getting available models failed with error: %1")
-                    .arg(fromffistr(error))
-            );
-            rpgm_string_free(error);
-            return;
-        }
-
-        ui->modelSelect->clear();
-
-        const u32 len = *ras<const u32*>(out.ptr);
-        u32 pos = 4;
-
-        while (pos < out.len) {
-            const u32 stringLen = *ras<const u32*>(out.ptr + pos);
-            pos += 4;
-
-            ui->modelSelect->addItem(
-                QString::fromUtf8(ras<cstr>(out.ptr + pos), stringLen)
-            );
-            pos += stringLen;
-        }
-
-        rpgm_buffer_free(out);
+        checkKey();
     });
 
     connect(
         ui->spellcheckDictionarySelect,
         &QComboBox::currentTextChanged,
         this,
-        [&](const QString& text) -> void {
+        [this](const QString& text) -> void {
         if (text.isEmpty()) {
             return;
         }
 
-        QString dicPath = qApp->applicationDirPath() + u"/dictionaries" + text;
+        QString dicPath = qApp->property("data-location").toString() +
+                          u"/dictionaries" + text;
         dicPath.slice(0, dicPath.size() - 3);
         dicPath += u"dic";
 
@@ -482,11 +426,11 @@ SettingsWindow::SettingsWindow(
     // Core
     ui->backupCheckbox->setChecked(settings->core.backup.enabled);
     ui->backupPeriodInput->setText(
-        QString::number(settings->core.backup.period)
+        QL1SV(itos(settings->core.backup.period).data())
     );
-    ui->maxBackupsInput->setText(QString::number(settings->core.backup.max));
+    ui->maxBackupsInput->setText(QL1SV(itos(settings->core.backup.max).data()));
 
-    ui->updatesCheckbox->setChecked(settings->core.checkForUpdates);
+    ui->updatesCheckbox->setChecked(settings->core.checkForAppUpdates);
 
     // Appearance
     if (settings->appearance.translationTableFont.isEmpty()) {
@@ -505,13 +449,6 @@ SettingsWindow::SettingsWindow(
         );
     }
 
-    ui->trailingWhitespaceCheckbox->setChecked(
-        settings->appearance.displayTrailingWhitespace
-    );
-    ui->displayWordsCheckbox->setChecked(
-        settings->appearance.displayWordsAndCharacters
-    );
-
     ui->styleSelect->setCurrentText(settings->appearance.style);
     ui->themeSelect->setCurrentIndex(u8(settings->appearance.theme));
 
@@ -523,7 +460,7 @@ SettingsWindow::SettingsWindow(
     ui->bookmarkMenuInput->setKeySequence(settings->controls.bookmarkMenu);
 
     ui->lineLengthHintInput->setText(
-        QString::number(projectSettings->lineLengthHint)
+        QL1SV(itos(projectSettings->lineLengthHint).data())
     );
     ui->sourceLanguageSelect->setCurrentIndex(
         i8(projectSettings->sourceLang) + 1
@@ -532,6 +469,28 @@ SettingsWindow::SettingsWindow(
         i8(projectSettings->translationLang) + 1
     );
     ui->projectContextInput->setPlainText(projectSettings->projectContext);
+
+    // Translation
+    ui->leadingWhitespaceCheckbox->setChecked(
+        (settings->translation.miscLints & MiscLints::LeadingWhitespace) != 0
+    );
+    ui->trailingWhitespaceCheckbox->setChecked(
+        (settings->translation.miscLints & MiscLints::TrailingWhitespace) != 0
+    );
+    ui->contiguousWhitespaceCheckbox->setChecked(
+        (settings->translation.miscLints & MiscLints::ContiguousWhitespace) != 0
+    );
+    ui->unclosedPunctuationCheckbox->setChecked(
+        (settings->translation.miscLints & MiscLints::UnclosedPunctuation) != 0
+    );
+
+    ui->displayWordsCheckbox->setChecked(
+        settings->translation.displayWordsAndCharacters
+    );
+
+    ui->tagMismatchCheckbox->setChecked(
+        (settings->translation.miscLints & MiscLints::TagMismatch) != 0
+    );
 }
 
 SettingsWindow::~SettingsWindow() {
@@ -583,7 +542,7 @@ void SettingsWindow::refreshSpellcheckDictionarySelect() {
 
     ui->spellcheckDictionarySelect->blockSignals(true);
 
-    for (const i32 idx : range(1, ui->spellcheckDictionarySelect->count())) {
+    for (const auto idx : range(1, ui->spellcheckDictionarySelect->count())) {
         ui->spellcheckDictionarySelect->removeItem(idx);
     }
 
@@ -619,14 +578,43 @@ void SettingsWindow::closeEvent(QCloseEvent* const event) {
     }
 
     settings->core.backup.enabled = ui->backupCheckbox->isChecked();
-    settings->core.checkForUpdates = ui->updatesCheckbox->isChecked();
+    settings->core.checkForAppUpdates = ui->updatesCheckbox->isChecked();
 
     settings->appearance.translationTableFont = ui->fontSelect->currentText();
     settings->appearance.translationTableFontSize =
         ui->translationTableFontSizeWidget->value();
-    settings->appearance.displayTrailingWhitespace =
-        ui->trailingWhitespaceCheckbox->isChecked();
-    settings->appearance.displayWordsAndCharacters =
+
+    if (ui->leadingWhitespaceCheckbox->isChecked()) {
+        settings->translation.miscLints |= MiscLints::LeadingWhitespace;
+    } else {
+        settings->translation.miscLints &= ~MiscLints::LeadingWhitespace;
+    }
+
+    if (ui->trailingWhitespaceCheckbox->isChecked()) {
+        settings->translation.miscLints |= MiscLints::TrailingWhitespace;
+    } else {
+        settings->translation.miscLints &= ~MiscLints::TrailingWhitespace;
+    }
+
+    if (ui->contiguousWhitespaceCheckbox->isChecked()) {
+        settings->translation.miscLints |= MiscLints::ContiguousWhitespace;
+    } else {
+        settings->translation.miscLints &= ~MiscLints::ContiguousWhitespace;
+    }
+
+    if (ui->unclosedPunctuationCheckbox->isChecked()) {
+        settings->translation.miscLints |= MiscLints::UnclosedPunctuation;
+    } else {
+        settings->translation.miscLints &= ~MiscLints::UnclosedPunctuation;
+    }
+
+    if (ui->tagMismatchCheckbox->isChecked()) {
+        settings->translation.miscLints |= MiscLints::TagMismatch;
+    } else {
+        settings->translation.miscLints &= ~MiscLints::TagMismatch;
+    }
+
+    settings->translation.displayWordsAndCharacters =
         ui->displayWordsCheckbox->isChecked();
 
     settings->controls.searchPanel =
@@ -766,6 +754,97 @@ void SettingsWindow::setDefaultBaseURL(const TranslationEndpoint endpoint) {
             break;
         case TranslationEndpoint::Zhipu:
             ui->baseURLInput->setText(u"https://open.bigmodel.cn"_s);
+            break;
+    }
+}
+
+void SettingsWindow::checkKey() {
+    const auto endpoint = TranslationEndpoint(ui->typeSelect->currentIndex());
+
+    if (endpoint <= TranslationEndpoint::DeepL) {
+        // TODO: Check
+        return;
+    }
+
+    ByteBuffer out;
+
+    const QByteArray apiKey = ui->apiKeyInput->text().toUtf8();
+    const QByteArray baseUrl = ui->baseURLInput->text().toUtf8();
+
+    const bool success =
+        rpgm_get_models(endpoint, strtoffi(apiKey), strtoffi(baseUrl), &out);
+
+    if (!success) {
+        const QUtf8SV error = ffitostr(rpgm_error());
+        qWarning() << "Getting available models failed with error: %1"_L1.arg(
+            error
+        );
+        QMessageBox::warning(
+            this,
+            tr("Failed to validate key"),
+            tr("Getting available models failed with error: %1").arg(error)
+        );
+
+        return;
+    }
+
+    ui->modelSelect->clear();
+
+    const u32 len = *ras<const u32*>(out.ptr);
+    u32 pos = 4;
+
+    while (pos < out.len) {
+        const u32 stringLen = *ras<const u32*>(out.ptr + pos);
+        pos += 4;
+
+        ui->modelSelect->addItem(
+            QString::fromUtf8(ras<cstr>(out.ptr + pos), stringLen)
+        );
+        pos += stringLen;
+    }
+
+    rpgm_buffer_free(out);
+}
+
+void SettingsWindow::onTypeChange(const TranslationEndpoint endpoint) {
+    ui->baseURLInput->setEnabled(true);
+
+    switch (endpoint) {
+        case TranslationEndpoint::Google:
+            ui->typeDescriptionLabel->setText(tr(
+                "Google Translate. Free and unlimited. Configured options don't work with this endpoint."
+            ));
+            break;
+        case TranslationEndpoint::Yandex:
+            ui->typeDescriptionLabel->setText(tr(
+                "Yandex Translate. Requires API key and folder ID. Configured options don't work with this endpoint."
+            ));
+            break;
+        case TranslationEndpoint::DeepL:
+            ui->typeDescriptionLabel->setText(tr(
+                "DeepL. Requires API key and folder ID. Configured options don't work with this endpoint, except glossary usage."
+            ));
+            ui->baseURLInput->setEnabled(false);
+            break;
+        default:
+            setDefaultBaseURL(endpoint);
+
+            ui->typeDescriptionLabel->setText(tr(
+                "LLM endpoint with pre-defined base URL. Don't change the base URL, unless you know what you're doing. Configured options will affect this endpoint."
+            ));
+
+            if (endpoint == TranslationEndpoint::OpenAICompatible) {
+                ui->typeDescriptionLabel->setText(tr(
+                    "OpenAI-compatible endpoint. This category fits many providers, including OpenAI itself, DeepSeek, Mistral, and local providers, such as llama.cpp and koboldcpp. Requires valid base URL, that should probably end with '/v1'. Configured options will affect this endpoint."
+                ));
+            } else if (
+                endpoint == TranslationEndpoint::Ollama ||
+                endpoint == TranslationEndpoint::Koboldcpp
+            ) {
+                ui->typeDescriptionLabel->setText(tr(
+                    "Local endpoint. You need to set correct base url, that should probably end with '/v1'. Configured options will affect this endpoint."
+                ));
+            }
             break;
     }
 }

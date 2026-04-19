@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>icons/add.svg</file>
         <file>icons/arrow_downward.svg</file>
+        <file>icons/arrow_upward.svg</file>
         <file>icons/book_3.svg</file>
         <file>icons/bookmark_add.svg</file>
         <file>icons/bookmark.svg</file>

@@ -3,6 +3,7 @@
 #include "AboutWindow.hpp"
 #include "AssetMenu.hpp"
 #include "AutoUpdater.hpp"
+#include "BackupSelectDialog.hpp"
 #include "BatchMenu.hpp"
 #include "BookmarkMenu.hpp"
 #include "Constants.hpp"
@@ -212,12 +213,6 @@ MainWindow::MainWindow(QWidget* const parent) :
     });
 
     connect(ui->actionCloseProject, &QAction::triggered, this, [this] -> void {
-        const auto result = saveEverything();
-
-        if (!result) {
-            return;
-        }
-
         closeProject();
     });
 
@@ -273,8 +268,10 @@ MainWindow::MainWindow(QWidget* const parent) :
         popupInput->setFixedWidth(256);
         popupInput->setPlaceholderText(
             tr("Input line from %1 to %2")
-                .arg(1)
-                .arg(linesStatusLabel->text().split(u' ').first())
+                .arg(
+                    u"1",
+                    QStringView(linesStatusLabel->text()).split(u' ').first()
+                )
         );
 
         popupInput->move((width() / 2) - 128, x() + 64);
@@ -328,7 +325,7 @@ MainWindow::MainWindow(QWidget* const parent) :
     });
 
     connect(actionWrite, &QAction::triggered, this, [this] -> void {
-        const QString sourcePath = projectSettings->sourcePath();
+        const QString sourcePath = projectSettings->actualSourcePath();
 
         if (!QFile::exists(sourcePath)) {
             QMessageBox::warning(
@@ -355,7 +352,7 @@ MainWindow::MainWindow(QWidget* const parent) :
             taskWorker,
             &TaskWorker::writeFinished,
             this,
-            [this](const std::tuple<FFIString, f32> results) -> void {
+            [this](const result<f32, FFIString> result) -> void {
             QTimer::singleShot(3000, [this] -> void {
                 ui->taskLabel->setText(tr("No Tasks"));
                 ui->taskProgressBar->setMaximum(0);
@@ -363,22 +360,18 @@ MainWindow::MainWindow(QWidget* const parent) :
                 ui->taskProgressBar->setEnabled(false);
             });
 
-            const auto [error, elapsed] = results;
-
-            if (error.ptr != nullptr) {
+            if (!result) {
                 QMessageBox::critical(
                     this,
                     tr("Write failed"),
-                    QString::fromUtf8(error.ptr, isize(error.len))
+                    ffitostr(result.error()).toString()
                 );
-
-                rpgm_string_free(error);
             }
 
             QMessageBox::information(
                 this,
                 tr("Written successfully"),
-                tr("Elapsed: %1s.").arg(QString::number(elapsed, 10, 2))
+                tr("Elapsed: %1s.").arg(QL1SV(ftos(result.value(), 2).data()))
             );
         },
             Qt::SingleShotConnection
@@ -575,6 +568,45 @@ MainWindow::MainWindow(QWidget* const parent) :
     }
     );
 
+    connect(ui->actionLoadBackup, &QAction::triggered, this, [this] -> void {
+        if (!projectSettings) {
+            return;
+        }
+
+        auto* const dialog =
+            new BackupSelectDialog(projectSettings->backupPath(), this);
+
+        connect(
+            dialog,
+            &BackupSelectDialog::accepted,
+            this,
+            [this, dialog] -> void {
+            loadBackup(dialog->backupPath());
+            delete dialog;
+        }
+        );
+
+        connect(
+            dialog,
+            &BackupSelectDialog::rejected,
+            this,
+            [this, dialog] -> void { delete dialog; }
+        );
+    });
+
+    connect(
+        ui->actionCheckForChanges,
+        &QAction::triggered,
+        this,
+        [this] -> void {
+        if (!projectSettings) {
+            return;
+        }
+
+        checkHashes();
+    }
+    );
+
     connect(
         ui->translationTable,
         &TranslationTable::translatedChanged,
@@ -582,9 +614,13 @@ MainWindow::MainWindow(QWidget* const parent) :
         [this](const i8 count) -> void {
         ui->globalProgressBar->setValue(ui->globalProgressBar->value() + count);
         ui->tabPanel->setCurrentTranslated(count);
-        progressStatusLabel->setText(tr("%1 Translated / %2 Total")
-                                         .arg(ui->tabPanel->currentTranslated())
-                                         .arg(ui->tabPanel->currentTotal()));
+        progressStatusLabel->setText(
+            tr("%1 Translated / %2 Total")
+                .arg(
+                    QL1SV(itos(ui->tabPanel->currentTranslated()).data()),
+                    QL1SV(itos(ui->tabPanel->currentTotal()).data())
+                )
+        );
     }
     );
 
@@ -663,11 +699,16 @@ MainWindow::MainWindow(QWidget* const parent) :
 
         linesStatusLabel->setText(
             tr("%1 Lines / %2 Comments")
-                .arg(ui->translationTable->model()->rowCount())
                 .arg(
-                    ui->translationTable->model()->rowCount() -
-                    ui->tabPanel->currentTotal()
+                    QL1SV(
+                        itos(ui->translationTable->model()->rowCount()).data()
+                    ),
+                    itos(
+                        ui->translationTable->model()->rowCount() -
+                        ui->tabPanel->currentTotal()
+                    )
                 )
+
         );
     }
     );
@@ -702,9 +743,8 @@ MainWindow::MainWindow(QWidget* const parent) :
             Selected selected,
             const BatchAction action,
             const u8 columnIndex,
-            const std::
-                variant<BatchMenu::TrimFlags, std::tuple<u8, QString>, u8>&
-                    variant
+            const std::variant<BatchMenu::TrimFlags, tuple<u8, QString>, u8>&
+                variant
         ) -> void {
         const QString currentTabName = ui->tabPanel->currentTabName();
 
@@ -757,26 +797,24 @@ MainWindow::MainWindow(QWidget* const parent) :
                 &TaskWorker::translateFinished,
                 this,
                 [this, columnIndex, selected](
-                    const expected<
-                        std::tuple<ByteBuffer, ByteBuffer>,
-                        FFIString>& results
+                    const expected<tuple<ByteBuffer, ByteBuffer>, FFIString>&
+                        result
                 ) -> void {
-                if (!results) {
-                    const auto error = results.error();
+                if (!result) {
+                    const auto error = result.error();
 
                     QMessageBox::warning(
                         this,
                         tr("Batch translation failed"),
                         tr("Batch translation failed with error: %1")
-                            .arg(fromffistr(error))
+                            .arg(ffitostr(error))
                     );
 
-                    rpgm_string_free(error);
                     return;
                 }
 
                 const auto [translatedFiles, translatedFilesFFI] =
-                    results.value();
+                    result.value();
 
                 const auto stringsArray = span(
                     ras<const ByteBuffer*>(translatedFilesFFI.ptr),
@@ -793,9 +831,12 @@ MainWindow::MainWindow(QWidget* const parent) :
                 for (const auto [idx, filenameArray] :
                      views::enumerate(filenames)) {
                     if (stringsArray[idx].len == 0) {
-                        qInfo() << "Translated strings array at index "_L1
-                                << idx << "in file "_L1 << QL1SV(filenameArray)
-                                << " is empty."_L1;
+                        qInfo()
+                            << "Translated strings array at index %1 in file %2 is empty."_L1
+                                   .arg(
+                                       QL1SV(itos(idx).data()),
+                                       QL1SV(filenameArray)
+                                   );
                         continue;
                     }
 
@@ -830,9 +871,10 @@ MainWindow::MainWindow(QWidget* const parent) :
                         file = make_unique<QFile>(path);
 
                         if (!file->open(QFile::ReadWrite)) {
-                            qWarning()
-                                << "Failed to open file %1: %2"_L1.arg(path)
-                                       .arg(file->errorString());
+                            qWarning() << "Failed to open file %1: %2"_L1.arg(
+                                path,
+                                file->errorString()
+                            );
 
                             std::swap(
                                 filenames[idx],
@@ -870,11 +912,11 @@ MainWindow::MainWindow(QWidget* const parent) :
                             isize lineEnd = lineStart;
 
                             while (lineEnd < size && data[lineEnd] != u'\n') {
-                                ++lineEnd;
+                                lineEnd++;
                             }
 
                             if (lineEnd != lineStart) {
-                                ++lineCount;
+                                lineCount++;
                             }
 
                             lineStart = lineEnd + 1;
@@ -899,7 +941,7 @@ MainWindow::MainWindow(QWidget* const parent) :
                         isize lineEnd = lineStart;
 
                         while (lineEnd < size && data[lineEnd] != u'\n') {
-                            ++lineEnd;
+                            lineEnd++;
                         }
 
                         if (lineEnd != lineStart) {
@@ -912,6 +954,7 @@ MainWindow::MainWindow(QWidget* const parent) :
                             if (hasLines) {
                                 replaced.push_back(u'\n');
                             }
+
                             hasLines = true;
 
                             const cstr linePtr = data + lineStart;
@@ -927,8 +970,8 @@ MainWindow::MainWindow(QWidget* const parent) :
                                 usize fieldStart = 0;
                                 bool malformed = false;
 
-                                for (u8 column = 0; column < columnIndex;
-                                     ++column) {
+                                for (const auto column :
+                                     range(0, columnIndex)) {
                                     const usize separatorPos = lineView.find(
                                         SEPARATOR_UTF8,
                                         fieldStart
@@ -1049,7 +1092,7 @@ MainWindow::MainWindow(QWidget* const parent) :
 
             const QSVList lines = result.value().lines;
 
-            for (const u32 idx : range<u32>(0, lines.size())) {
+            for (const auto idx : range(0, lines.size())) {
                 const QStringView line = lines[idx];
 
                 const QSVList parts = lineParts(line, idx, filename);
@@ -1144,7 +1187,7 @@ MainWindow::MainWindow(QWidget* const parent) :
                     &TaskWorker::singleReplaceFinished,
                     this,
                     [this, &item, matches](
-                        const std::tuple<QString, TextMatch*>& results
+                        const tuple<QString, TextMatch*>& results
                     ) -> void {
                     const auto [text, newMatches] = results;
 
@@ -1331,66 +1374,13 @@ MainWindow::MainWindow(QWidget* const parent) :
             return;
         }
 
-        const QString& projectPath = projectSettings->projectPath;
-        const QString sourcePath = projectSettings->sourcePath();
-        const QString translationPath = projectSettings->translationPath();
-
-        QMetaObject::invokeMethod(
-            taskWorker,
-            &TaskWorker::read,
-            Qt::QueuedConnection,
-            sourcePath,
-            translationPath,
+        read(
             readMenu->readMode(),
-            projectSettings->engineType,
             readMenu->duplicateMode(),
             readMenu->selected(true),
             readMenu->flags(),
             readMenu->parseMapEvents(),
-            ByteBuffer{ .ptr = ras<const u8*>(projectSettings->hashes.data()),
-                        .len = u32(projectSettings->hashes.size()) },
             readMenu->title()
-        );
-
-        connect(
-            taskWorker,
-            &TaskWorker::readFinished,
-            this,
-            [this](const std::tuple<FFIString, ByteBuffer> results) -> void {
-            QTimer::singleShot(3000, [this] -> void {
-                ui->taskLabel->setText(tr("No Tasks"));
-                ui->taskProgressBar->setMaximum(0);
-                ui->taskProgressBar->setValue(0);
-                ui->taskProgressBar->setEnabled(false);
-            });
-
-            const auto [error, hashes] = results;
-
-            if (error.ptr != nullptr) {
-                const QString errorString =
-                    QString::fromUtf8(error.ptr, isize(error.len));
-                rpgm_string_free(error);
-
-                QMessageBox::warning(this, tr("Read failed"), errorString);
-                return;
-            }
-
-            if (hashes.ptr != nullptr) {
-                const u128* const input = ras<const u128*>(hashes.ptr);
-
-                projectSettings->hashes.resize(hashes.len);
-                memcpy(
-                    projectSettings->hashes.data(),
-                    input,
-                    hashes.len * sizeof(u128)
-                );
-
-                rpgm_buffer_free(hashes);
-            }
-
-            openProject(projectSettings->projectPath, false);
-        },
-            Qt::SingleShotConnection
         );
     });
 
@@ -1407,7 +1397,7 @@ MainWindow::MainWindow(QWidget* const parent) :
             taskWorker,
             &TaskWorker::purgeFinished,
             this,
-            [this](const FFIString error) -> void {
+            [this](const result<void, FFIString> result) -> void {
             QTimer::singleShot(3000, [this] -> void {
                 ui->taskLabel->setText(tr("No Tasks"));
                 ui->taskProgressBar->setMaximum(0);
@@ -1415,14 +1405,13 @@ MainWindow::MainWindow(QWidget* const parent) :
                 ui->taskProgressBar->setEnabled(false);
             });
 
-            if (error.ptr != nullptr) {
+            if (!result) {
                 QMessageBox::information(
                     this,
                     tr("Purge failed"),
-                    tr("Purge failed with error: %1").arg(fromffistr(error))
+                    tr("Purge failed with error: %1")
+                        .arg(ffitostr(result.error()))
                 );
-
-                rpgm_string_free(error);
                 return;
             }
 
@@ -1445,7 +1434,7 @@ MainWindow::MainWindow(QWidget* const parent) :
             taskWorker,
             &TaskWorker::writeFinished,
             this,
-            [this](const std::tuple<FFIString, f32>& results) -> void {
+            [this](const result<f32, FFIString>& result) -> void {
             QTimer::singleShot(3000, [this] -> void {
                 ui->taskLabel->setText(tr("No Tasks"));
                 ui->taskProgressBar->setMaximum(0);
@@ -1453,22 +1442,20 @@ MainWindow::MainWindow(QWidget* const parent) :
                 ui->taskProgressBar->setEnabled(false);
             });
 
-            const auto [error, elapsed] = results;
-
-            if (error.ptr != nullptr) {
+            if (!result) {
                 QMessageBox::warning(
                     this,
                     tr("Write failed"),
-                    tr("Write failed with error: %1").arg(fromffistr(error))
+                    tr("Write failed with error: %1")
+                        .arg(ffitostr(result.error()))
                 );
-                rpgm_string_free(error);
                 return;
             }
 
             QMessageBox::information(
                 this,
                 tr("Write finished"),
-                tr("Elapsed: %1").arg(elapsed)
+                tr("Elapsed: %1").arg(result.value(), 10, 2)
             );
         },
             Qt::SingleShotConnection
@@ -1544,7 +1531,8 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::initializeSettings() {
-    auto settingsFile = QFile(qApp->applicationDirPath() + SETTINGS_PATH);
+    auto settingsFile =
+        QFile(qApp->property("data-location").toString() + SETTINGS_PATH);
 
     if (settingsFile.open(QFile::ReadOnly)) {
         const QByteArray jsonData = settingsFile.readAll();
@@ -1554,16 +1542,18 @@ void MainWindow::initializeSettings() {
             QJsonDocument::fromJson(jsonData, &jsonError).object();
 
         if (jsonError.error != QJsonParseError::NoError) {
-            qWarning() << "Parsing settings.json failed: "_L1
-                       << jsonError.errorString();
+            qWarning() << "Parsing settings.json failed: %1"_L1.arg(
+                jsonError.errorString()
+            );
             settings = make_shared<Settings>();
         } else {
             settings =
                 make_shared<Settings>(Settings::fromJSON(settingsObject));
         }
     } else {
-        qWarning() << "Failed to open settings.json: "_L1
-                   << settingsFile.errorString();
+        qWarning() << "Failed to open settings.json: %1"_L1.arg(
+            settingsFile.errorString()
+        );
         settings = make_shared<Settings>();
     }
 
@@ -1615,7 +1605,7 @@ void MainWindow::loadSettings() {
 
 auto MainWindow::saveSettings() -> bool {
 start:
-    QString path = qApp->applicationDirPath() + SETTINGS_PATH;
+    QString path = qApp->property("data-location").toString() + SETTINGS_PATH;
     auto settingsFile = make_unique<QFile>(path);
 
     if (!settingsFile->open(QFile::WriteOnly | QFile::Truncate)) {
@@ -1637,8 +1627,7 @@ start:
                         tr(
                             "Failed to open file %1: %2. Starting from the beginning."
                         )
-                            .arg(path)
-                            .arg(settingsFile->errorString())
+                            .arg(path, settingsFile->errorString())
                     );
 
                     goto start;
@@ -1688,8 +1677,7 @@ start:
                         tr(
                             "Failed to open file %1: %2. Starting from the beginning."
                         )
-                            .arg(path)
-                            .arg(glossaryFile->errorString())
+                            .arg(path, glossaryFile->errorString())
                     );
 
                     goto start;
@@ -1741,8 +1729,7 @@ start:
                         tr(
                             "Failed to open file %1: %2. Starting from the beginning."
                         )
-                            .arg(path)
-                            .arg(projectSettingsFile->errorString())
+                            .arg(path, projectSettingsFile->errorString())
                     );
 
                     goto start;
@@ -1766,7 +1753,7 @@ start:
     );
 
     QString metadataPath =
-        projectSettings->translationPath() + u"/.rvpacker-metadata";
+        projectSettings->translationPath() + RVPACKER_METADATA_FILE;
     auto metadataFile = make_unique<QFile>(metadataPath);
 
     if (!metadataFile->open(QFile::WriteOnly | QFile::Truncate)) {
@@ -1779,7 +1766,7 @@ start:
                 break;
             case 1: {
                 const QString& dir = std::get<1>(result).s;
-                metadataPath = dir + u"/.rvpacker-metadata";
+                metadataPath = dir + RVPACKER_METADATA_FILE;
                 metadataFile = make_unique<QFile>(metadataPath);
 
                 if (!metadataFile->open(QFile::WriteOnly | QFile::Truncate)) {
@@ -1789,8 +1776,7 @@ start:
                         tr(
                             "Failed to open file %1: %2. Starting from the beginning."
                         )
-                            .arg(metadataPath)
-                            .arg(metadataFile->errorString())
+                            .arg(metadataPath, metadataFile->errorString())
                     );
 
                     goto start;
@@ -1809,8 +1795,22 @@ start:
         }
     }
 
-    // TODO: Fill metadata
     QVariantHash metadata;
+
+    metadata["romanize"_L1] =
+        (projectSettings->flags & BaseFlags_Romanize) != 0;
+    metadata["disableCustomProcessing"_L1] =
+        (projectSettings->flags & BaseFlags_DisableCustomProcessing) != 0;
+    metadata["trim"_L1] = (projectSettings->flags & BaseFlags_Trim) != 0;
+    metadata["duplicateMode"_L1] = u8(projectSettings->duplicateMode);
+
+    QJsonObject hashes;
+
+    for (const auto [key, hash] : projectSettings->hashes) {
+        hashes[QL1SV(key.data())] = qint64(hash);
+    }
+
+    metadata["hashes"_L1] = hashes;
 
     metadataFile->write(
         QJsonDocument(QJsonObject::fromVariantHash(metadata)).toJson()
@@ -1850,8 +1850,9 @@ void MainWindow::retranslate(const QLocale::Language language) {
     delete translator;
 
     translator = new QTranslator(this);
+    const QString localeName = QLocale(language).bcp47Name();
     const bool success = translator->load(
-        ":/%1.qm"_L1.arg(QLocale(language).bcp47Name().split(u'-').first())
+        ":/%1.qm"_L1.arg(QStringView(localeName).split(u'-').first())
     );
 
     qApp->installTranslator(translator);
@@ -1891,7 +1892,7 @@ void MainWindow::showAboutWindow() {
 }
 
 void MainWindow::exit() {
-    if (projectSettings == nullptr) {
+    if (!projectSettings) {
         qApp->quit();
         return;
     }
@@ -1910,7 +1911,7 @@ auto MainWindow::setupUi() -> Ui::mainWindow* {
 };
 
 void MainWindow::checkForUpdates(bool manual) {
-    if (!settings->core.checkForUpdates && !manual) {
+    if (!settings->core.checkForAppUpdates && !manual) {
         return;
     }
 
@@ -1921,7 +1922,7 @@ void MainWindow::checkForUpdates(bool manual) {
         &AutoUpdater::updateDownloaded,
         this,
         [this](const QByteArray& archiveData) -> void {
-        const QString appDir = qApp->applicationDirPath();
+        const QString appDir = qApp->property("data-location").toString();
 
 #ifdef Q_OS_WINDOWS
         const QString exePath = qApp->applicationFilePath();
@@ -1957,8 +1958,9 @@ void MainWindow::checkForUpdates(bool manual) {
                 archiveData.constData(),
                 usize(archiveData.size())
             ) != ARCHIVE_OK) {
-            qWarning() << "libarchive failed to open archive:"_L1
-                       << archive_error_string(archive_);
+            qWarning() << "libarchive failed to open archive: %1"_L1.arg(
+                archive_error_string(archive_)
+            );
 
             QMessageBox::information(
                 this,
@@ -1991,8 +1993,9 @@ void MainWindow::checkForUpdates(bool manual) {
             archive_entry_set_pathname(entry, outputPath.constData());
 
             if (archive_write_header(disk, entry) != ARCHIVE_OK) {
-                qWarning() << "libarchive write_header failed:"_L1
-                           << archive_error_string(disk);
+                qWarning() << "libarchive write_header failed: %1"_L1.arg(
+                    archive_error_string(disk)
+                );
                 break;
             }
 
@@ -2010,16 +2013,18 @@ void MainWindow::checkForUpdates(bool manual) {
                 }
 
                 if (read != ARCHIVE_OK) {
-                    qWarning() << "libarchive read_data_block failed:"_L1
-                               << archive_error_string(archive_);
+                    qWarning() << "libarchive read_data_block failed:"_L1.arg(
+                        archive_error_string(archive_)
+                    );
                     writeOk = false;
                     break;
                 }
 
                 if (archive_write_data_block(disk, buffer, size, offset) !=
                     ARCHIVE_OK) {
-                    qWarning() << "libarchive write_data_block failed:"_L1
-                               << archive_error_string(disk);
+                    qWarning() << "libarchive write_data_block failed:"_L1.arg(
+                        archive_error_string(disk)
+                    );
                     writeOk = false;
                     break;
                 }
@@ -2086,8 +2091,7 @@ void MainWindow::checkForUpdates(bool manual) {
         auto* const checkbox = new QCheckBox(tr("Don't remind me"), &msgBox);
         msgBox.setWindowTitle(tr("New version is available"));
         msgBox.setText(tr("Version %1 is available.\nCurrent version is %2.")
-                           .arg(version)
-                           .arg(QString::fromLatin1(APP_VERSION)));
+                           .arg(version, QString::fromLatin1(APP_VERSION)));
         const QPushButton* const installButton =
             msgBox.addButton(tr("Install"), QMessageBox::AcceptRole);
         const QPushButton* const skipButton =
@@ -2127,7 +2131,7 @@ void MainWindow::checkForUpdates(bool manual) {
             );
         } else if (clickedButton == skipButton) {
             if (checkbox->isChecked()) {
-                settings->core.checkForUpdates = false;
+                settings->core.checkForAppUpdates = false;
             }
 
             updater->deleteLater();
@@ -2180,12 +2184,14 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
         QMessageBox::critical(
             this,
             tr("Failed to open project"),
-            tr("Folder does not exist.")
+            tr("Folder %1 does not exist.").arg(folder)
         );
         return;
     }
 
+    QString tempFolder = folder;
     closeProject();
+    settings->core.projectPath = std::move(tempFolder);
 
     if (!newProject &&
         !QFile::exists(settings->core.projectPath + PROGRAM_DATA_DIRECTORY)) {
@@ -2206,34 +2212,40 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
     const QString rootTranslationPath = folder + TRANSLATION_DIRECTORY;
 
     const auto postRead = [this, folder, tempProjectSettings, newProject](
-                              const std::tuple<FFIString, ByteBuffer> results
-                          ) -> result<void, QString> {
-        const auto [error, hashes] = results;
-
-        if (error.ptr != nullptr) {
-            const QString errorString =
-                QString::fromUtf8(error.ptr, isize(error.len));
-            rpgm_string_free(error);
-
-            return Err(errorString);
+                              const result<ByteBuffer, FFIString> result
+                          ) -> ::result<void, FFIString> {
+        if (!result) {
+            return Err(result.error());
         }
 
+        const auto hashes = result.value();
+
         if (hashes.ptr != nullptr) {
-            const u128* const input = ras<const u128*>(hashes.ptr);
+            const u8* const input = hashes.ptr;
             const u32 size = hashes.len;
 
-            tempProjectSettings->hashes.resize(size);
-            memcpy(
-                tempProjectSettings->hashes.data(),
-                input,
-                size * sizeof(u128)
-            );
+            u32 cursor = 0;
+            const u32 hashesCount = *ras<const u32*>(input);
+            cursor += 4;
+
+            tempProjectSettings->hashes = {};
+            tempProjectSettings->hashes.reserve(hashesCount);
+
+            while (cursor < size) {
+                const FilenameArray filename =
+                    *ras<const FilenameArray*>(input + cursor);
+                cursor += sizeof(FilenameArray);
+
+                const u64 hash = *ras<const u64*>(input + cursor);
+                tempProjectSettings->hashes.insert({ filename, hash });
+                cursor += sizeof(u64);
+            }
 
             rpgm_buffer_free(hashes);
         }
 
         const QString projectSettingsPath =
-            folder + PROGRAM_DATA_DIRECTORY + PROJECT_SETTINGS_FILE;
+            folder % PROGRAM_DATA_DIRECTORY % PROJECT_SETTINGS_FILE;
 
         auto projectSettingsFile = QFile(projectSettingsPath);
 
@@ -2245,8 +2257,9 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                 QJsonDocument::fromJson(jsonData, &jsonError).object();
 
             if (jsonError.error != QJsonParseError::NoError) {
-                qWarning() << "Parsing project-settings.json failed: "_L1
-                           << jsonError.errorString();
+                qWarning() << "Parsing project-settings.json failed: %1"_L1.arg(
+                    jsonError.errorString()
+                );
                 //! Could use improper settings, if application aborted (because
                 //! of crash, power outage etc.).
                 // We guard against it by saving project settings in backup and
@@ -2258,8 +2271,9 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                 );
             }
         } else {
-            qWarning() << "Failed to open project-settings.json: %1"_L1
-                       << projectSettingsFile.errorString();
+            qWarning() << "Failed to open project-settings.json: %1"_L1.arg(
+                projectSettingsFile.errorString()
+            );
 
             projectSettings = tempProjectSettings;
         }
@@ -2288,9 +2302,10 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
             auto file = QFile(fileInfo.filePath());
 
             if (!file.open(QFile::ReadWrite)) {
-                qWarning() << "Failed to open file %1: %2"_L1
-                                  .arg(fileInfo.filePath())
-                                  .arg(file.errorString());
+                qWarning() << "Failed to open file %1: %2"_L1.arg(
+                    fileInfo.filePath(),
+                    file.errorString()
+                );
                 continue;
             }
 
@@ -2508,14 +2523,16 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                         .array();
 
                 if (jsonError.error != QJsonParseError::NoError) {
-                    qWarning() << "Parsing glossary.json failed: "_L1
-                               << jsonError.errorString();
+                    qWarning() << "Parsing glossary.json failed: %1"_L1.arg(
+                        jsonError.errorString()
+                    );
                 } else {
                     glossaryMenu->fill(Glossary::fromJSON(glossaryArray));
                 }
             } else {
-                qWarning() << "Failed to open glossary.json: "_L1
-                           << glossaryFile.errorString();
+                qWarning() << "Failed to open glossary.json: %1"_L1.arg(
+                    glossaryFile.errorString()
+                );
             }
         }
 
@@ -2542,11 +2559,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
         readMenu->init(projectSettings);
         taskWorker->init(settings, projectSettings, &mapSections);
 
-        ui->translationTable->init(
-            &projectSettings->lineLengthHint,
-            &settings->appearance.displayTrailingWhitespace,
-            &projectSettings->spellcheckDictionary
-        );
+        ui->translationTable->init(settings.get(), projectSettings.get());
 
         actionTabPanel->setEnabled(true);
         actionSave->setEnabled(true);
@@ -2599,8 +2612,44 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
         ui->sourceControlDock->setProjectPath(projectSettings->projectPath);
 #endif
 
-        firstReadPending = false;
+        const QString baselineSourcePath =
+            projectSettings->baselineSourcePath();
+        const QString sourcePath = projectSettings->sourcePath();
 
+        if (QFile::exists(sourcePath)) {
+            if (!QFile::exists(baselineSourcePath)) {
+                // If there's no baseline, make the current source the baseline.
+                QMessageBox::information(
+                    this,
+                    tr("Baseline couldn't be found"),
+                    tr(
+                        "Copying the data directory to .rpgmtranslate/baseline-data as a baseline."
+                    )
+                );
+
+                try {
+                    fs::copy(
+                        sourcePath.toStdString(),
+                        baselineSourcePath.toStdString(),
+                        fs::copy_options::recursive |
+                            fs::copy_options::overwrite_existing
+                    );
+                } catch (const fs::filesystem_error& error) {
+                    QMessageBox::warning(
+                        this,
+                        tr("Couldn't set baseline data up"),
+                        tr(
+                            "Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead."
+                        )
+                            .arg(sourcePath, baselineSourcePath, error.what())
+                    );
+                }
+            } else {
+                checkHashes();
+            }
+        }
+
+        firstReadPending = false;
         return {};
     };
 
@@ -2608,36 +2657,20 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                                  const QString& sourcePath,
                                  const QString& translationPath,
                                  const QString& title
-                             ) {
-        QMetaObject::invokeMethod(
-            taskWorker,
-            &TaskWorker::read,
-            Qt::QueuedConnection,
-            sourcePath,
-            translationPath,
-            ReadMode::Default,
-            tempProjectSettings->engineType,
-            readMenu->duplicateMode(),
-            Selected{},
-            readMenu->flags(),
-            readMenu->parseMapEvents(),
-            ByteBuffer{ .ptr = nullptr, .len = 0 },
-            title
-        );
-
+                             ) -> void {
         connect(
             taskWorker,
             &TaskWorker::readFinished,
             this,
-            [this, postRead](const std::tuple<FFIString, ByteBuffer> results)
-                -> void {
-            const auto result = postRead(results);
+            [this,
+             postRead](const result<ByteBuffer, FFIString> result) -> void {
+            const auto postReadResult = postRead(result);
 
-            if (!result) {
+            if (!postReadResult) {
                 QMessageBox::critical(
                     this,
                     tr("Failed to load project"),
-                    result.error()
+                    ffitostr(result.error()).toString()
                 );
             }
 
@@ -2649,6 +2682,25 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
             });
         },
             Qt::SingleShotConnection
+        );
+
+        tempProjectSettings->flags = readMenu->flags();
+        tempProjectSettings->duplicateMode = readMenu->duplicateMode();
+
+        QMetaObject::invokeMethod(
+            taskWorker,
+            &TaskWorker::read,
+            Qt::QueuedConnection,
+            sourcePath,
+            translationPath,
+            ReadMode::Default,
+            tempProjectSettings->engineType,
+            tempProjectSettings->duplicateMode,
+            Selected{},
+            tempProjectSettings->flags,
+            readMenu->parseMapEvents(),
+            tempProjectSettings->hashes,
+            title
         );
     };
 
@@ -2684,23 +2736,26 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
 
                 if (selected == QMessageBox::Yes) {
                     QDir().mkpath(
-                        folder + PROGRAM_DATA_DIRECTORY + TRANSLATION_DIRECTORY
+                        folder % PROGRAM_DATA_DIRECTORY % TRANSLATION_DIRECTORY
                     );
 
                     try {
                         fs::copy(
                             rootTranslationPath.toStdString(),
-                            (folder + PROGRAM_DATA_DIRECTORY +
-                             TRANSLATION_DIRECTORY)
+                            QString(
+                                folder % PROGRAM_DATA_DIRECTORY %
+                                TRANSLATION_DIRECTORY
+                            )
                                 .toStdString(),
                             fs::copy_options::recursive |
                                 fs::copy_options::overwrite_existing
                         );
                         copied = true;
                     } catch (const fs::filesystem_error& err) {
-                        // TODO: Add directory name
-                        qWarning()
-                            << u"Failed to copy directory: "_s << err.what();
+                        qWarning() << "Failed to copy directory %1: %2"_L1.arg(
+                            rootTranslationPath,
+                            err.what()
+                        );
                     }
                 }
             }
@@ -2790,16 +2845,15 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                     taskWorker,
                     &TaskWorker::extractFinished,
                     this,
-                    [this,
-                     tempProjectSettings,
-                     postArchive](const FFIString error) -> void {
-                    if (error.ptr != nullptr) {
+                    [this, tempProjectSettings, postArchive](
+                        const result<void, FFIString> result
+                    ) -> void {
+                    if (!result) {
                         QMessageBox::critical(
                             this,
                             tr("Failed to load project"),
-                            QString::fromUtf8(error.ptr, isize(error.len))
+                            ffitostr(result.error()).toString()
                         );
-                        rpgm_string_free(error);
                         return;
                     }
 
@@ -2812,7 +2866,9 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                     Qt::SingleShotConnection
                 );
 
-                if (!systemExists) {
+                if (systemExists) {
+                    emit taskWorker->extractFinished({});
+                } else {
                     QMetaObject::invokeMethod(
                         taskWorker,
                         &TaskWorker::extractArchive,
@@ -2822,11 +2878,17 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                     );
                 }
 
-                emit taskWorker->extractFinished({});
+                return {};
             }
         }
 
-        return postRead({ { .ptr = nullptr, .len = 0 }, {} });
+        const auto result = postRead(ByteBuffer(nullptr, 0, 0));
+
+        if (!result) {
+            return Err(ffitostr(result.error()).toString());
+        }
+
+        return {};
     };
 
     const auto result = startOpening();
@@ -2904,12 +2966,20 @@ void MainWindow::changeTab(
 
         linesStatusLabel->setText(
             tr("%1 Lines / %2 Comments")
-                .arg(lines.size())
-                .arg(lines.size() - ui->tabPanel->currentTotal())
+                .arg(
+                    QL1SV(itos(lines.size()).data()),
+                    QL1SV(
+                        itos(lines.size() - ui->tabPanel->currentTotal()).data()
+                    )
+                )
         );
-        progressStatusLabel->setText(tr("%1 Translated / %2 Total")
-                                         .arg(ui->tabPanel->currentTranslated())
-                                         .arg(ui->tabPanel->currentTotal()));
+        progressStatusLabel->setText(
+            tr("%1 Translated / %2 Total")
+                .arg(
+                    QL1SV(itos(ui->tabPanel->currentTranslated()).data()),
+                    QL1SV(itos(ui->tabPanel->currentTotal()).data())
+                )
+        );
         tabNameStatusLabel->setText(tabName);
 
         // TODO: Display total source words/characters in the status bar
@@ -2956,7 +3026,7 @@ start:
                     break;
                 case 1: {
                     const QString& dir = std::get<1>(result).s;
-                    filePath = dir + u'/' + tabName + TXT_EXTENSION;
+                    filePath = dir % u'/' % tabName % TXT_EXTENSION;
                     file = make_unique<QFile>(filePath);
 
                     if (!file->open(QFile::WriteOnly | QFile::Truncate)) {
@@ -2966,8 +3036,7 @@ start:
                             tr(
                                 "Failed to open file %1: %2. Starting from the beginning."
                             )
-                                .arg(filePath)
-                                .arg(file->errorString())
+                                .arg(filePath, file->errorString())
                         );
 
                         goto start;
@@ -2994,18 +3063,21 @@ start:
 
     TranslationTableModel* const model = ui->translationTable->model();
 
-    for (const i32 row : range(0, model->rowCount())) {
+    for (const auto row : range(0, model->rowCount())) {
         if ((model->flags(model->index(row, 1)) & Qt::ItemIsEditable) == 0) {
             *stream << *model->item(row, 0).text();
         } else {
             auto fields = QStringList(model->columnCount());
 
-            for (const u8 column : range<u8>(0, model->columnCount())) {
+            for (const auto column : range(0, model->columnCount())) {
                 const auto item = model->item(row, column);
 
                 if (item.text()->isNull()) {
-                    qWarning() << u"Item at row %1 and column %2 is nullptr."_s
-                                      .arg(row, column);
+                    qWarning()
+                        << "Item at row %1 and column %2 is nullptr."_L1.arg(
+                               QL1SV(itos(row).data()),
+                               QL1SV(itos(column).data())
+                           );
                     continue;
                 }
 
@@ -3020,7 +3092,7 @@ start:
             *stream << fields.join(SEPARATORL1);
         }
 
-        *stream << u'\n';
+        *stream << '\n';
     }
 
     if (tabName == "system"_L1) {
@@ -3068,8 +3140,7 @@ start:
                         tr(
                             "Failed to open file %1: %2. Starting from the beginning."
                         )
-                            .arg(mapsPath)
-                            .arg(mapsFile->errorString())
+                            .arg(mapsPath, mapsFile->errorString())
                     );
 
                     goto start;
@@ -3103,9 +3174,72 @@ start:
     return true;
 }
 
+void MainWindow::loadBackup(const QString& backupPath) {
+    auto file = QFile(backupPath);
+
+    if (!file.open(QFile::ReadOnly)) {
+        QMessageBox::warning(
+            this,
+            tr("Failed to open backup"),
+            tr("Opening backup %1 failed: %2")
+                .arg(backupPath, file.errorString())
+        );
+        return;
+    }
+
+    QByteArray content = file.readAll();
+
+    archive* const arch = archive_read_new();
+    archive_read_support_format_tar(arch);
+    archive_read_support_filter_xz(arch);
+
+    if (archive_read_open_memory(arch, content.data(), content.size()) !=
+        ARCHIVE_OK) {
+        QMessageBox::warning(
+            this,
+            tr("Failed to read archive"),
+            tr("Reading archive failed with %1")
+                .arg(QUtf8SV(archive_error_string(arch)))
+        );
+        archive_read_free(arch);
+        return;
+    }
+
+    archive_entry* entry = nullptr;
+
+    while (archive_read_next_header(arch, &entry) == ARCHIVE_OK) {
+        const cstr pathStr = archive_entry_pathname(entry);
+
+        const QString path = projectSettings->translationPath() % u'/' %
+                             QString::fromUtf8(pathStr);
+
+        auto file = QFile(path);
+
+        if (!file.open(QFile::WriteOnly)) {
+            QMessageBox::warning(
+                this,
+                tr("Failed to write entry from backup"),
+                tr("Writing entry %1 failed: %2").arg(path, file.errorString())
+            );
+            archive_read_data_skip(arch);
+            continue;
+        }
+
+        const i64 size = archive_entry_size(entry);
+        const str buf = new char[size];
+
+        archive_read_data(arch, buf, size);
+        file.write(buf, size);
+
+        delete[] buf;
+    }
+
+    archive_read_close(arch);
+    archive_read_free(arch);
+}
+
 void MainWindow::saveBackup() {
     const auto saveSuccess = saveCurrentTab();
-
     if (!saveSuccess) {
         return;
     }
@@ -3115,35 +3249,84 @@ void MainWindow::saveBackup() {
         QDir(backupPath).entryInfoList(QDir::Dirs, QDir::Time);
 
     if (entries.size() > settings->core.backup.max) {
-        QFile::remove(entries.first().filePath());
+        QDir(entries.first().filePath()).removeRecursively();
     }
 
     const auto date = QDate::currentDate();
     const auto time = QTime::currentTime();
 
-    auto backupDirName = u"/%1-%2-%3_%4-%5-%6"_s.arg(date.day())
-                             .arg(date.month())
-                             .arg(date.year())
-                             .arg(time.hour())
-                             .arg(time.minute())
-                             .arg(time.second());
+    const QString archivePath = "%1/%2-%3-%4_%5-%6-%7.tar.xz"_L1.arg(
+        backupPath,
+        QL1SV(itos(date.day(), 2, '0').data()),
+        QL1SV(itos(date.month(), 2, '0').data()),
+        QL1SV(itos(date.year()).data()),
+        QL1SV(itos(time.hour(), 2, '0').data()),
+        QL1SV(itos(time.minute(), 2, '0').data()),
+        QL1SV(itos(time.second(), 2, '0').data())
+    );
 
-    try {
-        fs::copy(
-            projectSettings->translationPath().toStdString(),
-            (projectSettings->backupPath() + backupDirName).toStdString(),
-            fs::copy_options::recursive | fs::copy_options::overwrite_existing
+    struct archive* arch = archive_write_new();
+    archive_write_add_filter_xz(arch);
+    archive_write_set_format_pax_restricted(arch);
+
+    archive_write_set_filter_option(arch, "xz", "compression-level", "9");
+
+    if (archive_write_open_filename(arch, archivePath.toStdString().c_str()) !=
+        ARCHIVE_OK) {
+        qWarning() << "Failed to open archive %1: %2"_L1.arg(
+            archivePath,
+            archive_error_string(arch)
         );
-    } catch (const fs::filesystem_error& error) {
-        qWarning() << u"Failed to save backup: " << error.what();
+        archive_write_free(arch);
         return;
     }
+
+    auto listing = QDirListing(
+        projectSettings->translationPath(),
+        { u"*.txt"_s },
+        QDirListing::IteratorFlag::FilesOnly
+    );
+
+    for (const auto& entry : listing) {
+        const QString filePath = entry.filePath();
+        archive_entry* const aentry = archive_entry_new();
+
+        const QString filename = entry.fileName();
+        archive_entry_set_pathname(aentry, filename.toStdString().c_str());
+
+        archive_entry_set_filetype(aentry, AE_IFREG);
+        archive_entry_set_perm(aentry, 0o644);
+        archive_entry_set_size(aentry, entry.size());
+
+        if (archive_write_header(arch, aentry) != ARCHIVE_OK) {
+            qWarning() << "Failed to write archive header"_L1;
+            archive_entry_free(aentry);
+            continue;
+        }
+
+        auto file = QFile(filePath);
+
+        if (file.open(QFile::ReadOnly)) {
+            const QByteArray buffer = file.readAll();
+            archive_write_data(arch, buffer.constData(), buffer.size());
+        } else {
+            qWarning() << "Failed to open file %1: %2"_L1.arg(
+                filePath,
+                file.errorString()
+            );
+        }
+
+        archive_entry_free(aentry);
+    }
+
+    archive_write_close(arch);
+    archive_write_free(arch);
 
     saveGlossary();
     saveProjectSettings();
 
     ui->statusBar->showMessage(
-        tr("Backup %1 created.").arg(backupDirName.slice(1))
+        tr("Backup %1 created.").arg(lastPathComponent(archivePath))
     );
 }
 
@@ -3161,25 +3344,25 @@ void MainWindow::appendMatches(
 
     ByteBuffer matches;
 
-    const FFIString error = rpgm_find_all_matches(
-        toffistr(sourceUtf8),
-        toffistr(termUtf8),
+    const bool success = rpgm_find_all_matches(
+        strtoffi(sourceUtf8),
+        strtoffi(termUtf8),
         term.sourceMatchMode,
-        toffistr(translationUtf8),
-        toffistr(termTranslationUtf8),
+        strtoffi(translationUtf8),
+        strtoffi(termTranslationUtf8),
         term.translationMatchMode,
         Algorithm::English,
         Algorithm::Russian,
         &matches
     );
 
-    if (error.ptr != nullptr) {
+    if (!success) {
+        const FFIString error = rpgm_error();
         QMessageBox::critical(
             this,
             tr("Matching failed"),
-            QString::fromUtf8(error.ptr, isize(error.len))
+            ffitostr(error).toString()
         );
-        rpgm_string_free(error);
         return;
     }
 
@@ -3197,6 +3380,12 @@ void MainWindow::appendMatches(
 }
 
 void MainWindow::closeProject() {
+    const auto result = saveEverything();
+
+    if (!result) {
+        return;
+    }
+
     glossaryMenu->hide();
     bookmarkMenu->hide();
     searchMenu->hide();
@@ -3261,11 +3450,13 @@ void MainWindow::closeProject() {
     backupTimer.stop();
 
     projectSettings.reset();
+
+    settings->core.projectPath = QString();
 }
 
 auto MainWindow::handleOpenError(const QString& path, const QString& error)
     -> ControlFlow {
-    qWarning() << "Failed to save file %1: %2"_L1.arg(path).arg(error);
+    qWarning() << "Failed to save file %1: %2"_L1.arg(path, error);
 
     auto messageBox = QMessageBox(this);
     messageBox.setIcon(QMessageBox::Warning);
@@ -3275,8 +3466,7 @@ auto MainWindow::handleOpenError(const QString& path, const QString& error)
         tr(
             "Unable to save file %1: %2. You may try to save the file to a custom location. It's strongly advised to you to better close the program and fix the underlying issue before continuing your work."
         )
-            .arg(path)
-            .arg(error)
+            .arg(path, error)
     );
 
     const QPushButton* const continueBtn =
@@ -3371,3 +3561,275 @@ void MainWindow::updateTask(
         });
     }
 };
+
+void MainWindow::checkHashes() {
+    const QString sourcePath = projectSettings->sourcePath();
+
+    if (!QFile::exists(sourcePath)) {
+        QMessageBox::warning(
+            this,
+            tr("Source path does not exist"),
+            tr("The source path %1 does not exist.").arg(sourcePath)
+        );
+        return;
+    }
+
+    const auto sourceFiles = QDirListing(
+        sourcePath,
+        { u"*.json"_s, u"*.rxdata"_s, u"*.rvdata"_s, u"*.rvdata2"_s },
+        QDirListing::IteratorFlag::FilesOnly
+    );
+
+    vector<FilenameArray> mismatchedFiles;
+    mismatchedFiles.reserve(projectSettings->hashes.size());
+
+    vector<FilenameArray> newFiles;
+    newFiles.reserve(projectSettings->hashes.size());
+
+    QList<QString> skippedFiles;
+
+    bool hasAnyFile = false;
+
+    for (const auto& sourceFile : sourceFiles) {
+        hasAnyFile = true;
+
+        const QString filename = sourceFile.fileName();
+
+        if (filename.startsWith("Animations"_L1) ||
+            filename.startsWith("Tilesets"_L1) ||
+            filename.startsWith("MapInfos"_L1)) {
+            // Not important
+            continue;
+        }
+
+        auto file = QFile(sourceFile.filePath());
+
+        if (!file.open(QFile::ReadOnly)) {
+            skippedFiles.append("%1: %2"_L1.arg(filename, file.errorString()));
+            continue;
+        }
+
+        const QByteArray content = file.readAll();
+        const ByteBuffer contentBuffer{ .ptr = ras<const u8*>(content.data()),
+                                        .len = u32(content.size()),
+                                        .cap = 0 };
+
+        u64 newHash;
+        rpgm_hash_file(contentBuffer, projectSettings->duplicateMode, &newHash);
+
+        const QByteArray filenameUtf8 = filename.toUtf8();
+        const QByteArrayView slicedFilename =
+            QByteArrayView(filenameUtf8)
+                .slice(0, filenameUtf8.lastIndexOf('.'));
+
+        FilenameArray filenameArray;
+
+        for (const auto [idx, chr] : views::enumerate(slicedFilename)) {
+            filenameArray[idx] = char(tolower(chr));
+        }
+
+        for (const auto idx :
+             range(slicedFilename.size(), filenameArray.size())) {
+            filenameArray[idx] = '\0';
+        }
+
+        const auto entry = projectSettings->hashes.find(filenameArray);
+
+        if (entry == projectSettings->hashes.end()) {
+            newFiles.push_back(filenameArray);
+            continue;
+        }
+
+        const u64 oldHash = entry->second;
+
+        if (oldHash != newHash) {
+            mismatchedFiles.push_back(filenameArray);
+        }
+    }
+
+    if (!hasAnyFile) {
+        QMessageBox::information(
+            this,
+            tr("No source files"),
+            tr("No matching source files were found in:\n%1").arg(sourcePath)
+        );
+        return;
+    }
+
+    QString skippedText;
+
+    if (!skippedFiles.isEmpty()) {
+        skippedText =
+            tr("\n\nSkipped files:\n%1").arg(skippedFiles.join(u'\n'));
+    }
+
+    const bool hasMismatched = !mismatchedFiles.empty();
+    const bool hasNew = !newFiles.empty();
+
+    if (hasMismatched || hasNew) {
+        const auto buildFileList =
+            [](const vector<FilenameArray>& files) -> QString {
+            QList<char> result;
+
+            for (const auto& file : files) {
+                for (const char chr : file) {
+                    if (chr == '\0') {
+                        break;
+                    }
+
+                    result.append(chr);
+                }
+
+                result.append(',');
+                result.append(' ');
+            }
+
+            if (!result.isEmpty()) {
+                result.removeLast();
+                result.removeLast();
+            }
+
+            return QString::fromUtf8(result.data(), result.size());
+        };
+
+        QString messageBody;
+
+        if (hasMismatched) {
+            messageBody +=
+                tr("Changed files: [%1]").arg(buildFileList(mismatchedFiles));
+        }
+
+        if (hasNew) {
+            if (!messageBody.isEmpty()) {
+                messageBody += u'\n';
+            }
+            messageBody += tr("New files: [%1]").arg(buildFileList(newFiles));
+        }
+
+        const QMessageBox::StandardButton button = QMessageBox::question(
+            this,
+            tr("Source files have been updated"),
+            tr("%1\n\nThe files have been changed. "
+               "Do you want to append any new text?%2")
+                .arg(messageBody, skippedText)
+        );
+
+        if (button == QMessageBox::Yes) {
+            const QString baselineSourcePath =
+                projectSettings->baselineSourcePath();
+
+            try {
+                fs::copy(
+                    sourcePath.toStdString(),
+                    baselineSourcePath.toStdString(),
+                    fs::copy_options::recursive |
+                        fs::copy_options::overwrite_existing
+                );
+            } catch (const fs::filesystem_error& error) {
+                QMessageBox::warning(
+                    this,
+                    tr("Couldn't set baseline data up"),
+                    tr(
+                        "Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead."
+                    )
+                        .arg(sourcePath, baselineSourcePath, error.what())
+                );
+            }
+
+            read(
+                ReadMode::AppendDefault,
+                projectSettings->duplicateMode,
+                Selected(),
+                projectSettings->flags,
+                false,
+                ui->gameTitleInput->placeholderText()
+            );
+        }
+    } else {
+        QMessageBox::information(
+            this,
+            tr("Project up to date"),
+            tr("All source files are up-to-date.%1").arg(skippedText)
+        );
+    }
+}
+
+void MainWindow::read(
+    const ReadMode readMode,
+    const DuplicateMode duplicateMode,
+    const Selected selected,
+    const BaseFlags flags,
+    const bool mapEvents,
+    const QString& title
+) {
+    const QString sourcePath = projectSettings->actualSourcePath();
+    const QString translationPath = projectSettings->translationPath();
+
+    QMetaObject::invokeMethod(
+        taskWorker,
+        &TaskWorker::read,
+        Qt::QueuedConnection,
+        sourcePath,
+        translationPath,
+        readMode,
+        projectSettings->engineType,
+        duplicateMode,
+        selected,
+        flags,
+        mapEvents,
+        projectSettings->hashes,
+        title
+    );
+
+    connect(
+        taskWorker,
+        &TaskWorker::readFinished,
+        this,
+        [this](const result<ByteBuffer, FFIString> result) -> void {
+        QTimer::singleShot(3000, [this] -> void {
+            ui->taskLabel->setText(tr("No Tasks"));
+            ui->taskProgressBar->setMaximum(0);
+            ui->taskProgressBar->setValue(0);
+            ui->taskProgressBar->setEnabled(false);
+        });
+
+        if (!result) {
+            QMessageBox::warning(
+                this,
+                tr("Read failed"),
+                ffitostr(result.error()).toString()
+            );
+            return;
+        }
+
+        const ByteBuffer hashes = result.value();
+
+        if (hashes.ptr != nullptr) {
+            const u8* const input = hashes.ptr;
+            const u32 size = hashes.len;
+
+            u32 cursor = 0;
+            const u32 hashesCount = *ras<const u32*>(input);
+            cursor += 4;
+
+            projectSettings->hashes = {};
+            projectSettings->hashes.reserve(hashesCount);
+
+            while (cursor < size) {
+                const FilenameArray filename =
+                    *ras<const FilenameArray*>(input + cursor);
+                cursor += sizeof(FilenameArray);
+
+                const u64 hash = *ras<const u64*>(input + cursor);
+                projectSettings->hashes.insert({ filename, hash });
+                cursor += sizeof(u64);
+            }
+
+            rpgm_buffer_free(hashes);
+        }
+
+        openProject(projectSettings->projectPath, false);
+    },
+        Qt::SingleShotConnection
+    );
+}

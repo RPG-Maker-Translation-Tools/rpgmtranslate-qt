@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aliases.hpp"
+#include "Settings.hpp"
 
 #ifdef ENABLE_NUSPELL
 #include <nuspell/dictionary.hxx>
@@ -9,14 +10,13 @@
 #endif
 
 #include <QSyntaxHighlighter>
-#include <QTextCharFormat>
 
 class TranslationHighlighter final : public QSyntaxHighlighter {
     Q_OBJECT
 
    public:
     explicit TranslationHighlighter(
-        bool whitespaceHighlightingEnabled,
+        const TranslationSettings* translationSettings,
 #ifdef ENABLE_NUSPELL
         const nuspell::Dictionary* dictionary,
         const bool* dictionaryReady,
@@ -28,13 +28,7 @@ class TranslationHighlighter final : public QSyntaxHighlighter {
     void highlightBlock(const QString& text) override;
 
    private:
-    QTextCharFormat whitespaceFormat;
-
 #ifdef ENABLE_NUSPELL
-    [[nodiscard]] auto isMisspelled(const QString& word) const -> bool;
-
-    QTextCharFormat misspelledFormat;
-
     const nuspell::Dictionary* const dictionary;
     const bool* const isDictionaryReady;
 
@@ -44,5 +38,5 @@ class TranslationHighlighter final : public QSyntaxHighlighter {
     );
 #endif
 
-    bool whitespaceHighlightingEnabled;
+    const TranslationSettings* translationSettings;
 };

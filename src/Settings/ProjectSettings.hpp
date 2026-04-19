@@ -2,8 +2,10 @@
 
 #include "Aliases.hpp"
 #include "Constants.hpp"
+#include "Hasher.hpp"
 #include "rpgmtranslate.h"
 
+#include <QFile>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QStringList>
@@ -20,7 +22,7 @@ enum class SourceDirectory : u8 {
 };
 
 struct ProjectSettings {
-    vector<u128> hashes;
+    HashMap<FilenameArray, u64> hashes;
     QStringList completedFiles;
 
     vector<ColumnInfo> columns;
@@ -57,6 +59,20 @@ struct ProjectSettings {
             default:
                 return {};
         }
+    }
+
+    [[nodiscard]] auto baselineSourcePath() const -> QString {
+        return programDataPath() + BASELINE_DATA_DIRECTORY;
+    }
+
+    [[nodiscard]] auto actualSourcePath() const -> QString {
+        QString path = baselineSourcePath();
+
+        if (QFile::exists(path)) {
+            return path;
+        }
+
+        return sourcePath();
     }
 
     [[nodiscard]] auto translationPath() const -> QString {

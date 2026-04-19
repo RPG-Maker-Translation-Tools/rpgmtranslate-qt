@@ -828,10 +828,12 @@
      <string>File</string>
     </property>
     <addaction name="actionOpenFolder"/>
+    <addaction name="actionRecentProjects"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
     <addaction name="separator"/>
-    <addaction name="actionRecentProjects"/>
+    <addaction name="actionLoadBackup"/>
+    <addaction name="actionCheckForChanges"/>
     <addaction name="actionCloseProject"/>
     <addaction name="actionCloseTab"/>
     <addaction name="separator"/>
@@ -984,6 +986,9 @@
    </property>
    <property name="allowedAreas">
     <set>Qt::DockWidgetArea::BottomDockWidgetArea</set>
+   </property>
+   <property name="windowTitle">
+    <string>Match Menu</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
@@ -1417,6 +1422,16 @@ QToolButton:hover {
    </property>
    <property name="shortcut">
     <string>Esc</string>
+   </property>
+  </action>
+  <action name="actionCheckForChanges">
+   <property name="text">
+    <string>Check for source file changes</string>
+   </property>
+  </action>
+  <action name="actionLoadBackup">
+   <property name="text">
+    <string>Load Backup</string>
    </property>
   </action>
  </widget>

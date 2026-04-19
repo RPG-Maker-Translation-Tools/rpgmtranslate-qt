@@ -9,17 +9,22 @@
         <translation>О RPGMTranslate</translation>
     </message>
     <message>
-        <location filename="../src/AboutWindow/AboutWindow.ui" line="107"/>
-        <source>Icons: Google Material Symbols, licensed under Apache License 2.0</source>
-        <translation>Иконки: Google Material Symbols, лицензировано под Apache License 2.0</translation>
+        <location filename="../src/AboutWindow/AboutWindow.ui" line="128"/>
+        <source>RPGMTranslate is licensed under [WTFPL](https://www.wtfpl.net/).</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AboutWindow/AboutWindow.ui" line="117"/>
-        <source>Licensed under [WTFPL](https://www.wtfpl.net/)</source>
-        <translation>Лицензировано под [WTFPL](https://www.wtfpl.net/)</translation>
+        <location filename="../src/AboutWindow/AboutWindow.ui" line="141"/>
+        <source>The program uses third-party software, that is licensed under other conditions:
+- [Google Material Symbols](https://fonts.google.com/icons) - licensed under `Apache License Version 2.0`.
+- [jeaiii/itoa](https://github.com/jeaiii/itoa) - licensed under MIT.
+- [miniaudio](https://github.com/mackron/miniaudio) - public domain.
+- [magic_enum](https://github.com/Neargye/magic_enum) - licensed under MIT.
+- [zmij](https://github.com/vitaut/zmij) - licensed under MIT.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AboutWindow/AboutWindow.ui" line="130"/>
+        <location filename="../src/AboutWindow/AboutWindow.ui" line="159"/>
         <source>GitHub: [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt)</source>
         <translation></translation>
     </message>
@@ -27,33 +32,336 @@
 <context>
     <name>AssetMenu</name>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.hpp" line="98"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="39"/>
+        <source>Search file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="123"/>
         <source>Audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.hpp" line="99"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="124"/>
+        <source>Data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="125"/>
         <source>Images</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.hpp" line="100"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="126"/>
         <source>Icons</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.hpp" line="101"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="127"/>
         <source>Fonts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.hpp" line="103"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="128"/>
         <source>Movies</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.hpp" line="107"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="129"/>
         <source>JS</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AssetPreviewWidget</name>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="41"/>
+        <source>Locate file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="42"/>
+        <source>Open in default app</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="45"/>
+        <source>Beautify</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="111"/>
+        <source>Media playback not available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="123"/>
+        <source>The quick brown fox jumps over the lazy dog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="127"/>
+        <source> pt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="270"/>
+        <source>Highlighting is disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="271"/>
+        <source>JSON highlighting was disabled during compilation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="328"/>
+        <source>Extension is unsupported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="374"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="566"/>
+        <source>Failed to decrypt asset %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="388"/>
+        <source>Failed to load pixmap from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="410"/>
+        <source>Failed to load font %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="428"/>
+        <source>Any</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="431"/>
+        <source>Latin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="434"/>
+        <source>Greek</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="437"/>
+        <source>Cyrillic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="440"/>
+        <source>Armenian</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="443"/>
+        <source>Hebrew</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="446"/>
+        <source>Arabic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="449"/>
+        <source>Syriac</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="452"/>
+        <source>Thaana</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="455"/>
+        <source>Devanagari</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="458"/>
+        <source>Bengali</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="461"/>
+        <source>Gurmukhi</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="464"/>
+        <source>Gujarati</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="467"/>
+        <source>Oriya</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="470"/>
+        <source>Tamil</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="473"/>
+        <source>Telugu</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="476"/>
+        <source>Kannada</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="479"/>
+        <source>Malayalam</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="482"/>
+        <source>Sinhala</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="485"/>
+        <source>Thai</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="488"/>
+        <source>Lao</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="491"/>
+        <source>Tibetan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="494"/>
+        <source>Myanmar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="497"/>
+        <source>Georgian</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="500"/>
+        <source>Khmer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="503"/>
+        <source>Simplified Chinese</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="506"/>
+        <source>Traditional Chinese</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="509"/>
+        <source>Japanese</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="512"/>
+        <source>Korean</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="515"/>
+        <source>Vietnamese</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="518"/>
+        <source>Symbol</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="521"/>
+        <source>Ogham</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="524"/>
+        <source>Runic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="527"/>
+        <source>Nko</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="535"/>
+        <source>Supported writing systems: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="583"/>
+        <source>Failed to open temporary file %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="613"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="630"/>
+        <source>Asset playback is disabled. You can open asset in the default app.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="648"/>
+        <source>Failed to open file %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="678"/>
+        <source>Failed to generate JSON</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="679"/>
+        <source>Failed to generate JSON for file %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="774"/>
+        <source>Invalid regex</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="798"/>
+        <source>No results</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>BackupSelectDialog</name>
+    <message>
+        <location filename="../src/BackupSelectDialog/BackupSelectDialog.hpp" line="25"/>
+        <source>Load</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/BackupSelectDialog/BackupSelectDialog.hpp" line="26"/>
+        <source>Once you click load, your current progress will be LOST! All current changed will be overwritten by a backup and the project will be reloaded.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/BackupSelectDialog/BackupSelectDialog.hpp" line="64"/>
+        <source>This backup was created %1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -125,52 +433,52 @@
         <translation>Обработать</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="68"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="70"/>
         <source>Batch action not selected</source>
         <translation>Действие не выбрано</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="69"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="71"/>
         <source>Select the batch action you want to perform.</source>
         <translation>Выберите действие, которое вы бы хотели применить.</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="77"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="79"/>
         <source>Translation column not selected</source>
         <translation>Столбец перевода не выбран</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="78"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="80"/>
         <source>Select the translation column you want perform the action in.</source>
         <translation>Выберите столбец перевода, в котором вы хотите выполнить действие.</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="97"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="99"/>
         <source>Translation endpoint not selected</source>
         <translation>Точка перевода не выбрана</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="98"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="100"/>
         <source>Select the translation endpoint you want to use.</source>
         <translation>Выберите точку перевода, которую хотели бы использовать.</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="107"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="109"/>
         <source>Invalid value</source>
         <translation>Неверное значение</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="108"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="110"/>
         <source>Wrap length input requires a number from 20 to 255.</source>
         <translation>Ввод длины для переноса требует число от 20 до 255.</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="119"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="121"/>
         <source>No files selected</source>
         <translation>Файлы не выбраны</translation>
     </message>
     <message>
-        <location filename="../src/BatchMenu/BatchMenu.cpp" line="120"/>
+        <location filename="../src/BatchMenu/BatchMenu.cpp" line="122"/>
         <source>Select files you want to process in file select menu.</source>
         <translation>Выберите файлы, которые хотели бы обработать.</translation>
     </message>
@@ -178,7 +486,7 @@
 <context>
     <name>BookmarkListDelegate</name>
     <message>
-        <location filename="../src/BookmarkMenu/BookmarkList.cpp" line="162"/>
+        <location filename="../src/BookmarkMenu/BookmarkList.cpp" line="158"/>
         <source>Row %1 / File %2</source>
         <translation>Строка %1 / Файл %2</translation>
     </message>
@@ -186,8 +494,8 @@
 <context>
     <name>BookmarkMenu</name>
     <message>
-        <location filename="../src/BookmarkMenu/BookmarkMenu.cpp" line="20"/>
-        <location filename="../src/BookmarkMenu/BookmarkMenu.cpp" line="120"/>
+        <location filename="../src/BookmarkMenu/BookmarkMenu.cpp" line="18"/>
+        <location filename="../src/BookmarkMenu/BookmarkMenu.cpp" line="117"/>
         <source>- Filter by file -</source>
         <translation>- Отфильтровать по файлу -</translation>
     </message>
@@ -195,8 +503,8 @@
 <context>
     <name>CBSLIWidget</name>
     <message>
-        <location filename="../src/CBSLIWidget/CBSLIWidget.hpp" line="27"/>
-        <location filename="../src/CBSLIWidget/CBSLIWidget.hpp" line="71"/>
+        <location filename="../src/CBSLIWidget/CBSLIWidget.cpp" line="6"/>
+        <location filename="../src/CBSLIWidget/CBSLIWidget.cpp" line="50"/>
         <source>Custom</source>
         <translation type="unfinished"></translation>
     </message>
@@ -237,22 +545,22 @@
         <translation>QC</translation>
     </message>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.ui" line="233"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.ui" line="230"/>
         <source>Term</source>
         <translation>Термин</translation>
     </message>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.ui" line="238"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.ui" line="235"/>
         <source>Translation</source>
         <translation>Перевод</translation>
     </message>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.ui" line="243"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.ui" line="240"/>
         <source>Note</source>
         <translation>Информация</translation>
     </message>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.ui" line="248"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.ui" line="245"/>
         <source>Actions</source>
         <translation>Действия</translation>
     </message>
@@ -295,93 +603,93 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="120"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="125"/>
         <source>Tab Panel</source>
         <translation>Панель вкладок</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="122"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="127"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="124"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="129"/>
         <source>Write</source>
         <translation>Записать</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="126"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="131"/>
         <source>Search</source>
         <translation>Поиск</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="129"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="134"/>
         <source>Batch Menu</source>
         <translation>Меню обработки</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="146"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="151"/>
         <source>Bookmark Menu</source>
         <translation>Меню закладок</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="133"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="138"/>
         <source>Glossary Menu</source>
         <translation>Меню глоссария</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="136"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="141"/>
         <source>Match Menu</source>
         <translation>Меню совпадений</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="141"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="146"/>
         <source>Translations Menu</source>
         <translation>Меню переводов</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="150"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="155"/>
         <source>Source Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="152"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="157"/>
         <source>Assets</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="155"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="160"/>
         <source>Locate Project Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="159"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="164"/>
         <source>Search Panel</source>
         <translation>Панель поиска</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2150"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2162"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2256"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2268"/>
         <source>Failed to open project</source>
         <translation>Не удалось открыть проект</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1540"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1591"/>
         <source>Open a project by using &apos;Open Folder&apos; button!</source>
         <translation>Откройте проект, используя кнопку &quot;Открыть проект&quot;!</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1321"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1367"/>
         <source>Select a game folder</source>
         <translation>Выберите папку игры</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="467"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="465"/>
         <source>Read</source>
         <translation>Чтение</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="468"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="466"/>
         <source>Purge</source>
         <translation>Чистка</translation>
     </message>
@@ -391,35 +699,36 @@
         <translation>Введите строку от %1 до %2</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="611"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="614"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="615"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2504"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="651"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="654"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="655"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2616"/>
         <source>Translation</source>
         <translation>Перевод</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2834"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3018"/>
         <source>Failed to open tab: %1.</source>
         <translation>Не удалось открыть вкладку: %1.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2988"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3180"/>
         <source>Tab %1 saved.</source>
         <translation>Вкладка %1 сохранена.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3050"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3241"/>
         <source>maps.txt saved.</source>
         <translation>Файл maps.txt сохранён.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3129"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3414"/>
         <source>Matching failed</source>
         <translation>Проверка совпадений не удалась</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="337"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="339"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3695"/>
         <source>No source files</source>
         <translation>Нет исходных файлов</translation>
     </message>
@@ -439,443 +748,504 @@
         <translation>Чтение</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="338"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="340"/>
         <source>Cannot write, source files are absent.</source>
         <translation>Запись невозможна, исходные файлы отсутствуют.</translation>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.cpp" line="372"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1463"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1515"/>
         <source>Write failed</source>
         <translation>Запись не удалась</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="381"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="379"/>
         <source>Written successfully</source>
         <translation>Запись прошла успешно</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="444"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="442"/>
         <source>Libgit2 support is disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="445"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="443"/>
         <source>Program was compiled without support for libgit2, so it&apos;s impossible to access source control.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1183"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1229"/>
         <source>Set source and translation languages in Settings &gt; Project to show glossary matches.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1187"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1233"/>
         <source>Set source language in Settings &gt; Project to show glossary matches.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1190"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1236"/>
         <source>Set translation language in Settings &gt; Project to show glossary matches.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1288"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1334"/>
         <source>Set source and translation languages in Settings &gt; Project to show translations.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1292"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1338"/>
         <source>Set source language in Settings &gt; Project to show translations.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1295"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1341"/>
         <source>Set translation language in Settings &gt; Project to show translations.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1869"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1937"/>
         <source>Cannot open settings window</source>
         <translation>Не удалось открыть окно настроек</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1870"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1938"/>
         <source>Settings can only be changed after opening a project.</source>
         <translation>Настройки могут быть изменены лишь после открытия проекта.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1983"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2114"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2037"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2113"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2220"/>
         <source>Update failed</source>
         <translation>Обновление не удалось</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1984"/>
-        <source>Failed to write archive file</source>
-        <translation>Не удалось записать файл архива</translation>
-    </message>
-    <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2006"/>
-        <source>Unarchiving update failed</source>
-        <translation>Разархивирование обновления не удалось</translation>
-    </message>
-    <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2007"/>
-        <source>Executing tar failed with: %1</source>
-        <translation>Выполнение tar не удалось с сообщением: %1</translation>
-    </message>
-    <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2043"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2150"/>
         <source>Up to date</source>
         <translation>Программа обновлена</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2044"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2151"/>
         <source>Program is up-to-date.</source>
         <translation>Программа обновлена до последней версии.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2054"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2161"/>
         <source>Don&apos;t remind me</source>
         <translation>Не напоминать</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2055"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2162"/>
         <source>New version is available</source>
         <translation>Новая версия доступна</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2056"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2163"/>
         <source>Version %1 is available.
 Current version is %2.</source>
         <translation>Версия %1 доступна.
 Текущая версия - %2.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2060"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2166"/>
         <source>Install</source>
         <translation>Установить</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2062"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2168"/>
         <source>Skip</source>
         <translation>Пропустить</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2072"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2178"/>
         <source>Installing update...</source>
         <translation>Устанавливаем обновление...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2073"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3231"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2179"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3524"/>
         <source>Abort</source>
         <translation>Отменить</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2115"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2221"/>
         <source>Update failed with error: %1</source>
         <translation>Обновление не удалось с ошибкой: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2130"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2236"/>
         <source>%1 rows cut.</source>
         <translation>%1 строк вырезано.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2133"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2239"/>
         <source>%1 rows copied.</source>
         <translation>%1 строк скопировано.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2136"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2242"/>
         <source>%1 rows pasted.</source>
         <translation>%1 строк вставлено.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2151"/>
-        <source>Folder does not exist.</source>
-        <translation>Папка не существует.</translation>
-    </message>
-    <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2163"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2269"/>
         <source>Failed to opened project because couldn&apos;t locate `.rpgmtranslate` program directory that was previously located at this path: %1. If this is intentional, please reopen the directory manually.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2595"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2800"/>
         <source>Existing translation folder</source>
         <translation>Существующая папка с переводом</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2596"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2801"/>
         <source>Translation folder is found in the root of the project. Use it?</source>
         <translation>Папка перевода найдена в корне проекта. Использовать её?</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2627"/>
-        <source>Source files and translation do not exist.</source>
-        <translation>Исходные файлы и перевод отсутствуют.</translation>
-    </message>
-    <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2641"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2910"/>
         <source>Read was rejected by user.</source>
         <translation>Чтение было отвергнуто пользователем.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="382"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="380"/>
         <source>Elapsed: %1s.</source>
         <translation>Затрачено: %1с.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="587"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2857"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="624"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3046"/>
         <source>%1 Translated / %2 Total</source>
         <translation>%1 переведено / %2 всего</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="667"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2853"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="707"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3037"/>
         <source>%1 Lines / %2 Comments</source>
         <translation>%1 строк / %2 комментариев</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="724"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="768"/>
         <source>Source language is not set</source>
         <translation>Исходный язык не выбран</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="725"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="769"/>
         <source>Cannot perform batch-translate. You need to set source language in Settings &gt; Project first.</source>
         <translation>Невозможно провести массовый перевод. Вам нужно выбрать исходный язык в Настройки &gt; Проект.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="735"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="779"/>
         <source>Translation language is not set</source>
         <translation>Язык перевода не выбран</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="736"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="780"/>
         <source>Cannot perform batch-translate. You need to set translation language in Settings &gt; Project first.</source>
         <translation>Невозможно провести массовый перевод. Вам нужно выбрать язык перевода в Настройки &gt; Проект.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="770"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="814"/>
         <source>Batch translation failed</source>
         <translation>Массовый перевод не удался</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="771"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="815"/>
         <source>Batch translation failed with error: %1</source>
         <translation>Массовый перевод не удался с ошибкой: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1013"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1089"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1059"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1135"/>
         <source>Files were skipped</source>
         <translation>Файлы были пропущены</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1014"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1090"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1060"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1136"/>
         <source>The program was unable to open the following files:
  %1</source>
         <translation>Программе не удалось открыть следующие файлы:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1375"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1416"/>
         <source>Read failed</source>
         <translation>Чтение не удалось</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1422"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1478"/>
         <source>Purge failed</source>
         <translation>Чистка не удалась</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1423"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1479"/>
         <source>Purge failed with error: %1</source>
         <translation>Чистка не удалась с ошибкой: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1464"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1516"/>
         <source>Write failed with error: %1</source>
         <translation>Запись не удалась с ошибкой: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1473"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1524"/>
         <source>Write finished</source>
         <translation>Запись закончена</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1474"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1525"/>
         <source>Elapsed: %1</source>
         <translation>Затрачено: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3270"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2038"/>
+        <source>Failed to open update archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2114"/>
+        <source>Failed to extract update archive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2257"/>
+        <source>Folder %1 does not exist.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2696"/>
+        <source>Baseline couldn&apos;t be found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2697"/>
+        <source>Copying the data directory to .rpgmtranslate/baseline-data as a baseline.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2889"/>
+        <source>Source files, translation or archive file do not exist.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3563"/>
         <source>Search finished.</source>
         <translation>Поиск завершён.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3270"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3563"/>
         <source>Searching...</source>
         <translation>Поиск...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3275"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3568"/>
         <source>Replace finished.</source>
         <translation>Замена завершена.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3275"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3568"/>
         <source>Replacing...</source>
         <translation>Замена...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3280"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3573"/>
         <source>Put finished.</source>
         <translation>Помещение завершено.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3280"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3573"/>
         <source>Putting...</source>
         <translation>Помещение...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3285"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3578"/>
         <source>Trim finished.</source>
         <translation>Обрезание завершено.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3285"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3578"/>
         <source>Trimming...</source>
         <translation>Обрезание...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3290"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3583"/>
         <source>Sending translation request...</source>
         <translation>Посылаем запрос на перевод...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3295"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3588"/>
         <source>Translate finished.</source>
         <translation>Перевод завершён.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3295"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3588"/>
         <source>Translating...</source>
         <translation>Перевод...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3300"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3593"/>
         <source>Wrap finished.</source>
         <translation>Перенос завершён.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3300"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3593"/>
         <source>Wrapping...</source>
         <translation>Перенос...</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="361"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1362"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1413"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1452"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2709"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3197"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3307"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3614"/>
+        <source>Source path does not exist</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3615"/>
+        <source>The source path %1 does not exist.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3696"/>
+        <source>No matching source files were found in:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3705"/>
+        <source>
+
+Skipped files:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3740"/>
+        <source>Changed files: [%1]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3747"/>
+        <source>New files: [%1]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3752"/>
+        <source>Source files have been updated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3753"/>
+        <source>%1
+
+The files have been changed. Do you want to append any new text?%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3764"/>
+        <source>Project up-to-date</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3765"/>
+        <source>All source files are up-to-date.%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="363"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1407"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1469"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1506"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2747"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3491"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3600"/>
         <source>No Tasks</source>
         <translation>Нет задач</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1639"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1690"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1743"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1791"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2833"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2914"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3016"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1696"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1746"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1798"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1845"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3017"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3104"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3208"/>
         <source>Failed to open file</source>
         <translation>Не удалось открыть файл</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1640"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1691"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1744"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="1792"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2915"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3017"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1697"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1747"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1799"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="1846"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3105"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3209"/>
         <source>Failed to open file %1: %2. Starting from the beginning.</source>
         <translation>Не удалось открыть файл %1: %2. Начинаем заново.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2460"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2570"/>
         <source>%1: Successfully parsed.</source>
         <translation>%1: успешно распарсен.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3212"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3506"/>
         <source>Warning</source>
         <translation>Предупреждение</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3213"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3507"/>
         <source>Saving file failed</source>
         <translation>Сохранение файла не удалось</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3215"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3509"/>
         <source>Unable to save file %1: %2. You may try to save the file to a custom location. It&apos;s strongly advised to you to better close the program and fix the underlying issue before continuing your work.</source>
         <translation>Не удалось сохранить файл %1: %2. Вы можете попробовать сохранить файл в выбранную локацию. Вам рекомендуется закрыть программу после этого, и исправить саму ошибку перед продолжением работы.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3223"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3516"/>
         <source>Continue anyway</source>
         <translation>Продолжить в любом случае</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3225"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3518"/>
         <source>Retry</source>
         <translation>Заново</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3227"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3520"/>
         <source>Save to custom location</source>
         <translation>Сохранить в выбранную локацию</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2497"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2609"/>
         <source>Source</source>
         <translation>Исходный текст</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2565"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2677"/>
         <source>Before working with the program, check out documentation in Help &gt; Documentation!</source>
         <translation>Перед работой с программой, изучите документацию в меню Помощь &gt; Документация!</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2703"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2745"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2757"/>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2775"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2741"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2923"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="2968"/>
         <source>Failed to load project</source>
         <translation>Не удалось загрузить проект</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2817"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3004"/>
         <source>File is unavailable</source>
         <translation>Файл недоступен</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="2818"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3005"/>
         <source>File is currently processed and is being locked.</source>
         <translation>Файл в данный момент закрыт на обработку.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="3095"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="3380"/>
         <source>Backup %1 created.</source>
         <translation>Резервная копия %1 создана.</translation>
     </message>
@@ -896,27 +1266,27 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/MatchMenu/MatchTable.cpp" line="347"/>
-        <location filename="../src/MatchMenu/MatchTable.cpp" line="353"/>
+        <location filename="../src/MatchMenu/MatchTable.cpp" line="355"/>
         <source>%1, %2 occurrences: %3</source>
         <translation>%1, %2 совпадений: %3</translation>
     </message>
     <message>
-        <location filename="../src/MatchMenu/MatchTable.cpp" line="362"/>
+        <location filename="../src/MatchMenu/MatchTable.cpp" line="366"/>
         <source>Translation is empty.</source>
         <translation>Перевод пуст.</translation>
     </message>
     <message>
-        <location filename="../src/MatchMenu/MatchTable.cpp" line="364"/>
+        <location filename="../src/MatchMenu/MatchTable.cpp" line="368"/>
         <source>Term translation is not present.</source>
         <translation>Перевод термина не представлен.</translation>
     </message>
     <message>
-        <location filename="../src/MatchMenu/MatchTable.cpp" line="366"/>
+        <location filename="../src/MatchMenu/MatchTable.cpp" line="370"/>
         <source>Number of term occurrences doesn&apos;t match the number of translation occurrences.</source>
         <translation>Количество появлений термина не совпадает с количеством его перевода.</translation>
     </message>
     <message>
-        <location filename="../src/MatchMenu/MatchTable.cpp" line="370"/>
+        <location filename="../src/MatchMenu/MatchTable.cpp" line="374"/>
         <source>Match.</source>
         <translation>Совпадение.</translation>
     </message>
@@ -960,6 +1330,24 @@ Current version is %2.</source>
     </message>
 </context>
 <context>
+    <name>MediaPlayer</name>
+    <message>
+        <location filename="../src/AssetMenu/MediaPlayer.cpp" line="352"/>
+        <source>Resume</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/MediaPlayer.cpp" line="352"/>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/MediaPlayer.cpp" line="417"/>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PurgeMenu</name>
     <message>
         <location filename="../src/PurgeMenu/PurgeMenu.ui" line="60"/>
@@ -980,9 +1368,14 @@ Current version is %2.</source>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/utilities/Utils.cpp" line="13"/>
+        <location filename="../src/utilities/Utils.cpp" line="14"/>
         <source>Couldn&apos;t split text at line %1 in file %2</source>
         <translation>Не удалось разделить текст на строке %1 в файле %2</translation>
+    </message>
+    <message>
+        <location filename="../src/AssetMenu/MediaPlayer.cpp" line="297"/>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1034,7 +1427,7 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/ReadMenu/ReadMenu.ui" line="205"/>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="127"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="132"/>
         <source>Remove duplicates across maps and events. Recommended. In system, scripts and plugins files this mode is always overridden by allow mode.</source>
         <translation>Удаляет дубликаты среди карт и ивентов. В файлах system, scripts и plugins этот режим всегда установлен на &quot;Разрешить&quot;.</translation>
     </message>
@@ -1069,49 +1462,89 @@ Current version is %2.</source>
         <translation>Распарсить ивенты карт: парсит метаданные ивентов в картах, по типу их ID, названий и x/y позиций.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="539"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="552"/>
+        <source>Use title from Game.ini: If game is RPG Maker XP/VX/VX Ace, it may not necessarily contain game title in the system file. Use this option to take it from Game.ini. You will have to pick the right encoding. If this option is not set, we&apos;ll try to use the title from system file, if it&apos;s there.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="575"/>
+        <source>UTF-8</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="580"/>
+        <source>Shift_JIS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="585"/>
+        <source>GB18030</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="624"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="546"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="631"/>
         <source>Apply</source>
         <translation>Применить</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="44"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="49"/>
         <source>Force rewrites existing translation files.</source>
         <translation>Принудительно перезаписывает существующий перевод.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="58"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="63"/>
         <source>Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event. Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode.</source>
         <translation>Добавляет новый текст из игры в файлы перевода, если его там ещё нет. Порядок строк отсортирован, неиспользуемые строки переносятся в конец карты/ивента. Стандартный режим ничего не делает, если исходные файлы не изменены с последнего чтения - в таком случае используйте режим принудительного добавления.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="84"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="89"/>
         <source>Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event.</source>
         <translation>Добавляет новый текст из игры в файлы перевода, если его там ещё нет. Порядок строк отсортирован, неиспользуемые строки переносятся в конец карты/ивента.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="30"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="35"/>
         <source>Invalid mode</source>
         <translation>Неправильный режим</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="31"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="36"/>
         <source>Default mode does nothing when files are already read.</source>
         <translation>Стандартный режим не имеет действия, когда файлы уже прочтены.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="40"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="45"/>
         <source>Parses the game text.</source>
         <translation>Парсит текст игры.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="122"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="127"/>
         <source>Allow duplicates across maps and events. This may bloat your translation. This mode is always set for system, scripts, and plugins files.</source>
         <translation>Позволить дубликаты среди карт и событий. Это может раздуть ваш перевод. Этот режим всегда установлен для файлов system, scripts и plugins.</translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="159"/>
+        <source>Failed to extract INI title</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="160"/>
+        <source>Failed to extract title from the Game.ini file: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="170"/>
+        <source>Title is empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="171"/>
+        <source>Title is empty in Game.ini file.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1235,47 +1668,47 @@ Current version is %2.</source>
 <context>
     <name>SearchPanelDock</name>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="226"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="227"/>
         <source>Already replaced</source>
         <translation>Уже заменён</translation>
     </message>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="227"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="228"/>
         <source>This result was already replaced.</source>
         <translation>Этот результат уже заменён.</translation>
     </message>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="194"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="195"/>
         <source>Confirmation</source>
         <translation>Подтверждение</translation>
     </message>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="85"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="86"/>
         <source>File %1 / Row %2 / Column %3 (%4)</source>
         <translation>Файл %1 / Строка %2 / Столбец %3 (%4)</translation>
     </message>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="91"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="92"/>
         <source>Source</source>
         <translation>Исходный текст</translation>
     </message>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="195"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="196"/>
         <source>Do you really want to put the text from the replace input in place of this text, effectively replacing it?</source>
         <translation>Вы действительно хотите поместить текст из ввода для замены вместо этого текста, по сути замещая его?</translation>
     </message>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="219"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="220"/>
         <source>Cannot be replaced</source>
         <translation>Нельзя заменить</translation>
     </message>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="220"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="221"/>
         <source>Source column cannot be replaced.</source>
         <translation>Текст исходного столбца не может быть заменён.</translation>
     </message>
     <message>
-        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="111"/>
+        <location filename="../src/SearchPanelDock/SearchPanelDock.cpp" line="112"/>
         <source>- Filter by file -</source>
         <translation>- Отфильтровать по файлу -</translation>
     </message>
@@ -1284,32 +1717,32 @@ Current version is %2.</source>
     <name>SettingsWindow</name>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="32"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1685"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1915"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="107"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="142"/>
         <source>Core</source>
         <translation>Основные</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="108"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="143"/>
         <source>Appearance</source>
         <translation>Внешний вид</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="109"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="144"/>
         <source>Controls</source>
         <translation>Управление</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="110"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="145"/>
         <source>Translation</source>
         <translation>Перевод</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="111"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="146"/>
         <source>Project</source>
         <translation>Проект</translation>
     </message>
@@ -1360,7 +1793,7 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="475"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1355"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1320"/>
         <source>Default</source>
         <translation>Стандартная</translation>
     </message>
@@ -1375,432 +1808,512 @@ Current version is %2.</source>
         <translation>Тёмная</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="517"/>
-        <source>Display trailing whitespace in translation table cells</source>
-        <translation>Подсвечивать пробелы на границах текста в ячейках таблицы перевода</translation>
-    </message>
-    <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="524"/>
-        <source>Display words/characters count in status bar when opening a tab</source>
-        <translation>Отображать количество слов/букв в статусной строке при открытии вкладки</translation>
-    </message>
-    <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="584"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="549"/>
         <source>Search Panel</source>
         <translation>Панель поиска</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="739"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="704"/>
         <source>Match Menu</source>
         <translation>Меню совпадений</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="770"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="735"/>
         <source>Glossary Menu</source>
         <translation>Меню глоссария</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1129"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1094"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1137"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1102"/>
         <source>Google</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1142"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1107"/>
         <source>Yandex</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1147"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1112"/>
         <source>DeepL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1152"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1117"/>
         <source>Aliyun</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1157"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1122"/>
         <source>Anthropic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1162"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1127"/>
         <source>DeepSeek</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1167"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1132"/>
         <source>Gemini</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1172"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1137"/>
         <source>Koboldcpp</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1177"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1142"/>
         <source>Longcat</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1182"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1147"/>
         <source>Moonshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1187"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1152"/>
         <source>Mistral</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1192"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1157"/>
         <source>Ollama</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1197"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1162"/>
         <source>OpenAI</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1202"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1167"/>
         <source>OpenAI-compatible</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1207"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1172"/>
         <source>Volcengine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1212"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1177"/>
         <source>Xiaomi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1217"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1182"/>
         <source>Xinference</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1222"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1187"/>
         <source>Zhipu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1243"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1208"/>
         <source>Use for single translation (will display text translation through the endpoint in translations menu)</source>
         <translation>Использовать для единичного перевода (будет отображать перевод в поле в меню переводов)</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1268"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1233"/>
         <source>API key</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1303"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1268"/>
         <source>Yandex folder ID</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1365"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1330"/>
         <source>If &quot;Check key&quot; outputs something about incorrect URL, missing page etc., make sure that your base URL includes the API version. For example: &quot;https://api.openai.com/v1&quot; or &quot;https://generativelanguage.googleapis.com/v1beta&quot;. Don&apos;t include parts like &quot;/chat/completions&quot; in the URL!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1375"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1340"/>
         <source>Check key</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="63"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1430"/>
+        <source>Reasoning effort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1438"/>
+        <source>Low</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1443"/>
+        <source>Medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1448"/>
+        <source>High</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1459"/>
+        <source>Thinking/reasoning</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="98"/>
         <source>Input token limit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="66"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="101"/>
         <source>Output token limit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1447"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1466"/>
         <source>Use glossary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1629"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1642"/>
         <source>LanguageTool base URL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1727"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1662"/>
+        <source>Yanfly Engine Core Lints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1683"/>
+        <source>Yanfly Core Engine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1710"/>
+        <source>Advanced Text System Lints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1734"/>
+        <source>Custom Lints</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1758"/>
+        <source>Misc</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1831"/>
+        <source>Highlight leading whitespace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1838"/>
+        <source>Highlight trailing whitespace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1845"/>
+        <source>Highlight contiguous whitespace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1852"/>
+        <source>Highlight unclosed punctuation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1859"/>
+        <source>Display source/translation tag mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1866"/>
+        <source>Display words/characters count for a file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1957"/>
         <source>Line length hint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1753"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1983"/>
         <source>Source language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1769"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1999"/>
         <source>Translation language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1779"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2009"/>
         <source>Spellcheck dictionary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1801"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2031"/>
         <source>Context</source>
         <translation type="unfinished">Контекст</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1840"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2070"/>
         <source>File context select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1871"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2101"/>
         <source>File context</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1902"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2132"/>
         <source>Project сontext</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="615"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="580"/>
         <source>Tab Panel</source>
         <translation>Панель вкладок</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="646"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="611"/>
         <source>Go To Row</source>
         <translation>Переход к строке</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="677"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="642"/>
         <source>Batch Menu</source>
         <translation>Меню обработки</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="708"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="673"/>
         <source>Bookmark Menu</source>
         <translation>Меню закладок</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="801"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="766"/>
         <source>Translations Menu</source>
         <translation>Меню переводов</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="906"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="871"/>
         <source>Machine Translation</source>
         <translation>Машинный перевод</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="954"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="919"/>
         <source>Endpoint List</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1004"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="969"/>
         <source>Select endpoints by clicking on them. You can change the name by double-clicking an endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1029"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="994"/>
         <source>Add Endpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1067"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1032"/>
         <source>Remove Selected Endpoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1338"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1303"/>
         <source>Base URL</source>
         <translation>Базовый URL</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1345"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1636"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1310"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1649"/>
         <source>https://localhost:8000</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1406"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1371"/>
         <source>Model</source>
         <translation>Модель</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="72"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="107"/>
         <source>Temperature</source>
         <translation>Температура</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1454"/>
-        <source>Thinking</source>
-        <translation>Мышление</translation>
-    </message>
-    <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1479"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1492"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1491"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1504"/>
         <source>System Prompt</source>
         <translation>Системный промпт</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1499"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1547"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1511"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1559"/>
         <source>Default System Prompt</source>
         <translation>Стандартный системный промпт</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1527"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1540"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1539"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1552"/>
         <source>Single Translate System Prompt</source>
         <translation>Системный промпт для единичного перевода</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1583"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1596"/>
         <source>LanguageTool</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1604"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1617"/>
         <source>Use LanguageTool linting</source>
         <translation>Использовать линтинг LanguageTool</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1740"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1797"/>
+        <source>Symbols that should be considered space (comma-separated list; literal symbols and Unicode U+XXXX codepoints are allowed):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1970"/>
         <source>In characters. Allowed range: 0-255.</source>
         <translation>В символах. Лимит: 0-255</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="69"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="104"/>
         <source>Thinking budget limit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="74"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="109"/>
         <source>Frequency penalty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="76"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="111"/>
         <source>Precense penalty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="78"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="113"/>
         <source>Top P</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="82"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="117"/>
         <source>Translation table font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="129"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="135"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="164"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="170"/>
         <source>Endpoint %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="192"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="228"/>
         <source>Google Translate. Free and unlimited. Configured options don&apos;t work with this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="197"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="233"/>
         <source>Yandex Translate. Requires API key and folder ID. Configured options don&apos;t work with this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="202"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="238"/>
         <source>DeepL. Requires API key and folder ID. Configured options don&apos;t work with this endpoint, except glossary usage.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="210"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="246"/>
         <source>LLM endpoint with pre-defined base URL. Don&apos;t change the base URL, unless you know what you&apos;re doing. Configured options will affect this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="215"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="251"/>
         <source>OpenAI-compatible endpoint. This category fits many providers, including OpenAI itself, DeepSeek, Mistral, and local providers, such as llama.cpp and koboldcpp. Requires valid base URL, that should probably end with &apos;/v1&apos;. Configured options will affect this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="391"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="370"/>
+        <source>Couldn&apos;t select model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="371"/>
+        <source>Model that was previously selected for translation: %1 is not longer in the list of models provided by the endpoint.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="448"/>
         <source>URL is invalid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="392"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="449"/>
         <source>Given URL is invalid. Please check the validity of submitted URL.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="427"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="855"/>
         <source>Failed to validate key</source>
         <translation>Не удалось подтвердить ключ</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="428"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="856"/>
         <source>Getting available models failed with error: %1</source>
         <translation>Не удалось получить доступные модели из-за ошибки: %1</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="469"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="481"/>
         <source>No .dic file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="470"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="482"/>
         <source>`.dic` file corresponding to the `.aff` file does not exist. Dictionary won&apos;t work properly without the `.dic` file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="605"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="640"/>
         <source>Invalid backup period</source>
         <translation>Неверный период резервного копирования</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="606"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="641"/>
         <source>Backup period is invalid. Unable to save.</source>
         <translation>Число периода резервного копирования неверно. Не удалось сохранить настройки.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="616"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="651"/>
         <source>Invalid max backups</source>
         <translation>Неверный период максимальных копий</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="617"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="652"/>
         <source>Max backups value is invalid. Unable to save.</source>
         <translation>Число максимальный копий неверно. Не удалось сохранить настройки.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="658"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="716"/>
         <source>Invalid line length hint</source>
         <translation>Неверная подсказка длины строки</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="659"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="717"/>
         <source>Line length hint is invalid. Unable to save.</source>
         <translation>Чисто подсказки длины строки неверно. Не удалось сохранить настройки.</translation>
     </message>
@@ -1839,12 +2352,12 @@ Current version is %2.</source>
 <context>
     <name>TaskWorker</name>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="455"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="469"/>
         <source>Files were skipped</source>
         <translation>Файлы были пропущены</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="456"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="470"/>
         <source>The program was unable to open the following files:
  %1</source>
         <translation>Программе не удалось открыть следующие файлы:
@@ -1854,55 +2367,431 @@ Current version is %2.</source>
 <context>
     <name>TermInfoCell</name>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="427"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="433"/>
         <source>Exact</source>
         <translation>Точный</translation>
     </message>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="428"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="434"/>
         <source>Fuzzy</source>
         <translation>Приближённый</translation>
     </message>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="429"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="435"/>
         <source>Both</source>
         <translation>Оба</translation>
     </message>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="432"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="438"/>
         <source>Case Sensitive</source>
         <translation>Учитывать регистр</translation>
     </message>
     <message>
-        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="433"/>
+        <location filename="../src/GlossaryMenu/GlossaryMenu.cpp" line="439"/>
         <source>Permissive</source>
         <translation>Пермиссивность</translation>
     </message>
 </context>
 <context>
+    <name>TextCodes</name>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="39"/>
+        <source>ATS Message Options: \nb{text} - Shows the namebox with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="42"/>
+        <source>ATS Message Options: \nbl{text} - Shows the namebox left of the message with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="45"/>
+        <source>ATS Message Options: \nbr{text} - Shows the namebox right of the message with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="48"/>
+        <source>ATS Message Options: \nbt{text} - Shows the namebox above the message with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="51"/>
+        <source>ATS Message Options: \nbb{text} - Shows the namebox below the message with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="54"/>
+        <source>ATS Message Options: \nblt{text} - Shows the namebox left and above with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="57"/>
+        <source>ATS Message Options: \nblb{text} - Shows the namebox left and below with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="60"/>
+        <source>ATS Message Options: \nbrt{text} - Shows the namebox right and above with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="63"/>
+        <source>ATS Message Options: \nbrb{text} - Shows the namebox right and below with text displayed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="66"/>
+        <source>ATS Message Options: \fit - Fits the window to this message (:paragraph_format must be false).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="69"/>
+        <source>ATS Message Options: \e[n] - Sets the text box in reference to character n (0 = Player; &gt;0 = Event).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="72"/>
+        <source>ATS Message Options: \et[n] - Sets the text box above character n (0 = Player; &gt;0 = Event).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="75"/>
+        <source>ATS Message Options: \eb[n] - Sets the text box below character n (0 = Player; &gt;0 = Event).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="78"/>
+        <source>ATS Message Options: \el[n] - Sets the text box to the left of character n (0 = Player; &gt;0 = Event).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="81"/>
+        <source>ATS Message Options: \er[n] - Sets the text box to the right of character n (0 = Player; &gt;0 = Event).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="84"/>
+        <source>ATS Message Options: \lse - Turns the letter by letter SE on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="87"/>
+        <source>ATS Message Options: /lse - Turns the letter by letter SE off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="90"/>
+        <source>ATS Message Options: \pse - Turns the pause SE on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="91"/>
+        <source>ATS Message Options: /pse - Turns the pause SE off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="92"/>
+        <source>ATS Message Options: \fse - Turns the finish SE on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="93"/>
+        <source>ATS Message Options: /fse - Turns the finish SE off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="94"/>
+        <source>ATS Message Options: \tse - Turns the terminate SE on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="95"/>
+        <source>ATS Message Options: /tse - Turns the terminate SE off.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="98"/>
+        <source>ATS Message Options: \pSE[file,x,y] - Play the &quot;file&quot; SE at volume x and pitch y.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="101"/>
+        <source>ATS Message Options: \pME[file,x,y] - Play the &quot;file&quot; ME at volume x and pitch y.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="104"/>
+        <source>ATS Message Options: \pANIM[x,n] - Play the animation with ID n over character x.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="107"/>
+        <source>ATS Message Options: \pBLN[x,n] - Play the balloon with ID n over character x.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="111"/>
+        <source>Yanfly Message Core (YEP): \V[n] is replaced by the value of the nth variable.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="114"/>
+        <source>Yanfly Message Core (YEP): \N[n] is replaced by the name of the nth actor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="117"/>
+        <source>Yanfly Message Core (YEP): \P[n] is replaced by the name of the nth party member.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="120"/>
+        <source>Yanfly Message Core (YEP): \G is replaced by the currency unit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="123"/>
+        <source>Yanfly Message Core (YEP): \C[n] draws the subsequent text in the nth color.
+This tag should always be closed with \C[0] tag to reset the color to default.
+\C[n] uses the colors from img/system/Window.png file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="126"/>
+        <source>Yanfly Message Core (YEP): \I[n] is replaced by the nth icon.
+\I[n] uses the icons from img/system/IconSet.rpgmvp file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="129"/>
+        <source>Yanfly Message Core (YEP): \{ increases the text size by one step.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="132"/>
+        <source>Yanfly Message Core (YEP): \} descreases the text size by one step.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="135"/>
+        <source>Yanfly Message Core (YEP): \\ inserts a literal backslash (\).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="138"/>
+        <source>Yanfly Message Core (YEP): \$ opens the gold window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="139"/>
+        <source>Yanfly Message Core (YEP): \. waits 1/4th seconds.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="140"/>
+        <source>Yanfly Message Core (YEP): \| waits 1 second.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="141"/>
+        <source>Yanfly Message Core (YEP): \! waits for button input.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="142"/>
+        <source>Yanfly Message Core (YEP): \&gt; displays the remaining text on same line all at once.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="145"/>
+        <source>Yanfly Message Core (YEP): \&lt; cancels the effect that displays text all at once.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="148"/>
+        <source>Yanfly Message Core (YEP): \^ does not wait for input after displaying text.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="153"/>
+        <source>Yanfly Message Core (YEP): \w[x] waits x frames (60 frames = 1 second). Message window only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="158"/>
+        <source>Yanfly Message Core (YEP): \n&lt;x&gt; creates a name box with x string. Left side. Works for message window only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="161"/>
+        <source>Yanfly Message Core (YEP): \nc&lt;x&gt; creates a name box with x string. Centered. Works for message window only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="164"/>
+        <source>Yanfly Message Core (YEP): \nr&lt;x&gt; creates a name box with x string. Right side. Works for message window only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="169"/>
+        <source>Yanfly Message Core (YEP): if using word wrap mode, this will cause a line break.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="174"/>
+        <source>Yanfly Message Core (YEP): \px[x] sets x position of text to x.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="177"/>
+        <source>Yanfly Message Core (YEP): \py[x] sets y position of text to x.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="182"/>
+        <source>Yanfly Message Core (YEP): \oc[x] sets outline color to x.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="185"/>
+        <source>Yanfly Message Core (YEP): \ow[x] sets outline width to x.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="190"/>
+        <source>Yanfly Message Core (YEP): \fr resets all font changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="193"/>
+        <source>Yanfly Message Core (YEP): \fs[x] changes font size to x.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="196"/>
+        <source>Yanfly Message Core (YEP): \fn&lt;x&gt; changes font name to x.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="199"/>
+        <source>Yanfly Message Core (YEP): \fb toggles font boldness.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="200"/>
+        <source>Yanfly Message Core (YEP): \fi toggles font italic.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="203"/>
+        <source>Yanfly Message Core (YEP): \af[x] shows face of actor x. Works for message window only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="206"/>
+        <source>Yanfly Message Core (YEP): \ac[x] writes out actor&apos;s class name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="209"/>
+        <source>Yanfly Message Core (YEP): \an[x] writes out actor&apos;s nickname.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="214"/>
+        <source>Yanfly Message Core (YEP): \pf[x] shows face of party member x. Works for message window only.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="217"/>
+        <source>Yanfly Message Core (YEP): \pc[x] writes out party member x&apos;s class name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="220"/>
+        <source>Yanfly Message Core (YEP): \pn[x] writes out party member x&apos;s nickname.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="225"/>
+        <source>Yanfly Message Core (YEP): \nc[x] writes out class x&apos;s name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="228"/>
+        <source>Yanfly Message Core (YEP): \ni[x] writes out item x&apos;s name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="231"/>
+        <source>Yanfly Message Core (YEP): \nw[x] writes out weapon x&apos;s name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="234"/>
+        <source>Yanfly Message Core (YEP): \na writes out armor x&apos;s name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="237"/>
+        <source>Yanfly Message Core (YEP): \ns[x] writes out skill x&apos;s name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="240"/>
+        <source>Yanfly Message Core (YEP): \nt writes out state x&apos;s name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="245"/>
+        <source>Yanfly Message Core (YEP): \ii[x] writes out item x&apos;s name including icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="248"/>
+        <source>Yanfly Message Core (YEP): \iw[x] writes out weapon x&apos;s name including icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="251"/>
+        <source>Yanfly Message Core (YEP): \ia[x] writes out armor x&apos;s weapon including icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="254"/>
+        <source>Yanfly Message Core (YEP): \is[x] writes out skill x&apos;s name including icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/TranslationTable/PluginSequences.hpp" line="257"/>
+        <source>Yanfly Message Core (YEP): \it[x] writes out state x&apos;s name including icon.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TranslationTable</name>
     <message>
-        <location filename="../src/TranslationTable/TranslationTable.cpp" line="128"/>
+        <location filename="../src/TranslationTable/TranslationTable.cpp" line="130"/>
         <source>Remove Row</source>
         <translation>Удалить строку</translation>
     </message>
     <message>
-        <location filename="../src/TranslationTable/TranslationTable.cpp" line="130"/>
+        <location filename="../src/TranslationTable/TranslationTable.cpp" line="132"/>
         <source>Bookmark Row</source>
         <translation>Добавить в закладки</translation>
     </message>
     <message>
-        <location filename="../src/TranslationTable/TranslationTable.cpp" line="156"/>
+        <location filename="../src/TranslationTable/TranslationTable.cpp" line="158"/>
         <source>Translation</source>
         <translation>Перевод</translation>
     </message>
     <message>
-        <location filename="../src/TranslationTable/TranslationTable.cpp" line="247"/>
+        <location filename="../src/TranslationTable/TranslationTable.cpp" line="249"/>
         <source>Cell is not empty</source>
         <translation>Ячейка не пуста</translation>
     </message>
     <message>
-        <location filename="../src/TranslationTable/TranslationTable.cpp" line="248"/>
+        <location filename="../src/TranslationTable/TranslationTable.cpp" line="250"/>
         <source>Selected cell is not empty. Overwrite its contents with the translation?</source>
         <translation>Выбранная ячейка не пуста. Перезаписать её данные переводом?</translation>
     </message>
@@ -1910,7 +2799,7 @@ Current version is %2.</source>
 <context>
     <name>TranslationsMenu</name>
     <message>
-        <location filename="../src/TranslationsMenu/TranslationsMenu.cpp" line="21"/>
+        <location filename="../src/TranslationsMenu/TranslationsMenu.cpp" line="23"/>
         <source>Translations Menu</source>
         <translation type="unfinished">Меню переводов</translation>
     </message>
@@ -1927,7 +2816,7 @@ Current version is %2.</source>
     <name>mainWindow</name>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="122"/>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1079"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1081"/>
         <source>Tab Panel</source>
         <translation>Панель вкладок</translation>
     </message>
@@ -1943,7 +2832,7 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="242"/>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1369"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1371"/>
         <source>Open Folder</source>
         <translation>Открыть папку</translation>
     </message>
@@ -1964,6 +2853,7 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="415"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="991"/>
         <source>Match Menu</source>
         <translation>Меню совпадений</translation>
     </message>
@@ -1994,7 +2884,7 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="771"/>
-        <location filename="../src/MainWindow/MainWindow.ui" line="881"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="883"/>
         <source>Search Panel</source>
         <translation>Панель поиска</translation>
     </message>
@@ -2004,99 +2894,109 @@ Current version is %2.</source>
         <translation>Файл</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="842"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="844"/>
         <source>Help</source>
         <translation>Помощь</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="850"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="852"/>
         <source>Language</source>
         <translation>Язык</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="916"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="918"/>
         <source>- Filter by file -</source>
         <translation>- Отфильтровать по файлу -</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1087"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1089"/>
         <source>Source Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1184"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1186"/>
         <source>Commit message...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1222"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1224"/>
         <source>Commit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1298"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1300"/>
         <source>Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1317"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1319"/>
         <source>Refresh Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1346"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1348"/>
         <source>Copy translation to root</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1353"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1355"/>
         <source>Commits</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1374"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1376"/>
         <source>Exit</source>
         <translation>Выйти</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1379"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1381"/>
         <source>About RPGMTranslate</source>
         <translation>О RPGMTranslate</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1384"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1386"/>
         <source>Usage Documentation</source>
         <translation>Документация по использованию</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1399"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1401"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1404"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1406"/>
         <source>Check For Updates</source>
         <translation>Проверить обновления</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1409"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1411"/>
         <source>Recent Projects</source>
         <translation>Недавние проекты</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1414"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1416"/>
         <source>Close Project</source>
         <translation>Закрыть проект</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1419"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1421"/>
         <source>Close Tab</source>
         <translation>Закрыть вкладку</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.ui" line="1422"/>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1424"/>
         <source>Esc</source>
         <translation>Esc</translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1429"/>
+        <source>Check for source file changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindow.ui" line="1434"/>
+        <source>Load Backup</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

@@ -18,6 +18,8 @@ If you configured the endpoints for [single-translation](./settings.md#translati
 
 If you configured the [LanguageTool](./settings.md#languagetool), LanguageTool will be used to lint the translation text.
 
+LanguageTool is currently WIP.
+
 ### Spell Check
 
 RPGMTranslate supports spell check out of the box, thanks to Nuspell library.
@@ -25,6 +27,12 @@ RPGMTranslate supports spell check out of the box, thanks to Nuspell library.
 On information about how to find, install and activate dictionaries, see [Spell Check Settings](./settings.md#spell-check)
 
 Note that Japanese, Chinese etc. are not yet supported, because they require segmentation before spellcheck.
+
+### Plugin & Misc
+
+RPGMTranslate provides built-in linting for a lot of Yanfly plugins tags. As of sixth release candidate, there's a lot of stubs but low amount of actual lints.
+
+Misc lints are all about whitespace, punctuation, tag mismatches and so on. Only whitespace and punctuation ones are implemented as of sixth release candidate. Tag mismatches and similar things require more effort to actually implement them.
 
 ### Other options
 

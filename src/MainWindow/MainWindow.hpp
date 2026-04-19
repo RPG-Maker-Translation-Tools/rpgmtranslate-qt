@@ -4,6 +4,7 @@
 #include "Enums.hpp"
 #include "FFILogger.hpp"
 #include "FWD.hpp"
+#include "Hasher.hpp"
 #include "ProjectSettings.hpp"
 #include "Settings.hpp"
 #include "TaskWorker.hpp"
@@ -75,9 +76,20 @@ class MainWindow final : public QMainWindow {
         u32 idx
     );
 
+    inline void checkHashes();
     inline void closeProject();
 
-    void updateTask(TaskWorker::Task task, u32 progress, u32 total);
+    inline void updateTask(TaskWorker::Task task, u32 progress, u32 total);
+    inline void read(
+        ReadMode readMode,
+        DuplicateMode duplicateMode,
+        Selected selected,
+        BaseFlags flags,
+        bool mapEvents,
+        const QString& title
+    );
+
+    inline void loadBackup(const QString& filename);
 
     [[nodiscard]] inline auto
     handleOpenError(const QString& path, const QString& error) -> ControlFlow;

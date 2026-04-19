@@ -1,5 +1,57 @@
 # Changelog
 
+## v1.0.0-rc.6
+
+This release polishes asset inspector and fixes a couple of crucial bugs. And, as well, brings two major changes: baseline data tracking and RPG Maker plugin tags/sequences linting.
+
+Note that tags and sequences linting requires a lot of work. This release brings only basic support, and the next release candidate will complete this feature.
+
+### Changes
+
+- Updated to `rvpacker-txt-rs-lib` v13.0.0
+- Added reasoning effort to translation settings.
+- The program now generates `.rvpacker-metadata` file for compatibility with `rvpacker-txt-rs`.
+- Translations menu now has fixed size, but each translation label is now scrollable along with the menu view.
+- Fixes:
+    - The previously selected model is now restored in settings. If this model is no longer in the list of models, provided by the endpoint, user will be notified.
+    - Small fixes for media player.
+    - Fixed writing wrong settings to project settings on the first read.
+    - Closing a project will always trigger a save now.
+    - Closing a project won't cause it to load on the second startup now.
+- Backups:
+    - Backups are now LZMA2-compressed to save space.
+    - Numbers in backup file names, like days, months, hours etc. are now padded with leading zero.
+    - Added `File > Load Backup` button to restore the project to a specific backup.
+- Linting:
+    - Support and linting for a lot of Yanfly plugins - still WIP.
+    - Support and linting for ATS Message Options plugin - still WIP.
+    - Support for custom sequences and tags - still WIP.
+    - Separate options for highlighting trailing/leading/sequential whitespace.
+    - Option for detecting tag/sequence mismatches between source and translation text - still WIP.
+    - Linting is highly customizable through settings - still WIP.
+- Stability:
+    - When the directory where the program is located not writable, it will try to find other directory for the application data. Users can manually specify `RPGMTRANSLATE_DATA_DIR` variable to store the data in desired place. Otherwise, data will be put in the local data directory - [see paths for `AppLocalDataLocation` here](https://doc.qt.io/qt-6/qstandardpaths.html).
+    - Reduced possible errors due to improper memory handling when doing FFI calls.
+    - New baseline data tracking system:
+        - On the first read, `data`/`Data` directory will be copied to `.rpgmtranslate/baseline-data`.
+        - All program operations will use `baseline-data` from this point.
+        - On startup, the program will check, whether the files in the original data directory changed.
+        - If those files have changed, it will suggest to append the new text to the translation files.
+        - You can always trigger the check manually through `File > Check for source file changes`.
+    - A lot of micro-optimizations.
+    - Changed the standard hasher from `rapidhash` to `gxhash` which proves to be much faster.
+- Asset inspector:
+    - Asset inspector now processes files with both lowercase and uppercase extensions.
+    - Implemented searching text when inspecting code assets.
+    - It's now possible to refresh the list of assets for any new assets.
+    - Implemented the ability to change sample text and font size when inspecting font assets.
+    - Added display of current scaling (in percents) when inspecting image assets.
+    - Added image scale slider to image viewer in case you don't have a mouse wheel.
+- Development:
+    - Removed `rapidhash` dependency. `gxhash` is invoked from Rust instead, and it's much faster.
+    - Added `magic_enum.hpp`, `miniaudio.h` and new `jeaiii_to_text.h`, `zmij.h` and `zmij.cc` files directly to the source tree.
+    - Changed hashing to use unsigned 64-bit integers instead of 128-bit integers. This improves compatibility.
+
 ## v1.0.0-rc.5
 
 This release candidate introduces asset inspector support. Next release candidate will further improve user experience and correct some parts of the program. Git client will be implemented in the final v1.0.0 release.

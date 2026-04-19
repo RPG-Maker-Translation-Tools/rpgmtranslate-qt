@@ -6,6 +6,12 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
+enum ReasoningEffort : u8 {
+    Low,
+    Medium,
+    High
+};
+
 struct Backup {
     u16 period = MIN_BACKUP_PERIOD;
     u8 max = MAX_BACKUPS;
@@ -22,8 +28,10 @@ struct CoreSettings {
 
     Backup backup;
 
-    bool checkForUpdates = true;
-    bool firstLaunch = true;
+    bool checkForAppUpdates = true;
+
+    // TODO: Implement
+    bool checkForSourceUpdates = true;
 
     [[nodiscard]] auto toJSON() const -> QJsonObject;
     [[nodiscard]] static auto fromJSON(const QJsonObject& obj) -> CoreSettings;
@@ -39,8 +47,6 @@ struct AppearanceSettings {
     u8 translationTableFontSize = 0;
 
     bool displayPercents = false;
-    bool displayTrailingWhitespace = false;
-    bool displayWordsAndCharacters = false;
 
     [[nodiscard]] auto toJSON() const -> QJsonObject;
     [[nodiscard]] static auto fromJSON(const QJsonObject& obj)
@@ -96,7 +102,7 @@ struct EndpointSettings {
 
     u16 thinkingBudget = UINT16_MAX;
 
-    // TODO: Reasoning effort
+    ReasoningEffort reasoningEffort;
 
     bool useGlossary = false;
     bool thinking = false;
@@ -136,10 +142,25 @@ struct LanguageToolSettings {
         -> LanguageToolSettings;
 };
 
+enum MiscLints : u8 {
+    LeadingWhitespace = 1 << 0,
+    TrailingWhitespace = 1 << 1,
+    ContiguousWhitespace = 1 << 2,
+    UnclosedPunctuation = 1 << 3,
+    TagMismatch = 1 << 4
+};
+
 struct TranslationSettings {
     LanguageToolSettings languageTool;
 
     vector<EndpointSettings> endpoints;
+
+    // TODO: Plugin lints
+
+    vector<array<QChar, 2>> whitespaceCharacters;
+    MiscLints miscLints = MiscLints(0);
+
+    bool displayWordsAndCharacters = false;
 
     [[nodiscard]] auto toJSON() const -> QJsonObject;
     static auto fromJSON(const QJsonObject& obj) -> TranslationSettings;

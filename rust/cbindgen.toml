@@ -27,8 +27,9 @@ include = [
     "MatchMode",
     "HighlightToken",
     "HighlightLanguage",
+    "ReadMode",
 ]
-exclude = ["Bitset2048", "Selected", "ReadMode"]
+exclude = ["Bitset2048", "Selected"]
 item_types = ["functions", "structs", "enums", "typedefs", "constants"]
 
 [layout]

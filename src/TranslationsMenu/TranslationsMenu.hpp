@@ -4,8 +4,6 @@
 #include "FWD.hpp"
 #include "PersistentMenu.hpp"
 
-// TODO: Replace bare labels with scroll areas
-
 class TranslationsMenu final : public PersistentMenu {
     Q_OBJECT
 

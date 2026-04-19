@@ -1,29 +1,45 @@
 #include "AssetMenu.hpp"
 
+#include "AssetPreviewWidget.hpp"
+#include "ProjectSettings.hpp"
 #include "rpgmtranslate.h"
 
-#include <QDir>
 #include <QDirListing>
-#include <QFontDatabase>
-#include <QLabel>
-#include <QPainter>
-#include <QStyleHints>
-#include <QTemporaryFile>
+#include <QGraphicsPixmapItem>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QTreeWidget>
 
-AssetMenu::AssetMenu(QWidget* const parent) : PersistentMenu(parent) {
-    tree.setUniformRowHeights(true);
-    tree.setHeaderHidden(true);
-    tree.setSelectionMode(QTreeWidget::SingleSelection);
-    tree.setEditTriggers(QTreeWidget::NoEditTriggers);
-    tree.setDragDropMode(QTreeWidget::NoDragDrop);
-    tree.setAcceptDrops(false);
+AssetMenu::AssetMenu(QWidget* const parent) :
+    PersistentMenu(parent),
+    assetPreviewWidget(new AssetPreviewWidget()),
+    refreshButton(new QPushButton(
+        QPushButton(QIcon(u":/icons/refresh.svg"_s), QString(), this)
+    )),
+    topWidget(new QWidget(this)),
+    topLayout(new QHBoxLayout(topWidget)),
+    layout(new QVBoxLayout(this)),
+    searchInput(new QLineEdit(this)),
+    tree(new QTreeWidget(this)),
+    graphicsScene(new QGraphicsScene(this)) {
+    tree->setUniformRowHeights(true);
+    tree->setHeaderHidden(true);
+    tree->setSelectionMode(QTreeWidget::SingleSelection);
+    tree->setEditTriggers(QTreeWidget::NoEditTriggers);
+    tree->setDragDropMode(QTreeWidget::NoDragDrop);
+    tree->setAcceptDrops(false);
 
-    searchInput.setPlaceholderText(tr("Search file..."));
-    layout.addWidget(&searchInput);
-    layout.addWidget(&tree);
+    searchInput->setPlaceholderText(tr("Search file..."));
+
+    topLayout->addWidget(searchInput);
+    topLayout->addWidget(refreshButton);
+
+    layout->addWidget(topWidget);
+    layout->addWidget(tree);
 
     connect(
-        &tree,
+        tree,
         &QTreeWidget::itemClicked,
         this,
         [this](const QTreeWidgetItem* const item, const i32 column) -> void {
@@ -33,16 +49,15 @@ AssetMenu::AssetMenu(QWidget* const parent) : PersistentMenu(parent) {
             return;
         }
 
-        assetPreviewWidget.showAsset(path);
+        assetPreviewWidget->showAsset(path);
     }
     );
 
-    connect(
-        &searchInput,
-        &QLineEdit::textChanged,
-        this,
-        &AssetMenu::filterTree
-    );
+    connect(refreshButton, &QPushButton::pressed, this, [this] -> void {
+        refresh();
+    });
+
+    connect(searchInput, &QLineEdit::textChanged, this, &AssetMenu::filterTree);
 }
 
 void AssetMenu::init(shared_ptr<ProjectSettings> projectSettings) {
@@ -51,8 +66,8 @@ void AssetMenu::init(shared_ptr<ProjectSettings> projectSettings) {
 }
 
 void AssetMenu::clear() {
-    tree.clear();
-    graphicsScene.clear();
+    tree->clear();
+    graphicsScene->clear();
 }
 
 auto AssetMenu::applyFilter(
@@ -69,8 +84,8 @@ auto AssetMenu::applyFilter(
     }
 
     bool anyVisible = false;
-    for (i32 i = 0; i < childCount; i++) {
-        if (applyFilter(item->child(i), lowerFilter)) {
+    for (const auto idx : range(0, childCount)) {
+        if (applyFilter(item->child(idx), lowerFilter)) {
             anyVisible = true;
         }
     }
@@ -85,38 +100,39 @@ auto AssetMenu::applyFilter(
 
 void AssetMenu::filterTree(const QString& text) {
     const QString lower = text.toLower();
-    const i32 categoryCount = tree.topLevelItemCount();
-    for (i32 i = 0; i < categoryCount; i++) {
-        applyFilter(tree.topLevelItem(i), lower);
+    const i32 categoryCount = tree->topLevelItemCount();
+    for (const auto idx : range(0, categoryCount)) {
+        applyFilter(tree->topLevelItem(idx), lower);
     }
 }
 
 void AssetMenu::refresh() {
     clear();
-    searchInput.clear();
+    searchInput->clear();
 
     if (!projectSettings) {
         return;
     }
 
-    auto* const audioItem = new QTreeWidgetItem(&tree, { tr("Audio") });
-    auto* const dataItem = new QTreeWidgetItem(&tree, { tr("Data") });
-    auto* const imagesItem = new QTreeWidgetItem(&tree, { tr("Images") });
-    auto* const iconsItem = new QTreeWidgetItem(&tree, { tr("Icons") });
-    auto* const fontsItem = new QTreeWidgetItem(&tree, { tr("Fonts") });
-    auto* const moviesItem = new QTreeWidgetItem(&tree, { tr("Movies") });
-    auto* const jsItem = new QTreeWidgetItem(&tree, { tr("JS") });
+    auto* const audioItem = new QTreeWidgetItem(tree, { tr("Audio") });
+    auto* const dataItem = new QTreeWidgetItem(tree, { tr("Data") });
+    auto* const imagesItem = new QTreeWidgetItem(tree, { tr("Images") });
+    auto* const iconsItem = new QTreeWidgetItem(tree, { tr("Icons") });
+    auto* const fontsItem = new QTreeWidgetItem(tree, { tr("Fonts") });
+    auto* const moviesItem = new QTreeWidgetItem(tree, { tr("Movies") });
+    auto* const jsItem = new QTreeWidgetItem(tree, { tr("JS") });
 
     const auto populate = [](QTreeWidgetItem* const parent,
                              const QString& dirPath,
-                             const QStringList& exts) -> void {
+                             const QStringList& filters) -> void {
         if (!QFile::exists(dirPath)) {
+            qWarning() << "Path %1 does not exist."_L1.arg(dirPath);
             return;
         }
 
         const auto listing = QDirListing(
             dirPath,
-            exts,
+            filters,
             QDirListing::IteratorFlag::Recursive |
                 QDirListing::IteratorFlag::FilesOnly
         );
@@ -178,9 +194,10 @@ void AssetMenu::refresh() {
         populate(
             dataItem,
             base + u"/Data",
-            { u"*.rxdata"_s, u".rvdata"_s, u".rvdata2"_s }
+            { u"*.rxdata"_s, u"*.rvdata"_s, u"*.rvdata2"_s }
         );
         populate(imagesItem, base + u"/Graphics", { u"*.png"_s, u"*.jpg"_s });
+        populate(fontsItem, base + u"/Fonts", { u"*.ttf"_s, u"*.otf"_s });
         populate(moviesItem, base + u"/Movies", { u"*.webm"_s, u"*.mp4"_s });
     }
 }

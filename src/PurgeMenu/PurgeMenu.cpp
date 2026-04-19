@@ -9,9 +9,7 @@ PurgeMenu::PurgeMenu(QWidget* const parent) :
     fileSelectMenu(new FileSelectMenu(parent)) {
     hide();
     setAttribute(Qt::WA_StyledBackground, true);
-    setStyleSheet("PurgeMenu { background-color: %1 }"_L1.arg(
-        qApp->palette().color(QPalette::Window).name()
-    ));
+    setStyleSheet(u"PurgeMenu { background-color: palette(window) }"_s);
 
     connect(ui->applyButton, &QPushButton::pressed, this, [this] -> void {
         emit accepted();

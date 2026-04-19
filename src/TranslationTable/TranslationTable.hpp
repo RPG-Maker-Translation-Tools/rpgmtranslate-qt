@@ -55,9 +55,8 @@ class TranslationTable final : public QTableView {
     explicit TranslationTable(QWidget* parent = nullptr);
 
     void init(
-        const u16* hint,
-        const bool* enabled,
-        const QString* dictionaryPath
+        const Settings* settings,
+        const ProjectSettings* projectSettings
     ) const;
 
     void initializeDictionary() const;
@@ -106,6 +105,8 @@ class TranslationTable final : public QTableView {
     TranslationTableModel* model_;
     TranslationTableHeader* header_;
     TranslationTableDelegate* delegate;
+
+    const ProjectSettings* projectSettings;
 
     i8 selectedColumn = -1;
 };

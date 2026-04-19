@@ -40,5 +40,10 @@ qsvReplace(QStringView input, QChar needle, QChar replacement) -> QString;
 
 [[nodiscard]] auto lastPathComponent(const QString& path) -> QStringView;
 
-auto toffistr(QByteArrayView utf8) -> FFIString;
-auto fromffistr(FFIString str) -> QUtf8SV;
+[[nodiscard]] inline auto strtoffi(const QByteArrayView utf8) -> FFIString {
+    return { .ptr = utf8.data(), .len = u32(utf8.size()) };
+}
+
+[[nodiscard]] inline auto ffitostr(const FFIString str) -> QUtf8SV {
+    return { str.ptr, isize(str.len) };
+}

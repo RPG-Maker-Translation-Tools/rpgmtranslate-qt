@@ -9,7 +9,6 @@
 #include <QPainter>
 #include <QStyle>
 #include <QStyleOptionProgressBar>
-#include <QStyledItemDelegate>
 
 void TabListDelegate::paint(
     QPainter* const painter,
@@ -26,7 +25,7 @@ void TabListDelegate::paint(
     const auto* const model = ras<const TabListModel*>(index.model());
 
     if (maxCachedNameWidth == 0 || maxCachedProgressWidth == 0) {
-        for (const u16 idx : range(0, model->rowCount())) {
+        for (const auto idx : range(0, model->rowCount())) {
             const TabListItem& tab = model->tab(idx);
 
             const u16 spaceAdvance = fontMetrics.horizontalAdvance(u' ');
@@ -35,8 +34,8 @@ void TabListDelegate::paint(
                 fontMetrics.horizontalAdvance(tab.name) + (spaceAdvance * 2) + 2
             );
 
-            const QString progressSample = QString::number(tab.translated) +
-                                           u'/' + QString::number(tab.total);
+            const QString progressSample = QL1SV(itos(tab.translated).data()) +
+                                           u'/' + QL1SV(itos(tab.total).data());
 
             maxCachedProgressWidth = max<u16>(
                 maxCachedProgressWidth,
@@ -62,7 +61,7 @@ void TabListDelegate::paint(
     }
 
     const QStyle* const style =
-        (opt.widget != nullptr) ? opt.widget->style() : QApplication::style();
+        (opt.widget != nullptr) ? opt.widget->style() : qApp->style();
 
     style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, opt.widget);
 
@@ -102,10 +101,10 @@ void TabListDelegate::paint(
         const u32 percent =
             u32((f32(translated) / f32(total)) * f32(PERCENT_MULTIPLIER));
 
-        progressText = QString::number(percent) + u'%';
+        progressText = QL1SV(itos(percent).data()) + u'%';
     } else {
         progressText =
-            QString::number(translated) + u'/' + QString::number(total);
+            QL1SV(itos(translated).data()) % u'/' % QL1SV(itos(total).data());
     }
 
     style->drawControl(QStyle::CE_ProgressBar, &progressBar, painter);

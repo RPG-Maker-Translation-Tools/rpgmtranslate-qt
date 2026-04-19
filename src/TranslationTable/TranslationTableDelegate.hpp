@@ -20,13 +20,11 @@ class TranslationTableDelegate final : public QStyledItemDelegate {
 #endif
 
     void init(
-        const u16* const hint,
-        const bool* const enabled,
-        const QString* const dictionaryPath
+        const ProjectSettings* const projectSettings,
+        const Settings* const settings
     ) {
-        lengthHint = hint;
-        this->whitespaceHighlightingEnabled = enabled;
-        this->dictionaryPath = dictionaryPath;
+        this->projectSettings = projectSettings;
+        this->settings = settings;
     }
 
     void setText(const QString& text);
@@ -66,9 +64,8 @@ class TranslationTableDelegate final : public QStyledItemDelegate {
     static constexpr u8 PAD_X = 4;
     static constexpr u8 PAD_Y = 4;
 
-    const u16* lengthHint;
-    const bool* whitespaceHighlightingEnabled;
-    const QString* dictionaryPath;
+    const Settings* settings;
+    const ProjectSettings* projectSettings;
 
     mutable QPlainTextEdit* activeInput = nullptr;
     mutable u32 activeRow;

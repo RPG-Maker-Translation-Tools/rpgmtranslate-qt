@@ -223,7 +223,7 @@ struct Selected {
     FileFlags flags = FileFlags(0);
 
     [[nodiscard]] auto empty() const -> bool {
-        for (const u16 idx : range<u16>(0, mapCount)) {
+        for (const auto idx : range(0, mapCount)) {
             if (mapIndices[idx]) {
                 return false;
             }
@@ -258,7 +258,7 @@ struct Selected {
 
         u16 flagFileCount = 0;
 
-        for (u16 flagIdx : range<u16>(0, (FileFlags_Scripts + 1) - 2)) {
+        for (const auto flagIdx : range(0, (FileFlags_Scripts + 1) - 2)) {
             const auto flag = FileFlags(1 << flagIdx);
 
             if ((flags & flag) != 0 && flag != FileFlags_Map) {
@@ -291,10 +291,10 @@ struct Selected {
                 filenames.push_back(name);
             }
 
-            ++dense;
+            dense++;
         }
 
-        for (u16 flagIdx : range<u16>(1, (FileFlags_Scripts + 1) - 2)) {
+        for (const auto flagIdx : range(1, (FileFlags_Scripts + 1) - 2)) {
             const auto flag = FileFlags(1 << flagIdx);
 
             if ((flags & flag) == 0) {

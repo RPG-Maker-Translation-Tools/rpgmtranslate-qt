@@ -4,7 +4,6 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QScrollBar>
 
 GitCommitModel::GitCommitModel(QObject* const parent) :
     QAbstractListModel(parent) {}

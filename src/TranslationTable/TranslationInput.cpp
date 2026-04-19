@@ -1,19 +1,36 @@
 #include "TranslationInput.hpp"
 
+#include "ProjectSettings.hpp"
+
 #include <QAbstractItemView>
-#include <QApplication>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QTextBlock>
 #include <QTextCursor>
 
-TranslationInput::TranslationInput(const u16 hint, QWidget* const parent) :
+static constexpr u16 TOOLTIP_DELAY_MS = 500;
+
+TranslationInput::TranslationInput(
+    const ProjectSettings* projectSettings,
+    QWidget* const parent
+) :
     QPlainTextEdit(parent),
-    lengthHint(hint) {
+    projectSettings(projectSettings) {
     setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    setMouseTracking(true);
+
+    tooltipDelayTimer.setSingleShot(true);
+    tooltipDelayTimer.setInterval(TOOLTIP_DELAY_MS);
+
+    connect(
+        &tooltipDelayTimer,
+        &QTimer::timeout,
+        this,
+        &TranslationInput::showPendingTooltip
+    );
 
     connect(
         this,
@@ -21,6 +38,7 @@ TranslationInput::TranslationInput(const u16 hint, QWidget* const parent) :
         this,
         &TranslationInput::onTextChanged
     );
+
     connect(
         document(),
         &QTextDocument::contentsChanged,
@@ -79,9 +97,9 @@ void TranslationInput::updateContentHeight() {
     }
 
     const auto fontMetrics = QFontMetrics(font());
-    const i32 lineHeight = fontMetrics.lineSpacing();
-    const i32 lineCount = document()->lineCount();
-    const i32 contentHeight = (lineCount * lineHeight) + 10;
+    const u16 lineHeight = fontMetrics.lineSpacing();
+    const u32 lineCount = document()->lineCount();
+    const u32 contentHeight = (lineCount * lineHeight) + 10;
 
     if (contentHeight != lastContentHeight) {
         lastContentHeight = contentHeight;
@@ -96,12 +114,13 @@ void TranslationInput::performAutoReplacements() {
     const i32 originalPosition = cursor.position();
     const QString text = toPlainText();
 
+    // TODO: Make those optional
     constexpr array<std::pair<QL1SV, QStringView>, 5> replacements = {
         std::pair{ "<<"_L1, u"«" },
         { ">>"_L1, u"»" },
         { "--"_L1, u"—" },
         { ",,"_L1, u"„" },
-        { "''"_L1, u"“" }
+        { "''"_L1, u"\u201C" }
     };
 
     for (const auto& pair : replacements) {
@@ -130,7 +149,7 @@ void TranslationInput::performAutoReplacements() {
 void TranslationInput::paintEvent(QPaintEvent* const event) {
     QPlainTextEdit::paintEvent(event);
 
-    if (lengthHint == 0) {
+    if (projectSettings->lineLengthHint == 0) {
         return;
     }
 
@@ -140,7 +159,81 @@ void TranslationInput::paintEvent(QPaintEvent* const event) {
     const i32 charWidth = fontMetrics().horizontalAdvance(u' ');
 
     const i32 xPos = contentOffset().x() + document()->documentMargin() +
-                     (charWidth * lengthHint);
+                     (charWidth * projectSettings->lineLengthHint);
 
     painter.drawLine(xPos, 0, xPos, viewport()->height());
-};
+}
+
+void TranslationInput::mouseMoveEvent(QMouseEvent* const event) {
+    const QTextCursor cursor = cursorForPosition(event->pos());
+    const QTextBlock block = cursor.block();
+    const QTextLayout* const layout = block.layout();
+
+    const u32 posInBlock = cursor.position() - block.position();
+    const u32 absPos = cursor.position();
+
+    if (hoveredRangeStart != -1 && absPos >= hoveredRangeStart &&
+        absPos < hoveredRangeEnd) {
+        QPlainTextEdit::mouseMoveEvent(event);
+        return;
+    }
+
+    tooltipDelayTimer.stop();
+    tooltip.hide();
+    hoveredRangeStart = -1;
+    hoveredRangeEnd = -1;
+    pendingTooltipText = QString();
+    pendingTooltipCaptured = QString();
+
+    for (const QTextLayout::FormatRange& range : layout->formats()) {
+        if (posInBlock >= range.start &&
+            posInBlock < range.start + range.length) {
+            const QString tip = range.format.toolTip();
+            const QString captured = range.format.property(69).toString();
+
+            if (!tip.isEmpty()) {
+                const i32 blockStart = block.position();
+                hoveredRangeStart = blockStart + range.start;
+                hoveredRangeEnd = blockStart + range.start + range.length;
+
+                auto rangeCursor = QTextCursor(document());
+                rangeCursor.setPosition(hoveredRangeStart);
+                const QRect charRect = cursorRect(rangeCursor);
+
+                const auto localPos = QPoint(
+                    charRect.left(),
+                    charRect.top() - (fontMetrics().lineSpacing() * 2)
+                );
+                pendingTooltipPos = viewport()->mapToGlobal(localPos);
+                pendingTooltipText = tip;
+                pendingTooltipCaptured = captured;
+
+                tooltipDelayTimer.start();
+                break;
+            }
+        }
+    }
+
+    QPlainTextEdit::mouseMoveEvent(event);
+}
+
+void TranslationInput::leaveEvent(QEvent* const event) {
+    tooltipDelayTimer.stop();
+    tooltip.hide();
+    hoveredRangeStart = -1;
+    hoveredRangeEnd = -1;
+    pendingTooltipText.clear();
+
+    QPlainTextEdit::leaveEvent(event);
+}
+
+void TranslationInput::showPendingTooltip() {
+    if (!pendingTooltipText.isEmpty()) {
+        tooltip.showAt(
+            pendingTooltipPos,
+            pendingTooltipText,
+            pendingTooltipCaptured,
+            projectSettings
+        );
+    }
+}

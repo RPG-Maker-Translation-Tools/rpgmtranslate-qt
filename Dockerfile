@@ -1,6 +1,4 @@
 ARG REPO_URL=https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt
-ARG RAPIDHASH_URL=https://github.com/Nicoshev/rapidhash.git
-ARG MAGICENUM_URL=https://github.com/Neargye/magic_enum.git
 
 # Build info:
 # We set locale to UTF-8 to avoid any problems related to the locale.
@@ -14,22 +12,18 @@ ARG MAGICENUM_URL=https://github.com/Neargye/magic_enum.git
 # Debian
 FROM debian:trixie AS debian-build
 
-ARG DEBIAN_FRONTEND=NONINTERACTIVE
+ARG DEBIAN_FRONTEND=noninteractive
 
 ARG REPO_URL
-ARG RAPIDHASH_URL
-ARG MAGICENUM_URL
 
 RUN apt update && apt install -y \
-    git cmake make g++ clang \
+    git cmake make g++ clang pkg-config ca-certificates locales curl \
+    libssl-dev \
     qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-wayland-dev \
     qt6-l10n-tools qt6-svg-dev \
-    libarchive-dev \
-    libgit2-dev libnuspell-dev \
-    pkg-config libssl-dev \
-    locales curl \
-    ca-certificates && \
-    sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+    libarchive-dev libgit2-dev libnuspell-dev \
+    libavutil-dev libavcodec-dev libavformat-dev libswresample-dev libswscale-dev \
+    && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
@@ -41,11 +35,6 @@ ENV PATH="/root/.cargo/bin:${PATH}" \
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN cargo binstall -y cbindgen
-
-RUN git clone --depth 1 ${RAPIDHASH_URL} /tmp/rapidhash && \
-    cp /tmp/rapidhash/rapidhash.h /usr/local/include/ && \
-    git clone --depth 1 ${MAGICENUM_URL} /tmp/magic_enum && \
-    cp -r /tmp/magic_enum/include/magic_enum /usr/local/include/
 
 WORKDIR /app
 RUN git clone --depth 1 ${REPO_URL} .
@@ -58,16 +47,12 @@ RUN cmake -B build -S . && cmake --build build -j
 FROM opensuse/tumbleweed AS opensuse-build
 
 ARG REPO_URL
-ARG RAPIDHASH_URL
-ARG MAGICENUM_URL
 
 RUN zypper refresh && zypper install -y \
-    git cmake make gcc-c++ clang \
+    git cmake make gcc-c++ clang curl glibc-locale pkg-config \
+    libopenssl-devel \
     qt6-base-devel qt6-linguist-devel qt6-tools-devel qt6-svg-devel qt6-wayland-devel \
-    libarchive-devel \
-    libgit2-devel nuspell \
-    pkg-config libopenssl-devel \
-    glibc-locale curl
+    libarchive-devel libgit2-devel nuspell ffmpeg-devel
 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
@@ -79,11 +64,6 @@ ENV PATH="/root/.cargo/bin:${PATH}" \
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN cargo binstall -y cbindgen
-
-RUN git clone --depth 1 https://github.com/Nicoshev/rapidhash.git /tmp/rapidhash && \
-    cp /tmp/rapidhash/rapidhash.h /usr/local/include/ && \
-    git clone --depth 1 https://github.com/Neargye/magic_enum.git /tmp/magic_enum && \
-    cp -r /tmp/magic_enum/include/magic_enum /usr/local/include/
 
 WORKDIR /app
 RUN git clone --depth 1 ${REPO_URL} .
@@ -96,16 +76,12 @@ RUN cmake -B build -S . && cmake --build build -j
 FROM archlinux:latest AS arch-build
 
 ARG REPO_URL
-ARG RAPIDHASH_URL
-ARG MAGICENUM_URL
 
 RUN pacman -Syu --noconfirm --needed \
-    git cmake make gcc clang \
+    git cmake make gcc clang pkgconf openssl glibc curl \
     qt6-base qt6-tools qt6-svg qt6-wayland \
-    libarchive \
-    libgit2 nuspell glibc curl \
-    pkgconf openssl && \
-    sed -i '/en_US.UTF-8/s/^#//g' /etc/locale.gen && locale-gen
+    libarchive libgit2 nuspell ffmpeg \
+    && sed -i '/en_US.UTF-8/s/^#//g' /etc/locale.gen && locale-gen
 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
@@ -117,11 +93,6 @@ ENV PATH="/root/.cargo/bin:${PATH}" \
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN cargo binstall -y cbindgen
-
-RUN git clone --depth 1 ${RAPIDHASH_URL} /tmp/rapidhash && \
-    cp /tmp/rapidhash/rapidhash.h /usr/local/include/ && \
-    git clone --depth 1 ${MAGICENUM_URL} /tmp/magic_enum && \
-    cp -r /tmp/magic_enum/include/magic_enum /usr/local/include/
 
 WORKDIR /app
 RUN git clone --depth 1 ${REPO_URL} .
@@ -134,17 +105,12 @@ RUN cmake -B build -S . && cmake --build build -j
 FROM alpine:latest AS alpine-build
 
 ARG REPO_URL
-ARG RAPIDHASH_URL
-ARG MAGICENUM_URL
 
 RUN apk update && apk add \
-    git cmake make g++ clang \
+    git cmake make g++ clang bash musl-locales musl-locales-lang curl pkgconf \
+    libunwind-dev openssl-dev \
     qt6-qtbase-dev qt6-qttools-dev qt6-qtsvg-dev qt6-qtwayland-dev \
-    libarchive-dev \
-    libgit2-dev nuspell-dev \
-    pkgconf openssl-dev \
-    libunwind-dev \
-    bash musl-locales musl-locales-lang curl
+    libarchive-dev libgit2-dev nuspell-dev ffmpeg-dev
 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
@@ -156,12 +122,6 @@ ENV PATH="/root/.cargo/bin:${PATH}" \
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN cargo binstall -y cbindgen
-
-RUN mkdir -p /usr/local/include
-RUN git clone --depth 1 ${RAPIDHASH_URL} /tmp/rapidhash && \
-    cp /tmp/rapidhash/rapidhash.h /usr/local/include/rapidhash.h && \
-    git clone --depth 1 ${MAGICENUM_URL} /tmp/magic_enum && \
-    cp -r /tmp/magic_enum/include/magic_enum /usr/local/include/
 
 WORKDIR /app
 RUN git clone --depth 1 ${REPO_URL} .

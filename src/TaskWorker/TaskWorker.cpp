@@ -1,5 +1,6 @@
 #include "TaskWorker.hpp"
 
+#include "Aliases.hpp"
 #include "Enums.hpp"
 #include "Utils.hpp"
 #include "rpgmtranslate.h"
@@ -36,7 +37,7 @@ auto fileLines(
                     .split(u'\n', Qt::SkipEmptyParts);
     } else {
         const QString path =
-            projectSettings->translationPath() + u'/' + filename + u".txt";
+            projectSettings->translationPath() % u'/' % filename % u".txt";
 
         auto file = QFile(path);
 
@@ -73,12 +74,13 @@ auto modifyFile(
                     .split(u'\n', Qt::SkipEmptyParts);
     } else {
         const QString path =
-            projectSettings->translationPath() + u'/' + filename + u".txt";
+            projectSettings->translationPath() % u'/' % filename % u".txt";
 
         file = new QFile(path);
 
         if (!file->open(QFile::ReadWrite)) {
-            qWarning() << "Failed to open file %1: %2"_L1.arg(path).arg(
+            qWarning() << "Failed to open file %1: %2"_L1.arg(
+                path,
                 file->errorString()
             );
             delete file;
@@ -116,12 +118,7 @@ auto modifyFile(
         QString currentLine;
 
         if (!remainder.isEmpty()) {
-            const u32 totalSize =
-                remainder.join(u' ').size() + 1 + lineView.size();
-            currentLine.reserve(totalSize);
-            currentLine = remainder.join(u' ');
-            currentLine += u' ';
-            currentLine += lineView;
+            currentLine = remainder.join(u' ') % u' ' % lineView;
             remainder.clear();
         } else {
             currentLine = lineView.toString();
@@ -184,7 +181,7 @@ void TaskWorker::read(
     const Selected selected,
     const BaseFlags flags,
     const bool mapEvents,
-    const ByteBuffer hashes,
+    const HashMap<FilenameArray, u64>& hashes,
     const QString& title
 ) {
     ByteBuffer outHashes;
@@ -193,21 +190,39 @@ void TaskWorker::read(
     const QByteArray sourcePathUtf8 = sourcePath.toUtf8();
     const QByteArray translationPathUtf8 = translationPath.toUtf8();
 
-    const FFIString error = rpgm_read(
-        toffistr(sourcePathUtf8),
-        toffistr(translationPathUtf8),
+    QByteArray hashesArray;
+    const u32 hashesArraySize =
+        (hashes.size() * sizeof(FilenameArray)) + (hashes.size() * sizeof(u64));
+    hashesArray.reserve(hashesArraySize);
+
+    for (const auto [filename, hash] : hashes) {
+        const cstr hashBytes = ras<cstr>(&hash);
+
+        hashesArray.append(filename);
+        hashesArray.append(hashBytes, sizeof(u64));
+    }
+
+    const ByteBuffer hashesBuf =
+        ByteBuffer{ .ptr = ras<const u8*>(hashesArray.data()),
+                    .len = u32(hashesArray.size()),
+                    .cap = u32(hashes.size()) };
+
+    const bool success = rpgm_read(
+        strtoffi(sourcePathUtf8),
+        strtoffi(translationPathUtf8),
         readMode,
         engineType,
         duplicateMode,
         selected,
         flags,
         mapEvents,
-        hashes,
-        toffistr(titleUtf8),
+        hashesBuf,
+        strtoffi(titleUtf8),
         &outHashes
     );
 
-    emit readFinished({ error, outHashes });
+    success ? emit readFinished(outHashes)
+            : emit readFinished(Err(rpgm_error()));
 }
 
 void TaskWorker::extractArchive(
@@ -217,34 +232,37 @@ void TaskWorker::extractArchive(
     const QByteArray archivePathUtf8 = archivePath.toUtf8();
     const QByteArray folderUtf8 = folder.toUtf8();
 
-    const FFIString error =
-        rpgm_extract_archive(toffistr(archivePathUtf8), toffistr(folderUtf8));
+    const bool success =
+        rpgm_extract_archive(strtoffi(archivePathUtf8), strtoffi(folderUtf8));
 
-    emit extractFinished(error);
+    success ? emit extractFinished({})
+            : emit extractFinished(Err(rpgm_error()));
 }
 
 void TaskWorker::write(const QString& gameTitle, const Selected selected) {
     f32 elapsed;
 
-    const QByteArray sourcePathUtf8 = projectSettings->sourcePath().toUtf8();
+    const QByteArray sourcePathUtf8 =
+        projectSettings->actualSourcePath().toUtf8();
     const QByteArray translationPathUtf8 =
         projectSettings->translationPath().toUtf8();
     const QByteArray outputPathUtf8 = projectSettings->outputPath().toUtf8();
     const QByteArray gameTitleUtf8 = gameTitle.toUtf8();
 
-    const FFIString error = rpgm_write(
-        toffistr(sourcePathUtf8),
-        toffistr(translationPathUtf8),
-        toffistr(outputPathUtf8),
+    const bool success = rpgm_write(
+        strtoffi(sourcePathUtf8),
+        strtoffi(translationPathUtf8),
+        strtoffi(outputPathUtf8),
         projectSettings->engineType,
         projectSettings->duplicateMode,
-        toffistr(gameTitleUtf8),
+        strtoffi(gameTitleUtf8),
         projectSettings->flags,
         selected,
         &elapsed
     );
 
-    emit writeFinished({ error, elapsed });
+    success ? emit writeFinished(elapsed)
+            : emit writeFinished(Err(rpgm_error()));
 }
 
 void TaskWorker::search(
@@ -280,7 +298,7 @@ void TaskWorker::search(
     }
 
     if ((searchFlags & SearchFlags::WholeWord) != 0) {
-        pattern = u"\\b"_s + pattern + u"\\b";
+        pattern = u"\\b"_s % pattern % u"\\b";
     }
 
     const auto regexp = QRegularExpression(pattern, options);
@@ -336,7 +354,7 @@ void TaskWorker::search(
                     break;
                 }
             } else {
-                for (const i32 idx : range(0, match.lastCapturedIndex() + 1)) {
+                for (const auto idx : range(0, match.lastCapturedIndex() + 1)) {
                     cellMatches.matches[matchesPos++] = TextMatch(
                         match.capturedStart(idx),
                         match.capturedLength(idx),
@@ -464,8 +482,7 @@ void TaskWorker::performBatchAction(
     const Selected selected,
     const BatchAction action,
     const u8 columnIndex,
-    const std::variant<BatchMenu::TrimFlags, std::tuple<u8, QString>, u8>&
-        variant,
+    const std::variant<BatchMenu::TrimFlags, tuple<u8, QString>, u8>& variant,
     const Glossary& glossary
 ) {
     u32 count = 0;
@@ -497,26 +514,24 @@ void TaskWorker::performBatchAction(
 
         emit progressChanged(Task::BatchTranslate, 0, 0);
 
-        const FFIString error = rpgm_translate(
-            toffistr(endpointSettingsJSON),
-            toffistr(projectContext),
-            toffistr(localContext),
-            toffistr(translationPath),
+        const bool success = rpgm_translate(
+            strtoffi(endpointSettingsJSON),
+            strtoffi(projectContext),
+            strtoffi(localContext),
+            strtoffi(translationPath),
             projectSettings->sourceLang,
             projectSettings->translationLang,
             { .ptr = ras<const u8*>(filenames.data()),
               .len = u32(filenames.size()) },
-            toffistr(glossaryJSON),
+            strtoffi(glossaryJSON),
             &translatedFiles,
             &translatedFilesFFI
         );
 
-        if (error.ptr != nullptr) {
-            emit translateFinished(Err(error));
+        if (!success) {
+            emit translateFinished(Err(rpgm_error()));
         } else {
-            emit translateFinished(
-                std::tuple(translatedFiles, translatedFilesFFI)
-            );
+            emit translateFinished(tuple(translatedFiles, translatedFilesFFI));
         }
         return;
     }
@@ -668,8 +683,7 @@ void TaskWorker::replace(
                     total
                 );
 
-                for (const u32 idx :
-                     range<u32>(rowStart, cellMatch.rowIndex())) {
+                for (const auto idx : range(rowStart, cellMatch.rowIndex())) {
                     newLines.push_back(lines[idx]);
                 }
 
@@ -710,35 +724,35 @@ void TaskWorker::replace(
                         QString result;
                         result.reserve(replaceText.size());
 
-                        for (i32 ci = 0; ci < replaceText.size(); ++ci) {
-                            if (replaceText[ci] != u'\\' ||
-                                ci + 1 >= replaceText.size()) {
-                                result.append(replaceText[ci]);
+                        for (auto cidx : range(0, replaceText.size())) {
+                            if (replaceText[cidx] != u'\\' ||
+                                cidx + 1 >= replaceText.size()) {
+                                result.append(replaceText[cidx]);
                                 continue;
                             }
 
-                            const QChar next = replaceText[ci + 1];
+                            const QChar next = replaceText[cidx + 1];
 
                             if (next == u'`') {
                                 result.append(beforeFull);
-                                ++ci;
+                                ++cidx;
                             } else if (next == u'\'') {
                                 result.append(afterFull);
-                                ++ci;
+                                ++cidx;
                             } else if (next == u'+') {
                                 result.append(lastCapture);
-                                ++ci;
+                                ++cidx;
                             } else if (next == u'\\') {
                                 result.append(u'\\');
-                                ++ci;
+                                ++cidx;
                             } else if (next.isDigit() && next != u'0') {
                                 bool handled = false;
 
-                                if (ci + 2 < replaceText.size() &&
-                                    replaceText[ci + 2].isDigit()) {
+                                if (cidx + 2 < replaceText.size() &&
+                                    replaceText[cidx + 2].isDigit()) {
                                     const i32 twoDigit =
                                         (next.digitValue() * 10) +
-                                        replaceText[ci + 2].digitValue();
+                                        replaceText[cidx + 2].digitValue();
                                     const u32 idx =
                                         capturedBegin + u32(twoDigit - 1);
                                     if (idx < capturedEnd &&
@@ -747,7 +761,7 @@ void TaskWorker::replace(
                                             matchSpan[idx].start(),
                                             matchSpan[idx].len()
                                         ));
-                                        ci += 2;
+                                        cidx += 2;
                                         handled = true;
                                     }
                                 }
@@ -762,7 +776,7 @@ void TaskWorker::replace(
                                             matchSpan[idx].start(),
                                             matchSpan[idx].len()
                                         ));
-                                        ci += 1;
+                                        cidx += 1;
                                         handled = true;
                                     }
                                 }
@@ -811,7 +825,7 @@ void TaskWorker::replace(
                 rowStart = cellMatch.rowIndex() + 1;
             }
 
-            for (const u32 idx : range<u32>(rowStart, lines.size())) {
+            for (const auto idx : range(rowStart, lines.size())) {
                 newLines.push_back(lines[idx]);
             }
 
@@ -867,22 +881,20 @@ void TaskWorker::translateSingle(
         const QByteArray endpointUtf8 = QJsonDocument(endpointSettings.toJSON())
                                             .toJson(QJsonDocument::Compact);
 
-        const FFIString error = rpgm_translate_single(
-            toffistr(endpointUtf8),
-            toffistr(projectContext),
-            toffistr(localContextUtf8),
+        const bool success = rpgm_translate_single(
+            strtoffi(endpointUtf8),
+            strtoffi(projectContext),
+            strtoffi(localContextUtf8),
             projectSettings->sourceLang,
             projectSettings->translationLang,
-            toffistr(textUtf8),
-            toffistr(glossaryJSON),
+            strtoffi(textUtf8),
+            strtoffi(glossaryJSON),
             &outString
         );
 
-        if (error.ptr != nullptr) {
-            translations.push_back(
-                QString::fromUtf8(error.ptr, isize(error.len))
-            );
-            rpgm_string_free(error);
+        if (!success) {
+            const QUtf8SV error = ffitostr(rpgm_error());
+            translations.push_back(error.toString());
             return;
         }
 
@@ -910,7 +922,7 @@ void TaskWorker::replaceSingle(
     const u8 columnIndex,
     const span<const TextMatch> matches
 ) {
-    std::tuple<QString, TextMatch*> replacedData;
+    tuple<QString, TextMatch*> replacedData;
 
     auto closure =
         [&replaceText,
@@ -976,20 +988,21 @@ void TaskWorker::replaceSingle(
 }
 
 void TaskWorker::purge(const QString& gameTitle, const Selected selected) {
-    const QByteArray sourcePathUtf8 = projectSettings->sourcePath().toUtf8();
+    const QByteArray sourcePathUtf8 =
+        projectSettings->actualSourcePath().toUtf8();
     const QByteArray translationPathUtf8 =
         projectSettings->translationPath().toUtf8();
     const QByteArray gameTitleUtf8 = gameTitle.toUtf8();
 
-    const FFIString error = rpgm_purge(
-        toffistr(sourcePathUtf8),
-        toffistr(translationPathUtf8),
+    const bool success = rpgm_purge(
+        strtoffi(sourcePathUtf8),
+        strtoffi(translationPathUtf8),
         projectSettings->engineType,
         projectSettings->duplicateMode,
-        toffistr(gameTitleUtf8),
+        strtoffi(gameTitleUtf8),
         projectSettings->flags,
         selected
     );
 
-    emit purgeFinished(error);
+    success ? emit purgeFinished({}) : emit purgeFinished(Err(rpgm_error()));
 }

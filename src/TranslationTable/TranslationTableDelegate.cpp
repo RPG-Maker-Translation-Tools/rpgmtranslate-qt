@@ -1,15 +1,13 @@
 #include "TranslationTableDelegate.hpp"
 
 #include "Aliases.hpp"
+#include "Settings.hpp"
 #include "TranslationHighlighter.hpp"
 #include "TranslationInput.hpp"
 #include "TranslationTable.hpp"
 #include "TranslationTableModel.hpp"
 
 #include <QApplication>
-#include <QDir>
-#include <QDirIterator>
-#include <QFileInfo>
 #include <QModelIndex>
 #include <QPainter>
 #include <QSyntaxHighlighter>
@@ -29,10 +27,10 @@ auto TranslationTableDelegate::createEditor(
     const QStyleOptionViewItem& /* option */,
     const QModelIndex& index
 ) const -> QWidget* {
-    auto* const editor = new TranslationInput(*lengthHint, parent);
+    auto* const editor = new TranslationInput(projectSettings, parent);
 
     new TranslationHighlighter(
-        *whitespaceHighlightingEnabled,
+        &settings->translation,
 #ifdef ENABLE_NUSPELL
         &dictionary,
         &dictionaryReady,
@@ -278,7 +276,7 @@ auto TranslationTableDelegate::eventFilter(
         QModelIndex target;
 
         if (key == Qt::Key_Up) {
-            for (i32 row = 0; row < rowCount; row++) {
+            for (const auto row : range(0, rowCount)) {
                 const QModelIndex candidate =
                     model->index(row, col, current.parent());
 
@@ -288,7 +286,7 @@ auto TranslationTableDelegate::eventFilter(
                 }
             }
         } else {
-            for (i32 row = rowCount - 1; row >= 0; row--) {
+            for (const auto row : range<-1>(rowCount - 1, -1)) {
                 const QModelIndex candidate =
                     model->index(row, col, current.parent());
 
@@ -313,10 +311,12 @@ auto TranslationTableDelegate::eventFilter(
 
 #ifdef ENABLE_NUSPELL
 auto TranslationTableDelegate::initializeDictionary() -> result<void, QString> {
-    const QString path =
-        qApp->applicationDirPath() + u"/dictionaries" + *dictionaryPath;
+    const QString path = qApp->property("data-location").toString() +
+                         u"/dictionaries" +
+                         projectSettings->spellcheckDictionary;
 
-    if (dictionaryPath->isEmpty() || !QFile::exists(path)) {
+    if (projectSettings->spellcheckDictionary.isEmpty() ||
+        !QFile::exists(path)) {
         dictionary = nuspell::Dictionary();
         dictionaryReady = false;
     } else {

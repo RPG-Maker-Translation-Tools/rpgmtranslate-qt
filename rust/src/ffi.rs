@@ -1,17 +1,21 @@
 #![allow(unsafe_op_in_unsafe_fn)]
+#![allow(static_mut_refs)]
 use crate::api::*;
+use gxhash::{HashMap, HashMapExt, gxhash64};
 use language_tokenizer::{Algorithm, MatchResult};
 use log::{Log, Metadata, Record};
+use marshal_rs::Get;
 use rvpacker_txt_rs_lib::{
-    BaseFlags, DuplicateMode, EngineType, FileFlags, ReadMode,
+    BaseFlags, DuplicateMode, EngineType, FileFlags, RPGMFileType,
+    core::parse_rpgm_file,
 };
 use std::{
-    collections::HashMap,
-    ffi::c_char,
+    ffi::{CStr, c_char},
     fs::{self, read_to_string},
-    mem::{self},
+    io::{Cursor, Read},
+    mem,
     path::Path,
-    ptr::{self},
+    ptr, slice,
     sync::{LazyLock, OnceLock},
 };
 use tokio::runtime::{Builder, Runtime};
@@ -93,12 +97,23 @@ impl FFIString {
     }
 }
 
+#[repr(u8)]
+pub enum ReadMode {
+    Default,
+    DefaultForce,
+    AppendDefault,
+    AppendForce,
+}
+
 #[inline]
 unsafe fn ffi_to_str<'a>(string: FFIString) -> &'a str {
-    let slice = std::slice::from_raw_parts(
-        string.ptr.cast::<u8>(),
-        string.len as usize,
-    );
+    if string.len == 0 {
+        return "";
+    }
+
+    let slice =
+        slice::from_raw_parts(string.ptr.cast::<u8>(), string.len as usize);
+
     str::from_utf8_unchecked(slice)
 }
 
@@ -169,6 +184,13 @@ pub unsafe extern "C" fn rpgm_free_translated_files(
     );
 }
 
+static mut ERROR: String = String::new();
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn rpgm_error() -> FFIString {
+    str_to_ffi(&ERROR)
+}
+
 #[unsafe(no_mangle)]
 #[must_use]
 pub unsafe extern "C" fn rpgm_read(
@@ -183,20 +205,48 @@ pub unsafe extern "C" fn rpgm_read(
     hashes: ByteBuffer,
     ini_title: FFIString,
     out_hashes: *mut ByteBuffer,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<_, Error> {
         let source_path = ffi_to_str(source_path);
         let translation_path = ffi_to_str(translation_path);
         let ini_title = ffi_to_str(ini_title);
-
-        let hashes = if hashes.ptr.is_null() {
-            &[]
-        } else {
-            std::slice::from_raw_parts(
-                hashes.ptr.cast::<u128>(),
-                hashes.len as usize,
-            )
+        let read_mode = match read_mode {
+            ReadMode::Default => {
+                rvpacker_txt_rs_lib::ReadMode::Default { force: false }
+            }
+            ReadMode::DefaultForce => {
+                rvpacker_txt_rs_lib::ReadMode::Default { force: true }
+            }
+            ReadMode::AppendDefault => {
+                rvpacker_txt_rs_lib::ReadMode::Append { force: false }
+            }
+            ReadMode::AppendForce => {
+                rvpacker_txt_rs_lib::ReadMode::Append { force: true }
+            }
         };
+
+        let cap = hashes.cap;
+        let mut hashes_map: HashMap<String, u64> =
+            HashMap::with_capacity(cap as usize);
+
+        let hashes = slice::from_raw_parts(hashes.ptr, hashes.len as usize);
+        let mut cursor = Cursor::new(hashes);
+
+        let mut buf = [0u8; 16];
+        let mut hash_buf = [0u8; 8];
+
+        while let Ok(r) = cursor.read(&mut buf)
+            && r != 0
+        {
+            let _ = cursor.read_exact(&mut hash_buf);
+            hashes_map.insert(
+                CStr::from_bytes_until_nul(&buf)
+                    .unwrap_unchecked()
+                    .to_string_lossy()
+                    .into_owned(),
+                u64::from_le_bytes(hash_buf),
+            );
+        }
 
         let out = read(
             Path::new(&source_path),
@@ -207,7 +257,7 @@ pub unsafe extern "C" fn rpgm_read(
             selected.file_flags,
             flags,
             map_events,
-            hashes.to_vec(),
+            hashes_map,
             ini_title,
         )?;
 
@@ -215,22 +265,37 @@ pub unsafe extern "C" fn rpgm_read(
     })();
 
     match result {
-        Ok(mut serialized) => {
+        Ok(hashes) => {
+            dbg!(&hashes);
+
+            let mut buf = Vec::with_capacity(
+                4 + (hashes.len() * 16) + (hashes.len() * size_of::<u64>()),
+            );
+
+            buf.extend((hashes.len() as u32).to_le_bytes());
+
+            for (key, value) in hashes {
+                buf.extend(key.as_bytes());
+
+                for _ in 0..16 - key.len() {
+                    buf.push(0);
+                }
+
+                buf.extend(value.to_le_bytes());
+            }
+
             *out_hashes = ByteBuffer {
-                ptr: serialized.as_mut_ptr().cast::<u8>(),
-                len: serialized.len() as u32,
-                cap: serialized.capacity() as u32,
+                ptr: buf.as_ptr(),
+                len: buf.len() as u32,
+                cap: buf.capacity() as u32,
             };
 
-            mem::forget(serialized);
-
-            FFIString::null()
+            mem::forget(buf);
+            true
         }
         Err(err) => {
-            let msg = err.to_string();
-            let ffi = str_to_ffi(&msg);
-            mem::forget(msg);
-            ffi
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -247,7 +312,7 @@ pub unsafe extern "C" fn rpgm_write(
     flags: BaseFlags,
     selected: Selected,
     elapsed_out: *mut f32,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<f32, Error> {
         let source_path = ffi_to_str(source_path);
         let translation_path = ffi_to_str(translation_path);
@@ -271,13 +336,11 @@ pub unsafe extern "C" fn rpgm_write(
     match result {
         Ok(elapsed) => {
             *elapsed_out = elapsed;
-            FFIString::null()
+            true
         }
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -292,7 +355,7 @@ pub unsafe extern "C" fn rpgm_purge(
     game_title: FFIString,
     flags: BaseFlags,
     selected: Selected,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<(), Error> {
         let source_path = ffi_to_str(source_path);
         let translation_path = ffi_to_str(translation_path);
@@ -312,12 +375,10 @@ pub unsafe extern "C" fn rpgm_purge(
     })();
 
     match result {
-        Ok(_) => FFIString::null(),
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Ok(_) => true,
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -327,7 +388,7 @@ pub unsafe extern "C" fn rpgm_purge(
 pub unsafe extern "C" fn rpgm_extract_archive(
     input_path: FFIString,
     output_path: FFIString,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<(), Error> {
         let input_path = ffi_to_str(input_path);
         let output_path = ffi_to_str(output_path);
@@ -336,12 +397,10 @@ pub unsafe extern "C" fn rpgm_extract_archive(
     })();
 
     match result {
-        Ok(()) => FFIString::null(),
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Ok(()) => true,
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -353,7 +412,7 @@ pub unsafe extern "C" fn rpgm_get_models(
     api_key: FFIString,
     base_url: FFIString,
     out: *mut ByteBuffer,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<_, Error> {
         let api_key = ffi_to_str(api_key);
         let base_url = ffi_to_str(base_url);
@@ -380,13 +439,11 @@ pub unsafe extern "C" fn rpgm_get_models(
             };
 
             mem::forget(buffer);
-            FFIString::null()
+            true
         }
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -402,7 +459,7 @@ pub unsafe extern "C" fn rpgm_translate_single(
     text: FFIString,
     glossary: FFIString,
     out_string: *mut FFIString,
-) -> FFIString {
+) -> bool {
     let project_context = ffi_to_str(project_context);
     let local_context = ffi_to_str(local_context);
     let text = ffi_to_str(text);
@@ -434,13 +491,11 @@ pub unsafe extern "C" fn rpgm_translate_single(
             let str = str_to_ffi(&results);
             mem::forget(results);
             *out_string = str;
-            FFIString::null()
+            true
         }
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -524,7 +579,7 @@ pub unsafe extern "C" fn rpgm_translate<'a>(
     glossary: FFIString,
     out_translated: *mut ByteBuffer,
     out_translated_ffi: *mut ByteBuffer,
-) -> FFIString {
+) -> bool {
     let project_context = ffi_to_str(project_context);
     let local_context = ffi_to_str(local_context);
     let glossary = ffi_to_str(glossary);
@@ -538,8 +593,8 @@ pub unsafe extern "C" fn rpgm_translate<'a>(
     let mut sections: Vec<&str> = Vec::new();
 
     let result = (|| -> Result<_, Error> {
-        let filenames = std::slice::from_raw_parts::<[u8; 13]>(
-            filenames.ptr.cast::<[u8; 13]>(),
+        let filenames = slice::from_raw_parts::<[u8; 16]>(
+            filenames.ptr.cast::<[u8; 16]>(),
             filenames.len as usize,
         );
 
@@ -722,13 +777,11 @@ pub unsafe extern "C" fn rpgm_translate<'a>(
             mem::forget(translated_files);
             mem::forget(translated_files_ffi);
 
-            FFIString::null()
+            true
         }
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -745,7 +798,7 @@ pub unsafe extern "C" fn rpgm_find_all_matches(
     source_algorithm: Algorithm,
     tr_algorithm: Algorithm,
     out: *mut ByteBuffer,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<_, Error> {
         let source_haystack = ffi_to_str(source_haystack);
         let source_needle = ffi_to_str(source_needle);
@@ -822,13 +875,11 @@ pub unsafe extern "C" fn rpgm_find_all_matches(
 
             mem::forget(serialized);
 
-            FFIString::null()
+            true
         }
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -890,7 +941,7 @@ pub unsafe extern "C" fn rpgm_count_words(
     text: FFIString,
     algorithm: Algorithm,
     out: *mut u32,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<_, Error> {
         let count = count_words(&ffi_to_str(text), algorithm)?;
         Ok(count)
@@ -899,13 +950,11 @@ pub unsafe extern "C" fn rpgm_count_words(
     match result {
         Ok(count) => {
             *out = count;
-            FFIString::null()
+            true
         }
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -918,10 +967,10 @@ pub unsafe extern "C" fn rpgm_language_tool_lint(
     base_url: FFIString,
     api_key: FFIString,
     algorithm: Algorithm,
-) -> FFIString {
+) -> bool {
     // TODO
 
-    FFIString::null()
+    true
 }
 
 #[unsafe(no_mangle)]
@@ -929,7 +978,7 @@ pub unsafe extern "C" fn rpgm_language_tool_lint(
 pub unsafe extern "C" fn rpgm_decrypt_asset(
     path: FFIString,
     out: *mut ByteBuffer,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<_, Error> {
         let decrypted = decrypt_asset(Path::new(&ffi_to_str(path)))?;
         Ok(decrypted)
@@ -945,13 +994,11 @@ pub unsafe extern "C" fn rpgm_decrypt_asset(
 
             mem::forget(decrypted);
 
-            FFIString::null()
+            true
         }
-        Err(error) => {
-            let err = error.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+        Err(err) => {
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -985,7 +1032,7 @@ pub unsafe extern "C" fn rpgm_generate_json(
     content: FFIString,
     filename: FFIString,
     json_out: *mut FFIString,
-) -> FFIString {
+) -> bool {
     let result = (|| -> Result<_, Error> {
         let json = generate_json(
             ffi_to_str(content).as_bytes(),
@@ -999,13 +1046,11 @@ pub unsafe extern "C" fn rpgm_generate_json(
             *json_out = str_to_ffi(&json);
             mem::forget(json);
 
-            FFIString::null()
+            true
         }
         Err(err) => {
-            let err = err.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+            ERROR = err.to_string();
+            false
         }
     }
 }
@@ -1024,7 +1069,7 @@ pub unsafe extern "C" fn rpgm_beautify_json(
 pub unsafe extern "C" fn rpgm_get_ini_title(
     project_path: FFIString,
     out: *mut ByteBuffer,
-) -> FFIString {
+) -> bool {
     let project_path = ffi_to_str(project_path);
 
     let result = (|| -> Result<_, Error> {
@@ -1042,13 +1087,96 @@ pub unsafe extern "C" fn rpgm_get_ini_title(
 
             mem::forget(title);
 
-            FFIString::null()
+            true
         }
         Err(err) => {
-            let err = err.to_string();
-            let ffi = str_to_ffi(&err);
-            mem::forget(err);
-            ffi
+            ERROR = err.to_string();
+            false
         }
     }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn rpgm_hash_file(
+    content: ByteBuffer,
+    duplicate_mode: DuplicateMode,
+    out: *mut u64,
+) {
+    let content = slice::from_raw_parts(content.ptr, content.len as usize);
+    *out = gxhash64(content, duplicate_mode as i64);
+}
+
+// TODO
+// Required data for this function most of the times is:
+// name, class name, nickname, icon, actor face
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn rpgm_get_entity_data(
+    path: FFIString,
+    engine_type: EngineType,
+    file_type: RPGMFileType,
+    index: u32,
+    keys: *const FFIString,
+    keys_n: u32,
+    out: *mut FFIString,
+) -> bool {
+    let path = ffi_to_str(path);
+
+    let result = (|| -> Result<_, Error> {
+        let content = fs::read(path)
+            .map_err(|err| Error::Io(Path::new(path).to_path_buf(), err))?;
+
+        let value = parse_rpgm_file(&content, engine_type, file_type)?;
+
+        let required_value = value.get_index(index as usize);
+        // TODO: If something is not what was expected, write error instead of the value to the out.
+
+        if let Some(val) = required_value {
+            let keys = slice::from_raw_parts(keys, keys_n as usize);
+
+            for (idx, &key) in keys.iter().enumerate() {
+                let key = ffi_to_str(key);
+
+                if let Some(val) = val.get(key) {
+                    let str = val.as_str();
+
+                    let Some(str) = str else {
+                        // TODO
+                        continue;
+                    };
+
+                    let string = str.to_string();
+
+                    *out.add(idx) = FFIString {
+                        ptr: string.as_ptr().cast::<i8>(),
+                        len: string.len() as u32,
+                        cap: string.capacity() as u32,
+                    };
+
+                    mem::forget(string);
+                } else {
+                    // TODO
+                }
+            }
+        } else {
+            return Err(Error::InvalidIndex(index as usize, path.to_string()));
+        }
+
+        Ok(())
+    })();
+
+    match result {
+        Ok(()) => true,
+        Err(err) => {
+            ERROR = err.to_string();
+            false
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn gxhash(
+    ptr: *const std::ffi::c_void,
+    len: usize,
+) -> u64 {
+    gxhash::gxhash64(slice::from_raw_parts(ptr.cast::<u8>(), len), 0)
 }

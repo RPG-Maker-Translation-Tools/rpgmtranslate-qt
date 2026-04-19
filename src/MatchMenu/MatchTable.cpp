@@ -319,7 +319,7 @@ void MatchTable::appendMatch(
             sourceMatchDescs.append(tr("Exact"));
         } else {
             sourceMatchDescs.append(
-                tr("Fuzzy (%1)").arg(QString::number(match.score, 10, 3))
+                tr("Fuzzy (%1)").arg(QL1SV(ftos(match.score, 3).data()))
             );
         }
 
@@ -337,7 +337,7 @@ void MatchTable::appendMatch(
             translationMatchDescs.append(tr("Exact"));
         } else {
             translationMatchDescs.append(
-                tr("Fuzzy (%1)").arg(QString::number(match.score, 10, 3))
+                tr("Fuzzy (%1)").arg(QL1SV(ftos(match.score).data()))
             );
         }
 
@@ -345,15 +345,19 @@ void MatchTable::appendMatch(
     }
 
     QString termOccurrences = tr("%1, %2 occurrences: %3")
-                                  .arg(termSource)
-                                  .arg(sourceCount)
-                                  .arg(sourceMatchDescs.join(", "_L1));
+                                  .arg(
+                                      termSource,
+                                      QL1SV(itos(sourceCount).data()),
+                                      sourceMatchDescs.join(", "_L1)
+                                  );
 
     QString translationOccurrences =
         tr("%1, %2 occurrences: %3")
-            .arg(termTranslation)
-            .arg(translationCount)
-            .arg(translationMatchDescs.join(", "_L1));
+            .arg(
+                termTranslation,
+                QL1SV(itos(translationCount).data()),
+                translationMatchDescs.join(", "_L1)
+            );
 
     QString info;
     const bool match = sourceCount <= translationCount;

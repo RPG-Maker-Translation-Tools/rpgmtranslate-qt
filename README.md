@@ -21,7 +21,7 @@ A complete rewrite of the [original RPGMTranslate application](https://github.co
 - [x] Built-in batch processing of files, including batch translation, batch trim and batch text wrap.
 - [x] Integrated APIs for Google Translate, Yandex Translate, DeepL, ChatGPT, Claude, DeepSeek, Gemini, Ollama, and any OpenAI-compatible endpoints (e.g. koboldcpp).
 - [x] Integrated asset inspector, which allows to inspect images, videos, fonts, scripts and more.
-- [x] Integrated spell-checking and advanced linting.
+- [x] Integrated spell-checking and advanced linting, including linting of tags from different plugins (like Yanfly Message Core) and information about them.
 - [ ] **WIP** Integrated Git client.
 - [ ] **WIP** LanguageTool integration.
 
@@ -32,6 +32,7 @@ Under the hood, this application uses:
 - [rvpacker-txt-rs-lib](https://github.com/RPG-Maker-Translation-Tools/rvpacker-txt-rs-lib) to parse text from RPG Maker files and apply the translation.
 - [marshal-rs](https://github.com/RPG-Maker-Translation-Tools/marshal-rs) to parse RPG Maker XP/VX/VX Ace files to JSON.
 - [rpgm-archive-decrypter-lib](https://github.com/RPG-Maker-Translation-Tools/rpgm-archive-decrypter-lib) to decrypt `.rgss` RPG Maker XP/VX/VX Ace archives.
+- [rpgm-asset-decrypter-lib](https://github.com/RPG-Maker-Translation-Tools/rpgm-asset-decrypter-lib) to decrypt MV/MZ assets.
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
 
@@ -84,3 +85,8 @@ Project is licensed under [WTFPL](https://www.wtfpl.net/).
 The repository contains third-party software, that is licensed under other conditions:
 
 - `icons` - contains [Google Material Symbols](https://fonts.google.com/icons) - licensed under `Apache License Version 2.0`.
+- `src/3rdparty` - contains 3rd-party libraries:
+    - `jeaiii_to_text.h` - licensed under MIT.
+    - `miniaudio.h` - public domain.
+    - `magic_enum.hpp` - licensed under MIT.
+    - `zmij.h` and `zmij.cc` - licensed under MIT.

@@ -16,9 +16,8 @@ auto Backup::fromJSON(const QJsonObject& obj) -> Backup {
 
 [[nodiscard]] auto CoreSettings::toJSON() const -> QJsonObject {
     return { { u"projectPath"_s, projectPath },
-             { u"firstLaunch"_s, firstLaunch },
              { u"backup"_s, backup.toJSON() },
-             { u"checkForUpdates"_s, checkForUpdates },
+             { u"checkForUpdates"_s, checkForAppUpdates },
              { u"recentProjects"_s,
                QJsonArray::fromStringList(recentProjects) } };
 }
@@ -26,10 +25,9 @@ auto Backup::fromJSON(const QJsonObject& obj) -> Backup {
 auto CoreSettings::fromJSON(const QJsonObject& obj) -> CoreSettings {
     CoreSettings settings;
     settings.projectPath = obj["projectPath"_L1].toString();
-    settings.firstLaunch = obj["firstLaunch"_L1].toBool(settings.firstLaunch);
     settings.backup = Backup::fromJSON(obj["backup"_L1].toObject());
-    settings.checkForUpdates =
-        obj["updatesEnabled"_L1].toBool(settings.checkForUpdates);
+    settings.checkForAppUpdates =
+        obj["updatesEnabled"_L1].toBool(settings.checkForAppUpdates);
 
     for (const auto& value : obj["recentProjects"_L1].toArray()) {
         settings.recentProjects.append(value.toString());
@@ -44,9 +42,7 @@ auto CoreSettings::fromJSON(const QJsonObject& obj) -> CoreSettings {
              { u"style"_s, style },
              { u"theme"_s, u8(theme) },
              { u"language"_s, u8(language) },
-             { u"displayPercents"_s, displayPercents },
-             { u"displayTrailingWhitespace"_s, displayTrailingWhitespace },
-             { u"displayWordsAndCharacters"_s, displayWordsAndCharacters } };
+             { u"displayPercents"_s, displayPercents } };
 }
 
 auto AppearanceSettings::fromJSON(const QJsonObject& obj)
@@ -130,7 +126,7 @@ auto DeepLEndpointSettings::fromJSON(const QJsonObject& obj)
     obj["outputTokenLimit"_L1] = outputTokenLimit;
 
     obj["thinkingBudget"_L1] = thinkingBudget;
-
+    obj["reasoningEffort"_L1] = reasoningEffort;
     obj["useGlossary"_L1] = useGlossary;
     obj["thinking"_L1] = thinking;
 
@@ -172,6 +168,8 @@ auto EndpointSettings::fromJSON(const QJsonObject& obj) -> EndpointSettings {
     settings.outputTokenLimit = u16(obj["outputTokenLimit"_L1].toInt());
 
     settings.thinkingBudget = u16(obj["thinkingBudget"_L1].toInt());
+    settings.reasoningEffort =
+        ReasoningEffort(obj["reasoningEffort"_L1].toInt());
 
     settings.useGlossary = obj["useGlossary"_L1].toBool();
     settings.thinking = obj["thinking"_L1].toBool();
@@ -202,12 +200,13 @@ auto LanguageToolSettings::fromJSON(const QJsonObject& obj)
     }
 
     return { { u"languageTool"_s, languageTool.toJSON() },
-             { u"endpoints"_s, endpointsArray } };
+             { u"endpoints"_s, endpointsArray },
+             { u"miscLints"_s, u8(miscLints) } };
 }
 
 auto TranslationSettings::fromJSON(const QJsonObject& obj)
     -> TranslationSettings {
-    QJsonArray endpointsArray = obj["endpoints"_L1].toArray();
+    const QJsonArray endpointsArray = obj["endpoints"_L1].toArray();
 
     vector<EndpointSettings> endpoints;
     endpoints.reserve(endpointsArray.size());
@@ -219,7 +218,8 @@ auto TranslationSettings::fromJSON(const QJsonObject& obj)
     return { .languageTool = LanguageToolSettings::fromJSON(
                  obj["languageTool"_L1].toObject()
              ),
-             .endpoints = std::move(endpoints) };
+             .endpoints = std::move(endpoints),
+             .miscLints = MiscLints(obj["miscLints"_L1].toInt()) };
 }
 
 [[nodiscard]] auto ControlSettings::toJSON() const -> QJsonObject {

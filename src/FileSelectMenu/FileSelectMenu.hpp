@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Aliases.hpp"
-#include "Enums.hpp"
 #include "FWD.hpp"
+#include "Hasher.hpp"
 #include "PersistentMenu.hpp"
 #include "Types.hpp"
 

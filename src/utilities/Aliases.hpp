@@ -1,6 +1,8 @@
 #pragma once
 
-#include <magic_enum/magic_enum.hpp>
+#include "jeaiii_to_text.h"
+#include "magic_enum.hpp"
+#include "zmij.h"
 
 #include <QString>
 #include <atomic>
@@ -14,10 +16,7 @@
 #include <optional>
 #include <qtversionchecks.h>
 #include <ranges>
-#include <rapidhash.h>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 using namespace Qt::Literals::StringLiterals;
@@ -29,11 +28,11 @@ namespace fs = std::filesystem;
 namespace views = std::views;
 namespace ranges = std::ranges;
 
-// No idea if this works
-#if defined(_MSC_VER) && !defined(__clang__)
-#include <__MSVC_Int128.hpp>
-using __uint128_t = std::_Unsigned128;
-#endif
+// Previous fix for MSVC u128, we don't need it anymore
+// #if defined(_MSC_VER) && !defined(__clang__)
+// #include <__MSVC_Int128.hpp>
+// using __uint128_t = std::_Unsigned128;
+// #endif
 
 using usize = std::size_t;
 using isize = std::intptr_t;
@@ -41,7 +40,6 @@ using u8 = std::uint8_t;
 using u16 = std::uint16_t;
 using u32 = std::uint32_t;
 using u64 = std::uint64_t;
-using u128 = __uint128_t;
 using i8 = std::int8_t;
 using i16 = std::int16_t;
 using i32 = std::int32_t;
@@ -80,6 +78,7 @@ using std::shared_ptr;
 using std::span;
 using std::string;
 using std::string_view;
+using std::tuple;
 using std::unique_ptr;
 using std::vector;
 using std::wstring;
@@ -108,57 +107,90 @@ template <typename O, typename T>
     return reinterpret_cast<O>(std::forward<T>(arg));
 }
 
-template <typename T = usize>
-constexpr auto range(const T from, const T dest) {
-    return views::iota(from, dest);
+template <typename T, typename U>
+using range_common_t = std::conditional_t<
+    (std::is_signed_v<T> || std::is_signed_v<U>),
+    std::common_type_t<std::make_signed_t<T>, std::make_signed_t<U>>,
+    std::common_type_t<T, U>>;
+
+template <auto Step = 1, typename T, typename U>
+constexpr auto range(const T start, const U stop) {
+    static_assert(Step != 0);
+
+    using Common = range_common_t<T, U>;
+
+    const auto s = static_cast<Common>(start);
+    const auto e = static_cast<Common>(stop);
+
+    if constexpr (Step > 0) {
+        return views::iota(s, e) | views::stride(Step);
+    } else {
+        return views::iota(e + 1, s + 1) | views::reverse |
+               views::stride(-Step);
+    }
 }
 
-struct RapidHasher {
-    template <typename T>
-    constexpr auto operator()(const T& value) const -> u64 {
-        if constexpr (std::is_same_v<T, QString>) {
-            return rapidhash(value.utf16(), value.size());
-        } else if constexpr (std::is_same_v<T, string>) {
-            return rapidhash(value.data(), value.size());
-        } else if constexpr (std::is_trivially_copyable_v<T>) {
-            return rapidhash(&value, sizeof(T));
-        } else {
-            static_assert(sizeof(T) == 0, "Unsupported type for RapidHasher");
+using FilenameArray = array<char, 16>;
+
+// Integer to string. Currently handles only numbers up to 16 digits.
+// Returned array must be manually sliced to the first null.
+template <std::integral T>
+inline auto itos(const T integer, const u8 pad = 0, const char padChar = ' ')
+    -> array<char, 16> {
+    array<char, 16> buf{};
+    jeaiii::to_text_from_integer(buf.data(), integer);
+
+    if (pad < buf.size() && pad != 0) {
+        const u8 contentLen = strlen(buf.data());
+
+        if (contentLen < pad) {
+            const u8 padLen = pad - contentLen;
+
+            memmove(buf.data() + padLen, buf.data(), contentLen);
+            memset(buf.data(), padChar, padLen);
         }
     }
-};
 
-template <typename K, typename V>
-using rapidhashmap = std::unordered_map<K, V, RapidHasher>;
-template <typename E>
-using rapidhashset = std::unordered_set<E, RapidHasher>;
+    return buf;
+}
 
-template <typename K, typename V>
-class HashMap : public rapidhashmap<K, V> {
-   public:
-    using rapidhashmap<K, V>::rapidhashmap;
+// Float to string. Currently handles only floats.
+// Returned array must be manually sliced to the first null.
+template <std::floating_point T>
+inline auto ftos(const T flt, i8 precision = 0)
+    -> array<char, zmij::float_buffer_size> {
+    array<char, zmij::float_buffer_size> buf{};
+    zmij::write(buf.data(), buf.size(), flt);
 
-    [[nodiscard]] auto operator[](const K& key) const -> const V& {
-        return rapidhashmap<K, V>::find(key)->second;
+    if (precision >= 0) {
+        bool afterPoint = false;
+        u8 count = 0;
+
+        for (const auto [idx, chr] : views::enumerate(buf)) {
+            if (chr == '\0') {
+                break;
+            }
+
+            if (chr == '.') {
+                if (precision == 0) {
+                    buf[idx] = '\0';
+                    break;
+                }
+
+                afterPoint = true;
+                continue;
+            }
+
+            if (afterPoint) {
+                if (count >= precision) {
+                    buf[idx] = '\0';
+                    break;
+                }
+
+                count++;
+            }
+        }
     }
-};
 
-template <typename E>
-class HashSet : public rapidhashset<E> {
-   public:
-    using rapidhashset<E>::rapidhashset;
-};
-
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-inline QString operator+(QString lhs, QStringView rhs) {
-    lhs.append(rhs);
-    return lhs;
+    return buf;
 }
-
-inline QString operator+(QStringView lhs, QString rhs) {
-    rhs.prepend(lhs);
-    return rhs;
-}
-#endif
-
-using FilenameArray = array<char, 13>;

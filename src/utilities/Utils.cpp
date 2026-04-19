@@ -12,8 +12,8 @@ auto lineParts(
 
     if (split.size() < 2) {
         qWarning() << QObject::tr("Couldn't split text at line %1 in file %2")
-                          .arg(lineNumber)
                           .arg(
+                              QL1SV(itos(lineNumber).data()),
 #if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
                               filename.toString()
 #else
@@ -58,7 +58,7 @@ auto qsvReplace(
     QString result;
     result.reserve(input.size());
 
-    const QChar* data = input.data();
+    const QChar* const data = input.data();
     const isize inputSize = input.size();
     const isize needleSize = needle.size();
 
@@ -165,8 +165,8 @@ auto qsvReplace(
     const QChar* const data = input.data();
     const isize size = input.size();
 
-    for (isize i = 0; i < size; i++) {
-        const QChar chr = data[i];
+    for (const auto idx : range(0, size)) {
+        const QChar chr = data[idx];
         result.push_back(chr == needle ? replacement : chr);
     }
 
@@ -189,7 +189,7 @@ auto joinQSVList(const QSVList& list, const QL1SV separator) -> QString {
         result.append(separator);
     }
 
-    for (isize i = 0; i < separator.size(); ++i) {
+    for (const auto idx : range(0, separator.size())) {
         result.removeLast();
     }
 
@@ -235,7 +235,7 @@ auto joinQSVList(const QSVList& list, const QStringView separator) -> QString {
         result.append(separator);
     }
 
-    for (const u8 idx : range<u8>(0, separator.size())) {
+    for (const auto idx : range(0, separator.size())) {
         result.removeLast();
     }
 
@@ -258,21 +258,13 @@ auto intLen(const i32 num) -> u8 {
 }
 
 auto lastPathComponent(const QString& path) -> QStringView {
-    for (u32 i = path.size() - 1; i >= 0; i--) {
-        const QChar chr = path[i];
+    for (const auto idx : range<-1>(path.size() - 1, -1)) {
+        const QChar chr = path[idx];
 
         if (chr == u'/' || chr == u'\\') {
-            return QStringView(path).mid(i + 1);
+            return QStringView(path).mid(idx + 1);
         }
     }
 
     return {};
-}
-
-auto toffistr(const QByteArrayView utf8) -> FFIString {
-    return { .ptr = utf8.data(), .len = u32(utf8.size()) };
-}
-
-auto fromffistr(const FFIString str) -> QUtf8SV {
-    return { str.ptr, isize(str.len) };
 }

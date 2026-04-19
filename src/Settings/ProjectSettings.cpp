@@ -1,48 +1,10 @@
 #include "ProjectSettings.hpp"
 
-auto tou128(const QString& str) -> u128 {
-    u128 result = 0;
-
-    for (const QChar chr : str) {
-        result = (result * 10) + (chr.toLatin1() - '0');
-    }
-
-    return result;
-}
-
-#ifdef Q_CC_MSVC
-[[nodiscard]] auto uint128_to_string(u128 value) -> QString {
-    constexpr u64 BASE = 10000000000000000000ULL;
-    array<u64, 3> parts{};
-    i32 idx = 0;
-
-    while (value > 0) {
-        parts[idx++] = u64(value % BASE);
-        value /= BASE;
-    }
-
-    QString result = QString::number(parts[idx - 1]);
-
-    for (i32 j = idx - 2; j >= 0; --j) {
-        QString chunk = QString::number(parts[j]);
-        result += QString(19 - chunk.length(), u'0') + chunk;
-    }
-
-    return result;
-}
-#endif
-
 [[nodiscard]] auto ProjectSettings::toJSON() const -> QJsonObject {
-    QJsonArray hashes;
+    QJsonObject hashes;
 
-    for (const u128 hash : this->hashes) {
-        hashes.append(
-#ifdef Q_CC_MSVC
-            uint128_to_string(hash)
-#else
-            QString::fromLatin1(std::format("{}", hash))
-#endif
-        );
+    for (const auto [key, value] : this->hashes) {
+        hashes[QL1SV(key.data())] = qint64(value);
     }
 
     QJsonArray contexts;
@@ -78,11 +40,13 @@ auto ProjectSettings::fromJSON(const QJsonObject& obj) -> ProjectSettings {
     settings.duplicateMode = DuplicateMode(obj["duplicateMode"_L1].toInt());
     settings.flags = BaseFlags(obj["flags"_L1].toInt());
 
-    QStringList hashes = obj["hashes"_L1].toVariant().toStringList();
+    const QJsonObject hashes = obj["hashes"_L1].toObject();
     settings.hashes.reserve(hashes.size());
 
-    for (const auto& hash : hashes) {
-        settings.hashes.emplace_back(tou128(hash));
+    for (const auto [key, value] : hashes.asKeyValueRange()) {
+        FilenameArray filename{};
+        memcpy(filename.data(), key.data(), key.size());
+        settings.hashes.insert({ filename, u64(value.toInteger()) });
     }
 
     settings.completedFiles = obj["completed"_L1].toVariant().toStringList();

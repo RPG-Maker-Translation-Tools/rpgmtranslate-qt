@@ -3,14 +3,7 @@
 #include "TabList.hpp"
 #include "TabListModel.hpp"
 
-#include <QApplication>
-#include <QDir>
-#include <QListWidget>
 #include <QMenu>
-#include <QProgressBar>
-#include <QPushButton>
-#include <QStandardItemModel>
-#include <QVBoxLayout>
 
 TabPanel::TabPanel(QWidget* const parent) :
     QDockWidget(parent),
@@ -97,7 +90,7 @@ void TabPanel::clear() {
 }
 
 [[nodiscard]] auto TabPanel::tabIndex(const QString& tabName) const -> u32 {
-    for (const u16 tab : range<u16>(0, tabCount())) {
+    for (const auto tab : range(0, tabCount())) {
         if (tabList->tab(tab).name == tabName) {
             return tab;
         }
@@ -174,7 +167,7 @@ void TabPanel::changeTab(const QString& filename) {
         return;
     }
 
-    for (const u16 tab : range<u16>(0, tabCount())) {
+    for (const auto tab : range(0, tabCount())) {
         if (tabList->tab(tab).name == filename) {
             tabList->setCurrentIndex(tabList->model()->index(tab, 0));
             return;
@@ -188,7 +181,7 @@ auto TabPanel::tabs() const -> QStringList {
     QStringList tabs;
     tabs.reserve(rowCount);
 
-    for (const u16 idx : range<u16>(0, rowCount)) {
+    for (const auto idx : range(0, rowCount)) {
         tabs.append(tabList->tab(idx).name);
     }
 

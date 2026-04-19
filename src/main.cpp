@@ -4,6 +4,8 @@
 #include <QDir>
 #include <QLockFile>
 #include <QLoggingCategory>
+#include <QStandardPaths>
+#include <QtEnvironmentVariables>
 #include <print>
 
 static QFile logFile;
@@ -72,11 +74,13 @@ static void messageHandler(
     const QMessageLogContext& ctx,
     const QString& msg
 ) {
-    const QString formatted = "[%1] %2:%3 (%4): %5"_L1.arg(levelToString(type))
-                                  .arg(QString::fromUtf8(shortFile(ctx.file)))
-                                  .arg(ctx.line)
-                                  .arg(QString::fromUtf8(ctx.function))
-                                  .arg(msg);
+    const QString formatted = "[%1] %2:%3 (%4): %5"_L1.arg(
+        levelToString(type),
+        QUtf8SV(shortFile(ctx.file)),
+        QL1SV(itos(ctx.line).data()),
+        QUtf8SV(ctx.function),
+        msg
+    );
 
     std::println(
         stdout,
@@ -127,11 +131,73 @@ auto main(i32 argCount, char* args[]) -> i32 {
 
     logFile.setFileName(qApp->applicationDirPath() + u"/rpgmtranslate.log");
     if (!logFile.open(QFile::WriteOnly | QFile::Truncate | QFile::Append)) {
-        std::println(stderr, "Failed to open log file");
-        return 1;
-    }
-    logStream.setDevice(&logFile);
+        std::println(
+            stderr,
+            "{} is not writable. Seeking other directory for RPGMTranslate data.",
+            qApp->applicationDirPath().toStdString()
+        );
 
+        const QString dir = qEnvironmentVariable("RPGMTRANSLATE_DATA_DIR");
+
+        if (dir.isEmpty()) {
+            const QString standardDataLocation =
+                QStandardPaths::writableLocation(
+                    QStandardPaths::AppLocalDataLocation
+                );
+
+            const string dirStd = standardDataLocation.toStdString();
+
+            std::println(
+                stdout,
+                "RPGMTRANSLATE_DATA_DIR is not set. Falling back to {} to store RPGMTranslate data.",
+                dirStd
+            );
+
+            logFile.setFileName(standardDataLocation + u"/rpgmtranslate.log");
+
+            if (!logFile.open(
+                    QFile::WriteOnly | QFile::Truncate | QFile::Append
+                )) {
+                std::println(
+                    stderr,
+                    "{} is not writable. Nowhere to place the application data, aborting.",
+                    dirStd
+                );
+
+                return 1;
+            }
+
+            qApp->setProperty("data-location", standardDataLocation);
+        } else {
+            const string dirStd = dir.toStdString();
+
+            std::println(
+                stdout,
+                "Found RPGMTRANSLATE_DATA_DIR: {}. Using it to store RPGMTranslate data.",
+                dirStd
+            );
+
+            logFile.setFileName(dir + u"/rpgmtranslate.log");
+
+            if (!logFile.open(
+                    QFile::WriteOnly | QFile::Truncate | QFile::Append
+                )) {
+                std::println(
+                    stderr,
+                    "{} is not writable. Nowhere to place the application data, aborting.",
+                    dirStd
+                );
+
+                return 1;
+            }
+
+            qApp->setProperty("data-location", dir);
+        }
+    }
+
+    qApp->setProperty("data-location", qApp->applicationDirPath());
+
+    logStream.setDevice(&logFile);
     qInstallMessageHandler(messageHandler);
 
     auto window = MainWindow();

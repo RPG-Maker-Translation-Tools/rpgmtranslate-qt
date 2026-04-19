@@ -4,7 +4,6 @@
 
 #include <QAbstractListModel>
 #include <QListView>
-#include <QPersistentModelIndex>
 #include <QStyledItemDelegate>
 #include <QTimer>
 #include <deque>

@@ -1,20 +1,16 @@
 #pragma once
 
 #include "Aliases.hpp"
-#include "AssetPreviewWidget.hpp"
+#include "FWD.hpp"
 #include "PersistentMenu.hpp"
-#include "ProjectSettings.hpp"
-
-#include <QGraphicsPixmapItem>
-#include <QHBoxLayout>
-#include <QLineEdit>
-#include <QTreeWidget>
 
 class AssetMenu final : public PersistentMenu {
     Q_OBJECT
 
    public:
     explicit AssetMenu(QWidget* parent = nullptr);
+
+    ~AssetMenu() override {}
 
     void init(shared_ptr<ProjectSettings> projectSettings);
     void clear();
@@ -26,11 +22,14 @@ class AssetMenu final : public PersistentMenu {
     void filterTree(const QString& text);
     void refresh();
 
-    AssetPreviewWidget assetPreviewWidget;
-    QVBoxLayout layout = QVBoxLayout(this);
-    QLineEdit searchInput = QLineEdit(this);
-    QTreeWidget tree = QTreeWidget(this);
-    QGraphicsScene graphicsScene = QGraphicsScene(this);
+    AssetPreviewWidget* const assetPreviewWidget;
+    QPushButton* const refreshButton;
+    QWidget* const topWidget;
+    QHBoxLayout* const topLayout;
+    QVBoxLayout* const layout;
+    QLineEdit* const searchInput;
+    QTreeWidget* const tree;
+    QGraphicsScene* const graphicsScene;
 
     shared_ptr<ProjectSettings> projectSettings;
 };

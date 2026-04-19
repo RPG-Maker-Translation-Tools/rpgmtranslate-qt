@@ -6,13 +6,9 @@
 #include "ezgit2.hpp"
 
 #include <QComboBox>
-#include <QDir>
-#include <QDirListing>
-#include <QFile>
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QPushButton>
-#include <QRegularExpression>
 #include <QToolButton>
 
 void SourceControlDock::init(

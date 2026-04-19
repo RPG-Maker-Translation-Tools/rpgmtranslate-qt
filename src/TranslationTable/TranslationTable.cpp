@@ -11,6 +11,8 @@
 #include <QMenu>
 #include <QMessageBox>
 
+// TODO: Find tag mismatches between source text and translation text.
+
 TranslationTable::TranslationTable(QWidget* const parent) :
     QTableView(parent),
 
@@ -205,7 +207,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
                 flags |= RowFlags::BookmarkFlag;
             }
         } else {
-            for (const u8 column : range<u8>(1, model_->columnCount())) {
+            for (const auto column : range(1, model_->columnCount())) {
                 if (model_->item(first, column).text()->isEmpty()) {
                     flags |= RowFlags::TranslatedFlag;
                     break;
@@ -264,11 +266,10 @@ void TranslationTable::insertTranslation(const QString& translation) {
 };
 
 void TranslationTable::init(
-    const u16* const hint,
-    const bool* const enabled,
-    const QString* const dictionaryPath
+    const Settings* const settings,
+    const ProjectSettings* const projectSettings
 ) const {
-    delegate->init(hint, enabled, dictionaryPath);
+    delegate->init(projectSettings, settings);
 
 #ifdef ENABLE_NUSPELL
     delegate->initializeDictionary();
@@ -290,7 +291,7 @@ void TranslationTable::fill(
 
     auto headerLabels = QStringList(model_->columnCount());
 
-    for (const u8 column : range<u8>(0, model_->columnCount())) {
+    for (const auto column : range(0, model_->columnCount())) {
         headerLabels[column] = columns[column].name;
         header_->resizeSection(column, columns[column].width);
     }
@@ -409,12 +410,12 @@ auto TranslationTable::paste() -> u32 {
 
     u32 pasted = 0;
 
-    for (u32 i = 0; i < count; i++) {
-        const u32 row = firstRow + i;
+    for (const auto idx : range(0, count)) {
+        const u32 row = firstRow + idx;
         const QModelIndex dst = model_->index(i32(row), column);
 
         if (dst.isValid() && ((model_->flags(dst) & Qt::ItemIsEditable) != 0)) {
-            if (model_->setData(dst, rows[i], Qt::EditRole)) {
+            if (model_->setData(dst, rows[idx], Qt::EditRole)) {
                 pasted++;
             }
         }

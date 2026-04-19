@@ -14,8 +14,6 @@
 
 - Qt6
 - libarchive (LZMA only)
-- rapidhash
-- magic_enum
 
 #### Qt6 (≥ 6.8.2)
 
@@ -63,15 +61,11 @@ These are conditionally required based on build flags.
     - Required parsers:
         - AAC, H.264
 
-- miniaudio
-
 #### Git Integration (`ENABLE_LIBGIT2`)
 
 - libgit2
 
 ### Getting development headers on Linux
-
-Note that `rapidhash`, `magic_enum` and `miniaudio` are **HEADER ONLY** libraries - rather than installing them from your package manager, you should manually acquire a header.
 
 #### Debian
 
@@ -102,11 +96,9 @@ sudo zypper refresh && sudo zypper install -y \
 
 ```bash
 sudo pacman -Syu --needed \
-  git cmake gcc clang \
+  git cmake gcc clang glibc pkgconf \
   qt6-base qt6-tools qt6-svg qt6-wayland \
-  libarchive \
-  libgit2 nuspell glibc \
-  pkgconf openssl
+  openssl libarchive libgit2 nuspell ffmpeg
 ```
 
 #### Alpine

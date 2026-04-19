@@ -25,15 +25,15 @@ AboutWindow::AboutWindow(QWidget* const parent) :
     );
 
 #ifdef ENABLE_LIBGIT2
-    int maj;
-    int min;
-    int pth;
+    i32 maj;
+    i32 min;
+    i32 pth;
 
     git_libgit2_version(&maj, &min, &pth);
     ui->libgit2VersionLabel->setText(u"libgit2 %1.%2.%3"_s.arg(
-        QString::number(maj),
-        QString::number(min),
-        QString::number(pth)
+        QL1SV(itos(maj).data()),
+        QL1SV(itos(min).data()),
+        QL1SV(itos(pth).data())
     ));
 #endif
 

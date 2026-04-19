@@ -37,6 +37,9 @@ class SettingsWindow final : public QDialog {
     inline void saveCurrentEndpoint(EndpointSettings& settings);
     inline void refreshSpellcheckDictionarySelect();
     inline void setDefaultBaseURL(TranslationEndpoint endpoint);
+    inline void checkKey();
+
+    inline void onTypeChange(TranslationEndpoint endpoint);
 
     shared_ptr<Settings> settings;
     shared_ptr<ProjectSettings> projectSettings;

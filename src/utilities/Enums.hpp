@@ -21,10 +21,3 @@ enum SearchLocation : u8 {
     Source = 1 << 0,
     Translation = 1 << 1,
 };
-
-enum class ReadMode : u8 {
-    Default,
-    DefaultForce,
-    AppendDefault,
-    AppendForce,
-};

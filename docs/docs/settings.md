@@ -40,12 +40,6 @@ Controls automatic project backups.
 
   Selects the application color scheme (Light/Dark/System).
 
-### Display options
-
-- Display trailing whitespace - If enabled, leading/trailing whitespaces in the text are visually marked in the translation table.
-
-- Display words and characters - If enabled, shows word/character count in the status bar.
-
 ## Controls
 
 Keyboard shortcuts
@@ -177,6 +171,10 @@ Prompts
 ### LanguageTool
 
 Currently **WIP**.
+
+### Plugins & Misc
+
+Not a lot of options as of sixth release candidate, WIP.
 
 ## Project
 

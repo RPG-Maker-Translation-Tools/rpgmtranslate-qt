@@ -52,7 +52,7 @@ class ReadMenu final : public QWidget {
 
     QByteArray projectPath;
     QString decodedTitle;
-    ByteBuffer title_;
+    ByteBuffer title_{};
 
     Ui::ReadMenu* const ui;
 

@@ -494,41 +494,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="widget_2" native="true">
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <property name="spacing">
-           <number>4</number>
-          </property>
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QCheckBox" name="trailingWhitespaceCheckbox">
-            <property name="text">
-             <string>Display trailing whitespace in translation table cells</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="displayWordsCheckbox">
-            <property name="text">
-             <string>Display words/characters count in status bar when opening a tab</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
@@ -873,9 +838,9 @@
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>0</y>
+            <y>-1338</y>
             <width>811</width>
-            <height>1608</height>
+            <height>2106</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -1442,16 +1407,63 @@
                   <widget class="CBSLIWidget" name="topPWidget" native="true"/>
                  </item>
                  <item>
-                  <widget class="QCheckBox" name="glossaryCheckbox">
-                   <property name="text">
-                    <string>Use glossary</string>
-                   </property>
+                  <widget class="QWidget" name="widget_8" native="true">
+                   <layout class="QHBoxLayout" name="horizontalLayout_17">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="label_33">
+                      <property name="text">
+                       <string>Reasoning effort</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QComboBox" name="comboBox">
+                      <item>
+                       <property name="text">
+                        <string>Low</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>Medium</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>High</string>
+                       </property>
+                      </item>
+                     </widget>
+                    </item>
+                   </layout>
                   </widget>
                  </item>
                  <item>
                   <widget class="QCheckBox" name="thinkingCheckbox">
                    <property name="text">
-                    <string>Thinking</string>
+                    <string>Thinking/reasoning</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="glossaryCheckbox">
+                   <property name="text">
+                    <string>Use glossary</string>
                    </property>
                   </widget>
                  </item>
@@ -1560,7 +1572,6 @@
                 <zorder>precenseWidget</zorder>
                 <zorder>topPWidget</zorder>
                 <zorder>glossaryCheckbox</zorder>
-                <zorder>thinkingCheckbox</zorder>
                 <zorder>systemPromptWidget</zorder>
                 <zorder>singleSystemPromptWidget</zorder>
                 <zorder>thinkingBudgetWidget</zorder>
@@ -1572,6 +1583,8 @@
                 <zorder>singleTranslationCheckbox</zorder>
                 <zorder>typeDescriptionLabel</zorder>
                 <zorder>label_4</zorder>
+                <zorder>widget_8</zorder>
+                <zorder>thinkingCheckbox</zorder>
                </widget>
               </item>
              </layout>
@@ -1634,6 +1647,223 @@
                   <widget class="QLineEdit" name="languageToolURLInput">
                    <property name="placeholderText">
                     <string>https://localhost:8000</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_2">
+             <property name="title">
+              <string>Yanfly Engine Core Lints</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_21">
+              <property name="spacing">
+               <number>8</number>
+              </property>
+              <property name="leftMargin">
+               <number>8</number>
+              </property>
+              <property name="topMargin">
+               <number>8</number>
+              </property>
+              <property name="rightMargin">
+               <number>8</number>
+              </property>
+              <property name="bottomMargin">
+               <number>8</number>
+              </property>
+              <item>
+               <widget class="QGroupBox" name="groupBox_4">
+                <property name="title">
+                 <string>Yanfly Core Engine</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_23">
+                 <property name="spacing">
+                  <number>8</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>8</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>8</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>8</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>8</number>
+                 </property>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_5">
+             <property name="title">
+              <string>Advanced Text System Lints</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_24">
+              <property name="spacing">
+               <number>8</number>
+              </property>
+              <property name="leftMargin">
+               <number>8</number>
+              </property>
+              <property name="topMargin">
+               <number>8</number>
+              </property>
+              <property name="rightMargin">
+               <number>8</number>
+              </property>
+              <property name="bottomMargin">
+               <number>8</number>
+              </property>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_7">
+             <property name="title">
+              <string>Custom Lints</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_25">
+              <property name="spacing">
+               <number>8</number>
+              </property>
+              <property name="leftMargin">
+               <number>8</number>
+              </property>
+              <property name="topMargin">
+               <number>8</number>
+              </property>
+              <property name="rightMargin">
+               <number>8</number>
+              </property>
+              <property name="bottomMargin">
+               <number>8</number>
+              </property>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_3">
+             <property name="title">
+              <string>Misc</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_2">
+              <property name="spacing">
+               <number>8</number>
+              </property>
+              <property name="leftMargin">
+               <number>8</number>
+              </property>
+              <property name="topMargin">
+               <number>8</number>
+              </property>
+              <property name="rightMargin">
+               <number>8</number>
+              </property>
+              <property name="bottomMargin">
+               <number>8</number>
+              </property>
+              <item>
+               <widget class="QWidget" name="widget_7" native="true">
+                <layout class="QHBoxLayout" name="horizontalLayout_2">
+                 <property name="spacing">
+                  <number>8</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_32">
+                   <property name="text">
+                    <string>Symbols that should be considered space, comma-separated list of Unicode U+XXXX code points:</string>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="whitespaceCharactersInput"/>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="widget_2" native="true">
+                <layout class="QVBoxLayout" name="verticalLayout_22">
+                 <property name="spacing">
+                  <number>4</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QCheckBox" name="leadingWhitespaceCheckbox">
+                   <property name="text">
+                    <string>Highlight leading whitespace</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="trailingWhitespaceCheckbox">
+                   <property name="text">
+                    <string>Highlight trailing whitespace</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="contiguousWhitespaceCheckbox">
+                   <property name="text">
+                    <string>Highlight contiguous whitespace</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="unclosedPunctuationCheckbox">
+                   <property name="text">
+                    <string>Highlight unclosed punctuation</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="tagMismatchCheckbox">
+                   <property name="text">
+                    <string>Display source/translation tag mismatch</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="displayWordsCheckbox">
+                   <property name="text">
+                    <string>Display words/characters count for a file</string>
                    </property>
                   </widget>
                  </item>

@@ -2,6 +2,7 @@
 
 #include "Aliases.hpp"
 #include "FWD.hpp"
+#include "Hasher.hpp"
 #include "Types.hpp"
 
 #include <QAbstractListModel>

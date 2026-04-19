@@ -4,9 +4,9 @@
 #include <QMouseEvent>
 #include <QPainter>
 
-constexpr static i32 PADDING_X = 8;
-constexpr static i32 PADDING_Y = 8;
-constexpr static i32 GAP = 4;
+constexpr static u8 PADDING_X = 8;
+constexpr static u8 PADDING_Y = 8;
+constexpr static u8 GAP = 4;
 
 BookmarkList::BookmarkList(QWidget* const parent) :
     QListView(parent),
@@ -156,8 +156,10 @@ void BookmarkListDelegate::paint(
 
     const QString& title = bookmark.description;
     const QString subtitle = tr("Row %1 / File %2")
-                                 .arg(bookmark.row + 1)
-                                 .arg(QL1SV(bookmark.filename.data()));
+                                 .arg(
+                                     QL1SV(itos(bookmark.row + 1).data()),
+                                     QL1SV(bookmark.filename.data())
+                                 );
 
     painter->save();
     painter->setClipRect(opt.rect);

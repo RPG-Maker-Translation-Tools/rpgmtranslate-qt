@@ -2,13 +2,11 @@
 
 #ifdef ENABLE_ASSET_PLAYBACK
 #include "Aliases.hpp"
+#include "FWD.hpp"
+#include "miniaudio.h"
 
-#include <QLabel>
-#include <QPushButton>
-#include <QSlider>
 #include <QTimer>
-#include <QVBoxLayout>
-#include <miniaudio.h>
+#include <QWidget>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -74,18 +72,18 @@ class MediaPlayer final : public QWidget {
     ma_device device;
     ma_device_config deviceConfig;
 
-    QVBoxLayout layout_ = QVBoxLayout(this);
-    QLabel mediaLabel = QLabel(this);
-
-    QWidget progressWidget = QWidget(this);
-    QHBoxLayout progressLayout = QHBoxLayout(&progressWidget);
-    QSlider progressSlider = QSlider(Qt::Horizontal, &progressWidget);
-    QLabel progressLabel = QLabel(&progressWidget);
-
-    QPushButton pauseButton = QPushButton(this);
-
     QTimer frameTimer;
     QTimer progressTimer;
+
+    QVBoxLayout* const layout_;
+    QLabel* const mediaLabel;
+
+    QWidget* const progressWidget;
+    QHBoxLayout* const progressLayout;
+    QSlider* const progressSlider;
+    QLabel* const progressLabel;
+
+    QPushButton* const pauseButton;
 
     AVFormatContext* formatContext = nullptr;
     AVCodecContext* videoCodecContext = nullptr;

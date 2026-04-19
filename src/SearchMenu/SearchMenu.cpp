@@ -137,7 +137,7 @@ void SearchMenu::changeEvent(QEvent* const event) {
 };
 
 void SearchMenu::clear() {
-    for (const u8 index : range<u8>(2, ui->searchColumnSelect->count())) {
+    for (const auto index : range(2, ui->searchColumnSelect->count())) {
         ui->searchColumnSelect->removeItem(index);
     }
 

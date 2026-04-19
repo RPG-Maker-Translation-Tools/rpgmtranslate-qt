@@ -62,7 +62,7 @@ class TaskWorker final : public QObject {
         Selected selected,
         BaseFlags flags,
         bool mapEvents,
-        ByteBuffer hashes,
+        const HashMap<FilenameArray, u64>& hashes,
         const QString& title
     );
 
@@ -84,7 +84,7 @@ class TaskWorker final : public QObject {
         Selected selected,
         BatchAction action,
         u8 columnIndex,
-        const std::variant<BatchMenu::TrimFlags, std::tuple<u8, QString>, u8>&
+        const std::variant<BatchMenu::TrimFlags, tuple<u8, QString>, u8>&
             variant,
         const Glossary& glossary
     );
@@ -130,15 +130,15 @@ class TaskWorker final : public QObject {
     void message(const QString& message);
     void progressChanged(Task task, u32 progress, u32 total);
 
-    void readFinished(std::tuple<FFIString, ByteBuffer> results);
-    void extractFinished(FFIString error);
-    void writeFinished(std::tuple<FFIString, f32> results);
-    void purgeFinished(FFIString error);
+    void readFinished(result<ByteBuffer, FFIString> result);
+    void extractFinished(result<void, FFIString> result);
+    void writeFinished(result<f32, FFIString> result);
+    void purgeFinished(result<void, FFIString> result);
     void searchFinished(HashMap<FilenameArray, vector<CellMatch>> results);
     void singleTranslateFinished(const vector<QString>& translations);
-    void singleReplaceFinished(const std::tuple<QString, TextMatch*>& results);
+    void singleReplaceFinished(const tuple<QString, TextMatch*>& results);
     void translateFinished(
-        const expected<std::tuple<ByteBuffer, ByteBuffer>, FFIString>& results
+        const result<tuple<ByteBuffer, ByteBuffer>, FFIString>& results
     );
 
    private:

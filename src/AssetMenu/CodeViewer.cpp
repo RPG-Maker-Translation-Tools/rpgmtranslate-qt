@@ -2,6 +2,9 @@
 
 #include "rpgmtranslate.h"
 
+#include <QPainter>
+#include <QTextCharFormat>
+
 LineNumberArea::LineNumberArea(CodeViewer* const editor) :
     QWidget(editor),
     editor(editor) {};
@@ -60,20 +63,20 @@ void CodeViewer::lineNumberAreaPaintEvent(QPaintEvent* const event) {
     );
 
     QTextBlock block = firstVisibleBlock();
-    u16 blockNumber = block.blockNumber();
-    u16 top =
+    u32 blockNumber = block.blockNumber();
+    u32 top =
         qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
-    u16 bottom = top + qRound(blockBoundingRect(block).height());
+    u32 bottom = top + qRound(blockBoundingRect(block).height());
 
     painter.setFont(font());
 
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
-            const QString number = QString::number(blockNumber + 1);
+            const QString number = QL1SV(itos(blockNumber + 1).data());
             painter.setPen(palette().color(QPalette::PlaceholderText));
             painter.drawText(
                 0,
-                top,
+                i32(top),
                 lineNumberArea->width() - 4,
                 fontMetrics().height(),
                 Qt::AlignRight | Qt::AlignVCenter,
@@ -153,7 +156,7 @@ void TreeSitterHighlighter::highlightBlock(const QString& text) {
         highlights.begin(),
         highlights.end(),
         blockStart,
-        [](const HighlightToken& token, u32 pos) -> bool {
+        [](const HighlightToken& token, const u32 pos) -> bool {
         return token.end_utf16 < pos;
     }
     );
@@ -178,7 +181,7 @@ void TreeSitterHighlighter::highlightBlock(const QString& text) {
 
 auto TreeSitterHighlighter::highlightColor(const HighlightType type) -> QColor {
     // TODO
-#ifdef GITHUB_THEME
+#if false
     const bool dark =
         qApp->styleHints()->colorScheme() == Qt::ColorScheme::Dark;
 

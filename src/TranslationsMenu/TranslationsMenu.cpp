@@ -5,29 +5,29 @@
 #include "Settings.hpp"
 
 #include <QLabel>
-#include <QMouseEvent>
+#include <QScrollArea>
 #include <QVBoxLayout>
-
-// TODO: Allow to resize this menu and implement translation widgets as
-// scrollable wrapping labels
 
 TranslationsMenu::TranslationsMenu(QWidget* const parent) :
     PersistentMenu(parent, Qt::FramelessWindowHint),
     layout(new QVBoxLayout(this)),
     translationsWidget(new QWidget(this)),
     translationsLayout(new QVBoxLayout(translationsWidget)) {
+    setFixedSize(360, 270);
     setDragMoveEnabled(true);
 
+    auto* const scrollArea = new QScrollArea(this);
+    scrollArea->setWidget(translationsWidget);
+    scrollArea->setWidgetResizable(true);
+
     layout->addWidget(new QLabel(tr("Translations Menu"), this));
-    layout->addWidget(translationsWidget);
+    layout->addWidget(scrollArea);
 
     layout->setContentsMargins(8, 8, 8, 8);
     layout->setSpacing(8);
 
-    translationsLayout->setContentsMargins(0, 0, 0, 0);
-    translationsLayout->setSpacing(8);
-
-    layout->setSizeConstraint(QLayout::SetFixedSize);
+    translationsLayout->setContentsMargins(4, 4, 4, 4);
+    translationsLayout->setSpacing(4);
 }
 
 void TranslationsMenu::showTranslations(
@@ -43,15 +43,24 @@ void TranslationsMenu::showTranslations(
         auto* const translationWidgetLayout =
             new QVBoxLayout(translationWidget);
 
-        translationWidgetLayout->setContentsMargins(0, 0, 0, 0);
+        translationWidgetLayout->setContentsMargins(4, 4, 4, 4);
         translationWidgetLayout->setSpacing(4);
+
+        auto* const headerLabel = new QLabel(name, translationWidget);
+        headerLabel->setWordWrap(true);
 
         auto* const translationLabel =
             new ClickableLabel(translation, translationWidget);
         translationLabel->setCursor(QCursor(Qt::PointingHandCursor));
+        translationLabel->setWordWrap(true);
 
-        translationWidgetLayout->addWidget(new QLabel(name, translationWidget));
-        translationWidgetLayout->addWidget(translationLabel);
+        auto* const scrollArea = new QScrollArea(translationWidget);
+        scrollArea->setWidget(translationLabel);
+
+        translationWidgetLayout->addWidget(headerLabel);
+        translationWidgetLayout->addWidget(scrollArea);
+
+        translationsLayout->addWidget(translationWidget);
 
         connect(
             translationLabel,
@@ -61,8 +70,6 @@ void TranslationsMenu::showTranslations(
             emit translationClicked(translationLabel->text());
         }
         );
-
-        translationsLayout->addWidget(translationWidget);
     }
 };
 

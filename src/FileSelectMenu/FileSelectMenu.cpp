@@ -75,7 +75,7 @@ void FileSelectMenu::clear() {
 auto FileSelectMenu::selected(const bool skipped) -> Selected {
     Selected selected;
 
-    for (const u16 idx : range<u16>(0, ui->gridLayout->count())) {
+    for (const auto idx : range(0, ui->gridLayout->count())) {
         const auto* const checkbox =
             as<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
 
@@ -120,7 +120,7 @@ auto FileSelectMenu::selected(const bool skipped) -> Selected {
 auto FileSelectMenu::selectedCount() const -> u16 {
     u16 count = 0;
 
-    for (const u16 idx : range<u16>(0, ui->gridLayout->count())) {
+    for (const auto idx : range(0, ui->gridLayout->count())) {
         const auto* const checkbox =
             as<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
 

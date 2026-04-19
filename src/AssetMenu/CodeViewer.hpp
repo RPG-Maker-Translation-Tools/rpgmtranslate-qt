@@ -3,12 +3,9 @@
 #include "FWD.hpp"
 #include "rpgmtranslate.h"
 
-#include <QDesktopServices>
-#include <QPainter>
 #include <QPlainTextEdit>
-#include <QStyleHints>
 #include <QSyntaxHighlighter>
-#include <QTextCharFormat>
+#include <QWidget>
 
 #if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || \
     defined(ENABLE_RUBY_HIGHLIGHTING)

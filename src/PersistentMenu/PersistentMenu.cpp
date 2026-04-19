@@ -12,9 +12,7 @@ PersistentMenu::PersistentMenu(
 ) :
     QWidget(parent, flags) {
     setAttribute(Qt::WA_StyledBackground, true);
-    setStyleSheet("PersistentMenu { background-color: %1 }"_L1.arg(
-        qApp->palette().color(QPalette::Window).name()
-    ));
+    setStyleSheet(u"PersistentMenu { background-color: palette(window) }"_s);
     hide();
 }
 
@@ -70,7 +68,7 @@ void PersistentMenu::mouseMoveEvent(QMouseEvent* const event) {
         const QPoint delta = curGlobal - pressPosGlobal_;
 
         if (!mouseMoved_ &&
-            delta.manhattanLength() >= QApplication::startDragDistance()) {
+            delta.manhattanLength() >= qApp->startDragDistance()) {
             setMouseMovedInternal(true);
         }
 

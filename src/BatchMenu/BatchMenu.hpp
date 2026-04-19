@@ -38,7 +38,7 @@ class BatchMenu final : public PersistentMenu {
         Selected selected,
         BatchAction action,
         u8 columnIndex,
-        std::variant<TrimFlags, std::tuple<u8, QString>, u8>
+        std::variant<TrimFlags, tuple<u8, QString>, u8>
     );
 
    protected:

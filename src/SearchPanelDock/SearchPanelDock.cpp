@@ -8,7 +8,6 @@
 #include "Utils.hpp"
 
 #include <QComboBox>
-#include <QFile>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
@@ -50,12 +49,13 @@ void SearchPanelDock::showMatches(
             lines = QStringView(mapSections.find(mapNumber)->second)
                         .split(u'\n', Qt::SkipEmptyParts);
         } else {
-            const QString path = this->projectSettings->translationPath() +
-                                 u'/' + filename + u".txt";
+            const QString path = this->projectSettings->translationPath() %
+                                 u'/' % filename % u".txt";
             auto file = QFile(path);
 
             if (!file.open(QFile::ReadOnly)) {
-                qWarning() << "Failed to open file %1: %2"_L1.arg(path).arg(
+                qWarning() << "Failed to open file %1: %2"_L1.arg(
+                    path,
                     file.errorString()
                 );
                 continue;
@@ -83,10 +83,10 @@ void SearchPanelDock::showMatches(
                     LINE_SEPARATOR
                 ),
                 tr("File %1 / Row %2 / Column %3 (%4)")
-                    .arg(filename)
-                    .arg(cellMatch.rowIndex() + 1)
-                    .arg(cellMatch.colIndex() + 1)
                     .arg(
+                        filename,
+                        itos(cellMatch.rowIndex() + 1),
+                        itos(cellMatch.colIndex() + 1),
                         cellMatch.colIndex() == 0
                             ? tr("Source")
                             : this->projectSettings
@@ -125,12 +125,12 @@ void SearchPanelDock::init(
         this,
         [this](const u16 index) -> void {
         if (index == 0) {
-            for (const i32 row :
+            for (const auto row :
                  range(0, this->searchResultList->model()->rowCount())) {
                 this->searchResultList->model()->item(row).hidden = false;
             }
         } else {
-            for (const i32 row :
+            for (const auto row :
                  range(0, this->searchResultList->model()->rowCount())) {
                 this->searchResultList->model()->item(row).hidden =
                     this->searchResultList->model()->item(row).filename !=
@@ -167,7 +167,7 @@ void SearchPanelDock::init(
                          views::drop(projectSettings->columns, 1)
                      )) {
                     const QAction* const action = menu.addAction(
-                        QString::number(idx + 1) + u" (" + column.name + u')'
+                        QL1SV(itos(idx + 1).data()) + u" (" + column.name + u')'
                     );
 
                     connect(

@@ -15,7 +15,6 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTreeWidget>
-#include <QVBoxLayout>
 
 constexpr u8 SOURCE_IDX = 0;
 constexpr u8 TRANSLATION_IDX = 1;
@@ -92,8 +91,8 @@ GlossaryMenu::GlossaryMenu(QWidget* const parent) :
             startIndex = 0;
         }
 
-        for (i32 i = 0; i < itemCount; i++) {
-            const i32 currentIndex = (startIndex + i) % itemCount;
+        for (const auto idx : range(0, itemCount)) {
+            const i32 currentIndex = (startIndex + idx) % itemCount;
             auto* const item = glossaryTable->topLevelItem(currentIndex);
 
             const auto* const sourceCell =
@@ -337,7 +336,7 @@ auto GlossaryMenu::glossary() const -> Glossary {
     const u32 entryCount = glossaryTable->topLevelItemCount();
     out.terms.reserve(entryCount);
 
-    for (i32 idx = 0; idx < entryCount; idx++) {
+    for (const auto idx : range(0, entryCount)) {
         auto* const item = glossaryTable->topLevelItem(idx);
 
         const auto* const sourceCell =
@@ -400,7 +399,7 @@ void TermInfoCell::setFrom(const QString& text, const MatchModeInfo& info) {
     const f64 threshold = (info.mode.tag == MatchMode::Tag::Exact)
                               ? DEFAULT_FUZZY_THRESHOLD
                               : info.mode.fuzzy.threshold;
-    fuzzyThresholdInput->setText(QString::number(threshold));
+    fuzzyThresholdInput->setText(QL1SV(ftos(threshold).data()));
 
     const bool show = info.mode.tag != MatchMode::Tag::Exact;
     fuzzyThresholdInput->setVisible(show);
@@ -459,9 +458,8 @@ TermInfoCell::TermInfoCell(QWidget* const parent) : QWidget(parent) {
         fuzzyThresholdInput->setVisible(show);
 
         if (show && fuzzyThresholdInput->text().trimmed().isEmpty()) {
-            fuzzyThresholdInput->setText(
-                QString::number(DEFAULT_FUZZY_THRESHOLD)
-            );
+            // DEFAULT_FUZZY_THRESHOLD
+            fuzzyThresholdInput->setText(u"0.8"_s);
         }
     };
 

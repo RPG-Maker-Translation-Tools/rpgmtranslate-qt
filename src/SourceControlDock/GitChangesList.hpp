@@ -2,6 +2,7 @@
 
 #ifdef ENABLE_LIBGIT2
 #include "Aliases.hpp"
+#include "Utils.hpp"
 
 #include <git2/diff.h>
 
@@ -23,9 +24,8 @@ struct GitChangeItem final {
     git_delta_t changeType;
     bool staged = false;
 
-    [[nodiscard]] auto fileName() const -> QString {
-        // TODO: Avoid QFileInfo
-        return QFileInfo(filePath).fileName();
+    [[nodiscard]] auto fileName() const -> QStringView {
+        return lastPathComponent(filePath);
     }
 
     [[nodiscard]] auto relativeDir(const QString& repoRootPath) const
@@ -158,7 +158,7 @@ class GitChangesDelegate final : public QStyledItemDelegate {
         checkOpt.state = QStyle::State_Enabled;
         checkOpt.state |= item.staged ? QStyle::State_On : QStyle::State_Off;
 
-        QApplication::style()
+        qApp->style()
             ->drawPrimitive(QStyle::PE_IndicatorCheckBox, &checkOpt, painter);
 
         const i32 checkboxReserved =
@@ -189,7 +189,7 @@ class GitChangesDelegate final : public QStyledItemDelegate {
         icon.paint(painter, iconRect);
         xPos += ICON_SIZE + ICON_TEXT_GAP;
 
-        const QString fileName = item.fileName();
+        const QString fileName = item.fileName().toString();
         const i32 nameWidth = fontMetrics.horizontalAdvance(fileName);
         const i32 totalTextAvail = badgeX - xPos - NAME_PATH_GAP;
         const i32 actualNameWidth = min(nameWidth, totalTextAvail);

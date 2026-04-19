@@ -3,7 +3,6 @@
 #include "BookmarkList.hpp"
 #include "TabListModel.hpp"
 
-#include <QApplication>
 #include <QComboBox>
 #include <QVBoxLayout>
 
@@ -13,9 +12,7 @@ BookmarkMenu::BookmarkMenu(QWidget* const parent) :
     fileSelect(new QComboBox(this)),
     bookmarkList(new BookmarkList(this)) {
     setAttribute(Qt::WA_StyledBackground, true);
-    setStyleSheet("BookmarkMenu { background-color: %1 }"_L1.arg(
-        qApp->palette().color(QPalette::Window).name()
-    ));
+    setStyleSheet(u"BookmarkMenu { background-color: palette(window) }"_s);
 
     fileSelect->addItem(tr("- Filter by file -"));
 
@@ -25,13 +22,13 @@ BookmarkMenu::BookmarkMenu(QWidget* const parent) :
         this,
         [this](const u32 index) -> void {
         if (index == 0) {
-            for (const u32 row : range<u32>(0, bookmarkList->rowCount())) {
+            for (const auto row : range(0, bookmarkList->rowCount())) {
                 bookmarkList->setRowHidden(row, false);
             }
         } else {
             const QString filename = fileSelect->currentText();
 
-            for (const u32 row : range<u32>(0, bookmarkList->rowCount())) {
+            for (const auto row : range(0, bookmarkList->rowCount())) {
                 const Bookmark& bookmark = bookmarkList->bookmark(row);
                 bookmarkList->setRowHidden(
                     row,
@@ -69,7 +66,7 @@ void BookmarkMenu::addBookmark(
 }
 
 void BookmarkMenu::updateBookmark(const u32 targetRow, const QString& text) {
-    for (const u32 row : range<u32>(0, bookmarkList->rowCount())) {
+    for (const auto row : range(0, bookmarkList->rowCount())) {
         Bookmark& bookmark = bookmarkList->bookmark(row);
 
         if (bookmark.row == targetRow) {
@@ -79,7 +76,7 @@ void BookmarkMenu::updateBookmark(const u32 targetRow, const QString& text) {
 };
 
 void BookmarkMenu::removeBookmark(const u32 targetRow) {
-    for (const u32 row : range<u32>(0, bookmarkList->rowCount())) {
+    for (const auto row : range(0, bookmarkList->rowCount())) {
         Bookmark& bookmark = bookmarkList->bookmark(row);
 
         if (bookmark.row == targetRow) {
@@ -94,7 +91,7 @@ void BookmarkMenu::shiftIndices(
     const bool rowAdded
 ) {
     if (rowAdded) {
-        for (const u32 idx : range<u32>(0, bookmarkList->rowCount())) {
+        for (const auto idx : range(0, bookmarkList->rowCount())) {
             Bookmark& bookmark = bookmarkList->bookmark(idx);
 
             if (QL1SV(bookmark.filename.data()) == file &&
@@ -103,7 +100,7 @@ void BookmarkMenu::shiftIndices(
             }
         }
     } else {
-        for (const u32 idx : range<u32>(0, bookmarkList->rowCount())) {
+        for (const auto idx : range(0, bookmarkList->rowCount())) {
             Bookmark& bookmark = bookmarkList->bookmark(idx);
 
             if (QL1SV(bookmark.filename.data()) == file && bookmark.row > row) {

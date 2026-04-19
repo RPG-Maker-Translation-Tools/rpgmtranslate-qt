@@ -1,4 +1,5 @@
 #![allow(clippy::too_many_arguments)]
+use gxhash::{HashMap, HashMapExt};
 use language_tokenizer::{
     Algorithm, MatchMode, MatchResult, find_all_matches as find_all_matches_,
     tokenize,
@@ -9,9 +10,10 @@ use languagetool_rust::api::{
 };
 use llm_connector::{
     LlmClient, LlmConnectorError,
-    types::{ChatRequest, Message, Role},
+    types::{ChatRequest, Message, ReasoningEffort, Role},
 };
 use log::{debug, info};
+use marshal_rs::Get;
 use regex::Regex;
 use rpgmad_lib::{Decrypter, ExtractError};
 use rvpacker_txt_rs_lib::{
@@ -22,7 +24,6 @@ use rvpacker_txt_rs_lib::{
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, from_str, to_string};
 use std::{
-    collections::HashMap,
     fs::{self, create_dir_all, read_to_string},
     io::{self},
     path::{Path, PathBuf},
@@ -89,7 +90,7 @@ pub fn to_bcp47(algorithm: Algorithm) -> &'static str {
 }
 
 static CHECKED_LANGS: LazyLock<Arc<Mutex<HashMap<&'static str, f64>>>> =
-    LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
+    LazyLock::new(|| Arc::new(Mutex::new(HashMap::default())));
 
 fn get_game_type(
     game_title: &str,
@@ -153,6 +154,8 @@ pub(crate) enum Error {
     AssetDecrypt(#[from] rpgm_asset_decrypter_lib::Error),
     #[error(transparent)]
     Marshal(#[from] marshal_rs::load::LoadError),
+    #[error("Index {0} does not exist in file {1}")]
+    InvalidIndex(usize, String),
 }
 
 #[repr(u8)]
@@ -249,9 +252,9 @@ pub(crate) fn read(
     skip_files: FileFlags,
     flags: BaseFlags,
     map_events: bool,
-    hashes: Vec<u128>,
+    hashes: HashMap<String, u64>,
     ini_title: &str,
-) -> Result<Vec<u128>, Error> {
+) -> Result<HashMap<String, u64>, Error> {
     let game_title: String = if engine_type.is_new() {
         let system_file_path = source_path.join("System.json");
         let system_file_content = read_to_string(&system_file_path)
@@ -271,8 +274,9 @@ pub(crate) fn read(
             let value =
                 marshal_rs::load::load_utf8(&system_file_content, None)?;
 
-            value["game_title"]
-                .as_str()
+            value
+                .get("game_title")
+                .and_then(|t| t.as_str())
                 .map(Into::into)
                 .unwrap_or(String::new())
         } else {
@@ -782,6 +786,13 @@ pub(crate) async fn translate<'a>(
                             .as_u64()
                             .unwrap_unchecked()
                     } as u32;
+                    let reasoning_effort = unsafe {
+                        endpoint_settings["reasoningEffort"]
+                            .as_u64()
+                            .unwrap_unchecked()
+                    } as u8;
+                    let reasoning_effort: ReasoningEffort =
+                        unsafe { std::mem::transmute(reasoning_effort) };
                     let model = unsafe {
                         endpoint_settings["model"].as_str().unwrap_unchecked()
                     };
@@ -802,7 +813,7 @@ pub(crate) async fn translate<'a>(
                     } as f32;
 
                     let mut limited_files: Vec<HashMap<&str, Vec<String>>> =
-                        vec![HashMap::new()];
+                        vec![HashMap::default()];
                     let mut entry: &mut HashMap<&str, Vec<String>> =
                         limited_files.first_mut().unwrap();
                     let mut limit = 0;
@@ -820,13 +831,13 @@ pub(crate) async fn translate<'a>(
                             entry.insert(file, strings);
                         } else {
                             limit = 0;
-                            limited_files.push(HashMap::new());
+                            limited_files.push(HashMap::default());
                             entry = limited_files.last_mut().unwrap();
                         }
                     }
 
                     let mut result: HashMap<String, Vec<String>> =
-                        HashMap::new();
+                        HashMap::default();
 
                     let mut request = ChatRequest {
                         model: model.to_string(),
@@ -837,6 +848,7 @@ pub(crate) async fn translate<'a>(
                         enable_thinking: Some(thinking),
                         temperature: Some(temperature),
                         max_tokens: Some(output_token_limit),
+                        reasoning_effort: Some(reasoning_effort),
                         ..Default::default()
                     };
 

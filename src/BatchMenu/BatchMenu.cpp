@@ -4,12 +4,10 @@
 #include "Types.hpp"
 #include "ui_BatchMenu.h"
 
-#include <QCheckBox>
 #include <QMessageBox>
-#include <QMouseEvent>
 
 // TODO: Add button to use the value from settings for wrapping
-// TODO: Add some kind of safety mechanism to avoid wrapping to more of 4 lines
+// TODO: Add some kind of safety mechanism to avoid wrapping more than 4 lines
 // of text
 // TODO: Wrapping also malforms the tags, like from Yanfly Message Core. That
 // needs to be addressed.
@@ -124,7 +122,7 @@ BatchMenu::BatchMenu(QWidget* const parent) :
             return;
         }
 
-        std::variant<TrimFlags, std::tuple<u8, QString>, u8> variant;
+        std::variant<TrimFlags, tuple<u8, QString>, u8> variant;
 
         switch (action) {
             case BatchAction::None:
@@ -146,7 +144,7 @@ BatchMenu::BatchMenu(QWidget* const parent) :
 
                 break;
             case BatchAction::Translate: {
-                variant = std::tuple(
+                variant = tuple(
                     u8(ui->translationEndpointSelect->currentIndex() - 1),
                     ui->contextInput->toPlainText()
                 );
@@ -222,7 +220,8 @@ void BatchMenu::setFiles(const vector<TabListItem>& files) {
 }
 
 void BatchMenu::setEndpoints(const vector<EndpointSettings>& endpoints) {
-    for (u8 idx = ui->translationEndpointSelect->count() - 1; idx > 0; idx++) {
+    for (i32 idx = ui->translationEndpointSelect->count() - 1; idx >= 0;
+         idx--) {
         ui->translationEndpointSelect->removeItem(idx);
     }
 

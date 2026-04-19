@@ -4,41 +4,58 @@
 #include "Constants.hpp"
 
 #include <QHideEvent>
+#include <QLabel>
 #include <QPixmap>
+#include <QPushButton>
+#include <QSlider>
+#include <QVBoxLayout>
 
 const auto toMMSS = [](const u32 secs) -> QString {
-    return u"%1:%2"_s.arg(secs / 60, 2, 10, u'0').arg(secs % 60, 2, 10, u'0');
+    return "%1:%2"_L1.arg(
+        QL1SV(itos(secs / 60, 2, '0').data()),
+        QL1SV(itos(secs % 60, 2, '0').data())
+    );
 };
 
-MediaPlayer::MediaPlayer(QWidget* const parent) : QWidget(parent) {
+MediaPlayer::MediaPlayer(QWidget* const parent) :
+    QWidget(parent),
+    layout_(new QVBoxLayout(this)),
+    mediaLabel(new QLabel(this)),
+
+    progressWidget(new QWidget(this)),
+    progressLayout(new QHBoxLayout(progressWidget)),
+    progressSlider(new QSlider(Qt::Horizontal, progressWidget)),
+    progressLabel(new QLabel(progressWidget)),
+
+    pauseButton(new QPushButton(this)) {
 #ifdef DEBUG_BUILD
     av_log_set_level(AV_LOG_VERBOSE);
 #elifdef RELEASE_BUILD
     av_log_set_level(AV_LOG_QUIET);
 #endif
 
-    layout_.setContentsMargins(0, 0, 0, 0);
-    layout_.setSpacing(0);
-    layout_.addWidget(&mediaLabel);
+    layout_->setContentsMargins(0, 0, 0, 0);
+    layout_->setSpacing(0);
+    layout_->addWidget(mediaLabel);
 
-    mediaLabel.setAlignment(Qt::AlignCenter);
+    mediaLabel->setAlignment(Qt::AlignCenter);
 
-    progressLayout.addWidget(&progressSlider);
-    progressLayout.addWidget(&progressLabel);
+    progressLayout->addWidget(progressSlider);
+    progressLayout->addWidget(progressLabel);
 
-    layout_.addWidget(&progressWidget);
-    layout_.addWidget(&pauseButton);
+    layout_->addWidget(progressWidget);
+    layout_->addWidget(pauseButton);
 
     frameTimer.setSingleShot(false);
 
     connect(&frameTimer, &QTimer::timeout, this, &MediaPlayer::processTick);
-    connect(&progressSlider, &QSlider::sliderReleased, this, [this] -> void {
+    connect(progressSlider, &QSlider::sliderReleased, this, [this] -> void {
         togglePlayback();
-        seekSecond(progressSlider.value());
+        seekSecond(progressSlider->value());
         togglePlayback();
     });
     connect(
-        &pauseButton,
+        pauseButton,
         &QPushButton::clicked,
         this,
         &MediaPlayer::togglePlayback
@@ -261,23 +278,23 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
     }
 
     if (!isAudioOnly) {
-        mediaLabel.clear();
-        mediaLabel.setFixedSize(videoWidth, videoHeight);
+        mediaLabel->clear();
+        mediaLabel->setFixedSize(videoWidth, videoHeight);
     } else {
         static constexpr u16 AUDIO_PANEL_WIDTH = 320;
         static constexpr u16 AUDIO_PANEL_HEIGHT = 96;
         videoWidth = AUDIO_PANEL_WIDTH;
         videoHeight = AUDIO_PANEL_HEIGHT;
 
-        mediaLabel.setFixedSize(videoWidth, videoHeight);
+        mediaLabel->setFixedSize(videoWidth, videoHeight);
     }
 
     duration = formatContext->duration / AV_TIME_BASE;
     audioBytesPlayed.store(0, std::memory_order_relaxed);
-    progressSlider.setValue(0);
-    progressSlider.setRange(0, duration);
-    progressLabel.setText(u"00:00/%1"_s.arg(toMMSS(duration)));
-    pauseButton.setText(tr("Pause"));
+    progressSlider->setValue(0);
+    progressSlider->setRange(0, duration);
+    progressLabel->setText("00:00/%1"_L1.arg(toMMSS(duration)));
+    pauseButton->setText(QObject::tr("Pause"));
 
     return {};
 }
@@ -332,7 +349,7 @@ void MediaPlayer::togglePlayback() {
     }
 
     paused = !paused;
-    pauseButton.setText(paused ? tr("Resume") : tr("Pause"));
+    pauseButton->setText(paused ? tr("Resume") : tr("Pause"));
     paused ? frameTimer.stop() : frameTimer.start(frameIntervalMS);
     paused ? ma_device_stop(&device) : ma_device_start(&device);
 }
@@ -367,16 +384,16 @@ void MediaPlayer::decodeAudio() {
 
     const auto ringWrite =
         [this](const usize pos, const u8* const src, const usize len) -> void {
-        for (usize i = 0; i < len; i++) {
-            pcmBuffer[(pos + i) & RING_MASK] = src[i];
+        for (const auto idx : range(0, len)) {
+            pcmBuffer[(pos + idx) & RING_MASK] = src[idx];
         }
     };
 
     if (!planarFormat) {
         ringWrite(head, audioFrame->data[0], frameBytes);
     } else {
-        for (u32 sample = 0; sample < samples; sample++) {
-            for (u8 channel = 0; channel < channels; channel++) {
+        for (const auto sample : range(0, samples)) {
+            for (const auto channel : range(0, channels)) {
                 const usize dstPos =
                     head +
                     (((usize(sample) * channels) + channel) * sampleSize);
@@ -397,7 +414,7 @@ void MediaPlayer::finishPlayback() {
     paused = true;
     finished = true;
 
-    pauseButton.setText(tr("Done"));
+    pauseButton->setText(tr("Done"));
 }
 
 void MediaPlayer::processTick() {
@@ -405,10 +422,12 @@ void MediaPlayer::processTick() {
         const i64 bytes = audioBytesPlayed.load(std::memory_order_relaxed);
         const i64 seconds = bytes / bytesPerSecond;
 
-        progressSlider.setValue(seconds);
-        progressLabel.setText(
-            u"%1/%2"_s.arg(toMMSS(seconds)).arg(toMMSS(duration))
-        );
+        if (!progressSlider->isSliderDown()) {
+            progressSlider->setValue(seconds);
+            progressLabel->setText(
+                "%1/%2"_L1.arg(toMMSS(seconds), toMMSS(duration))
+            );
+        }
 
         if (!refillRingBuffer(AUDIO_BUFFER_THRESHOLD) &&
             ringHead.load(std::memory_order_acquire) ==
@@ -439,10 +458,12 @@ void MediaPlayer::processTick() {
                 if (seconds != playbackSecond) {
                     playbackSecond = seconds;
 
-                    progressSlider.setValue(seconds);
-                    progressLabel.setText(
-                        u"%1/%2"_s.arg(toMMSS(seconds)).arg(toMMSS(duration))
-                    );
+                    if (!progressSlider->isSliderDown()) {
+                        progressSlider->setValue(seconds);
+                        progressLabel->setText(
+                            "%1/%2"_L1.arg(toMMSS(seconds), toMMSS(duration))
+                        );
+                    }
                 }
 
                 if (const auto result = showFrame(); !result) {
@@ -471,7 +492,7 @@ void MediaPlayer::processTick() {
         const auto result = showFrame();
 
         if (!result) {
-            qCritical() << "Failed to show frame: "_L1 << result.error();
+            qCritical() << "Failed to show frame: %1"_L1.arg(result.error());
         }
     }
 
@@ -507,7 +528,7 @@ auto MediaPlayer::showFrame() -> result<void, QString> {
         rgbFrame->linesize
     );
 
-    mediaLabel.setPixmap(
+    mediaLabel->setPixmap(
         QPixmap::fromImage(QImage(
             rgbFrame->data[0],
             videoWidth,
@@ -516,7 +537,7 @@ auto MediaPlayer::showFrame() -> result<void, QString> {
             QImage::Format_RGB888
         ))
     );
-    mediaLabel.repaint();
+    mediaLabel->repaint();
     return {};
 }
 
@@ -543,8 +564,8 @@ void MediaPlayer::audioDataCallback(
     const usize copySize = (available < bytesNeeded) ? available : bytesNeeded;
     self->audioBytesPlayed.fetch_add(copySize, std::memory_order_relaxed);
 
-    for (usize i = 0; i < copySize; i++) {
-        dst[i] = self->pcmBuffer[(tail + i) & RING_MASK];
+    for (const auto idx : range(0, copySize)) {
+        dst[idx] = self->pcmBuffer[(tail + idx) & RING_MASK];
     }
 
     if (copySize < bytesNeeded) {
@@ -634,8 +655,6 @@ void MediaPlayer::seekSecond(const u32 second) {
         refillRingBuffer(AUDIO_BUFFER_THRESHOLD);
     }
 
-    progressLabel.setText(u"%1/%2"_s.arg(toMMSS(second)).arg(toMMSS(duration)));
-
-    togglePlayback();
+    progressLabel->setText("%1/%2"_L1.arg(toMMSS(second), toMMSS(duration)));
 }
 #endif

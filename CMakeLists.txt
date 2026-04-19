@@ -22,7 +22,7 @@ option(ENABLE_LIBGIT2
 )
 
 option(ENABLE_ASSET_PLAYBACK
-    "Allows playing video and audio assets directly in the application. Requires FFmpeg and miniaudio."
+    "Allows playing video and audio assets directly in the application. Requires FFmpeg."
     ON
 )
 
@@ -132,35 +132,7 @@ find_package(LibArchive REQUIRED)
 
 include(FindPackageHandleStandardArgs)
 
-find_path(RAPIDHASH_INCLUDE_DIR
-    NAMES rapidhash.h
-    HINTS ${RAPIDHASH_ROOT} ${RAPIDHASH_ROOT}/include
-)
-
-find_package_handle_standard_args(rapidhash
-    REQUIRED_VARS RAPIDHASH_INCLUDE_DIR
-    FAIL_MESSAGE  "rapidhash not found. Install it or set -DRAPIDHASH_ROOT=<path>"
-)
-
-if (NOT rapidhash_FOUND)
-    message(FATAL_ERROR "Aborting: rapidhash is required.")
-endif()
-
 if (ENABLE_ASSET_PLAYBACK)
-    find_path(MINIAUDIO_INCLUDE_DIR
-        NAMES miniaudio.h
-        HINTS ${MINIAUDIO_ROOT} ${MINIAUDIO_ROOT}/include
-    )
-
-    find_package_handle_standard_args(miniaudio
-        REQUIRED_VARS MINIAUDIO_INCLUDE_DIR
-        FAIL_MESSAGE  "miniaudio not found. Install it or set -DMINIAUDIO_ROOT=<path>"
-    )
-
-    if (NOT miniaudio_FOUND)
-        message(FATAL_ERROR "Aborting: miniaudio is required for ENABLE_ASSET_PLAYBACK.")
-    endif()
-
     find_path(FFMPEG_INCLUDE_DIR
         NAMES libavcodec/avcodec.h
         HINTS ${FFMPEG_ROOT} ${FFMPEG_ROOT}/include
@@ -222,6 +194,9 @@ file(GLOB TRANSLATION_TS_FILES translations/*)
 # Create the executable, but do not yet finalize it
 set(WINDOWS_APPLICATION_ICON "resources/${PROJECT_NAME}-logo.rc")
 
+# Build zmij, it cannot be used with only the header
+add_library(zmij OBJECT src/3rdparty/zmij.cc)
+
 qt_add_executable(${PROJECT_NAME}
     MANUAL_FINALIZATION
     ${SOURCES}
@@ -254,6 +229,7 @@ target_compile_definitions(${PROJECT_NAME}
         $<$<BOOL:${ENABLE_RUBY_HIGHLIGHTING}>:ENABLE_RUBY_HIGHLIGHTING>
 )
 
+# Definitions for better code
 add_definitions(
     -DQT_DISABLE_DEPRECATED_UP_TO=0x060802
     -DQT_ENABLE_STRICT_MODE_UP_TO=0x060802
@@ -286,8 +262,6 @@ file(GLOB ICONS icons/*)
 # Include paths
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${SUBDIRS}
-    ${RAPIDHASH_INCLUDE_DIRS}
-    ${MINIAUDIO_INCLUDE_DIRS}
 )
 
 # Link libraries
@@ -298,9 +272,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Network
     Qt6::Svg
     LibArchive::LibArchive
+    zmij
 )
 
 if (ENABLE_ASSET_PLAYBACK)
+    # FFmpeg libs
     target_link_libraries(${PROJECT_NAME} PRIVATE
         avfilter
         avformat
@@ -357,7 +333,6 @@ endif()
 if (ENABLE_RUBY_HIGHLIGHTING)
     list(APPEND RPGMTRANSLATE_RUST_FEATURES "ruby-highlighting")
 endif()
-
 
 corrosion_import_crate(
     MANIFEST_PATH "${RUST_CRATE_DIR}/Cargo.toml"

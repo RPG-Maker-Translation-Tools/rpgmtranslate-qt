@@ -2,6 +2,7 @@
 
 #include "FileSelectMenu.hpp"
 #include "ProjectSettings.hpp"
+#include "Utils.hpp"
 #include "rpgmtranslate.h"
 #include "ui_ReadMenu.h"
 
@@ -11,15 +12,12 @@ ReadMenu::ReadMenu(QWidget* const parent) :
     QWidget(parent),
     ui(setupUi()),
     fileSelectMenu(new FileSelectMenu(parent)) {
-    ui->iniTitleLabel->hide();
-    ui->titleEncodingSelect->hide();
+    ui->iniTitleDisplayWidget->hide();
 
     hide();
 
     setAttribute(Qt::WA_StyledBackground, true);
-    setStyleSheet("ReadMenu { background-color: %1 }"_L1.arg(
-        qApp->palette().color(QPalette::Window).name()
-    ));
+    setStyleSheet(u"ReadMenu { background-color: palette(window) }"_s);
 
     connect(
         ui->readModeSelect,
@@ -142,24 +140,28 @@ ReadMenu::ReadMenu(QWidget* const parent) :
         this,
         [this](const Qt::CheckState state) -> void {
         if (state == Qt::CheckState::Checked) {
-            const FFIString error = rpgm_get_ini_title(
+            const bool success = rpgm_get_ini_title(
                 FFIString{ .ptr = projectPath.data(),
                            .len = u32(projectPath.size()) },
                 &title_
             );
 
-            if (error.ptr != nullptr) {
+            if (!success) {
+                const QUtf8SV error = ffitostr(rpgm_error());
+                qCritical()
+                    << "Failed to extract title from the Game.ini file: %1"_L1
+                           .arg(error);
                 QMessageBox::critical(
                     this,
                     tr("Failed to extract INI title"),
                     tr("Failed to extract title from the Game.ini file: %1")
-                        .arg(QUtf8SV(error.ptr, error.len))
+                        .arg(error)
                 );
-                rpgm_string_free(error);
                 return;
             }
 
             if (title_.len == 0) {
+                qWarning() << "Title is empty in Game.ini file"_L1;
                 QMessageBox::warning(
                     this,
                     tr("Title is empty"),
@@ -169,12 +171,16 @@ ReadMenu::ReadMenu(QWidget* const parent) :
                 return;
             }
 
+            ui->iniTitleDisplayWidget->show();
+
             ui->titleEncodingSelect->setCurrentText(u"UTF-8"_s);
-            ui->iniTitleLabel->show();
-            ui->titleEncodingSelect->show();
+
+            ui->iniTitleLabel->setText(
+                QStringDecoder(QStringDecoder::Utf8)
+                    .decode(QByteArrayView(title_.ptr, title_.len))
+            );
         } else {
-            ui->iniTitleLabel->hide();
-            ui->titleEncodingSelect->hide();
+            ui->iniTitleDisplayWidget->hide();
         }
     }
     );
@@ -257,10 +263,8 @@ void ReadMenu::init(const shared_ptr<ProjectSettings>& settings) {
 
     if (engineType == EngineType::New) {
         ui->iniTitleWidget->hide();
-        ui->iniTitleDisplayWidget->hide();
     } else {
         ui->iniTitleWidget->show();
-        ui->iniTitleDisplayWidget->show();
     }
 
     ui->readModeSelect->setEnabled(true);
@@ -277,10 +281,8 @@ auto ReadMenu::exec(const QString& projectPath, const EngineType engineType)
 
     if (engineType == EngineType::New) {
         ui->iniTitleWidget->hide();
-        ui->iniTitleDisplayWidget->hide();
     } else {
         ui->iniTitleWidget->show();
-        ui->iniTitleDisplayWidget->show();
     }
 
     QEventLoop loop;
@@ -299,9 +301,16 @@ auto ReadMenu::exec(const QString& projectPath, const EngineType engineType)
     loop.exec();
 
     this->projectPath = QByteArray();
-    decodedTitle = QStringDecoder(ui->titleEncodingSelect->currentText())
-                       .decode(QByteArrayView(title_.ptr, title_.len));
-    rpgm_buffer_free(title_);
+
+    if (!ui->titleEncodingSelect->currentText().isEmpty()) {
+        decodedTitle = QStringDecoder(ui->titleEncodingSelect->currentText())
+                           .decode(QByteArrayView(title_.ptr, title_.len));
+    }
+
+    if (title_.ptr != nullptr) {
+        rpgm_buffer_free(title_);
+        title_ = ByteBuffer{};
+    }
 
     return code;
 };
