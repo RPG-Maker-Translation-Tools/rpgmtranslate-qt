@@ -297,12 +297,12 @@ pub(crate) fn read(
         .read_mode(read_mode)
         .duplicate_mode(duplicate_mode)
         .map_events(map_events)
-        .hashes(hashes)
+        .hashes(hashes.into_iter())
         .build();
 
     reader.read(source_path, translation_path, engine_type)?;
 
-    Ok(reader.hashes())
+    Ok(reader.hashes().collect())
 }
 
 pub(crate) fn purge(

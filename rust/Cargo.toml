@@ -31,7 +31,7 @@ gxhash = { version = "3.5.0", features = [
 ], default-features = false }
 
 rpgmad-lib = "5.0.0"
-rvpacker-txt-rs-lib = { version = "13.0.0", path = "../../rvpacker-txt-rs-lib" }
+rvpacker-txt-rs-lib = "13.0.0"
 rpgm-asset-decrypter-lib = "3.2.2"
 marshal-rs = "2.0.1"
 

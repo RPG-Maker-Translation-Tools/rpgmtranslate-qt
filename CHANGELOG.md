@@ -8,7 +8,12 @@ Note that tags and sequences linting requires a lot of work. This release brings
 
 ### Changes
 
-- Updated to `rvpacker-txt-rs-lib` v13.0.0
+- Updated to `rvpacker-txt-rs-lib` v13.0.0:
+    - Made `core::parse_rpgm_file` function public.
+    - Remove `core::get_engine_extension` function.
+    - Changed how hashing works: Now program operates on 64-bit hash outputs of `gxhash` instead of 128-bit ones, and accepts/returns hashes as iterators over filename-hash pairs.
+    - Added `from_filename`, `to_str` and `extension` methods for `EngineType`.
+    - Added `Display` impl for `EngineType`.
 - Added reasoning effort to translation settings.
 - The program now generates `.rvpacker-metadata` file for compatibility with `rvpacker-txt-rs`.
 - Translations menu now has fixed size, but each translation label is now scrollable along with the menu view.
