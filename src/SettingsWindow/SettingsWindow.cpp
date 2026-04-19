@@ -426,9 +426,11 @@ SettingsWindow::SettingsWindow(
     // Core
     ui->backupCheckbox->setChecked(settings->core.backup.enabled);
     ui->backupPeriodInput->setText(
-        QL1SV(itos(settings->core.backup.period).data())
+        QString::fromLatin1(itos(settings->core.backup.period).data())
     );
-    ui->maxBackupsInput->setText(QL1SV(itos(settings->core.backup.max).data()));
+    ui->maxBackupsInput->setText(
+        QString::fromLatin1(itos(settings->core.backup.max).data())
+    );
 
     ui->updatesCheckbox->setChecked(settings->core.checkForAppUpdates);
 
@@ -460,7 +462,7 @@ SettingsWindow::SettingsWindow(
     ui->bookmarkMenuInput->setKeySequence(settings->controls.bookmarkMenu);
 
     ui->lineLengthHintInput->setText(
-        QL1SV(itos(projectSettings->lineLengthHint).data())
+        QString::fromLatin1(itos(projectSettings->lineLengthHint).data())
     );
     ui->sourceLanguageSelect->setCurrentIndex(
         i8(projectSettings->sourceLang) + 1
@@ -778,11 +780,20 @@ void SettingsWindow::checkKey() {
         const QUtf8SV error = ffitostr(rpgm_error());
         qWarning() << "Getting available models failed with error: %1"_L1.arg(
             error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                .toString()
+#endif
         );
         QMessageBox::warning(
             this,
             tr("Failed to validate key"),
-            tr("Getting available models failed with error: %1").arg(error)
+            tr("Getting available models failed with error: %1")
+                .arg(
+                    error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
+                )
         );
 
         return;

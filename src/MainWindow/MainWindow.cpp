@@ -371,7 +371,13 @@ MainWindow::MainWindow(QWidget* const parent) :
             QMessageBox::information(
                 this,
                 tr("Written successfully"),
-                tr("Elapsed: %1s.").arg(QL1SV(ftos(result.value(), 2).data()))
+                tr("Elapsed: %1s.")
+                    .arg(
+                        QL1SV(ftos(result.value(), 2).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
+                    )
             );
         },
             Qt::SingleShotConnection
@@ -617,8 +623,15 @@ MainWindow::MainWindow(QWidget* const parent) :
         progressStatusLabel->setText(
             tr("%1 Translated / %2 Total")
                 .arg(
-                    QL1SV(itos(ui->tabPanel->currentTranslated()).data()),
+                    QL1SV(itos(ui->tabPanel->currentTranslated()).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
+                        ,
                     QL1SV(itos(ui->tabPanel->currentTotal()).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
                 )
         );
     }
@@ -702,11 +715,19 @@ MainWindow::MainWindow(QWidget* const parent) :
                 .arg(
                     QL1SV(
                         itos(ui->translationTable->model()->rowCount()).data()
-                    ),
-                    itos(
-                        ui->translationTable->model()->rowCount() -
-                        ui->tabPanel->currentTotal()
                     )
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
+                        ,
+                    QL1SV(itos(
+                              ui->translationTable->model()->rowCount() -
+                              ui->tabPanel->currentTotal()
+                          )
+                              .data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
                 )
 
         );
@@ -807,7 +828,12 @@ MainWindow::MainWindow(QWidget* const parent) :
                         this,
                         tr("Batch translation failed"),
                         tr("Batch translation failed with error: %1")
-                            .arg(ffitostr(error))
+                            .arg(
+                                ffitostr(error)
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                    .toString()
+#endif
+                            )
                     );
 
                     return;
@@ -834,8 +860,15 @@ MainWindow::MainWindow(QWidget* const parent) :
                         qInfo()
                             << "Translated strings array at index %1 in file %2 is empty."_L1
                                    .arg(
-                                       QL1SV(itos(idx).data()),
-                                       QL1SV(filenameArray)
+                                       QL1SV(itos(idx).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                           .toString()
+#endif
+                                           ,
+                                       QL1SV(filenameArray.data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                           .toString()
+#endif
                                    );
                         continue;
                     }
@@ -1410,7 +1443,12 @@ MainWindow::MainWindow(QWidget* const parent) :
                     this,
                     tr("Purge failed"),
                     tr("Purge failed with error: %1")
-                        .arg(ffitostr(result.error()))
+                        .arg(
+                            ffitostr(result.error())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                .toString()
+#endif
+                        )
                 );
                 return;
             }
@@ -1447,7 +1485,12 @@ MainWindow::MainWindow(QWidget* const parent) :
                     this,
                     tr("Write failed"),
                     tr("Write failed with error: %1")
-                        .arg(ffitostr(result.error()))
+                        .arg(
+                            ffitostr(result.error())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                .toString()
+#endif
+                        )
                 );
                 return;
             }
@@ -1455,7 +1498,13 @@ MainWindow::MainWindow(QWidget* const parent) :
             QMessageBox::information(
                 this,
                 tr("Write finished"),
-                tr("Elapsed: %1").arg(result.value(), 10, 2)
+                tr("Elapsed: %1")
+                    .arg(
+                        QL1SV(ftos(result.value(), 2).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
+                    )
             );
         },
             Qt::SingleShotConnection
@@ -1959,7 +2008,10 @@ void MainWindow::checkForUpdates(bool manual) {
                 usize(archiveData.size())
             ) != ARCHIVE_OK) {
             qWarning() << "libarchive failed to open archive: %1"_L1.arg(
-                archive_error_string(archive_)
+                QUtf8SV(archive_error_string(archive_))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                    .toString()
+#endif
             );
 
             QMessageBox::information(
@@ -1994,7 +2046,10 @@ void MainWindow::checkForUpdates(bool manual) {
 
             if (archive_write_header(disk, entry) != ARCHIVE_OK) {
                 qWarning() << "libarchive write_header failed: %1"_L1.arg(
-                    archive_error_string(disk)
+                    QUtf8SV(archive_error_string(disk))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
                 );
                 break;
             }
@@ -2014,7 +2069,10 @@ void MainWindow::checkForUpdates(bool manual) {
 
                 if (read != ARCHIVE_OK) {
                     qWarning() << "libarchive read_data_block failed:"_L1.arg(
-                        archive_error_string(archive_)
+                        QUtf8SV(archive_error_string(archive_))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
                     );
                     writeOk = false;
                     break;
@@ -2023,7 +2081,10 @@ void MainWindow::checkForUpdates(bool manual) {
                 if (archive_write_data_block(disk, buffer, size, offset) !=
                     ARCHIVE_OK) {
                     qWarning() << "libarchive write_data_block failed:"_L1.arg(
-                        archive_error_string(disk)
+                        QUtf8SV(archive_error_string(disk))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
                     );
                     writeOk = false;
                     break;
@@ -2641,7 +2702,14 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                         tr(
                             "Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead."
                         )
-                            .arg(sourcePath, baselineSourcePath, error.what())
+                            .arg(
+                                sourcePath,
+                                baselineSourcePath,
+                                QUtf8SV(error.what())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                    .toString()
+#endif
+                            )
                     );
                 }
             } else {
@@ -2754,7 +2822,10 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                     } catch (const fs::filesystem_error& err) {
                         qWarning() << "Failed to copy directory %1: %2"_L1.arg(
                             rootTranslationPath,
-                            err.what()
+                            QUtf8SV(err.what())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                .toString()
+#endif
                         );
                     }
                 }
@@ -2967,17 +3038,31 @@ void MainWindow::changeTab(
         linesStatusLabel->setText(
             tr("%1 Lines / %2 Comments")
                 .arg(
-                    QL1SV(itos(lines.size()).data()),
+                    QL1SV(itos(lines.size()).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
+                        ,
                     QL1SV(
                         itos(lines.size() - ui->tabPanel->currentTotal()).data()
                     )
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
                 )
         );
         progressStatusLabel->setText(
             tr("%1 Translated / %2 Total")
                 .arg(
-                    QL1SV(itos(ui->tabPanel->currentTranslated()).data()),
+                    QL1SV(itos(ui->tabPanel->currentTranslated()).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
+                        ,
                     QL1SV(itos(ui->tabPanel->currentTotal()).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
                 )
         );
         tabNameStatusLabel->setText(tabName);
@@ -3075,8 +3160,15 @@ start:
                 if (item.text()->isNull()) {
                     qWarning()
                         << "Item at row %1 and column %2 is nullptr."_L1.arg(
-                               QL1SV(itos(row).data()),
+                               QL1SV(itos(row).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                   .toString()
+#endif
+                                   ,
                                QL1SV(itos(column).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                   .toString()
+#endif
                            );
                     continue;
                 }
@@ -3199,7 +3291,12 @@ void MainWindow::loadBackup(const QString& backupPath) {
             this,
             tr("Failed to read archive"),
             tr("Reading archive failed with %1")
-                .arg(QUtf8SV(archive_error_string(arch)))
+                .arg(
+                    QUtf8SV(archive_error_string(arch))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
+                )
         );
         archive_read_free(arch);
         return;
@@ -3257,12 +3354,35 @@ void MainWindow::saveBackup() {
 
     const QString archivePath = "%1/%2-%3-%4_%5-%6-%7.tar.xz"_L1.arg(
         backupPath,
-        QL1SV(itos(date.day(), 2, '0').data()),
-        QL1SV(itos(date.month(), 2, '0').data()),
-        QL1SV(itos(date.year()).data()),
-        QL1SV(itos(time.hour(), 2, '0').data()),
-        QL1SV(itos(time.minute(), 2, '0').data()),
+        QL1SV(itos(date.day(), 2, '0').data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QL1SV(itos(date.month(), 2, '0').data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QL1SV(itos(date.year()).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QL1SV(itos(time.hour(), 2, '0').data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QL1SV(itos(time.minute(), 2, '0').data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
         QL1SV(itos(time.second(), 2, '0').data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
     );
 
     struct archive* arch = archive_write_new();
@@ -3275,7 +3395,10 @@ void MainWindow::saveBackup() {
         ARCHIVE_OK) {
         qWarning() << "Failed to open archive %1: %2"_L1.arg(
             archivePath,
-            archive_error_string(arch)
+            QUtf8SV(archive_error_string(arch))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                .toString()
+#endif
         );
         archive_write_free(arch);
         return;
@@ -3732,7 +3855,14 @@ void MainWindow::checkHashes() {
                     tr(
                         "Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead."
                     )
-                        .arg(sourcePath, baselineSourcePath, error.what())
+                        .arg(
+                            sourcePath,
+                            baselineSourcePath,
+                            QUtf8SV(error.what())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                .toString()
+#endif
+                        )
                 );
             }
 

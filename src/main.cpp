@@ -75,10 +75,26 @@ static void messageHandler(
     const QString& msg
 ) {
     const QString formatted = "[%1] %2:%3 (%4): %5"_L1.arg(
-        levelToString(type),
-        QUtf8SV(shortFile(ctx.file)),
-        QL1SV(itos(ctx.line).data()),
-        QUtf8SV(ctx.function),
+        levelToString(type)
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QUtf8SV(shortFile(ctx.file))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QL1SV(itos(ctx.line).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QUtf8SV(ctx.function)
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
         msg
     );
 

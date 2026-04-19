@@ -99,8 +99,10 @@ void CBSLIWidget::setValue(i32 value) {
     {
         QSignalBlocker blocker(lineEdit_);
         lineEdit_->setText(
-            floatFormat ? QL1SV(ftos(f32(value) / FLOAT_FACTOR, 3).data())
-                        : QL1SV(itos(value).data())
+            QString::fromLatin1(
+                floatFormat ? ftos(f32(value) / FLOAT_FACTOR, 3).data()
+                            : itos(value).data()
+            )
         );
     }
 
@@ -120,8 +122,10 @@ void CBSLIWidget::setValue(f32 floatVal) {
     {
         QSignalBlocker blocker(lineEdit_);
         lineEdit_->setText(
-            floatFormat ? QL1SV(ftos(f32(value) / FLOAT_FACTOR, 3).data())
-                        : QL1SV(itos(value).data())
+            QString::fromLatin1(
+                floatFormat ? ftos(f32(value) / FLOAT_FACTOR, 3).data()
+                            : itos(value).data()
+            )
         );
     }
 
@@ -147,8 +151,10 @@ void CBSLIWidget::setValue(f32 floatVal) {
 void CBSLIWidget::onSliderValueChanged(const i32 value) {
     lineEdit_->blockSignals(true);
     lineEdit_->setText(
-        floatFormat ? QL1SV(ftos(f32(value) / FLOAT_FACTOR, 3).data())
-                    : QL1SV(itos(value).data())
+        QString::fromLatin1(
+            floatFormat ? ftos(f32(value) / FLOAT_FACTOR, 3).data()
+                        : itos(value).data()
+        )
     );
     lineEdit_->blockSignals(false);
     emit valueChanged(value);
@@ -168,9 +174,11 @@ void CBSLIWidget::onEditCommitted() {
     if (!correct) {
         QSignalBlocker blocker(lineEdit_);
         lineEdit_->setText(
-            floatFormat
-                ? QL1SV(ftos(f32(slider_->value()) / FLOAT_FACTOR, 3).data())
-                : QL1SV(itos(slider_->value()).data())
+            QString::fromLatin1(
+                floatFormat
+                    ? ftos(f32(slider_->value()) / FLOAT_FACTOR, 3).data()
+                    : itos(slider_->value()).data()
+            )
         );
         return;
     }

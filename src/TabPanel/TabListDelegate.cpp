@@ -34,8 +34,8 @@ void TabListDelegate::paint(
                 fontMetrics.horizontalAdvance(tab.name) + (spaceAdvance * 2) + 2
             );
 
-            const QString progressSample = QL1SV(itos(tab.translated).data()) +
-                                           u'/' + QL1SV(itos(tab.total).data());
+            const QString progressSample = QL1SV(itos(tab.translated).data()) %
+                                           u'/' % QL1SV(itos(tab.total).data());
 
             maxCachedProgressWidth = max<u16>(
                 maxCachedProgressWidth,

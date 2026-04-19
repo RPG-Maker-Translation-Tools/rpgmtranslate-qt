@@ -318,9 +318,13 @@ void MatchTable::appendMatch(
         if (match.score == 0.0F) {
             sourceMatchDescs.append(tr("Exact"));
         } else {
-            sourceMatchDescs.append(
-                tr("Fuzzy (%1)").arg(QL1SV(ftos(match.score, 3).data()))
-            );
+            sourceMatchDescs.append(tr("Fuzzy (%1)")
+                                        .arg(
+                                            QL1SV(ftos(match.score, 3).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                                .toString()
+#endif
+                                        ));
         }
 
         sourceSpans.emplace_back(match.start, match.len);
@@ -336,9 +340,13 @@ void MatchTable::appendMatch(
         if (match.score == 0.0F) {
             translationMatchDescs.append(tr("Exact"));
         } else {
-            translationMatchDescs.append(
-                tr("Fuzzy (%1)").arg(QL1SV(ftos(match.score).data()))
-            );
+            translationMatchDescs.append(tr("Fuzzy (%1)")
+                                             .arg(
+                                                 QL1SV(ftos(match.score).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                                     .toString()
+#endif
+                                             ));
         }
 
         translationSpans.emplace_back(match.start, match.len);
@@ -347,7 +355,11 @@ void MatchTable::appendMatch(
     QString termOccurrences = tr("%1, %2 occurrences: %3")
                                   .arg(
                                       termSource,
-                                      QL1SV(itos(sourceCount).data()),
+                                      QL1SV(itos(sourceCount).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                          .toString()
+#endif
+                                          ,
                                       sourceMatchDescs.join(", "_L1)
                                   );
 
@@ -355,7 +367,11 @@ void MatchTable::appendMatch(
         tr("%1, %2 occurrences: %3")
             .arg(
                 termTranslation,
-                QL1SV(itos(translationCount).data()),
+                QL1SV(itos(translationCount).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                    .toString()
+#endif
+                    ,
                 translationMatchDescs.join(", "_L1)
             );
 

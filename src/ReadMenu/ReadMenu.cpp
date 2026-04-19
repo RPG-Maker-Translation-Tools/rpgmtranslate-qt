@@ -150,12 +150,22 @@ ReadMenu::ReadMenu(QWidget* const parent) :
                 const QUtf8SV error = ffitostr(rpgm_error());
                 qCritical()
                     << "Failed to extract title from the Game.ini file: %1"_L1
-                           .arg(error);
+                           .arg(
+                               error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                   .toString()
+#endif
+                           );
                 QMessageBox::critical(
                     this,
                     tr("Failed to extract INI title"),
                     tr("Failed to extract title from the Game.ini file: %1")
-                        .arg(error)
+                        .arg(
+                            error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                .toString()
+#endif
+                        )
                 );
                 return;
             }

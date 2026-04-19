@@ -84,9 +84,21 @@ void SearchPanelDock::showMatches(
                 ),
                 tr("File %1 / Row %2 / Column %3 (%4)")
                     .arg(
-                        filename,
-                        itos(cellMatch.rowIndex() + 1),
-                        itos(cellMatch.colIndex() + 1),
+                        filename
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
+                            ,
+                        QL1SV(itos(cellMatch.rowIndex() + 1))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
+                            ,
+                        QL1SV(itos(cellMatch.colIndex() + 1))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
+                            ,
                         cellMatch.colIndex() == 0
                             ? tr("Source")
                             : this->projectSettings
@@ -167,7 +179,7 @@ void SearchPanelDock::init(
                          views::drop(projectSettings->columns, 1)
                      )) {
                     const QAction* const action = menu.addAction(
-                        QL1SV(itos(idx + 1).data()) + u" (" + column.name + u')'
+                        QL1SV(itos(idx + 1).data()) % u" (" % column.name % u')'
                     );
 
                     connect(

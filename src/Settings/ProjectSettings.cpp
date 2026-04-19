@@ -43,7 +43,10 @@ auto ProjectSettings::fromJSON(const QJsonObject& obj) -> ProjectSettings {
     const QJsonObject hashes = obj["hashes"_L1].toObject();
     settings.hashes.reserve(hashes.size());
 
-    for (const auto [key, value] : hashes.asKeyValueRange()) {
+    for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
+        const QString key = it.key();
+        const QJsonValue value = it.value();
+
         FilenameArray filename{};
         memcpy(filename.data(), key.data(), key.size());
         settings.hashes.insert({ filename, u64(value.toInteger()) });

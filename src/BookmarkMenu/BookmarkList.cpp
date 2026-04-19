@@ -157,8 +157,15 @@ void BookmarkListDelegate::paint(
     const QString& title = bookmark.description;
     const QString subtitle = tr("Row %1 / File %2")
                                  .arg(
-                                     QL1SV(itos(bookmark.row + 1).data()),
+                                     QL1SV(itos(bookmark.row + 1).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                         .toString()
+#endif
+                                         ,
                                      QL1SV(bookmark.filename.data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                                         .toString()
+#endif
                                  );
 
     painter->save();

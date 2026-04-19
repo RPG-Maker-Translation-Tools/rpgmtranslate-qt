@@ -130,15 +130,15 @@ class TaskWorker final : public QObject {
     void message(const QString& message);
     void progressChanged(Task task, u32 progress, u32 total);
 
-    void readFinished(result<ByteBuffer, FFIString> result);
-    void extractFinished(result<void, FFIString> result);
-    void writeFinished(result<f32, FFIString> result);
-    void purgeFinished(result<void, FFIString> result);
+    void readFinished(std::expected<ByteBuffer, FFIString> result);
+    void extractFinished(std::expected<void, FFIString> result);
+    void writeFinished(std::expected<f32, FFIString> result);
+    void purgeFinished(std::expected<void, FFIString> result);
     void searchFinished(HashMap<FilenameArray, vector<CellMatch>> results);
     void singleTranslateFinished(const vector<QString>& translations);
     void singleReplaceFinished(const tuple<QString, TextMatch*>& results);
     void translateFinished(
-        const result<tuple<ByteBuffer, ByteBuffer>, FFIString>& results
+        const std::expected<tuple<ByteBuffer, ByteBuffer>, FFIString>& results
     );
 
    private:

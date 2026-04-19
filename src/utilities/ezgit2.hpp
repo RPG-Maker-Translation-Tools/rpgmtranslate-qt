@@ -1,3 +1,4 @@
+#ifdef ENABLE_LIBGIT2
 #pragma once
 
 #include <git2/index.h>
@@ -1482,3 +1483,4 @@ namespace ezgit2 {
         auto operator=(ezgit2&&) -> ezgit2& = delete;
     };
 }  // namespace ezgit2
+#endif

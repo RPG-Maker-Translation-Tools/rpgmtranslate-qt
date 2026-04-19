@@ -8,7 +8,9 @@ extern "C" {
 #include "ui_AboutWindow.h"
 #include "version.h"
 
+#ifdef ENABLE_LIBGIT2
 #include <git2/common.h>
+#endif
 
 #include <archive.h>
 
@@ -31,9 +33,20 @@ AboutWindow::AboutWindow(QWidget* const parent) :
 
     git_libgit2_version(&maj, &min, &pth);
     ui->libgit2VersionLabel->setText(u"libgit2 %1.%2.%3"_s.arg(
-        QL1SV(itos(maj).data()),
-        QL1SV(itos(min).data()),
+        QL1SV(itos(maj).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QL1SV(itos(min).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
         QL1SV(itos(pth).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
     ));
 #endif
 

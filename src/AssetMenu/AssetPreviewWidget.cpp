@@ -376,10 +376,23 @@ void AssetPreviewWidget::loadGraphicsAsset(
         if (!success) {
             const QUtf8SV error = ffitostr(rpgm_error());
 
-            qCritical() << "Failed to decrypt asset %1: %2"_L1.arg(path, error);
+            qCritical() << "Failed to decrypt asset %1: %2"_L1.arg(
+                path,
+                error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                    .toString()
+#endif
+            );
             showPage(
                 Page::Error,
-                tr("Failed to decrypt asset %1: %2").arg(path, error)
+                tr("Failed to decrypt asset %1: %2")
+                    .arg(
+                        path,
+                        error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
+                    )
             );
             return;
         }
@@ -568,10 +581,23 @@ void AssetPreviewWidget::loadAudioAsset(
 
         if (!success) {
             const QUtf8SV error = ffitostr(rpgm_error());
-            qCritical() << "Failed to decrypt asset %1: %2"_L1.arg(path, error);
+            qCritical() << "Failed to decrypt asset %1: %2"_L1.arg(
+                path,
+                error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                    .toString()
+#endif
+            );
             showPage(
                 Page::Error,
-                tr("Failed to decrypt asset %1: %2").arg(path, error)
+                tr("Failed to decrypt asset %1: %2")
+                    .arg(
+                        path,
+                        error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
+                    )
             );
             return;
         }
@@ -680,11 +706,21 @@ void AssetPreviewWidget::loadTextAsset(
             qCritical() << "Failed to generate JSON for file %1: %2"_L1.arg(
                 path,
                 error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                    .toString()
+#endif
             );
             QMessageBox::critical(
                 this,
                 tr("Failed to generate JSON"),
-                tr("Failed to generate JSON for file %1: %2").arg(path, error)
+                tr("Failed to generate JSON for file %1: %2")
+                    .arg(
+                        path,
+                        error
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                            .toString()
+#endif
+                    )
             );
             return;
         }
@@ -834,8 +870,15 @@ void AssetPreviewWidget::navigateSearch(const int delta) {
                          searchResults.size();
 
     searchResultsLabel->setText("%1/%2"_L1.arg(
-        itos(currentSearchIndex + 1).data(),
-        itos(searchResults.size()).data()
+        QL1SV(itos(currentSearchIndex + 1).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
+        QL1SV(itos(searchResults.size()).data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
     ));
 
     const QColor allMatchColor = QColor(255, 220, 0, 80);

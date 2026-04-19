@@ -53,7 +53,13 @@ void LintTooltip::showAt(
 
         tooltipText +=
             "%1\nThe following text will be inserted instead of this code: %2"_L1
-                .arg(text, ffitostr(success ? out : rpgm_error()));
+                .arg(
+                    text,
+                    ffitostr(success ? out : rpgm_error())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                        .toString()
+#endif
+                );
     } else if (captured.startsWith(R"(\V[)"_L1, Qt::CaseInsensitive)) {
     } else if (captured.startsWith(R"(\P[)"_L1, Qt::CaseInsensitive)) {
     } else if (captured.startsWith(R"(\G)"_L1, Qt::CaseInsensitive)) {

@@ -12,8 +12,15 @@
 
 const auto toMMSS = [](const u32 secs) -> QString {
     return "%1:%2"_L1.arg(
-        QL1SV(itos(secs / 60, 2, '0').data()),
+        QL1SV(itos(secs / 60, 2, '0').data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
+            ,
         QL1SV(itos(secs % 60, 2, '0').data())
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+            .toString()
+#endif
     );
 };
 
@@ -75,12 +82,22 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
     if (result =
             avformat_open_input(&formatContext, path.c_str(), nullptr, nullptr);
         result < 0) {
-        return Err("avformat_open_input: %1"_L1.arg(makeError(result)));
+        return Err("avformat_open_input: %1"_L1.arg(
+            QUtf8SV(makeError(result))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                .toString()
+#endif
+        ));
     }
 
     if (result = avformat_find_stream_info(formatContext, nullptr);
         result < 0) {
-        return Err("avformat_find_stream_info: %1"_L1.arg(makeError(result)));
+        return Err("avformat_find_stream_info: %1"_L1.arg(
+            QUtf8SV(makeError(result))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                .toString()
+#endif
+        ));
     }
 
     const AVCodec* videoCodec = nullptr;
@@ -107,13 +124,21 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
             );
             result < 0) {
             return Err("avcodec_parameters_to_context (video): %1"_L1.arg(
-                makeError(result)
+                QUtf8SV(makeError(result))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                    .toString()
+#endif
             ));
         }
 
         if (result = avcodec_open2(videoCodecContext, videoCodec, nullptr);
             result < 0) {
-            return Err("avcodec_open2 (video): %1"_L1.arg(makeError(result)));
+            return Err("avcodec_open2 (video): %1"_L1.arg(
+                QUtf8SV(makeError(result))
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+                    .toString()
+#endif
+            ));
         }
 
         videoWidth = videoCodecContext->width;
@@ -140,7 +165,7 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
 
     if (isAudioOnly && audioStreamIndex < 0) {
         return Err(
-            "No playable stream (video or audio) found in: %1"_L1.arg(path)
+            "No playable stream (video or audio) found in: %1"_L1.arg(filePath)
         );
     }
 
@@ -236,7 +261,7 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
     }
 
     if (isAudioOnly && !audioDeviceOpen) {
-        return Err("Failed to open audio device for: %1"_L1.arg(path));
+        return Err("Failed to open audio device for: %1"_L1.arg(filePath));
     }
 
     audioFrame = av_frame_alloc();
