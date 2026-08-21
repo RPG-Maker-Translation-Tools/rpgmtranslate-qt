@@ -3,15 +3,13 @@
 #include "Aliases.hpp"
 #include "CodeViewer.hpp"
 #include "GraphicsAssetViewer.hpp"
+#include "rpgmtranslate_rs.h"
 
 #ifdef ENABLE_ASSET_PLAYBACK
 #include "MediaPlayer.hpp"
 #endif
 
 #include <QWidget>
-
-// TODO: JS/Ruby beautifier. Claude should vibe-code it so I don't have to
-// suffer
 
 class AssetPreviewWidget final : public QWidget {
     Q_OBJECT
@@ -40,16 +38,16 @@ class AssetPreviewWidget final : public QWidget {
     void loadTextAsset(const QString& path, const QString& extension);
 
     void performSearch();
-    void navigateSearch(int delta);  // +1 = next, -1 = prev
+    void navigateSearch(i32 delta);
 
     void updateFontPreview();
-
-    constexpr static u8 HEADER_LENGTH = 16;
 
     QString currentPath;
     QString lastTempFile;
 
     QByteArray codeUtf8;
+    QByteArray formatSource;
+    HighlightLanguage formatLanguage;
     QList<QTextCursor> searchResults;
 
 #ifdef ENABLE_ASSET_PLAYBACK
@@ -100,11 +98,6 @@ class AssetPreviewWidget final : public QWidget {
     QGraphicsScene* const graphicsScene;
     GraphicsAssetViewer* const graphicsViewer;
 
-#if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || \
-    defined(ENABLE_RUBY_HIGHLIGHTING)
-    TreeSitterHighlighter* highlighter = nullptr;
-#endif
-
-    int currentFontID = -1;
-    int currentSearchIndex = -1;
+    i32 currentFontID = -1;
+    i32 currentSearchIndex = -1;
 };

@@ -1,39 +1,41 @@
 #pragma once
 
+#include <QDockWidget>
+
 #ifdef ENABLE_LIBGIT2
 #include "Aliases.hpp"
 #include "FWD.hpp"
-#include "GitChangesList.hpp"
+#include "GitFileList.hpp"
+#include "Settings.hpp"
 #include "ezgit2.hpp"
 
-#include <QDockWidget>
 #include <QFileSystemWatcher>
+
+namespace Ui {
+    class MainWindow;
+}  // namespace Ui
 
 class SourceControlDock final : public QDockWidget {
     Q_OBJECT
 
    public:
-    using QDockWidget::QDockWidget;
+    explicit SourceControlDock(QWidget* const parent = nullptr) { git_libgit2_init(); }
 
-    void init(
-        QComboBox* branchSelect,
-        GitChangesList* changesList,
-        GitCommitList* commitList,
+    ~SourceControlDock() override { git_libgit2_shutdown(); }
 
-        QPushButton* commitButton,
-        QToolButton* commitOptionsButton,
+    void init(const Ui::MainWindow& ui_);
 
-        QPlainTextEdit* commitMessageInput,
-
-        QPushButton* copyTranslationButton,
-        QToolButton* refreshChangesButton
-    );
-    [[nodiscard]] auto setProjectPath(const QString& projectPath)
-        -> result<void, QString>;
+    [[nodiscard]] auto openRepository(const QString& dataPath, const GitSettings& gitSettings) -> result<void, QString>;
+    void clear();
 
    private:
-    ezgit2::ezgit2 ezgit2;
+    inline void commit(bool amend = false, bool force = false);
+    inline void updateSettings(const GitSettings& gitSettings);
+    inline void loadUI(const GitSettings& gitSettings);
+
     ezgit2::Repository repo;
+
+    QWidget* sourceControlDockContent;
 
     QPushButton* commitButton;
     QToolButton* commitOptionsButton;
@@ -41,12 +43,13 @@ class SourceControlDock final : public QDockWidget {
     QPlainTextEdit* commitMessageInput;
 
     QComboBox* branchSelect;
-    GitChangesList* changesList;
+    GitFileList* fileList;
     GitCommitList* commitList;
+
+    QPushButton* copyTranslationButton;
+    QToolButton* refreshChangesButton;
 };
 #else
-#include <QDockWidget>
-
 class SourceControlDock final : public QDockWidget {
    public:
     using QDockWidget::QDockWidget;

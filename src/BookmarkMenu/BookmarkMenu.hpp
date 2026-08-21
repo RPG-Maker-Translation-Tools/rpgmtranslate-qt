@@ -11,7 +11,7 @@ class BookmarkMenu final : public QWidget {
    public:
     explicit BookmarkMenu(QWidget* parent = nullptr);
 
-    void setFiles(const vector<TabListItem>& files);
+    void init(const vector<TabListItem>& files);
     void addBookmark(QStringView description, QStringView file, u32 row);
     void updateBookmark(u32 row, const QString& text);
     void removeBookmark(u32 row);

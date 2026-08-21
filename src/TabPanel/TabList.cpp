@@ -21,16 +21,6 @@ TabList::TabList(QWidget* const parent) :
     setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 }
 
-void TabList::setProgress(
-    const u16 row,
-    const u32 total,
-    const u32 translated
-) {
-    const QModelIndex index = model_->index(row);
-    model_->setData(index, total, Roles::TotalRole);
-    model_->setData(index, translated, Roles::TranslatedRole);
-}
-
 void TabList::setProgressDisplay(const bool percents) {
     displayPercents = percents;
     viewport()->update();

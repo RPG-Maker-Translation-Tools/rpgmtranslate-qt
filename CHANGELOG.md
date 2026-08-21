@@ -1,152 +1,85 @@
 # Changelog
 
-## v1.0.0-rc.6
+All notable changes to this project are documented in this file.
 
-This release polishes asset inspector and fixes a couple of crucial bugs. And, as well, brings two major changes: baseline data tracking and RPG Maker plugin tags/sequences linting.
+The format is based on [Keep a Changelog v2.0.0](https://keepachangelog.com/en/2.0.0/).
+This project uses (or at least tries to use) [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Note that tags and sequences linting requires a lot of work. This release brings only basic support, and the next release candidate will complete this feature.
+Dates are in DD.MM.YYYY format.
+Versions may carry a codename alongside the semver number.
 
-### Changes
+## [Unreleased]
 
-- Updated to `rvpacker-txt-rs-lib` v13.0.0:
-    - Made `core::parse_rpgm_file` function public.
-    - Remove `core::get_engine_extension` function.
-    - Changed how hashing works: Now program operates on 64-bit hash outputs of `gxhash` instead of 128-bit ones, and accepts/returns hashes as iterators over filename-hash pairs.
-    - Added `from_filename`, `to_str` and `extension` methods for `EngineType`.
-    - Added `Display` impl for `EngineType`.
-- Added reasoning effort to translation settings.
-- The program now generates `.rvpacker-metadata` file for compatibility with `rvpacker-txt-rs`.
-- Translations menu now has fixed size, but each translation label is now scrollable along with the menu view.
-- Fixes:
-    - The previously selected model is now restored in settings. If this model is no longer in the list of models, provided by the endpoint, user will be notified.
-    - Small fixes for media player.
-    - Fixed writing wrong settings to project settings on the first read.
-    - Closing a project will always trigger a save now.
-    - Closing a project won't cause it to load on the second startup now.
-- Backups:
-    - Backups are now LZMA2-compressed to save space.
-    - Numbers in backup file names, like days, months, hours etc. are now padded with leading zero.
-    - Added `File > Load Backup` button to restore the project to a specific backup.
-- Linting:
-    - Support and linting for a lot of Yanfly plugins - still WIP.
-    - Support and linting for ATS Message Options plugin - still WIP.
-    - Support for custom sequences and tags - still WIP.
-    - Separate options for highlighting trailing/leading/sequential whitespace.
-    - Option for detecting tag/sequence mismatches between source and translation text - still WIP.
-    - Linting is highly customizable through settings - still WIP.
-- Stability:
-    - When the directory where the program is located not writable, it will try to find other directory for the application data. Users can manually specify `RPGMTRANSLATE_DATA_DIR` variable to store the data in desired place. Otherwise, data will be put in the local data directory - [see paths for `AppLocalDataLocation` here](https://doc.qt.io/qt-6/qstandardpaths.html).
-    - Reduced possible errors due to improper memory handling when doing FFI calls.
-    - New baseline data tracking system:
-        - On the first read, `data`/`Data` directory will be copied to `.rpgmtranslate/baseline-data`.
-        - All program operations will use `baseline-data` from this point.
-        - On startup, the program will check, whether the files in the original data directory changed.
-        - If those files have changed, it will suggest to append the new text to the translation files.
-        - You can always trigger the check manually through `File > Check for source file changes`.
-    - A lot of micro-optimizations.
-    - Changed the standard hasher from `rapidhash` to `gxhash` which proves to be much faster.
-- Asset inspector:
-    - Asset inspector now processes files with both lowercase and uppercase extensions.
-    - Implemented searching text when inspecting code assets.
-    - It's now possible to refresh the list of assets for any new assets.
-    - Implemented the ability to change sample text and font size when inspecting font assets.
-    - Added display of current scaling (in percents) when inspecting image assets.
-    - Added image scale slider to image viewer in case you don't have a mouse wheel.
-- Development:
-    - Removed `rapidhash` dependency. `gxhash` is invoked from Rust instead, and it's much faster.
-    - Added `magic_enum.hpp`, `miniaudio.h` and new `jeaiii_to_text.h`, `zmij.h` and `zmij.cc` files directly to the source tree.
-    - Changed hashing to use unsigned 64-bit integers instead of 128-bit integers. This improves compatibility.
+## [v1.0.0] "Death of RPG Maker forums" - 21.08.2026
 
-## v1.0.0-rc.5
+### Added
 
-This release candidate introduces asset inspector support. Next release candidate will further improve user experience and correct some parts of the program. Git client will be implemented in the final v1.0.0 release.
+- Support and linting for Yanfly and co plugins. Information: <https://rpg-maker-translation-tools.github.io/rpgmtranslate-qt/text-editing/#plugin-misc>.
+- Implemented lint tooltips that fire when the lints are hovered. Tooltips contain useful information about the tag.
+- A couple of new lints, like tag mismatch, togglable spellcheck/glossary check.
+- Implemented special coloring for tags such as \C[x] or \hc[rrggbb].
+- Implemented local features to Git client, no remote interactions yet.
+- Implemented LanguageTool support. Using LanguageTool paid API is not tested, only the local server.
+- About window now provides the information about release's build environment (compiler, STL, SDK, date), as well as versions of key bundled libraries (e.g. Nuspell).
+- The running task (like search) now can be aborted using a button near the task text.
+- The application now warns you if a translation file contains lines that couldn't be parsed, instead of silently skipping them.
+- Export/Import: translation files can now be converted to and from CSV, XLSX, XML, JSON, and YAML, from a new "Export/Import" entry in the `rv` button's menu.
+- The asset inspector's "Beautify" button now also formats JS and Ruby scripts (via `dprint-plugin-typescript` and `librubyfmt`), not just JSON.
 
-### Changes
+### Changed
 
-- Updated to `rvpacker-txt-rs-lib` v12.1.0:
-    - Fix EOF parsing bug: flush final translation section in initialize_translation by @CreepsoOff
-    - Changed `generate_file` function in `json` module to also accept filename argument, and have a special case for `Scripts` files.
-    - Added `set_game_title` argument to `Reader` for compatibility with RPG Maker XP/VX/VXAce. This allows user to manually decode game title from Game.ini file and pass it here as UTF-8, since system file not always contains game title.
-    - Documentation fixes.
-- Fixed wrong extraction of encrypted archives which resulted in an unreadable project.
-- When reading RPG Maker XP/VX/VXAce projects, read menu will now have option to use the game title from Game.ini file. Since Game.ini is not necessarily UTF-8 encoded, this allows user to manually find the encoding and use correct game title.
-- Fixed possible panics on read.
-- Added information about libarchive, libgit2 and FFmpeg to about window.
-- Fixed clipping text in tab panel items.
-- Massively improved documentation.
-- Implemented asset inspector: currently supports browsing through images, audio, video, scripts, and inspecting each of those, along with media player, syntax highligthing and more.
+- Updated to `rvpacker-txt-rs-lib` v14.0.0:
+    - Files are now sorted before reading, this means that they will always go in right order (e.g. actors is first, weapons is last, map001-map999 sequentially).
+    - Removed romanize feature since it carried 0 real importance - "romanizing" (or more correctly, latinizing) the text should be performed by the downstream users of the library, and should only affect the translation - not the source text.
+    - Implemented `serde` module for exporting text to different structured formats and importing them back. Such formats include CSV, XLSX, YAML, JSON, XML.
+- Default color for the tooltips is now gold.
+- Enabled lints, their appearance and behavior are customizable through settings.
+- Text on-the-fly replacements (e.g. turning `<<` into `«`) are now customizable through settings.
+- Batch menu now operates on JavaScript code to perform batch actions. To implement this, quickjs-ng was used. It aims to support the latest ECMAScript specifications so you're not constrained when writing scripts.
+    - You can create your own scripts! Documentation on how it works in rpgmtranslate-qt can be found here: <https://rpg-maker-translation-tools.github.io/rpgmtranslate-qt/batch-processing/>.
+- Micro-optimized different parts of the program.
+- Tracking the current task in the top panel is now more descriptive.
+- Batch menu now has two selectable actions, "Translate" and "Script". "Script" has three built-in scripts, including trim and wrap from before, and a new one latinize script.
+- Source/translation language selects were reworked to now display the whole spectre of human languages. Previously, these inputs only included languages supported by the stemming Snowball backend. If the language is not supported by [Snowball](https://snowballstem.org/algorithms/) (or LSTM segmentation), it will not support stemming and will notify the user about it.
+- Term match menu was reworked to be a general menu for lints. The table was simplified to show general lints about tag mismatches, punctuation mismatches, misspellings, term mismatches and anything else.
+- Enabled lints and other translation checks are now toggled in the new lint menu. It allows you to toggle lints right on the spot, however lints are still configured in the settings.
+- Logging is massively improved, it should now cover more parts of the application and be better overall.
+- Each task now runs in its own dedicated thread, which allows you to run multiple tasks simultaneously.
+- API keys (endpoints, LanguageTool) are no longer stored in `settings.json`. They now live in the OS credential store (Windows Credential Manager / Linux Secret Service) and are only read back into memory when needed.
 
-## v1.0.0-rc.4
+### Fixes
 
-A couple more fixes.
+- Git client/tab panel are now hidden before opening a project.
+- Git client/tab panel are now hidden and git client is properly reset when closing a project.
+- Fixed problems possibly related to hashing due to hashing garbage past the null terminator.
+- Fixed pulling wrong hashes from the project settings, which would cause the application to show a popup stating that files have been updated, when in reality they weren't.
+- Fixed showing menus at wrong y positions on Windows.
+- Fixed wrong translation column / translation endpoint values in batch menu.
+- Fixed broken select file menus, that were broken for some reason. Or maybe that's a regression that never was shipped in release candidates.
+- Translation table now scrolls horizontally per-pixel which is more convenient.
+- The toolbar "Write" action no longer shows a spurious "written successfully" message after the write actually failed.
+- Settings window no longer writes a stale endpoint index after that endpoint was just removed.
+- The zoom-percent label in the asset inspector now actually shows the `%` sign.
+- Zoom-to-fit in the asset inspector (on opening an image or updating the font sample) no longer computes against a stale viewport size.
+- Fixed a copy-paste bug where the Mistral endpoint was silently sent using Moonshot's API preset for single-cell translation.
 
-### Changes
+### Development
 
-- Fixed outputting none/not all files when writing.
-- Fixed possible crash when applying batch translation. Still requires more testing.
-- Fixed absolutely idiotic issue, where the application would batch translate all maps, that end with the number of the selected map. For example, if map1 is selected, application would try to batch translate all other maps, that end with 1 (e.g. map11, map21, map31 etc.).
-- Fixed possible crash when getting error while opening/reading the project or aborting the read.
-- To avoid losing project settings and glossary in result of program abort, each backup will also save project settings and glossary.
-- To avoid losing settings in result of program abort, settings will be saved when closing settings window.
+- Migrated configure scripts to Lua, and started distributing minimal Lua Windows/Linux builds to run the configure scripts. You can see the modified sources of Lua here: <https://github.com/savannstm/lua>.
+- JSON parsing/writing now uses Glaze which is more maintainable.
+- Refined flags used to build the project on Windows - it should be more optimized and less error-prone. I also trimmed down the built copy of ICU data, so the raw executable now takes up less space.
+    - Something has corrupted binaries after compressing them with UPX which we used for every other release and the application would crash at start - #12. The problem was about compressed exports. After repacking with `--compress-exports=0`, the issue disappeared, so now our compressed distributed binaries are **less than 20MB**!
+- We're now shipping licenses for all libraries that we link statically. Licenses can be found in `licenses` directory, and about window now contains information about such libraries. This is our legal obligation, but I also decided to include the libraries that don't require attribution.
+- Added `prepare-release.lua`, a release-packaging script that verifies every bundled library has documented license text, generates the third-party notice, UPX-compresses the built binary, and assembles the final release archive.
+- Docs (settings, git, batch processing, glossary, text editing) were updated to reflect the current state of the program and its features.
+- Official releases now target x86-64-v3 baseline (instead of previous tuning for Sandy Bridge architecture) - starting from Intel Haswell (2013) and AMD Excavator (2015). This allows to use AVX2, FMA and BMI to massively improve performance. If you need a build that supports older processors, you'll have to build from source.
+- Default application JS scripts can now be found in `scripts` directory.
+- Replaced the hand-rolled tree-sitter highlighting pipeline (manual token buffers, incremental `QSyntaxHighlighter`, per-token color mapping) with [lumis](https://github.com/leandrocp/lumis): the Rust side now hands back HTML directly, and the asset inspector's code viewer just loads it.
+- Fixed a long-standing typo in the CMake option for JS syntax highlighting that meant it was never actually being enabled, regardless of its cached value.
 
-## v1.0.0-rc.3
+### Planned
 
-A couple of fixes.
-
-### Changes
-
-- Fixed undefined behavior when processing hashes on read which would lead to unexpected side effects, such as wrong engine being recognized.
-- Fixed base URL validation in settings.
-- Fixed outputting write results to `.rpgmtranslate/.rpgmtranslate/output` instead of `.rpgmtranslate/output`.
-- Fixed possible panic when tinkering with options in settings window.
-- Changed some checkboxes in settings window to show "custom" label instead of "enabled".
-- Added description for endpoint list.
-- Added description of different endpoint types.
-
-## v1.0.0-rc.2
-
-The second release candidate implements some scratches for the future features, like git client and asset inspector, along with a couple of fixes. It's expected to be the last release candidate before the final release.
-
-### Changes
-
-- Updated to `rvpacker-txt-rs-lib` v11.2.0.
-- Fixed read menu not showing itself when trying to open an unparsed project, which would effectively lead to a complete unability to open a new project using the program.
-- Fixed possible deadlock on program startup if `.rpgmtranslate` directory disappears in the saved project.
-- Fixed possible empty translation files when parsing the project.
-- Fixed leading slash (`/`) in status bar notifications about backups.
-- Implemented dictionaries support.
-- Fixed multiple translation lints overwriting each other.
-- Fixed not shifting row indices in the bookmark menu, when a new bookmark is added.
-- Implemented built-in git client.
-- Implemented built-in asset inspector.
-- Allowed to move dock widgets around.
-- Reimplemented tab panel as a dock widget.
-- Improved the look of tab panel.
-- Added "Locate project directory" button next to the game title.
-- Made API key, Yandex folder ID and base URL inputs' contents hidden by default.
-- Translation settings rewrite.
-- Translations menu overhaul, not complete though.
-- Implemented a little bit more of documentation. Not yet finished.
-- Overall polishing.
-
-### Note
-
-Git client and asset inspector are not yet fully implemented and usable.
-
-### Coming next
-
-- Replace bare labels in translations menu to scroll areas.
-- Finished implementation for git client and asset inspector.
-- LanguageTool support;
-- More linting (syntax highlighting for Yanfly Message Core, more than two spaces etc.)
-
-## v1.0.0-rc.1
-
-The first release candidate of the rewrite of the original project in C++.
-
-### Changes
-
-- Overall, improved user experience with the application.
-- Added tracking of the currently executing tasks, such as batch actions, search and replace.
-- No more temporary files. `maps.txt` is parsed to sections and stored in-memory for the duration of the project, while matches are tightly packed into a memory-efficient way, and stored in-memory as long as they're displayed in the search panel.
-- Added stubs for LanguageTool and spell check, but those aren't currently implemented.
+- Finishing all features is planned for the next two releases: 1.1 and 1.2.
+- Remote support for built-in git client.
+- More supported plugins linting (including VisuStella someday)!
+- Built-in database like in RPG Maker to search for specific entries and quickly find anything by searching.

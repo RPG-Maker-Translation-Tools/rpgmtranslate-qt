@@ -1,10 +1,19 @@
-# 3.25 is a modern baseline - has LINUX macro and other stuff
 cmake_minimum_required(VERSION 3.25)
 
-# Project definition
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
+    message(FATAL_ERROR "In-source builds are unsupported. You can of course patch this out of CMakeLists.txt and build in-source, but please specify a build directory using -B flag when invoking CMake.")
+endif()
+
 set(PROJECT_NAME rpgmtranslate)
 set(PROJECT_VERSION "1.0.0")
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+option(ENABLE_PIC
+    "Enable Position Independent Code."
+    ON
+)
 
 option(ENABLE_NUSPELL
     "Nuspell integration - allows using dictionaries for spell-checking."
@@ -27,54 +36,50 @@ option(ENABLE_ASSET_PLAYBACK
 )
 
 option(ENABLE_JSON_HIGHLIGHTING
-    "Only works if ENABLE_SYNTAX_HIGHLIGTHING=ON. Enable syntax highlighting for JSON data."
+    "Enable syntax highlighting for JSON data."
     ON
 )
-option(ENABLE_JS_HIGHLIGTHING
-    "Only works if ENABLE_SYNTAX_HIGHLIGTHING=ON. Enable syntax highlighting for JavaScript data."
+option(ENABLE_JS_HIGHLIGHTING
+    "Enable syntax highlighting for JavaScript code."
     ON
 )
 option(ENABLE_RUBY_HIGHLIGHTING
-    "Only works if ENABLE_SYNTAX_HIGHLIGTHING=ON. Enable syntax highlighting for Ruby-lang data."
+    "Enable syntax highlighting for Ruby-lang code."
+    ON
+)
+option(ENABLE_JS_FORMATTING
+    "Enable source code formatting for JavaScript code."
+    ON
+)
+option(ENABLE_RUBY_FORMATTING
+    "Enable source code formatting for Ruby-lang code."
     ON
 )
 
-option(ENABLE_ASAN
-    "Enable AddressSanitizer (ASan). If using MSVC, this will override runtime to release version."
-    OFF
-)
-option(ENABLE_UBSAN
-    "Enable UndefinedBehaviorSanitizer (UBSan)."
-    OFF
-)
-option(ENABLE_LSAN
-    "Enable LeakSanitizer (LSan)."
-    OFF
+option(ENABLE_MIMALLOC "Use mimalloc instead of a standard memory allocator." OFF)
+
+set(MSVC_RUNTIME
+    "MT"
+    CACHE
+    STRING
+    "MT (static) / MD (dynamic) / MTd (static debug) / MDd (dynamic debug). Don't use debug versions if you use Clang with MSVC target with enabled ASan."
 )
 
-option(MSVC_STATIC_RUNTIME
-    "Link MSVC runtime statically (MT/MTd vs MD/MDd)."
-    ON
-)
-option(ENABLE_PIC
-    "Enable Position Independent Code."
-    ON
-)
-option(ENABLE_LTO
-    "Enable link-time optimizations."
-    OFF
-)
+set(_valid_runtimes MT MD MTd MDd)
 
-# Set standards for C and C++
+if(NOT MSVC_RUNTIME IN_LIST _valid_runtimes)
+    message(FATAL_ERROR
+        "MSVC_RUNTIME must be one of: ${_valid_runtimes}. "
+        "Got: '${MSVC_RUNTIME}'")
+endif()
+
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Output directory for the compiled binaries
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY target/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY target/bin CACHE PATH "" FORCE)
 
-# Enable Qt6 automatic processing (UIC, MOC, RCC)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -83,140 +88,272 @@ if (ENABLE_PIC)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-if (ENABLE_LTO)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
-set(_san_flags "")
-
-if (ENABLE_ASAN)
-    string(APPEND _san_flags ",address")
-endif()
-
-if (ENABLE_UBSAN)
-    string(APPEND _san_flags ",undefined")
-endif()
-
-if (ENABLE_LSAN)
-    string(APPEND _san_flags ",leak")
-endif()
-
-if (_san_flags)
-    if (MSVC)
-        # MSVC debug runtime is incompatible with sanitizers. Let sanitizers take priority.
-        if (MSVC_STATIC_RUNTIME)
-            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-        else()
-            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
-        endif()
-    endif()
-
-    string(REGEX REPLACE "^," "" _san_flags "${_san_flags}")
-    set(_san_flags "-fsanitize=${_san_flags}")
-
-    set(CMAKE_CXX_FLAGS_DEBUG    "${CMAKE_CXX_FLAGS_DEBUG}    -O0 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls ${_san_flags} -fsanitize-address-use-after-scope")
-    set(CMAKE_C_FLAGS_DEBUG      "${CMAKE_C_FLAGS_DEBUG}      -O0 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls ${_san_flags} -fsanitize-address-use-after-scope")
-    set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} ${_san_flags} -fsanitize-address-use-after-scope")
-else()
-    if (MSVC)
-        if (MSVC_STATIC_RUNTIME)
-            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-        else()
-            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-        endif()
-    endif()
-endif()
-
 find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent Gui Svg Network LinguistTools)
 find_package(LibArchive REQUIRED)
-
-include(FindPackageHandleStandardArgs)
+find_package(LibLZMA REQUIRED)
+find_package(qjs REQUIRED)
 
 if (ENABLE_ASSET_PLAYBACK)
-    find_path(FFMPEG_INCLUDE_DIR
-        NAMES libavcodec/avcodec.h
-        PATHS /usr/include /usr/local/include
-        PATH_SUFFIXES ffmpeg
-    )
-
-    foreach(_lib avfilter avformat avcodec avutil swresample swscale)
-        string(TOUPPER ${_lib} _LIB_UPPER)
-
-        find_library(${_LIB_UPPER}_LIBRARY
-            NAMES ${_lib}
-            HINTS ${FFMPEG_ROOT}
-            PATHS /usr/lib64 /usr/lib
-        )
-    endforeach()
-
-    find_package_handle_standard_args(FFmpeg
-        REQUIRED_VARS
-            FFMPEG_INCLUDE_DIR
-            AVFILTER_LIBRARY
-            AVFORMAT_LIBRARY
-            AVCODEC_LIBRARY
-            AVUTIL_LIBRARY
-            SWRESAMPLE_LIBRARY
-            SWSCALE_LIBRARY
-        FAIL_MESSAGE "FFmpeg not found. Install it or set -DFFMPEG_ROOT=<path>"
-    )
-
-    if (NOT FFmpeg_FOUND)
-        message(FATAL_ERROR "Aborting: FFmpeg is required for ENABLE_ASSET_PLAYBACK.")
-    endif()
+    find_package(FFmpeg REQUIRED)
 endif()
 
 if (ENABLE_NUSPELL)
     find_package(Nuspell REQUIRED)
+    find_package(ICU REQUIRED COMPONENTS data)
 endif()
 
 if (ENABLE_LIBGIT2)
-    find_package(libgit2)
+    find_package(Libgit2 REQUIRED)
 endif()
 
-# Configure the project version header
-configure_file(
-    src/version/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/version.h
+if (ENABLE_MIMALLOC)
+    find_package(mimalloc REQUIRED)
+endif()
+
+if (LINUX)
+    find_package(Qt6 REQUIRED COMPONENTS WaylandClient)
+    find_package(OpenSSL REQUIRED)
+endif()
+
+set(SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetPreviewWidget.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/CodeViewer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/GraphicsAssetViewer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/MediaPlayer.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AutoUpdater/AutoUpdater.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkMenu.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/CBSLIWidget/CBSLIWidget.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/FFILogger/FFILogger.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintTable.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintSelectMenu/LintSelectMenu.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowCallbacks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowConnections.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowFunctions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowSaveLoad.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PersistentMenu/PersistentMenu.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PopupInput/PopupInput.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchPanelDock.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchResultList.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitCommitList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitFileList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/SourceControlDock.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListDelegate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabPanel.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskPanel/TaskPanel.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/TaskWorker.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LabelInput.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LintTooltip.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationHighlighter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationInput.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTable.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableDelegate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableHeader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableModel.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/TranslationsMenu.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.ui
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Notice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/miniaudio.cpp
 )
 
-# Collect all source files recursively
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-    src/*.cpp
-    src/*.c
-    src/*.hpp
-    src/*.h
-    src/*.ui
-    src/*.ts
+# Not compiled or added to the target - headers need no source-list entry of their own, since the
+# compiler finds them via target_include_directories() below. This list exists purely so
+# qt_add_translations() (further down) has every file that can carry a tr()/NOTICE() call in view;
+# without it, strings living only in a header (see e.g. MainWindow.hpp) would silently drop out of
+# the translation catalog.
+set(HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/fast_float.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/jeaiii_to_text.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/magic_enum.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/miniaudio.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/zmij.h
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetMenu.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetPreviewWidget.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/CodeViewer.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/GraphicsAssetViewer.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/MediaPlayer.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/AutoUpdater/AutoUpdater.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackupSelectDialog/BackupSelectDialog.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkList.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/CBSLIWidget/CBSLIWidget.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/FFILogger/FFILogger.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintMenu.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintTable.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintSelectMenu/LintSelectMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Lints/PluginSequences.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PersistentMenu/PersistentMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PopupInput/PopupInput.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchPanelDock.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchResultList.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Settings/ProjectSettings.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Settings/Settings.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/PasswordLineEdit.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/UnfocusLineEdit.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitCommitList.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitFileList.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/SourceControlDock.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabList.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListDelegate.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListModel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabPanel.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskPanel/TaskPanel.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/Task.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/TaskWorker.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LabelInput.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LintTooltip.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationHighlighter.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationInput.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTable.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableDelegate.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableHeader.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableModel.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/ClickableLabel.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/TranslationsMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Aliases.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Constants.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Enums.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/FWD.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Hasher.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Notice.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Types.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Utils.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/ezgit2.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/glazemeta.hpp
 )
-
-# Collect translation source files
-file(GLOB TRANSLATION_TS_FILES translations/*)
-
-# Create the executable, but do not yet finalize it
-set(WINDOWS_APPLICATION_ICON "resources/${PROJECT_NAME}-logo.rc")
-
-# Build zmij, it cannot be used with only the header
-add_library(zmij OBJECT src/3rdparty/zmij.cc)
 
 qt_add_executable(${PROJECT_NAME}
     MANUAL_FINALIZATION
-    ${SOURCES}
-    ${QM_FILES}
-    ${WINDOWS_APPLICATION_ICON}
 )
+
+set(WINDOWS_APPLICATION_ICON "resources/${PROJECT_NAME}-logo.rc")
+
+target_sources(${PROJECT_NAME} PRIVATE
+    ${SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/ClickableLabel.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/UnfocusLineEdit.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/BackupSelectDialog/BackupSelectDialog.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/PasswordLineEdit.hpp
+    ${WINDOWS_APPLICATION_ICON}
+    rpgmtranslate.manifest
+)
+
+set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY
+    AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow"
+)
+
+file(GLOB TRANSLATION_TS_FILES translations/*)
 
 qt_add_translations(
     ${PROJECT_NAME}
     TS_FILES ${TRANSLATION_TS_FILES}
-    SOURCES ${SOURCES}
+    SOURCES ${SOURCES} ${HEADERS}
     QM_FILES_OUTPUT_VARIABLE TRANSLATION_QM_FILES
+    # NOTICE()/NOTICE_N()/NOTICE_IN() (src/utilities/Notice.hpp) wrap the message literal, and lupdate does not expand
+    # macros. These aliases teach it to read the literal out of the call directly. NOTICE takes the text first so it
+    # lines up with QT_TR_NOOP's single argument; NOTICE_IN maps to QT_TRANSLATE_NOOP, which only fires on a
+    # two-argument call. NOTICE_N's call-site argument order (text, nullptr, n, ...) instead matches tr()'s own
+    # (sourceText, disambiguation, n) shape, aliased here to `tr` rather than a NOOP macro - only that gets lupdate
+    # to generate separate singular/plural entries for it, since numerus is recognized positionally, not via NOOP.
+    LUPDATE_OPTIONS -tr-function-alias QT_TR_NOOP+=NOTICE,QT_TRANSLATE_NOOP+=NOTICE_IN,tr+=NOTICE_N
 )
 
 qt_add_resources(resources.qrc)
 target_sources(${PROJECT_NAME} PRIVATE resources.qrc)
 
-# Build mode macros for usage in C++
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
         $<$<CONFIG:Debug>:DEBUG_BUILD>
@@ -229,9 +366,10 @@ target_compile_definitions(${PROJECT_NAME}
         $<$<BOOL:${ENABLE_JSON_HIGHLIGHTING}>:ENABLE_JSON_HIGHLIGHTING>
         $<$<BOOL:${ENABLE_JS_HIGHLIGHTING}>:ENABLE_JS_HIGHLIGHTING>
         $<$<BOOL:${ENABLE_RUBY_HIGHLIGHTING}>:ENABLE_RUBY_HIGHLIGHTING>
+        $<$<BOOL:${ENABLE_JS_FORMATTING}>:ENABLE_JS_FORMATTING>
+        $<$<BOOL:${ENABLE_RUBY_FORMATTING}>:ENABLE_RUBY_FORMATTING>
 )
 
-# Definitions for better code
 add_definitions(
     -DQT_DISABLE_DEPRECATED_UP_TO=0x060802
     -DQT_ENABLE_STRICT_MODE_UP_TO=0x060802
@@ -251,101 +389,51 @@ add_definitions(
 # Include file/line information in debug messages
 target_compile_definitions(${PROJECT_NAME} PRIVATE QT_MESSAGELOGCONTEXT)
 
-# Set properties (e.g., no console window for Windows app)
 set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 
-# Include the directory for generated files (e.g., version.h)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-# Include additional source subdirectories
-file(GLOB SUBDIRS LIST_DIRECTORIES true src/*)
-file(GLOB ICONS icons/*)
-
-# Include paths
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${SUBDIRS}
-    ${FFMPEG_INCLUDE_DIR}
-)
-
-# Link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt6::Gui
-    Qt6::Widgets
-    Qt6::Concurrent
-    Qt6::Network
-    Qt6::Svg
-    LibArchive::LibArchive
-    zmij
-)
-
-if (ENABLE_ASSET_PLAYBACK)
-    # FFmpeg libs
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-        avfilter
-        avformat
-        avcodec
-        avutil
-        swresample
-        swscale
-    )
-endif()
-
-if (ENABLE_NUSPELL)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Nuspell::nuspell)
-endif()
-
-if (ENABLE_LIBGIT2)
-    target_link_libraries(${PROJECT_NAME} PRIVATE libgit2::libgit2package)
-endif()
-
-if (LINUX)
-    find_package(Qt6 REQUIRED COMPONENTS WaylandClient)
-
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-        Qt6::WaylandClient
-    )
-endif()
-
-# Build the Rust library
 set(RUST_CRATE_DIR "${CMAKE_SOURCE_DIR}/rust")
 set(GENERATED_DIR  "${CMAKE_CURRENT_BINARY_DIR}")
-set(RPGMTRANSLATE_RUST_HEADER "${GENERATED_DIR}/rpgmtranslate.h")
+set(RUST_HEADER "${GENERATED_DIR}/${PROJECT_NAME}_rs.h")
 
 include(FetchContent)
 FetchContent_Declare(
     Corrosion
     GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
     GIT_TAG v0.6.1
+    GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(Corrosion)
 
-set(RPGMTRANSLATE_RUST_FEATURES "")
+set(RUST_FEATURES "")
 
 if (ENABLE_LANGUAGETOOL)
-    list(APPEND RPGMTRANSLATE_RUST_FEATURES "languagetool")
+    list(APPEND RUST_FEATURES "languagetool")
 endif()
 
 if (ENABLE_JSON_HIGHLIGHTING)
-    list(APPEND RPGMTRANSLATE_RUST_FEATURES "json-highlighting")
+    list(APPEND RUST_FEATURES "json-highlighting")
 endif()
 
 if (ENABLE_JS_HIGHLIGHTING)
-    list(APPEND RPGMTRANSLATE_RUST_FEATURES "js-highlighting")
+    list(APPEND RUST_FEATURES "js-highlighting")
 endif()
 
 if (ENABLE_RUBY_HIGHLIGHTING)
-    list(APPEND RPGMTRANSLATE_RUST_FEATURES "ruby-highlighting")
+    list(APPEND RUST_FEATURES "ruby-highlighting")
+endif()
+
+if (ENABLE_JS_FORMATTING)
+    list(APPEND RUST_FEATURES "js-formatting")
+endif()
+
+if (ENABLE_RUBY_FORMATTING)
+    list(APPEND RUST_FEATURES "ruby-formatting")
 endif()
 
 corrosion_import_crate(
     MANIFEST_PATH "${RUST_CRATE_DIR}/Cargo.toml"
-    FEATURES ${RPGMTRANSLATE_RUST_FEATURES}
+    FEATURES ${RUST_FEATURES}
 )
-
-if (LINUX)
-    find_package(OpenSSL REQUIRED)
-    corrosion_link_libraries(rpgmtranslate_rs OpenSSL::Crypto OpenSSL::SSL)
-endif()
 
 file(GLOB_RECURSE RUST_SOURCES
     CONFIGURE_DEPENDS
@@ -356,29 +444,105 @@ file(GLOB_RECURSE RUST_SOURCES
 )
 
 add_custom_command(
-    OUTPUT "${RPGMTRANSLATE_RUST_HEADER}"
+    OUTPUT "${RUST_HEADER}"
     COMMAND cbindgen
             --config "${RUST_CRATE_DIR}/cbindgen.toml"
-            --output "${RPGMTRANSLATE_RUST_HEADER}"
+            --output "${RUST_HEADER}"
     DEPENDS ${RUST_SOURCES}
     WORKING_DIRECTORY "${RUST_CRATE_DIR}"
     VERBATIM
 )
 
-add_custom_target(rpgmtranslate_rust_header
-    DEPENDS "${RPGMTRANSLATE_RUST_HEADER}"
+add_custom_target(rust_header
+    DEPENDS "${RUST_HEADER}"
 )
 
-add_dependencies(${PROJECT_NAME} rpgmtranslate_rust_header)
-target_include_directories(${PROJECT_NAME} PRIVATE "${GENERATED_DIR}")
+add_dependencies(${PROJECT_NAME} rust_header)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE rpgmtranslate_rs)
+if (WIN32)
+    set(_lua_executable ${CMAKE_CURRENT_SOURCE_DIR}/lua.exe)
+else()
+    set(_lua_executable ${CMAKE_CURRENT_SOURCE_DIR}/lua)
+endif()
 
-# Install the built executable
-include(GNUInstallDirs)
-install(TARGETS ${PROJECT_NAME}
-    BUNDLE DESTINATION .
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/headers/scripts.h
+    COMMAND ${_lua_executable} ${CMAKE_CURRENT_SOURCE_DIR}/prepare-headers.lua
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS ${_lua_executable} ${CMAKE_CURRENT_SOURCE_DIR}/prepare-headers.lua
+    COMMENT "Generating scripts.h"
 )
 
-# Finalize the Qt executable setup
+add_custom_target(scripts_header
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/headers/scripts.h
+)
+
+add_dependencies(${PROJECT_NAME} scripts_header)
+
+configure_file(
+    src/version/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/headers/version.h
+)
+
+configure_file(
+    src/version/nuspell-version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/headers/nuspell-version.h
+)
+
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/headers
+)
+
+file(GLOB SUBDIRS LIST_DIRECTORIES true src/*)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${SUBDIRS}
+    ${FFMPEG_INCLUDE_DIR}
+    "${GENERATED_DIR}"
+)
+
+add_library(zmij OBJECT src/3rdparty/zmij.cc)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Concurrent
+    Qt6::Network
+    Qt6::Svg
+    LibArchive::LibArchive
+    LibLZMA::LibLZMA
+    qjs
+    zmij
+    ${PROJECT_NAME}_rs
+)
+
+if (ENABLE_ASSET_PLAYBACK)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        FFmpeg::avcodec
+        FFmpeg::avformat
+        FFmpeg::avutil
+        FFmpeg::avfilter
+        FFmpeg::swresample
+        FFmpeg::swscale
+    )
+endif()
+
+if (ENABLE_NUSPELL)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Nuspell::nuspell ICU::data)
+endif()
+
+if (ENABLE_LIBGIT2)
+    target_link_libraries(${PROJECT_NAME} PRIVATE libgit2::libgit2)
+endif()
+
+if (ENABLE_MIMALLOC)
+    target_link_libraries(${PROJECT_NAME} PRIVATE mimalloc)
+endif()
+
+if (LINUX)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::WaylandClient)
+    corrosion_link_libraries(${PROJECT_NAME}_rs OpenSSL::Crypto OpenSSL::SSL)
+endif()
+
 qt_finalize_executable(${PROJECT_NAME})

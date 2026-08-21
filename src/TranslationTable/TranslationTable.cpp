@@ -11,8 +11,6 @@
 #include <QMenu>
 #include <QMessageBox>
 
-// TODO: Find tag mismatches between source text and translation text.
-
 TranslationTable::TranslationTable(QWidget* const parent) :
     QTableView(parent),
 
@@ -24,6 +22,8 @@ TranslationTable::TranslationTable(QWidget* const parent) :
     setItemDelegate(delegate);
 
     setVerticalScrollMode(QTableView::ScrollPerPixel);
+    setHorizontalScrollMode(QTableView::ScrollPerPixel);
+
     setEditTriggers(QTableView::DoubleClicked | QTableView::AnyKeyPressed);
 
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -35,30 +35,18 @@ TranslationTable::TranslationTable(QWidget* const parent) :
     verticalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignTop);
     verticalHeader()->setSectionsClickable(false);
     verticalHeader()->setHighlightSections(true);
-    verticalHeader()->setSectionResizeMode(
-        QHeaderView::ResizeMode::ResizeToContents
-    );
+    verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
 
-    connect(
-        model_,
-        &TranslationTableModel::translatedChanged,
-        this,
-        &TranslationTable::translatedChanged
-    );
+    connect(model_, &TranslationTableModel::translatedChanged, this, &TranslationTable::translatedChanged);
 
-    connect(
-        model_,
-        &TranslationTableModel::bookmarkChanged,
-        this,
-        &TranslationTable::bookmarkChanged
-    );
+    connect(model_, &TranslationTableModel::bookmarkChanged, this, &TranslationTable::bookmarkChanged);
 
     connect(
         selectionModel(),
         &QItemSelectionModel::currentChanged,
         this,
         [this](const QModelIndex& current, const QModelIndex&) -> void {
-        selectedColumn = i8(current.isValid() ? current.column() : -1);
+        selectedColumn = scast<i8>(current.isValid() ? current.column() : -1);
     }
     );
 
@@ -67,14 +55,14 @@ TranslationTable::TranslationTable(QWidget* const parent) :
         &QItemSelectionModel::selectionChanged,
         this,
         [this](
-            const QItemSelection& selected,
+            const QItemSelection& /* selected */,
             const QItemSelection& /* prev */
         ) -> void {
         if (selectedColumn < 0) {
             const QModelIndex current = currentIndex();
 
             if (current.isValid()) {
-                selectedColumn = i8(current.column());
+                selectedColumn = scast<i8>(current.column());
             } else {
                 const auto indexes = selectionModel()->selectedIndexes();
 
@@ -82,15 +70,14 @@ TranslationTable::TranslationTable(QWidget* const parent) :
                     return;
                 }
 
-                selectedColumn = i8(indexes.first().column());
+                selectedColumn = scast<i8>(indexes.first().column());
             }
         }
 
         QItemSelection toDeselect;
 
         for (const auto& range : selectionModel()->selection()) {
-            if (range.left() != selectedColumn ||
-                range.right() != selectedColumn) {
+            if (range.left() != selectedColumn || range.right() != selectedColumn) {
                 toDeselect.append(range);
             }
         }
@@ -107,11 +94,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
     }
     );
 
-    connect(
-        this,
-        &TranslationTable::pressed,
-        this,
-        [this](const QModelIndex& index) -> void {
+    connect(this, &TranslationTable::pressed, this, [this](const QModelIndex& index) -> void {
         if (qApp->mouseButtons() != Qt::RightButton) {
             return;
         }
@@ -126,10 +109,8 @@ TranslationTable::TranslationTable(QWidget* const parent) :
 
         auto* const menu = new QMenu(this);
 
-        const QAction* const removeRowAction =
-            menu->addAction(tr("Remove Row"));
-        const QAction* const bookmarkRowAction =
-            menu->addAction(tr("Bookmark Row"));
+        const QAction* const removeRowAction = menu->addAction(tr("Remove Row"));
+        const QAction* const bookmarkRowAction = menu->addAction(tr("Bookmark Row"));
 
         const QAction* const selectedAction = menu->exec(QCursor::pos());
         delete menu;
@@ -140,40 +121,27 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             model_->insertRow(index.row(), { BOOKMARK_COMMENT.toString() });
             emit bookmarked(index.row() + 1);
         }
-    }
-    );
+    });
 
-    connect(
-        header_,
-        &TranslationTableHeader::addButtonClicked,
-        this,
-        [this] -> void {
+    connect(header_, &TranslationTableHeader::addButtonClicked, this, [this] -> void {
         model_->appendColumn({});
 
         emit columnAdded();
 
-        model_->setHeaderData(
-            model_->columnCount() - 1,
-            Qt::Horizontal,
-            tr("Translation")
-        );
+        model_->setHeaderData(model_->columnCount() - 1, Qt::Horizontal, tr("Translation"));
         header_->resizeSection(model_->columnCount() - 1, DEFAULT_COLUMN_WIDTH);
-    }
-    );
+    });
 
     connect(
         model_,
         &TranslationTableModel::headerDataChanged,
         this,
-        [this](
-            const Qt::Orientation orientation,
-            const u8 logicalFirst,
-            const u8 logicalLast
-        ) -> void {
-        emit columnRenamed(
-            logicalFirst,
-            model_->headerData(logicalFirst, Qt::Horizontal).toString()
-        );
+        [this](const Qt::Orientation /* orientation */, const i32 logicalFirst, const i32 /* logicalLast */) -> void {
+        if (logicalFirst == 0) {
+            return;  // source column
+        }
+
+        emit columnRenamed(logicalFirst, model_->headerData(logicalFirst, Qt::Horizontal).toString());
     }
     );
 
@@ -181,11 +149,9 @@ TranslationTable::TranslationTable(QWidget* const parent) :
         header_,
         &QHeaderView::sectionResized,
         this,
-        [this](
-            const u8 logicalIndex,
-            const u16 /* oldSize */,
-            const u16 newSize
-        ) -> void { emit columnResized(logicalIndex, newSize); }
+        [this](const i32 logicalIndex, const i32 /* oldSize */, const i32 newSize) -> void {
+        emit columnResized(logicalIndex, newSize);
+    }
     );
 
     connect(
@@ -219,19 +185,9 @@ TranslationTable::TranslationTable(QWidget* const parent) :
     }
     );
 
-    connect(
-        delegate,
-        &TranslationTableDelegate::inputFocused,
-        this,
-        &TranslationTable::inputFocused
-    );
+    connect(delegate, &TranslationTableDelegate::inputFocused, this, &TranslationTable::inputFocused);
 
-    connect(
-        delegate,
-        &TranslationTableDelegate::textChanged,
-        this,
-        &TranslationTable::textChanged
-    );
+    connect(delegate, &TranslationTableDelegate::textChanged, this, &TranslationTable::textChanged);
 }
 
 void TranslationTable::insertTranslation(const QString& translation) {
@@ -247,12 +203,11 @@ void TranslationTable::insertTranslation(const QString& translation) {
         const auto selected = QMessageBox::question(
             this,
             tr("Cell is not empty"),
-            tr(
-                "Selected cell is not empty. Overwrite its contents with the translation?"
-            )
+            tr("Selected cell is not empty. Overwrite its contents with the translation?")
         );
 
         if (selected != QMessageBox::Yes) {
+            qInfo().noquote() << u"Overwriting a non-empty cell was rejected by user."_qsv;
             return;
         }
     }
@@ -265,22 +220,9 @@ void TranslationTable::insertTranslation(const QString& translation) {
     *item.text() = translation;
 };
 
-void TranslationTable::init(
-    const Settings* const settings,
-    const ProjectSettings* const projectSettings
-) const {
+void TranslationTable::init(const Settings* const settings, const ProjectSettings* const projectSettings) const {
     delegate->init(projectSettings, settings);
-
-#ifdef ENABLE_NUSPELL
-    delegate->initializeDictionary();
-#endif
 }
-
-#ifdef ENABLE_NUSPELL
-void TranslationTable::initializeDictionary() const {
-    delegate->initializeDictionary();
-};
-#endif
 
 void TranslationTable::fill(
     const span<QStringView>& lines,
@@ -333,12 +275,9 @@ auto TranslationTable::copy() -> u32 {
         return 0;
     }
 
-    ranges::sort(
-        indexes,
-        [](const QModelIndex& aIndex, const QModelIndex& bIndex) -> bool {
+    ranges::sort(indexes, [](const QModelIndex& aIndex, const QModelIndex& bIndex) -> bool {
         return aIndex.row() < bIndex.row();
-    }
-    );
+    });
 
     QStringList rowData;
 
@@ -397,22 +336,22 @@ auto TranslationTable::paste() -> u32 {
         row.replace("\\\\"_L1, "\\"_L1);
     }
 
-    const u8 column = indexes.front().column();
+    const i32 column = indexes.front().column();
 
-    u32 firstRow = indexes.front().row();
+    i32 firstRow = indexes.front().row();
     for (const QModelIndex& idx : indexes) {
-        firstRow = std::min(firstRow, u32(idx.row()));
+        firstRow = std::min(firstRow, idx.row());
     }
 
     const u32 maxRow = model_->rowCount() - 1;
     const u32 available = maxRow - firstRow + 1;
-    const u32 count = std::min(u32(rows.size()), available);
+    const u32 count = std::min(scast<u32>(rows.size()), available);
 
     u32 pasted = 0;
 
     for (const auto idx : range(0, count)) {
-        const u32 row = firstRow + idx;
-        const QModelIndex dst = model_->index(i32(row), column);
+        const i32 row = firstRow + idx;
+        const QModelIndex dst = model_->index(row, column);
 
         if (dst.isValid() && ((model_->flags(dst) & Qt::ItemIsEditable) != 0)) {
             if (model_->setData(dst, rows[idx], Qt::EditRole)) {
@@ -422,4 +361,8 @@ auto TranslationTable::paste() -> u32 {
     }
 
     return pasted;
+}
+
+auto TranslationTable::activeInput() -> TranslationInput* {
+    return delegate->getActiveInput();
 }

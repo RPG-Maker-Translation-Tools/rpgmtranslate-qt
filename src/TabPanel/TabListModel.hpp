@@ -7,8 +7,8 @@
 
 struct TabListItem {
     QString name;
-    u32 total;
-    u32 translated;
+    i32 total;
+    i32 translated;
     bool completed;
 };
 
@@ -18,17 +18,12 @@ class TabListModel final : public QAbstractListModel {
    public:
     explicit TabListModel(QObject* parent = nullptr);
 
-    [[nodiscard]] auto rowCount(const QModelIndex& parent = {}) const
-        -> i32 override;
-    [[nodiscard]] auto data(
-        const QModelIndex& index,
-        i32 role = Qt::DisplayRole
-    ) const -> QVariant override;
-    [[nodiscard]] auto flags(const QModelIndex& index) const
-        -> Qt::ItemFlags override;
+    [[nodiscard]] auto rowCount(const QModelIndex& parent = {}) const -> i32 override;
+    [[nodiscard]] auto data(const QModelIndex& index, i32 role = Qt::DisplayRole) const -> QVariant override;
+    [[nodiscard]] auto flags(const QModelIndex& index) const -> Qt::ItemFlags override;
 
-    [[nodiscard]] auto tab(u16 index) const -> const TabListItem&;
-    [[nodiscard]] auto tab(u16 index) -> TabListItem&;
+    [[nodiscard]] auto tab(u32 index) const -> const TabListItem&;
+    [[nodiscard]] auto tab(u32 index) -> TabListItem&;
 
     void clear();
     void setTabs(vector<TabListItem> items);

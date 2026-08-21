@@ -1,13 +1,7 @@
 #pragma once
 
 #include "Aliases.hpp"
-#include "Settings.hpp"
-
-#ifdef ENABLE_NUSPELL
-#include <nuspell/dictionary.hxx>
-
-#include <QRegularExpression>
-#endif
+#include "Types.hpp"
 
 #include <QSyntaxHighlighter>
 
@@ -15,28 +9,16 @@ class TranslationHighlighter final : public QSyntaxHighlighter {
     Q_OBJECT
 
    public:
-    explicit TranslationHighlighter(
-        const TranslationSettings* translationSettings,
-#ifdef ENABLE_NUSPELL
-        const nuspell::Dictionary* dictionary,
-        const bool* dictionaryReady,
-#endif
-        QTextDocument* document
-    );
+    explicit TranslationHighlighter(QTextDocument* document);
+
+    void setFormats(vector<LintCharState> perChar, i32 size) {
+        this->perChar = std::move(perChar);
+        this->size = size;
+    };
 
    protected:
     void highlightBlock(const QString& text) override;
 
-   private:
-#ifdef ENABLE_NUSPELL
-    const nuspell::Dictionary* const dictionary;
-    const bool* const isDictionaryReady;
-
-    static inline const QRegularExpression wordRegex = QRegularExpression(
-        uR"(\b[\p{L}']+\b)"_s,
-        QRegularExpression::UseUnicodePropertiesOption
-    );
-#endif
-
-    const TranslationSettings* translationSettings;
+    vector<LintCharState> perChar;
+    i32 size = 0;
 };

@@ -1,30 +1,10 @@
 #pragma once
 
+#include "Aliases.hpp"
 #include "FWD.hpp"
-#include "rpgmtranslate.h"
 
 #include <QPlainTextEdit>
-#include <QSyntaxHighlighter>
 #include <QWidget>
-
-#if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || \
-    defined(ENABLE_RUBY_HIGHLIGHTING)
-class TreeSitterHighlighter final : public QSyntaxHighlighter {
-   public:
-    using QSyntaxHighlighter::QSyntaxHighlighter;
-    ~TreeSitterHighlighter() override;
-
-    void setHighlights(span<const HighlightToken> newHighlights);
-
-   protected:
-    void highlightBlock(const QString& text) override;
-
-   private:
-    [[nodiscard]] static auto highlightColor(HighlightType type) -> QColor;
-
-    span<const HighlightToken> highlights;
-};
-#endif
 
 class LineNumberArea final : public QWidget {
    public:
@@ -44,6 +24,10 @@ class CodeViewer final : public QPlainTextEdit {
 
    public:
     explicit CodeViewer(QWidget* parent = nullptr);
+
+    // Replaces the document with `html` (from `rpgm_highlight_code`, already fully colored) -
+    // there's no separate highlighter to manage, lumis does the highlighting on the Rust side.
+    void setHighlightedHtml(const QString& html);
 
     [[nodiscard]] auto lineNumberAreaWidth() const -> i32;
     void lineNumberAreaPaintEvent(QPaintEvent* event);

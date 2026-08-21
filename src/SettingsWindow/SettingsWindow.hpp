@@ -3,22 +3,26 @@
 #include "Aliases.hpp"
 #include "FWD.hpp"
 #include "Settings.hpp"
-#include "rpgmtranslate.h"
+#include "rpgmtranslate_rs.h"
 
 #include <QDialog>
-
-QT_BEGIN_NAMESPACE
+#include <QNetworkAccessManager>
 
 namespace Ui {
-    class SettingsWindow;
+class SettingsWindow;
 }  // namespace Ui
-
-QT_END_NAMESPACE
 
 class SettingsWindow final : public QDialog {
     Q_OBJECT
 
    public:
+    // Every setting is transferred by one `sync` call that handles both directions, so a setting can't be
+    // half-wired: reading it without writing it back is not expressible.
+    enum class Direction : u8 {
+        Load,
+        Save
+    };
+
     explicit SettingsWindow(
         const shared_ptr<Settings>& settings,
         const shared_ptr<ProjectSettings>& projectSettings,
@@ -29,15 +33,30 @@ class SettingsWindow final : public QDialog {
 
    protected:
     void changeEvent(QEvent* event) override;
-    void closeEvent(QCloseEvent* event) override;
+    void done(i32 result) override;
     auto eventFilter(QObject* watched, QEvent* event) -> bool override;
 
    private:
     [[nodiscard]] inline auto setupUi() -> Ui::SettingsWindow*;
-    inline void saveCurrentEndpoint(EndpointSettings& settings);
+
+    void syncAll(Direction direction);
+    void syncEndpoint(Direction direction, EndpointSettings& endpoint);
+    void syncSequenceTable(Direction direction, QTableWidget* table, span<SequenceSettings> sequences);
+    void syncCustomLints(Direction direction);
+    void syncReplacements(Direction direction);
+    void syncFileContext(Direction direction, const QModelIndex& index);
+
+    [[nodiscard]] auto validate() -> bool;
+
+    void buildSequenceTables();
+    void addCustomLintRow(const CustomLint& lint);
+    void exportCustomLints();
+    void importCustomLints();
+
     inline void refreshSpellcheckDictionarySelect();
     inline void setDefaultBaseURL(TranslationEndpoint endpoint);
     inline void checkKey();
+    inline void checkLanguageToolConnection();
 
     inline void onTypeChange(TranslationEndpoint endpoint);
 
@@ -45,119 +64,5 @@ class SettingsWindow final : public QDialog {
     shared_ptr<ProjectSettings> projectSettings;
 
     Ui::SettingsWindow* const ui;
-
-    static inline QString DEFAULT_SYSTEM_PROMPT =
-        uR"(Role:
-You are a professional videogame localization specialist for JRPG/RPG/Visual Novel titles (RPG Maker engine). Produce player-facing translations with high fidelity, cultural awareness, and strict terminology consistency.
-
-Task:
-Translate all provided text from sourceLanguage to translationLanguage using all available context.
-
-Input:
-You receive a JSON object with:
-
-- sourceLanguage - BCP-47 tag of the source text
-- translationLanguage - target BCP-47 tag
-- projectContext - global tone, lore, and style guidance
-- localContext - situational context for this batch
-- glossary - mandatory terminology with notes (always override default choices)
-- files - object:
-  - keys = filename / asset type (map, system, items, etc.) - indicates gameplay function
-  - values = array of lines to process
-
-Line semantics:
-
-- HTML-like comments (`<!-- ... -->`) are context only - DO NOT translate.
-- `<!-- ID -->` starts a new independent entry.
-- `<!-- NAME -->` is an internal identifier.
-- `<!-- IN-GAME DISPLAY NAME -->` is the visible map name.
-- `<!-- EVENT NAME -->` starts a new event block.
-
-Translation rules:
-
-- Preserve meaning, intent, tone, and gameplay function.
-- Prefer concise, idiomatic, UI-safe phrasing.
-- Maintain cross-file consistency within the batch.
-- Use projectContext and localContext aggressively.
-- Enforce glossary terminology exactly.
-
-Non-translatable elements (must remain byte-exact and in place):
-
-- Control codes and escape sequences:
-  `\V[n] \N[n] \P[n] \G \C[n] \I[n] \{ \} \\ \$ \. \| \! \> \< \^ \w[x]
- \n<x> \nc<x> \nr<x> <br> \px[x] \py[x] \oc[x] \ow[x] \fr \fs[x] \fn<x>
- \fb \fi \af[x] \ac[x] \an[x] \pf[x] \pc[x] \pn[x]
- \nc[x] \ni[x] \nw[x] \na[x] \ns[x] \nt[x]
- \ii[x] \iw[x] \ia[x] \is[x] \it[x]`
-- Printf-style substitutions (`%s`, `%d`, etc.).
-- Inline conditional constructs (e.g., `text if(\V[250])`).
-- Engine command tags and HTML-like functional elements
-  (e.g., `<Picture: icon_jumpsuit>`).
-- Any variables, placeholders, markup, or structural tokens.
-
-Do not:
-
-- Translate comments or identifiers.
-- Reorder, split, merge, or drop lines.
-- Add explanations or metadata.
-
-Output:
-Return ONLY a JSON object with the same keys and array structure as the `files` key:
-
-```json
-{
-  "name": [...]
-}
-```
-)"_s;
-
-    static inline QString DEFAULT_SINGLE_TRANSLATE_SYSTEM_PROMPT =
-        uR"(Role:
-You are a professional videogame localization specialist for JRPG/RPG/Visual Novel titles (RPG Maker engine). Produce player-facing translations with high fidelity, cultural awareness, and strict terminology consistency.
-
-Task:
-Translate all provided text from sourceLanguage to translationLanguage using all available context.
-
-Input:
-You receive a JSON object containing:
-
-- sourceLanguage - BCP-47 tag of the source text
-- translationLanguage - target BCP-47 tag
-- projectContext - global tone, lore, and style guidance
-- localContext - situational context for this batch
-- glossary - mandatory terminology with notes (always override default choices)
-- string - the text to translate
-- filename - filename / asset type (map, system, items, etc.) - indicates gameplay function
-
-Translation rules:
-
-- Preserve meaning, intent, tone, and gameplay function.
-- Prefer concise, idiomatic, UI-safe phrasing.
-- Maintain cross-file consistency within the batch.
-- Use projectContext and localContext aggressively.
-- Enforce glossary terminology exactly.
-
-Non-translatable elements (must remain byte-exact and in place):
-
-- Control codes and escape sequences:
-  `\V[n] \N[n] \P[n] \G \C[n] \I[n] \{ \} \\ \$ \. \| \! \> \< \^ \w[x]
-\n<x> \nc<x> \nr<x> <br> \px[x] \py[x] \oc[x] \ow[x] \fr \fs[x] \fn<x>
-\fb \fi \af[x] \ac[x] \an[x] \pf[x] \pc[x] \pn[x]
-\nc[x] \ni[x] \nw[x] \na[x] \ns[x] \nt[x]
-\ii[x] \iw[x] \ia[x] \is[x] \it[x]`
-- Printf-style substitutions (`%s`, `%d`, etc.).
-- Inline conditional constructs (e.g., `text if(\V[250])`).
-- Engine command tags and HTML-like functional elements
-  (e.g., `<Picture: icon_jumpsuit>`).
-- Any variables, placeholders, markup, or structural tokens.
-
-Do not:
-
-- Translate comments or identifiers.
-- Reorder, split, merge, or drop lines.
-- Add explanations or metadata.
-
-Output:
-Return ONLY a JSON string with the translation.
-)"_s;
+    QNetworkAccessManager languageToolNetworkManager;
 };

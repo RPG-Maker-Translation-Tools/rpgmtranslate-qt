@@ -111,7 +111,7 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0">
        <property name="spacing">
         <number>16</number>
        </property>
@@ -242,7 +242,7 @@
              <item>
               <widget class="QLineEdit" name="maxBackupsInput">
                <property name="placeholderText">
-                <string>Range from 10 to 1000</string>
+                <string>Range from 1 to 99</string>
                </property>
               </widget>
              </item>
@@ -257,6 +257,132 @@
          <property name="text">
           <string>Check for updates</string>
          </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="sourceUpdatesCheckbox">
+         <property name="toolTip">
+          <string>Check whether the game's source files changed since the last read, and offer to re-read them.</string>
+         </property>
+         <property name="text">
+          <string>Check for source file updates</string>
+         </property>
+        </widget>
+       </item>
+       <item alignment="Qt::AlignmentFlag::AlignTop">
+        <widget class="QGroupBox" name="gitGroupbox">
+         <property name="title">
+          <string>Git</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_26">
+          <property name="spacing">
+           <number>8</number>
+          </property>
+          <property name="leftMargin">
+           <number>8</number>
+          </property>
+          <property name="topMargin">
+           <number>8</number>
+          </property>
+          <property name="rightMargin">
+           <number>8</number>
+          </property>
+          <property name="bottomMargin">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="preferGitConfigCheckbox">
+            <property name="toolTip">
+             <string>Use the identity from the repository's own git config when it defines one, and fall back to the fields below otherwise.</string>
+            </property>
+            <property name="text">
+             <string>Prefer the repository's git config</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="gitUsernameWidget" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_22">
+             <property name="spacing">
+              <number>8</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label_45">
+               <property name="text">
+                <string>User name</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="gitUsernameInput">
+               <property name="placeholderText">
+                <string>Name recorded as the commit author</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="gitUserEmailWidget" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_23">
+             <property name="spacing">
+              <number>8</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label_46">
+               <property name="text">
+                <string>User email</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="gitUserEmailInput">
+               <property name="placeholderText">
+                <string>Email recorded as the commit author</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
@@ -490,7 +616,54 @@
             </layout>
            </widget>
           </item>
+          <item>
+           <widget class="QWidget" name="languageWidget" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_24">
+             <property name="spacing">
+              <number>8</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="label_47">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Interface language</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="languageSelect"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
          </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="displayPercentsCheckbox">
+         <property name="toolTip">
+          <string>Show tab progress as a percentage instead of a translated/total count.</string>
+         </property>
+         <property name="text">
+          <string>Display progress as percents</string>
+         </property>
         </widget>
        </item>
        <item>
@@ -681,7 +854,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="matchMenuWidget" native="true">
+        <widget class="QWidget" name="lintMenuWidget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_24">
           <property name="spacing">
            <number>8</number>
@@ -701,12 +874,12 @@
           <item>
            <widget class="QLabel" name="label_26">
             <property name="text">
-             <string>Match Menu</string>
+             <string>Lint Menu</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QKeySequenceEdit" name="matchMenuInput"/>
+           <widget class="QKeySequenceEdit" name="lintMenuInput"/>
           </item>
          </layout>
         </widget>
@@ -838,9 +1011,9 @@
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>-1338</y>
-            <width>811</width>
-            <height>2106</height>
+            <y>0</y>
+            <width>816</width>
+            <height>3816</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -1099,92 +1272,92 @@
                      <widget class="QComboBox" name="typeSelect">
                       <item>
                        <property name="text">
-                        <string>Google</string>
+                        <string notr="true">Google</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Yandex</string>
+                        <string notr="true">Yandex</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>DeepL</string>
+                        <string notr="true">DeepL</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Aliyun</string>
+                        <string notr="true">Aliyun</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Anthropic</string>
+                        <string notr="true">Anthropic</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>DeepSeek</string>
+                        <string notr="true">DeepSeek</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Gemini</string>
+                        <string notr="true">Gemini</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Koboldcpp</string>
+                        <string notr="true">Koboldcpp</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Longcat</string>
+                        <string notr="true">Longcat</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Moonshot</string>
+                        <string notr="true">Moonshot</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Mistral</string>
+                        <string notr="true">Mistral</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Ollama</string>
+                        <string notr="true">Ollama</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>OpenAI</string>
+                        <string notr="true">OpenAI</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>OpenAI-compatible</string>
+                        <string notr="true">OpenAI-compatible</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Volcengine</string>
+                        <string notr="true">Volcengine</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Xiaomi</string>
+                        <string notr="true">Xiaomi</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Xinference</string>
+                        <string notr="true">Xinference</string>
                        </property>
                       </item>
                       <item>
                        <property name="text">
-                        <string>Zhipu</string>
+                        <string notr="true">Zhipu</string>
                        </property>
                       </item>
                      </widget>
@@ -1432,7 +1605,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QComboBox" name="comboBox">
+                     <widget class="QComboBox" name="reasoningEffortSelect">
                       <item>
                        <property name="text">
                         <string>Low</string>
@@ -1612,43 +1785,156 @@
                <number>8</number>
               </property>
               <item>
-               <widget class="QCheckBox" name="languageToolCheckbox">
+               <widget class="QCheckBox" name="ltEnableOnlyCheckbox">
                 <property name="text">
-                 <string>Use LanguageTool linting</string>
+                 <string>Enabled only: If true, only the rules and categories whose IDs are specified with enabledRules or enabledCategories are enabled.</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QWidget" name="languageToolSettingsWidget" native="true">
-                <layout class="QHBoxLayout" name="horizontalLayout_22">
-                 <property name="spacing">
-                  <number>8</number>
+               <widget class="QCheckBox" name="ltPickyCheckbox">
+                <property name="text">
+                 <string>Picky mode: additional rules will be activated, i.e. rules that you might only find useful when checking formal text.</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="widget_12" native="true">
+                <layout class="QFormLayout" name="formLayout_2">
+                 <property name="rowWrapPolicy">
+                  <enum>QFormLayout::RowWrapPolicy::WrapAllRows</enum>
                  </property>
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>0</number>
-                 </property>
-                 <item>
+                 <item row="0" column="0">
                   <widget class="QLabel" name="label_24">
                    <property name="text">
                     <string>LanguageTool base URL</string>
                    </property>
                   </widget>
                  </item>
-                 <item>
-                  <widget class="QLineEdit" name="languageToolURLInput">
-                   <property name="placeholderText">
-                    <string>https://localhost:8000</string>
+                 <item row="0" column="1">
+                  <widget class="QWidget" name="ltBaseUrlWidget" native="true">
+                   <layout class="QHBoxLayout" name="horizontalLayout_ltBaseUrl">
+                    <property name="spacing">
+                     <number>8</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLineEdit" name="ltBaseUrlInput">
+                      <property name="placeholderText">
+                       <string>https://localhost:8000</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="ltCheckConnectionButton">
+                      <property name="text">
+                       <string>Check connection</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_36">
+                   <property name="text">
+                    <string>Your username/email as used to log in at languagetool.org: Set to get Premium API access.</string>
                    </property>
                   </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="label_37">
+                   <property name="text">
+                    <string>Your API key (see https://languagetool.org/editor/settings/api): Set to get Premium API access.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0">
+                  <widget class="QLabel" name="label_39">
+                   <property name="text">
+                    <string>Mother tongue: A language code of the user's native language, enabling false friends checks for some language pairs.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="10" column="0">
+                  <widget class="QLabel" name="label_38">
+                   <property name="text">
+                    <string>Dicts: Comma-separated list of dictionaries to include words from; uses special default dictionary if this is unset.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="8" column="0">
+                  <widget class="QLabel" name="label_40">
+                   <property name="text">
+                    <string>Preferred variants: Comma-separated list of preferred language variants.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="7" column="0">
+                  <widget class="QLabel" name="label_41">
+                   <property name="text">
+                    <string>Enabled rules: IDs of rules to be enabled, comma-separated.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="6" column="0">
+                  <widget class="QLabel" name="label_42">
+                   <property name="text">
+                    <string>Disabled rules: IDs of rules to be disabled, comma-separated.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="4" column="0">
+                  <widget class="QLabel" name="label_43">
+                   <property name="text">
+                    <string>Enabled categories: IDs of categories to be enabled, comma-separated.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="ltUsernameInput"/>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QLineEdit" name="ltApiKeyInput"/>
+                 </item>
+                 <item row="3" column="1">
+                  <widget class="QComboBox" name="ltMotherTongueSelect"/>
+                 </item>
+                 <item row="4" column="1">
+                  <widget class="QLineEdit" name="ltEnabledCategoriesInput"/>
+                 </item>
+                 <item row="6" column="1">
+                  <widget class="QLineEdit" name="ltDisabledRulesInput"/>
+                 </item>
+                 <item row="7" column="1">
+                  <widget class="QLineEdit" name="ltEnabledRulesInput"/>
+                 </item>
+                 <item row="8" column="1">
+                  <widget class="QLineEdit" name="ltPreferredVariantsInput"/>
+                 </item>
+                 <item row="10" column="1">
+                  <widget class="QLineEdit" name="ltDictsInput"/>
+                 </item>
+                 <item row="5" column="0">
+                  <widget class="QLabel" name="label_44">
+                   <property name="text">
+                    <string>Disabled categories: IDs of categories to be disabled, comma-separated.</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="5" column="1">
+                  <widget class="QLineEdit" name="ltDisabledCategoriesInput"/>
                  </item>
                 </layout>
                </widget>
@@ -1659,7 +1945,7 @@
            <item>
             <widget class="QGroupBox" name="groupBox_2">
              <property name="title">
-              <string>Yanfly Engine Core Lints</string>
+              <string>Sequence Lints</string>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_21">
               <property name="spacing">
@@ -1680,75 +1966,461 @@
               <item>
                <widget class="QGroupBox" name="groupBox_4">
                 <property name="title">
-                 <string>Yanfly Core Engine</string>
+                 <string>Text Codes</string>
                 </property>
-                <layout class="QVBoxLayout" name="verticalLayout_23">
-                 <property name="spacing">
-                  <number>8</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>8</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>8</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>8</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>8</number>
-                 </property>
+                <property name="flat">
+                 <bool>false</bool>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_22">
+                 <item>
+                  <widget class="QTableWidget" name="textCodesTable">
+                   <property name="autoScroll">
+                    <bool>false</bool>
+                   </property>
+                   <property name="editTriggers">
+                    <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                   </property>
+                   <property name="tabKeyNavigation">
+                    <bool>false</bool>
+                   </property>
+                   <property name="showDropIndicator" stdset="0">
+                    <bool>false</bool>
+                   </property>
+                   <property name="dragDropOverwriteMode">
+                    <bool>false</bool>
+                   </property>
+                   <property name="selectionMode">
+                    <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
+                   </property>
+                   <property name="keyboardSearchFlags">
+                    <set>Qt::MatchFlag::MatchExactly</set>
+                   </property>
+                   <property name="supportedDragActions">
+                    <set>Qt::DropAction::IgnoreAction</set>
+                   </property>
+                   <attribute name="horizontalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="horizontalHeaderStretchLastSection">
+                    <bool>true</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderVisible">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderStretchLastSection">
+                    <bool>false</bool>
+                   </attribute>
+                   <column>
+                    <property name="text">
+                     <string>Pattern</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Category</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Use custom color</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Custom color</string>
+                    </property>
+                   </column>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="QGroupBox" name="groupBox_5">
-             <property name="title">
-              <string>Advanced Text System Lints</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_24">
-              <property name="spacing">
-               <number>8</number>
-              </property>
-              <property name="leftMargin">
-               <number>8</number>
-              </property>
-              <property name="topMargin">
-               <number>8</number>
-              </property>
-              <property name="rightMargin">
-               <number>8</number>
-              </property>
-              <property name="bottomMargin">
-               <number>8</number>
-              </property>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="QGroupBox" name="groupBox_7">
-             <property name="title">
-              <string>Custom Lints</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_25">
-              <property name="spacing">
-               <number>8</number>
-              </property>
-              <property name="leftMargin">
-               <number>8</number>
-              </property>
-              <property name="topMargin">
-               <number>8</number>
-              </property>
-              <property name="rightMargin">
-               <number>8</number>
-              </property>
-              <property name="bottomMargin">
-               <number>8</number>
-              </property>
+              <item>
+               <widget class="QGroupBox" name="groupBox_8">
+                <property name="title">
+                 <string>Note Tags</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_24">
+                 <item>
+                  <widget class="QTableWidget" name="noteTagsTable">
+                   <property name="autoScroll">
+                    <bool>false</bool>
+                   </property>
+                   <property name="editTriggers">
+                    <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                   </property>
+                   <property name="tabKeyNavigation">
+                    <bool>false</bool>
+                   </property>
+                   <property name="showDropIndicator" stdset="0">
+                    <bool>false</bool>
+                   </property>
+                   <property name="dragDropOverwriteMode">
+                    <bool>false</bool>
+                   </property>
+                   <property name="selectionMode">
+                    <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
+                   </property>
+                   <property name="keyboardSearchFlags">
+                    <set>Qt::MatchFlag::MatchExactly</set>
+                   </property>
+                   <property name="supportedDragActions">
+                    <set>Qt::DropAction::IgnoreAction</set>
+                   </property>
+                   <attribute name="horizontalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="horizontalHeaderStretchLastSection">
+                    <bool>true</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderVisible">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderStretchLastSection">
+                    <bool>false</bool>
+                   </attribute>
+                   <column>
+                    <property name="text">
+                     <string>Pattern</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Category</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Use custom color</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Custom color</string>
+                    </property>
+                   </column>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_9">
+                <property name="title">
+                 <string>Plugin Commands</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_23">
+                 <item>
+                  <widget class="QTableWidget" name="pluginCommandsTable">
+                   <property name="autoScroll">
+                    <bool>false</bool>
+                   </property>
+                   <property name="editTriggers">
+                    <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                   </property>
+                   <property name="tabKeyNavigation">
+                    <bool>false</bool>
+                   </property>
+                   <property name="showDropIndicator" stdset="0">
+                    <bool>false</bool>
+                   </property>
+                   <property name="dragDropOverwriteMode">
+                    <bool>false</bool>
+                   </property>
+                   <property name="selectionMode">
+                    <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
+                   </property>
+                   <property name="keyboardSearchFlags">
+                    <set>Qt::MatchFlag::MatchExactly</set>
+                   </property>
+                   <property name="supportedDragActions">
+                    <set>Qt::DropAction::IgnoreAction</set>
+                   </property>
+                   <attribute name="horizontalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="horizontalHeaderStretchLastSection">
+                    <bool>true</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderVisible">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderStretchLastSection">
+                    <bool>false</bool>
+                   </attribute>
+                   <column>
+                    <property name="text">
+                     <string>Pattern</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Category</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Use custom color</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Custom color</string>
+                    </property>
+                   </column>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_10">
+                <property name="title">
+                 <string>Comment Tags</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_26">
+                 <item>
+                  <widget class="QTableWidget" name="commentTagsTable">
+                   <property name="autoScroll">
+                    <bool>false</bool>
+                   </property>
+                   <property name="editTriggers">
+                    <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                   </property>
+                   <property name="tabKeyNavigation">
+                    <bool>false</bool>
+                   </property>
+                   <property name="showDropIndicator" stdset="0">
+                    <bool>false</bool>
+                   </property>
+                   <property name="dragDropOverwriteMode">
+                    <bool>false</bool>
+                   </property>
+                   <property name="selectionMode">
+                    <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
+                   </property>
+                   <property name="keyboardSearchFlags">
+                    <set>Qt::MatchFlag::MatchExactly</set>
+                   </property>
+                   <property name="supportedDragActions">
+                    <set>Qt::DropAction::IgnoreAction</set>
+                   </property>
+                   <attribute name="horizontalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="horizontalHeaderStretchLastSection">
+                    <bool>true</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderVisible">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderStretchLastSection">
+                    <bool>false</bool>
+                   </attribute>
+                   <column>
+                    <property name="text">
+                     <string>Pattern</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Category</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Use custom color</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Custom color</string>
+                    </property>
+                   </column>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_7">
+                <property name="title">
+                 <string>Custom Lints</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_25">
+                 <item>
+                  <widget class="QTableWidget" name="customLintsTable">
+                   <property name="autoScroll">
+                    <bool>false</bool>
+                   </property>
+                   <property name="editTriggers">
+                    <set>QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed</set>
+                   </property>
+                   <property name="tabKeyNavigation">
+                    <bool>false</bool>
+                   </property>
+                   <property name="showDropIndicator" stdset="0">
+                    <bool>false</bool>
+                   </property>
+                   <property name="dragDropOverwriteMode">
+                    <bool>false</bool>
+                   </property>
+                   <property name="selectionMode">
+                    <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+                   </property>
+                   <property name="selectionBehavior">
+                    <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                   </property>
+                   <property name="keyboardSearchFlags">
+                    <set>Qt::MatchFlag::MatchExactly</set>
+                   </property>
+                   <property name="supportedDragActions">
+                    <set>Qt::DropAction::IgnoreAction</set>
+                   </property>
+                   <attribute name="horizontalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="horizontalHeaderStretchLastSection">
+                    <bool>true</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderVisible">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderHighlightSections">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="verticalHeaderStretchLastSection">
+                    <bool>false</bool>
+                   </attribute>
+                   <column>
+                    <property name="text">
+                     <string>Pattern</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Tooltip</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Case insensitive</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Use custom color</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Custom color</string>
+                    </property>
+                   </column>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="widget_10" native="true">
+                   <layout class="QHBoxLayout" name="horizontalLayout_21">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QPushButton" name="addLintButton">
+                      <property name="minimumSize">
+                       <size>
+                        <width>32</width>
+                        <height>32</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>32</width>
+                        <height>32</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="icon">
+                       <iconset resource="../../resources.qrc">
+                        <normaloff>:/icons/add.svg</normaloff>:/icons/add.svg</iconset>
+                      </property>
+                      <property name="iconSize">
+                       <size>
+                        <width>20</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="removeLintButton">
+                      <property name="maximumSize">
+                       <size>
+                        <width>32</width>
+                        <height>32</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="icon">
+                       <iconset resource="../../resources.qrc">
+                        <normaloff>:/icons/close.svg</normaloff>:/icons/close.svg</iconset>
+                      </property>
+                      <property name="iconSize">
+                       <size>
+                        <width>20</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="exportLintsButton">
+                      <property name="text">
+                       <string>Export</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="importLintsButton">
+                      <property name="text">
+                       <string>Import</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
@@ -1773,6 +2445,160 @@
               <property name="bottomMargin">
                <number>8</number>
               </property>
+              <item>
+               <widget class="QLabel" name="label_34">
+                <property name="text">
+                 <string>Sequence Replacements</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_35">
+                <property name="text">
+                 <string>Sequence replacement is a feature that allows you to specify character sequences that will be converted into some other symbols. It's mainly useful when you need a non-ASCII punctuation symbol (e.g. em dash, guillemets).</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QTableWidget" name="replacementsTable">
+                <property name="tabKeyNavigation">
+                 <bool>false</bool>
+                </property>
+                <property name="showDropIndicator" stdset="0">
+                 <bool>false</bool>
+                </property>
+                <property name="dragDropOverwriteMode">
+                 <bool>false</bool>
+                </property>
+                <property name="selectionMode">
+                 <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+                </property>
+                <property name="selectionBehavior">
+                 <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                </property>
+                <property name="verticalScrollMode">
+                 <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
+                </property>
+                <property name="horizontalScrollMode">
+                 <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
+                </property>
+                <property name="gridStyle">
+                 <enum>Qt::PenStyle::SolidLine</enum>
+                </property>
+                <property name="supportedDragActions">
+                 <set>Qt::DropAction::IgnoreAction</set>
+                </property>
+                <column>
+                 <property name="text">
+                  <string>Sequence</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Replacement</string>
+                 </property>
+                </column>
+                <column>
+                 <property name="text">
+                  <string>Enabled</string>
+                 </property>
+                </column>
+               </widget>
+              </item>
+              <item alignment="Qt::AlignmentFlag::AlignLeft">
+               <widget class="QWidget" name="widget_9" native="true">
+                <layout class="QHBoxLayout" name="horizontalLayout_18">
+                 <property name="spacing">
+                  <number>0</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QPushButton" name="addReplacementButton">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../../resources.qrc">
+                     <normaloff>:/icons/add.svg</normaloff>:/icons/add.svg</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>20</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="removeReplacementButton">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>32</width>
+                     <height>32</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string/>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../../resources.qrc">
+                     <normaloff>:/icons/close.svg</normaloff>:/icons/close.svg</iconset>
+                   </property>
+                   <property name="iconSize">
+                    <size>
+                     <width>20</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
               <item>
                <widget class="QWidget" name="widget_7" native="true">
                 <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -1802,7 +2628,11 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="whitespaceCharactersInput"/>
+                  <widget class="QLineEdit" name="whitespaceCharactersInput">
+                   <property name="placeholderText">
+                    <string>U+3000, U+00A0, U+200B</string>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </widget>
@@ -1825,41 +2655,6 @@
                  <property name="bottomMargin">
                   <number>0</number>
                  </property>
-                 <item>
-                  <widget class="QCheckBox" name="leadingWhitespaceCheckbox">
-                   <property name="text">
-                    <string>Highlight leading whitespace</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QCheckBox" name="trailingWhitespaceCheckbox">
-                   <property name="text">
-                    <string>Highlight trailing whitespace</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QCheckBox" name="contiguousWhitespaceCheckbox">
-                   <property name="text">
-                    <string>Highlight contiguous whitespace</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QCheckBox" name="unclosedPunctuationCheckbox">
-                   <property name="text">
-                    <string>Highlight unclosed punctuation</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QCheckBox" name="tagMismatchCheckbox">
-                   <property name="text">
-                    <string>Display source/translation tag mismatch</string>
-                   </property>
-                  </widget>
-                 </item>
                  <item>
                   <widget class="QCheckBox" name="displayWordsCheckbox">
                    <property name="text">

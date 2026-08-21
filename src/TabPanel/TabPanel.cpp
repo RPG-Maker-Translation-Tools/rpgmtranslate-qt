@@ -2,6 +2,7 @@
 
 #include "TabList.hpp"
 #include "TabListModel.hpp"
+#include "Utils.hpp"
 
 #include <QMenu>
 
@@ -15,8 +16,7 @@ TabPanel::TabPanel(QWidget* const parent) :
         tabList->selectionModel(),
         &QItemSelectionModel::currentChanged,
         this,
-        [this](const QModelIndex& current, const QModelIndex& previous)
-            -> void {
+        [this](const QModelIndex& current, const QModelIndex& previous) -> void {
         if (current.row() == previous.row()) {
             return;
         }
@@ -28,26 +28,18 @@ TabPanel::TabPanel(QWidget* const parent) :
     }
     );
 
-    connect(
-        tabList,
-        &TabList::rightClicked,
-        this,
-        [this](const QModelIndex& index, const QPoint& pos) -> void {
+    connect(tabList, &TabList::rightClicked, this, [this](const QModelIndex& index, const QPoint& pos) -> void {
         auto* const menu = new QMenu(this);
 
         menu->addSeparator();
 
-        const bool completed =
-            !index.isValid() || tabList->tab(index.row()).completed;
+        const bool completed = !index.isValid() || tabList->tab(index.row()).completed;
 
-        auto* const markCompletedAction = menu->addAction(
-            completed ? tr("Unmark Completed") : tr("Mark as Completed")
-        );
+        auto* const markCompletedAction = menu->addAction(completed ? tr("Unmark Completed") : tr("Mark as Completed"));
 
         menu->addSeparator();
 
-        auto* const toggleProgressDisplayAction =
-            menu->addAction(tr("Toggle Progress Display"));
+        auto* const toggleProgressDisplayAction = menu->addAction(tr("Toggle Progress Display"));
 
         auto* const selectedAction = menu->exec(pos);
 
@@ -58,8 +50,7 @@ TabPanel::TabPanel(QWidget* const parent) :
             setProgressDisplay(!tabList->progressDisplay());
             emit displayToggled();
         }
-    }
-    );
+    });
 }
 
 void TabPanel::setTabs(vector<TabListItem> tabs) {
@@ -67,11 +58,11 @@ void TabPanel::setTabs(vector<TabListItem> tabs) {
     adjustSize();
 }
 
-auto TabPanel::tabCount() const -> u16 {
+auto TabPanel::tabCount() const -> i32 {
     return tabList->model()->rowCount();
 };
 
-auto TabPanel::tabName(const u16 tabIndex) const -> QString {
+auto TabPanel::tabName(const i32 tabIndex) const -> QString {
     return tabList->tab(tabIndex).name;
 };
 
@@ -89,7 +80,7 @@ void TabPanel::clear() {
     tabList->clear();
 }
 
-[[nodiscard]] auto TabPanel::tabIndex(const QString& tabName) const -> u32 {
+[[nodiscard]] auto TabPanel::tabIndex(const QString& tabName) const -> i32 {
     for (const auto tab : range(0, tabCount())) {
         if (tabList->tab(tab).name == tabName) {
             return tab;
@@ -99,7 +90,7 @@ void TabPanel::clear() {
     std::unreachable();
 };
 
-[[nodiscard]] auto TabPanel::currentTranslated() const -> u32 {
+[[nodiscard]] auto TabPanel::currentTranslated() const -> i32 {
     const QModelIndex currentIndex = tabList->currentIndex();
 
     if (!currentIndex.isValid()) {
@@ -109,7 +100,7 @@ void TabPanel::clear() {
     return tabList->tab(currentIndex.row()).translated;
 };
 
-[[nodiscard]] auto TabPanel::currentTotal() const -> u32 {
+[[nodiscard]] auto TabPanel::currentTotal() const -> i32 {
     const QModelIndex currentIndex = tabList->currentIndex();
 
     if (!currentIndex.isValid()) {
@@ -119,41 +110,37 @@ void TabPanel::clear() {
     return tabList->tab(currentIndex.row()).total;
 };
 
-[[nodiscard]] auto TabPanel::tabTotal(const u16 tabIndex) const -> u32 {
+[[nodiscard]] auto TabPanel::tabTotal(const i32 tabIndex) const -> i32 {
     return tabList->tab(tabIndex).total;
 };
 
-[[nodiscard]] auto TabPanel::tabTranslated(const u16 tabIndex) const -> u32 {
+[[nodiscard]] auto TabPanel::tabTranslated(const i32 tabIndex) const -> i32 {
     return tabList->tab(tabIndex).translated;
 };
 
-void TabPanel::setTabTranslated(
-    const u16 tabIndex,
-    const u32 translated
-) const {
+void TabPanel::setTabTranslated(const i32 tabIndex, const i32 translated) const {
     tabList->tab(tabIndex).translated = translated;
 };
 
-void TabPanel::setCurrentTranslated(const u32 translated) const {
+void TabPanel::setCurrentTranslated(const i32 translated) const {
     const QModelIndex currentIndex = tabList->currentIndex();
 
     if (!currentIndex.isValid()) {
         return;
     }
 
-    u32 currentTranslated = tabList->tab(currentIndex.row()).translated;
-    tabList->tab(currentIndex.row()).translated =
-        currentTranslated + translated;
+    const i32 currentTranslated = tabList->tab(currentIndex.row()).translated;
+    tabList->tab(currentIndex.row()).translated = currentTranslated + translated;
 }
 
-void TabPanel::setCurrentTotal(const u32 total) const {
+void TabPanel::setCurrentTotal(const i32 total) const {
     const QModelIndex currentIndex = tabList->currentIndex();
 
     if (!currentIndex.isValid()) {
         return;
     }
 
-    u32 currentTotal = tabList->tab(currentIndex.row()).total;
+    const i32 currentTotal = tabList->tab(currentIndex.row()).total;
     tabList->tab(currentIndex.row()).total = currentTotal + total;
 }
 
@@ -176,7 +163,7 @@ void TabPanel::changeTab(const QString& filename) {
 }
 
 auto TabPanel::tabs() const -> QStringList {
-    const u16 rowCount = tabList->model()->rowCount();
+    const i32 rowCount = tabList->model()->rowCount();
 
     QStringList tabs;
     tabs.reserve(rowCount);

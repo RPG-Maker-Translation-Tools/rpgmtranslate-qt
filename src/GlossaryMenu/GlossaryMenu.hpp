@@ -2,7 +2,6 @@
 
 #include "Aliases.hpp"
 #include "FWD.hpp"
-#include "FileSelectMenu.hpp"
 #include "PersistentMenu.hpp"
 #include "Types.hpp"
 
@@ -22,15 +21,10 @@ class GlossaryMenu final : public PersistentMenu {
     ~GlossaryMenu() override;
 
     void fill(const Glossary& glossary);
-    void setFiles(const vector<TabListItem>& files);
     [[nodiscard]] auto glossary() const -> Glossary;
     void clear();
 
-   signals:
-    void checkRequested(
-        Selected selected,
-        const std::variant<Glossary, Term>& variant
-    );
+    void setTermEnabled(u32 index, bool enabled);
 
    protected:
     void changeEvent(QEvent* event) override;
@@ -38,13 +32,9 @@ class GlossaryMenu final : public PersistentMenu {
    private:
     [[nodiscard]] inline auto setupUi() -> Ui::GlossaryMenu*;
 
-    [[nodiscard]] auto makeTermInfoCell(
-        const QString& text,
-        const MatchModeInfo& info
-    ) -> QWidget*;
+    [[nodiscard]] auto makeTermInfoCell(const QString& text, const MatchModeInfo& info) -> QWidget*;
     [[nodiscard]] auto makeNoteCell(const QString& note) -> QWidget*;
-    [[nodiscard]] auto makeActionCell(QTreeWidgetItem* item, u16 index)
-        -> QWidget*;
+    [[nodiscard]] auto makeActionCell(QTreeWidgetItem* item, i32 index) -> QWidget*;
     void addNewEntry(
         const QString& source = QString(),
         const QString& translation = QString(),
@@ -59,12 +49,13 @@ class GlossaryMenu final : public PersistentMenu {
             },
         MatchModeInfo translationMatchMode =
             MatchModeInfo{
-                .mode = {  
+                .mode = {
                     .tag = MatchMode::Tag::Exact},
                 .case_sensitive = false,
                 .permissive = false,
             },
-        bool editable = true
+        bool editable = true,
+        bool enabled = true
     );
     void setRowEditable(QTreeWidgetItem* item, bool editable);
 
@@ -74,12 +65,8 @@ class GlossaryMenu final : public PersistentMenu {
     QPushButton* searchButton;
 
     QPushButton* addTermButton;
-    QPushButton* fileSelectButton;
-    QPushButton* qcButton;
 
     QTreeWidget* glossaryTable;
-
-    FileSelectMenu* fileSelectMenu;
 
     i32 lastSearchIndex = 0;
 };
@@ -114,9 +101,7 @@ class ActionButtonsCell final : public QWidget {
    signals:
     void editToggled(bool editable);
     void deleteRequested();
-    void checkRequested();
 
    private:
     QPushButton* deleteButton;
-    QPushButton* checkButton;
 };

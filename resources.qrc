@@ -13,6 +13,7 @@
         <file>icons/comment.svg</file>
         <file>icons/commit.svg</file>
         <file>icons/construction.svg</file>
+        <file>icons/difference.svg</file>
         <file>icons/dock.svg</file>
         <file>icons/document_search.svg</file>
         <file>icons/edit_arrow_down.svg</file>
@@ -41,6 +42,7 @@
         <file>icons/swap_vert.svg</file>
         <file>icons/swipe_down.svg</file>
         <file>icons/translate.svg</file>
+        <file>icons/undo.svg</file>
         <file>icons/visibility.svg</file>
         <file>icons/visibility_off.svg</file>
         <file>icons/rpgmtranslate-logo.png</file>

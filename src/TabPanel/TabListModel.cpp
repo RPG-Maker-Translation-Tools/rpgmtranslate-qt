@@ -2,15 +2,13 @@
 
 #include "FWD.hpp"
 
-TabListModel::TabListModel(QObject* const parent) :
-    QAbstractListModel(parent) {}
+TabListModel::TabListModel(QObject* const parent) : QAbstractListModel(parent) {}
 
-auto TabListModel::rowCount(const QModelIndex& parent) const -> i32 {
-    return i32(tabs.size());
+auto TabListModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
+    return scast<i32>(tabs.size());
 }
 
-auto TabListModel::data(const QModelIndex& index, const i32 role) const
-    -> QVariant {
+auto TabListModel::data(const QModelIndex& /* index */, const i32 /* role */) const -> QVariant {
     return {};
 }
 
@@ -22,11 +20,11 @@ auto TabListModel::flags(const QModelIndex& index) const -> Qt::ItemFlags {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
-auto TabListModel::tab(const u16 index) const -> const TabListItem& {
+auto TabListModel::tab(const u32 index) const -> const TabListItem& {
     return tabs[index];
 }
 
-auto TabListModel::tab(const u16 index) -> TabListItem& {
+auto TabListModel::tab(const u32 index) -> TabListItem& {
     return tabs[index];
 }
 

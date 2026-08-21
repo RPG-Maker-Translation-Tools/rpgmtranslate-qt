@@ -10,10 +10,7 @@ class TranslationsMenu final : public PersistentMenu {
    public:
     explicit TranslationsMenu(QWidget* parent = nullptr);
 
-    void showTranslations(
-        const vector<QString>& translations,
-        const shared_ptr<Settings>& projectSettings
-    );
+    void showTranslations(const vector<QString>& translations, const shared_ptr<Settings>& projectSettings);
 
     void showError(const QString& error);
 

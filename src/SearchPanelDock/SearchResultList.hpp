@@ -11,7 +11,7 @@
 #include <QStyledItemDelegate>
 #include <QTimer>
 
-enum SearchResultListRole : i16 {
+enum SearchResultListRole : u16 {
     TitleRole = Qt::UserRole + 1,
     SubtitleRole = Qt::UserRole + 2,
     SpansRole = Qt::UserRole + 3
@@ -30,33 +30,17 @@ class SearchResultListDelegate final : public QStyledItemDelegate {
    public:
     using QStyledItemDelegate::QStyledItemDelegate;
 
-    constexpr void setProxy(const SearchResultListProxy* const proxy) {
-        proxy_ = proxy;
-    };
+    constexpr void setProxy(const SearchResultListProxy* const proxy) { proxy_ = proxy; };
 
     void invalidateCache() { heightCache_.clear(); };
 
-    [[nodiscard]] auto sizeHint(
-        const QStyleOptionViewItem& option,
-        const QModelIndex& index
-    ) const -> QSize override;
+    [[nodiscard]] auto sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const -> QSize override;
 
-    void paint(
-        QPainter* painter,
-        const QStyleOptionViewItem& option,
-        const QModelIndex& index
-    ) const override;
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
    private:
-    [[nodiscard]] static auto computeHeight(
-        const QStyleOptionViewItem& option,
-        const QModelIndex& index,
-        i32 contentWidth
-    ) -> i32;
-
-    constexpr static u8 PAD_X = 8;
-    constexpr static u8 PAD_Y = 8;
-    constexpr static u8 GAP = 4;
+    [[nodiscard]] static auto
+    computeHeight(const QStyleOptionViewItem& option, const QModelIndex& index, i32 contentWidth) -> i32;
 
     mutable HashMap<i32, i32> heightCache_;
     const SearchResultListProxy* proxy_;
@@ -68,20 +52,15 @@ class SearchResultListModel final : public QAbstractListModel {
    public:
     using QAbstractListModel::QAbstractListModel;
 
-    [[nodiscard]] auto rowCount(const QModelIndex& parent = QModelIndex()) const
-        -> i32 override;
-    [[nodiscard]] auto data(const QModelIndex& idx, i32 role) const
-        -> QVariant override;
-    [[nodiscard]] auto flags(const QModelIndex& idx) const
-        -> Qt::ItemFlags override;
+    [[nodiscard]] auto rowCount(const QModelIndex& parent = QModelIndex()) const -> i32 override;
+    [[nodiscard]] auto data(const QModelIndex& idx, i32 role) const -> QVariant override;
+    [[nodiscard]] auto flags(const QModelIndex& idx) const -> Qt::ItemFlags override;
 
     void clear() { setItems({}); };
 
     void setItems(vector<SearchResultListItem>&& items);
 
-    [[nodiscard]] constexpr auto item(const i32 row) -> SearchResultListItem& {
-        return items[row];
-    };
+    [[nodiscard]] constexpr auto item(const i32 row) -> SearchResultListItem& { return items[row]; };
 
    private:
     vector<SearchResultListItem> items;
@@ -96,7 +75,7 @@ class SearchResultListProxy final : public QSortFilterProxyModel {
         const i32 row,
         const QModelIndex& /* parent */
     ) const -> bool override {
-        auto* const model = as<SearchResultListModel*>(sourceModel());
+        auto* const model = scast<SearchResultListModel*>(sourceModel());
         const auto& item = model->item(row);
         return !item.hidden;
     }
@@ -108,17 +87,11 @@ class SearchResultList final : public QListView {
    public:
     explicit SearchResultList(QWidget* parent = nullptr);
 
-    [[nodiscard]] constexpr auto delegate() const -> SearchResultListDelegate* {
-        return delegate_;
-    }
+    [[nodiscard]] constexpr auto delegate() const -> SearchResultListDelegate* { return delegate_; }
 
-    [[nodiscard]] constexpr auto model() const -> SearchResultListModel* {
-        return model_;
-    }
+    [[nodiscard]] constexpr auto model() const -> SearchResultListModel* { return model_; }
 
-    [[nodiscard]] constexpr auto proxy() const -> SearchResultListProxy* {
-        return proxy_;
-    }
+    [[nodiscard]] constexpr auto proxy() const -> SearchResultListProxy* { return proxy_; }
 
     void clear() { model_->clear(); }
 

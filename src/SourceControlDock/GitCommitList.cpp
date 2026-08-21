@@ -5,15 +5,30 @@
 #include <QPainter>
 #include <QPainterPath>
 
-GitCommitModel::GitCommitModel(QObject* const parent) :
-    QAbstractListModel(parent) {}
+namespace {
+constexpr f32 HASH_FONT_SCALE = 0.82F;
+constexpr f32 SUBTITLE_FONT_SCALE = 0.85F;
 
-auto GitCommitModel::rowCount(const QModelIndex& parent) const -> i32 {
-    return i32(commits.size());
+constexpr i32 ROW_HEIGHT = 58;
+constexpr i32 PADDING_HORIZONTAL = 12;
+constexpr i32 PADDING_VERTICAL = 6;
+constexpr i32 CIRCLE_RADIUS = 6;
+constexpr i32 CIRCLE_TO_TEXT = 10;
+constexpr i32 HASH_MIN_WIDTH = 56;
+
+constexpr QRgb COLOR_REMOTE = 0xFF4A90D9;
+constexpr QRgb COLOR_LOCAL = 0xFF3DBE6E;
+
+constexpr i32 HOVER_DELAY_MS = 600;
+}  // namespace
+
+GitCommitModel::GitCommitModel(QObject* const parent) : QAbstractListModel(parent) {}
+
+auto GitCommitModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
+    return scast<i32>(commits.size());
 }
 
-auto GitCommitModel::data(const QModelIndex& index, i32 role) const
-    -> QVariant {
+auto GitCommitModel::data(const QModelIndex& index, i32 role) const -> QVariant {
     if (!index.isValid()) {
         return {};
     }
@@ -35,12 +50,6 @@ auto GitCommitModel::data(const QModelIndex& index, i32 role) const
     }
 }
 
-void GitCommitModel::setCommits(vector<GitCommit> commits) {
-    beginResetModel();
-    commits = std::move(commits);
-    endResetModel();
-}
-
 void GitCommitModel::prependCommit(GitCommit commit) {
     beginInsertRows({}, 0, 0);
     commits.push_front(std::move(commit));
@@ -48,7 +57,7 @@ void GitCommitModel::prependCommit(GitCommit commit) {
 }
 
 void GitCommitModel::appendCommit(GitCommit commit) {
-    const i32 row = i32(commits.size());
+    const i32 row = scast<i32>(commits.size());
     beginInsertRows({}, row, row);
     commits.push_back(std::move(commit));
     endInsertRows();
@@ -64,8 +73,7 @@ auto GitCommitModel::commitAt(const i32 row) const -> const GitCommit& {
     return commits.at(row);
 }
 
-GitCommitDelegate::GitCommitDelegate(QObject* const parent) :
-    QStyledItemDelegate(parent) {}
+GitCommitDelegate::GitCommitDelegate(QObject* const parent) : QStyledItemDelegate(parent) {}
 
 void GitCommitDelegate::paint(
     QPainter* const painter,
@@ -101,20 +109,15 @@ void GitCommitDelegate::paint(
     const i32 circleX = rect.left() + PADDING_HORIZONTAL + CIRCLE_RADIUS;
     const i32 circleY = rect.center().y();
 
-    const QColor circleColor =
-        isRemote ? QColor(COLOR_REMOTE) : QColor(COLOR_LOCAL);
+    const QColor circleColor = isRemote ? QColor(COLOR_REMOTE) : QColor(COLOR_LOCAL);
     painter->setPen(Qt::NoPen);
     painter->setBrush(circleColor);
-    painter
-        ->drawEllipse(QPoint(circleX, circleY), CIRCLE_RADIUS, CIRCLE_RADIUS);
+    painter->drawEllipse(QPoint(circleX, circleY), CIRCLE_RADIUS, CIRCLE_RADIUS);
 
-    const QColor primaryColor = isSelected
-                                    ? option.palette.highlightedText().color()
-                                    : option.palette.text().color();
+    const QColor primaryColor = isSelected ? option.palette.highlightedText().color() : option.palette.text().color();
 
     const QColor secondaryColor =
-        isSelected ? option.palette.highlightedText().color().darker(140)
-                   : option.palette.placeholderText().color();
+        isSelected ? option.palette.highlightedText().color().darker(140) : option.palette.placeholderText().color();
 
     const i32 textLeft = circleX + CIRCLE_RADIUS + CIRCLE_TO_TEXT;
     const i32 textRight = rect.right() - PADDING_HORIZONTAL;
@@ -131,55 +134,34 @@ void GitCommitDelegate::paint(
     painter->setFont(msgFont);
     painter->setPen(primaryColor);
 
-    const QRect msgRect(
-        textLeft,
-        rect.top() + PADDING_VERTICAL,
-        msgWidth,
-        halfHeight - PADDING_VERTICAL
-    );
+    const QRect msgRect(textLeft, rect.top() + PADDING_VERTICAL, msgWidth, halfHeight - PADDING_VERTICAL);
 
-    const QString elidedMsg =
-        QFontMetrics(msgFont).elidedText(message, Qt::ElideRight, msgWidth);
+    const QString elidedMsg = QFontMetrics(msgFont).elidedText(message, Qt::ElideRight, msgWidth);
     painter->drawText(msgRect, Qt::AlignVCenter | Qt::AlignLeft, elidedMsg);
 
     QFont hashFont = option.font;
     hashFont.setFamily(u"monospace"_s);
-    hashFont.setPointSizeF(option.font.pointSizeF() * 0.82F);
+    hashFont.setPointSizeF(option.font.pointSizeF() * HASH_FONT_SCALE);
     painter->setFont(hashFont);
     painter->setPen(secondaryColor);
 
-    const QRect hashRect(
-        hashLeft,
-        rect.top() + PADDING_VERTICAL,
-        HASH_MIN_WIDTH,
-        halfHeight - PADDING_VERTICAL
-    );
+    const QRect hashRect(hashLeft, rect.top() + PADDING_VERTICAL, HASH_MIN_WIDTH, halfHeight - PADDING_VERTICAL);
     painter->drawText(hashRect, Qt::AlignVCenter | Qt::AlignRight, hash);
 
     QFont subFont = option.font;
-    subFont.setPointSizeF(option.font.pointSizeF() * 0.85F);
+    subFont.setPointSizeF(option.font.pointSizeF() * SUBTITLE_FONT_SCALE);
     painter->setFont(subFont);
     painter->setPen(secondaryColor);
 
     const i32 subWidth = textRight - textLeft;
-    const QRect subRect(
-        textLeft,
-        rect.top() + halfHeight,
-        subWidth,
-        halfHeight - PADDING_VERTICAL
-    );
+    const QRect subRect(textLeft, rect.top() + halfHeight, subWidth, halfHeight - PADDING_VERTICAL);
 
-    const QString elidedAuthor =
-        QFontMetrics(subFont).elidedText(author, Qt::ElideRight, subWidth);
+    const QString elidedAuthor = QFontMetrics(subFont).elidedText(author, Qt::ElideRight, subWidth);
     painter->drawText(subRect, Qt::AlignVCenter | Qt::AlignLeft, elidedAuthor);
 
     painter->setPen(QPen(option.palette.mid().color(), 1));
-    painter->drawLine(
-        rect.left() + PADDING_HORIZONTAL,
-        rect.bottom(),
-        rect.right() - PADDING_HORIZONTAL,
-        rect.bottom()
-    );
+    painter
+        ->drawLine(rect.left() + PADDING_HORIZONTAL, rect.bottom(), rect.right() - PADDING_HORIZONTAL, rect.bottom());
 
     painter->restore();
 }
@@ -191,9 +173,7 @@ auto GitCommitDelegate::sizeHint(
     return { 0, ROW_HEIGHT };
 }
 
-GitCommitList::GitCommitList(QWidget* const parent) :
-    QListView(parent),
-    model_(new GitCommitModel(this)) {
+GitCommitList::GitCommitList(QWidget* const parent) : QListView(parent), model_(new GitCommitModel(this)) {
     setModel(model_);
     setItemDelegate(new GitCommitDelegate(this));
 
@@ -202,7 +182,7 @@ GitCommitList::GitCommitList(QWidget* const parent) :
 
     setAttribute(Qt::WA_Hover, true);
 
-    setVerticalScrollMode(ScrollPerPixel);
+    setVerticalScrollMode(QListView::ScrollPerPixel);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     hoverTimer.setSingleShot(true);

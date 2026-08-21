@@ -2,19 +2,25 @@
 
 #include <QWheelEvent>
 
+namespace {
+constexpr f32 SCALE_FACTOR = 1.15F;
+constexpr u32 SCALE_PERCENT_MULTIPLIER = 100;
+constexpr u32 MAX_SCALE_PERCENT = 1000;
+constexpr f32 MIN_SCALE_FACTOR = 0.01F;
+constexpr f32 MAX_SCALE_FACTOR = 10.0F;
+}  // namespace
+
 void GraphicsAssetViewer::wheelEvent(QWheelEvent* const event) {
-    u32 curScale = u32(roundf(currentScale() * 100));
+    u32 curScale = scast<u32>(roundf(currentScale() * SCALE_PERCENT_MULTIPLIER));
     const bool zoomingIn = event->angleDelta().y() > 0;
 
     if (curScale <= 1 && !zoomingIn) {
         return;
     }
 
-    if (curScale >= 1000 && zoomingIn) {
+    if (curScale >= MAX_SCALE_PERCENT && zoomingIn) {
         return;
     }
-
-    constexpr f32 SCALE_FACTOR = 1.15F;
 
     if (zoomingIn) {
         scale(SCALE_FACTOR, SCALE_FACTOR);
@@ -22,14 +28,14 @@ void GraphicsAssetViewer::wheelEvent(QWheelEvent* const event) {
         scale(1.0F / SCALE_FACTOR, 1.0F / SCALE_FACTOR);
     }
 
-    curScale = u32(roundf(currentScale() * 100));
+    curScale = scast<u32>(roundf(currentScale() * SCALE_PERCENT_MULTIPLIER));
 
     if (curScale <= 1 && !zoomingIn) {
-        setScaleFactor(0.01F);
+        setScaleFactor(MIN_SCALE_FACTOR);
     }
 
-    if (curScale >= 1000 && zoomingIn) {
-        setScaleFactor(10.0F);
+    if (curScale >= MAX_SCALE_PERCENT && zoomingIn) {
+        setScaleFactor(MAX_SCALE_FACTOR);
     }
 
     emit rescaled();
@@ -37,7 +43,7 @@ void GraphicsAssetViewer::wheelEvent(QWheelEvent* const event) {
 
 auto GraphicsAssetViewer::currentScale() const -> f32 {
     const QTransform trf = transform();
-    return f32(trf.m11());
+    return scast<f32>(trf.m11());
 }
 
 void GraphicsAssetViewer::setScaleFactor(const f32 factor) {

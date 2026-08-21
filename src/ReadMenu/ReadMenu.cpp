@@ -1,17 +1,13 @@
 #include "ReadMenu.hpp"
 
 #include "FileSelectMenu.hpp"
+#include "Notice.hpp"
 #include "ProjectSettings.hpp"
 #include "Utils.hpp"
-#include "rpgmtranslate.h"
+#include "rpgmtranslate_rs.h"
 #include "ui_ReadMenu.h"
 
-#include <QMessageBox>
-
-ReadMenu::ReadMenu(QWidget* const parent) :
-    QWidget(parent),
-    ui(setupUi()),
-    fileSelectMenu(new FileSelectMenu(parent)) {
+ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::FramelessWindowHint), ui(setupUi()), fileSelectMenu(new FileSelectMenu(parent)) {
     ui->iniTitleDisplayWidget->hide();
 
     hide();
@@ -19,21 +15,11 @@ ReadMenu::ReadMenu(QWidget* const parent) :
     setAttribute(Qt::WA_StyledBackground, true);
     setStyleSheet(u"ReadMenu { background-color: palette(window) }"_s);
 
-    connect(
-        ui->readModeSelect,
-        &QComboBox::currentIndexChanged,
-        this,
-        [this](const u8 index) -> void {
+    connect(ui->readModeSelect, &QComboBox::currentIndexChanged, this, [this](const i32 index) -> void {
         switch (ReadMode(index)) {
             case ReadMode::Default:
                 if (!fileSelectMenu->empty()) {
-                    QMessageBox::warning(
-                        nullptr,
-                        tr("Invalid mode"),
-                        tr(
-                            "Default mode does nothing when files are already read."
-                        )
-                    );
+                    present(this, NOTICE("Default mode does nothing when files are already read.", Warning, Modal));
 
                     ui->readModeSelect->setCurrentIndex(2);
                     return;
@@ -42,15 +28,11 @@ ReadMenu::ReadMenu(QWidget* const parent) :
                 ui->readModeLabel->setText(tr("Parses the game text."));
                 break;
             case ReadMode::DefaultForce:
-                ui->readModeLabel->setText(
-                    tr("Force rewrites existing translation files.")
-                );
+                ui->readModeLabel->setText(tr("Force rewrites existing translation files."));
 
                 ui->duplicateModeSelect->setCurrentIndex(false);
                 ui->duplicateModeSelect->setEnabled(true);
 
-                ui->romanizeCheckbox->setChecked(false);
-                ui->romanizeCheckbox->setEnabled(true);
                 ui->trimCheckbox->setChecked(false);
                 ui->trimCheckbox->setEnabled(true);
                 ui->disableCustomProcessingCheckbox->setChecked(false);
@@ -61,24 +43,13 @@ ReadMenu::ReadMenu(QWidget* const parent) :
                     "Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event. Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode."
                 ));
 
-                ui->duplicateModeSelect->setCurrentIndex(
-                    u8(projectSettings->duplicateMode)
-                );
+                ui->duplicateModeSelect->setCurrentIndex(scast<i32>(projectSettings->duplicateMode));
                 ui->duplicateModeSelect->setEnabled(false);
 
-                ui->romanizeCheckbox->setChecked(
-                    bool(projectSettings->flags & BaseFlags_Romanize)
-                );
-                ui->romanizeCheckbox->setEnabled(false);
-                ui->trimCheckbox->setChecked(
-                    bool(projectSettings->flags & BaseFlags_Trim)
-                );
+                ui->trimCheckbox->setChecked(scast<bool>(projectSettings->flags & BaseFlags_Trim));
                 ui->trimCheckbox->setEnabled(false);
                 ui->disableCustomProcessingCheckbox->setChecked(
-                    bool(
-                        projectSettings->flags &
-                        BaseFlags_DisableCustomProcessing
-                    )
+                    scast<bool>(projectSettings->flags & BaseFlags_DisableCustomProcessing)
                 );
                 ui->disableCustomProcessingCheckbox->setEnabled(false);
                 break;
@@ -87,38 +58,22 @@ ReadMenu::ReadMenu(QWidget* const parent) :
                     "Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event."
                 ));
 
-                ui->duplicateModeSelect->setCurrentIndex(
-                    u8(projectSettings->duplicateMode)
-                );
+                ui->duplicateModeSelect->setCurrentIndex(scast<i32>(projectSettings->duplicateMode));
                 ui->duplicateModeSelect->setEnabled(false);
 
-                ui->romanizeCheckbox->setChecked(
-                    bool(projectSettings->flags & BaseFlags_Romanize)
-                );
-                ui->romanizeCheckbox->setEnabled(false);
-                ui->trimCheckbox->setChecked(
-                    bool(projectSettings->flags & BaseFlags_Trim)
-                );
+                ui->trimCheckbox->setChecked(scast<bool>(projectSettings->flags & BaseFlags_Trim));
                 ui->trimCheckbox->setEnabled(false);
                 ui->disableCustomProcessingCheckbox->setChecked(
-                    bool(
-                        projectSettings->flags &
-                        BaseFlags_DisableCustomProcessing
-                    )
+                    scast<bool>(projectSettings->flags & BaseFlags_DisableCustomProcessing)
                 );
                 ui->disableCustomProcessingCheckbox->setEnabled(false);
                 break;
         }
 
         adjustSize();
-    }
-    );
+    });
 
-    connect(
-        ui->duplicateModeSelect,
-        &QComboBox::currentIndexChanged,
-        this,
-        [this](const u8 index) -> void {
+    connect(ui->duplicateModeSelect, &QComboBox::currentIndexChanged, this, [this](const i32 index) -> void {
         switch (DuplicateMode(index)) {
             case DuplicateMode::Allow:
                 ui->duplicateModeLabel->setText(tr(
@@ -131,53 +86,32 @@ ReadMenu::ReadMenu(QWidget* const parent) :
                 ));
                 break;
         }
-    }
-    );
+    });
 
-    connect(
-        ui->useIniTitleCheckbox,
-        &QCheckBox::checkStateChanged,
-        this,
-        [this](const Qt::CheckState state) -> void {
+    connect(ui->useIniTitleCheckbox, &QCheckBox::checkStateChanged, this, [this](const Qt::CheckState state) -> void {
         if (state == Qt::CheckState::Checked) {
+            rpgm_buffer_free(title_);
+            title_ = ByteBuffer{};
+
             const bool success = rpgm_get_ini_title(
-                FFIString{ .ptr = projectPath.data(),
-                           .len = u32(projectPath.size()) },
+                FFIString{ .ptr = projectPath.data(), .len = scast<u32>(projectPath.size()) },
                 &title_
             );
 
             if (!success) {
                 const QUtf8SV error = ffitostr(rpgm_error());
-                qCritical()
-                    << "Failed to extract title from the Game.ini file: %1"_L1
-                           .arg(
-                               error
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-                                   .toString()
-#endif
-                           );
-                QMessageBox::critical(
+                present(
                     this,
-                    tr("Failed to extract INI title"),
-                    tr("Failed to extract title from the Game.ini file: %1")
-                        .arg(
-                            error
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-                                .toString()
-#endif
-                        )
+                    NOTICE("Failed to extract title from the Game.ini file: %1", Critical, Modal, svtostr(error))
                 );
                 return;
             }
 
             if (title_.len == 0) {
-                qWarning() << "Title is empty in Game.ini file"_L1;
-                QMessageBox::warning(
-                    this,
-                    tr("Title is empty"),
-                    tr("Title is empty in Game.ini file.")
-                );
+                present(this, NOTICE("Title is empty in Game.ini file.", Warning, Modal));
+                ui->useIniTitleCheckbox->setChecked(false);
                 rpgm_buffer_free(title_);
+                title_ = ByteBuffer{};
                 return;
             }
 
@@ -186,25 +120,16 @@ ReadMenu::ReadMenu(QWidget* const parent) :
             ui->titleEncodingSelect->setCurrentText(u"UTF-8"_s);
 
             ui->iniTitleLabel->setText(
-                QStringDecoder(QStringDecoder::Utf8)
-                    .decode(QByteArrayView(title_.ptr, title_.len))
+                QStringDecoder(QStringDecoder::Utf8).decode(QByteArrayView(title_.ptr, title_.len))
             );
         } else {
             ui->iniTitleDisplayWidget->hide();
         }
-    }
-    );
+    });
 
-    connect(
-        ui->titleEncodingSelect,
-        &QComboBox::currentTextChanged,
-        this,
-        [this](const QString& encoding) -> void {
-        ui->iniTitleLabel->setText(QStringDecoder(encoding).decode(
-            QByteArrayView(title_.ptr, title_.len)
-        ));
-    }
-    );
+    connect(ui->titleEncodingSelect, &QComboBox::currentTextChanged, this, [this](const QString& encoding) -> void {
+        ui->iniTitleLabel->setText(QStringDecoder(encoding).decode(QByteArrayView(title_.ptr, title_.len)));
+    });
 
     connect(ui->applyButton, &QPushButton::pressed, this, [this] -> void {
         emit accepted();
@@ -257,7 +182,6 @@ void ReadMenu::clear() {
     ui->readModeSelect->setDisabled(true);
     ui->duplicateModeSelect->setDisabled(false);
 
-    ui->romanizeCheckbox->setChecked(false);
     ui->trimCheckbox->setChecked(false);
     ui->disableCustomProcessingCheckbox->setChecked(false);
     ui->ignoreCheckbox->setChecked(false);
@@ -284,8 +208,7 @@ void ReadMenu::init(const shared_ptr<ProjectSettings>& settings) {
     ui->skipObsoleteCheckbox->setEnabled(true);
 }
 
-auto ReadMenu::exec(const QString& projectPath, const EngineType engineType)
-    -> QDialog::DialogCode {
+auto ReadMenu::exec(const QString& projectPath, const EngineType engineType) -> QDialog::DialogCode {
     this->projectPath = projectPath.toUtf8();
     this->engineType = engineType;
 
@@ -298,12 +221,12 @@ auto ReadMenu::exec(const QString& projectPath, const EngineType engineType)
     QEventLoop loop;
     QDialog::DialogCode code;
 
-    connect(this, &ReadMenu::accepted, &loop, [this, &loop, &code] -> void {
+    connect(this, &ReadMenu::accepted, &loop, [&loop, &code] -> void {
         loop.quit();
         code = QDialog::DialogCode::Accepted;
     });
 
-    connect(this, &ReadMenu::rejected, &loop, [this, &loop, &code] -> void {
+    connect(this, &ReadMenu::rejected, &loop, [&loop, &code] -> void {
         loop.quit();
         code = QDialog::DialogCode::Rejected;
     });
@@ -313,8 +236,8 @@ auto ReadMenu::exec(const QString& projectPath, const EngineType engineType)
     this->projectPath = QByteArray();
 
     if (!ui->titleEncodingSelect->currentText().isEmpty()) {
-        decodedTitle = QStringDecoder(ui->titleEncodingSelect->currentText())
-                           .decode(QByteArrayView(title_.ptr, title_.len));
+        decodedTitle =
+            QStringDecoder(ui->titleEncodingSelect->currentText()).decode(QByteArrayView(title_.ptr, title_.len));
     }
 
     if (title_.ptr != nullptr) {
@@ -338,11 +261,7 @@ auto ReadMenu::duplicateMode() const -> DuplicateMode {
 };
 
 auto ReadMenu::flags() const -> BaseFlags {
-    auto flags = BaseFlags(0);
-
-    if (ui->romanizeCheckbox->isChecked()) {
-        flags |= BaseFlags_Romanize;
-    }
+    auto flags = scast<BaseFlags>(0);
 
     if (ui->trimCheckbox->isChecked()) {
         flags |= BaseFlags_Trim;
@@ -368,10 +287,9 @@ auto ReadMenu::selected(const bool skipped) const -> Selected {
 };
 
 auto ReadMenu::title() -> QString {
-    return ui->useIniTitleCheckbox->isChecked() ? std::move(decodedTitle)
-                                                : QString();
+    return ui->useIniTitleCheckbox->isChecked() ? std::move(decodedTitle) : QString();
 }
 
-void ReadMenu::setFiles(const vector<TabListItem>& files) {
-    fileSelectMenu->setFiles(files);
+void ReadMenu::init(const vector<TabListItem>& files) {
+    fileSelectMenu->init(files);
 }

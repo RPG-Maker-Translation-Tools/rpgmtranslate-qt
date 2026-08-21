@@ -1,12 +1,16 @@
 #include "BookmarkList.hpp"
 
+#include "Utils.hpp"
+
 #include <QApplication>
 #include <QMouseEvent>
 #include <QPainter>
 
-constexpr static u8 PADDING_X = 8;
-constexpr static u8 PADDING_Y = 8;
-constexpr static u8 GAP = 4;
+namespace {
+constexpr i32 PADDING_X = 8;
+constexpr i32 PADDING_Y = 8;
+constexpr i32 GAP = 4;
+}  // namespace
 
 BookmarkList::BookmarkList(QWidget* const parent) :
     QListView(parent),
@@ -34,27 +38,23 @@ BookmarkList::BookmarkList(QWidget* const parent) :
     viewport()->setCursor(Qt::PointingHandCursor);
 }
 
-[[nodiscard]] auto BookmarkList::bookmark(const u32 row) const -> Bookmark& {
+[[nodiscard]] auto BookmarkList::bookmark(const i32 row) const -> Bookmark& {
     return model_->bookmark(row);
 }
 
-[[nodiscard]] auto BookmarkList::rowCount() const -> u32 {
+[[nodiscard]] auto BookmarkList::rowCount() const -> i32 {
     return model_->rowCount();
 }
 
-void BookmarkList::appendRow(
-    const QStringView description,
-    const QStringView file,
-    const u32 row
-) const {
+void BookmarkList::appendRow(const QStringView description, const QStringView file, const u32 row) const {
     model_->appendRow(file, description, row);
 }
 
-void BookmarkList::removeRow(const u32 row) const {
+void BookmarkList::removeRow(const i32 row) const {
     model_->removeRow(row);
 }
 
-void BookmarkList::setRowHidden(const u32 row, const bool hidden) const {
+void BookmarkList::setRowHidden(const i32 row, const bool hidden) const {
     model_->bookmark(row).hidden = hidden;
 }
 
@@ -79,43 +79,33 @@ void BookmarkList::mousePressEvent(QMouseEvent* const event) {
     }
 }
 
-[[nodiscard]] auto BookmarkListModel::data(
-    const QModelIndex& idx,
-    const i32 role
-) const -> QVariant {
+[[nodiscard]] auto BookmarkListModel::data(const QModelIndex& /* parent */, const i32 /* role */) const -> QVariant {
     return {};
 }
 
-[[nodiscard]] auto BookmarkListModel::bookmark(const u32 row) -> Bookmark& {
+[[nodiscard]] auto BookmarkListModel::bookmark(const i32 row) -> Bookmark& {
     return bookmarks[row];
 }
 
-[[nodiscard]] auto BookmarkListModel::rowCount(const QModelIndex& parent) const
-    -> i32 {
-    return i32(bookmarks.size());
+[[nodiscard]] auto BookmarkListModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
+    return scast<i32>(bookmarks.size());
 }
 
-[[nodiscard]] auto BookmarkListModel::flags(const QModelIndex& idx) const
-    -> Qt::ItemFlags {
+[[nodiscard]] auto BookmarkListModel::flags(const QModelIndex& /* index */) const -> Qt::ItemFlags {
     return Qt::NoItemFlags;
 }
 
-void BookmarkListModel::removeRow(const u32 row) {
-    beginRemoveRows(QModelIndex(), i32(row), i32(row));
+void BookmarkListModel::removeRow(const i32 row) {
+    beginRemoveRows(QModelIndex(), row, row);
     bookmarks.removeAt(row);
     endRemoveRows();
 }
 
-void BookmarkListModel::appendRow(
-    const QStringView file,
-    const QStringView description,
-    const u32 row
-) {
-    FilenameArray filename;
+void BookmarkListModel::appendRow(const QStringView file, const QStringView description, const u32 row) {
     const auto filenameUtf8 = file.toUtf8();
 
-    memcpy(filename.data(), filenameUtf8.constData(), filenameUtf8.size());
-    filename[filenameUtf8.size()] = '\0';
+    FilenameArray filename{};
+    copyFilenameArray(filenameUtf8.data(), filenameUtf8.size(), filename.data());
 
     const i32 pos = rowCount();
     beginInsertRows(QModelIndex(), pos, pos);
@@ -133,7 +123,7 @@ void BookmarkListModel::clear() {
     const i32 row,
     const QModelIndex& /* parent */
 ) const -> bool {
-    auto* const model = as<BookmarkListModel*>(sourceModel());
+    auto* const model = scast<BookmarkListModel*>(sourceModel());
     const auto& item = model->bookmark(row);
     return !item.hidden;
 }
@@ -147,40 +137,23 @@ void BookmarkListDelegate::paint(
         return;
     }
 
-    const auto* const view = as<const BookmarkList*>(opt.widget);
-    const auto* const proxy = as<const BookmarkProxy*>(view->model());
-    auto* const src = as<BookmarkListModel*>(proxy->sourceModel());
+    const auto* const view = scast<const BookmarkList*>(opt.widget);
+    const auto* const proxy = scast<const BookmarkProxy*>(view->model());
+    auto* const src = scast<BookmarkListModel*>(proxy->sourceModel());
 
     const i32 sourceRow = proxy->mapToSource(index).row();
     const Bookmark& bookmark = src->bookmark(sourceRow);
 
     const QString& title = bookmark.description;
-    const QString subtitle = tr("Row %1 / File %2")
-                                 .arg(
-                                     QL1SV(itos(bookmark.row + 1).data())
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-                                         .toString()
-#endif
-                                         ,
-                                     QL1SV(bookmark.filename.data())
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-                                         .toString()
-#endif
-                                 );
+    const QString subtitle = tr("Row %1 / File %2").arg(itos(bookmark.row + 1).qsv(), bookmark.filename.data());
 
     painter->save();
     painter->setClipRect(opt.rect);
 
-    QStyle* const style = opt.widget->style();
-    style->drawPrimitive(
-        QStyle::PE_PanelItemViewItem,
-        &opt,
-        painter,
-        opt.widget
-    );
+    const QStyle* const style = opt.widget->style();
+    style->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget);
 
-    const QRect rect =
-        opt.rect.adjusted(PADDING_X, PADDING_Y, -PADDING_X, -PADDING_Y);
+    const QRect rect = opt.rect.adjusted(PADDING_X, PADDING_Y, -PADDING_X, -PADDING_Y);
 
     const auto fontMetrics = QFontMetrics(opt.font);
     const i32 fontHeight = fontMetrics.height();
@@ -192,8 +165,7 @@ void BookmarkListDelegate::paint(
     subtitleRect.setTop(titleRect.bottom() + GAP);
     subtitleRect.setHeight(fontHeight);
 
-    const QColor titleColor =
-        opt.palette.color(QPalette::Active, QPalette::Text);
+    const QColor titleColor = opt.palette.color(QPalette::Active, QPalette::Text);
 
     const QColor subtitleColor = titleColor.darker(125);
 
@@ -214,10 +186,8 @@ void BookmarkListDelegate::paint(
     painter->restore();
 }
 
-[[nodiscard]] auto BookmarkListDelegate::sizeHint(
-    const QStyleOptionViewItem& opt,
-    const QModelIndex& index
-) const -> QSize {
+[[nodiscard]] auto BookmarkListDelegate::sizeHint(const QStyleOptionViewItem& opt, const QModelIndex& /* index */) const
+    -> QSize {
     const auto fontMentrics = QFontMetrics(opt.font);
 
     const i32 height = (PADDING_Y * 2) + (fontMentrics.height() * 2) + GAP;

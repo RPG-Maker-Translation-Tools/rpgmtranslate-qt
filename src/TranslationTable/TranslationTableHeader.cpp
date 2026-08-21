@@ -5,26 +5,20 @@
 #include <QKeyEvent>
 #include <QPainter>
 
-TranslationTableHeader::TranslationTableHeader(QWidget* const parent) :
-    QHeaderView(Qt::Horizontal, parent) {
+namespace {
+constexpr i32 ADD_BUTTON_EXTRA_WIDTH = 32;
+} // namespace
+
+TranslationTableHeader::TranslationTableHeader(QWidget* const parent) : QHeaderView(Qt::Horizontal, parent) {
     setSectionsClickable(true);
     setHighlightSections(true);
 
     labelInput = new LabelInput(viewport());
 
-    connect(
-        labelInput,
-        &LabelInput::editingFinished,
-        this,
-        &TranslationTableHeader::commitEdit
-    );
+    connect(labelInput, &LabelInput::editingFinished, this, &TranslationTableHeader::commitEdit);
 }
 
-void TranslationTableHeader::paintSection(
-    QPainter* const painter,
-    const QRect& rect,
-    const i32 logicalIndex
-) const {
+void TranslationTableHeader::paintSection(QPainter* const painter, const QRect& rect, const i32 logicalIndex) const {
     QHeaderView::paintSection(painter, rect, logicalIndex);
 }
 
@@ -56,8 +50,7 @@ void TranslationTableHeader::paintEvent(QPaintEvent* const event) {
 }
 
 void TranslationTableHeader::mousePressEvent(QMouseEvent* const event) {
-    if (labelInput->isVisible() &&
-        !labelInput->geometry().contains(event->pos())) {
+    if (labelInput->isVisible() && !labelInput->geometry().contains(event->pos())) {
         commitEdit();
     }
 
@@ -137,13 +130,12 @@ void TranslationTableHeader::leaveEvent(QEvent* const event) {
 
 [[nodiscard]] auto TranslationTableHeader::sizeHint() const -> QSize {
     QSize size = QHeaderView::sizeHint();
-    size.setWidth(size.width() + 32);
+    size.setWidth(size.width() + ADD_BUTTON_EXTRA_WIDTH);
     return size;
 }
 
 [[nodiscard]] auto TranslationTableHeader::getButtonRect() const -> QRect {
-    const i32 xPos =
-        sectionViewportPosition(count() - 1) + sectionSize(count() - 1);
+    const i32 xPos = sectionViewportPosition(count() - 1) + sectionSize(count() - 1);
     const i32 buttonWidth = 32;
     return { xPos, 0, buttonWidth, height() };
 }
@@ -155,17 +147,9 @@ void TranslationTableHeader::beginEditSection(const i32 logicalIndex) {
 
     editingSection = logicalIndex;
 
-    const auto rect = QRect(
-        sectionViewportPosition(logicalIndex),
-        0,
-        sectionSize(logicalIndex),
-        height()
-    );
+    const auto rect = QRect(sectionViewportPosition(logicalIndex), 0, sectionSize(logicalIndex), height());
 
-    const QString text =
-        model()
-            ->headerData(logicalIndex, orientation(), Qt::DisplayRole)
-            .toString();
+    const QString text = model()->headerData(logicalIndex, orientation(), Qt::DisplayRole).toString();
 
     labelInput->setText(text);
     labelInput->setGeometry(rect.adjusted(4, 2, -4, -2));

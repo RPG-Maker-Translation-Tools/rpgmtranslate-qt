@@ -18,15 +18,9 @@ class TabList final : public QListView {
 
     explicit TabList(QWidget* parent = nullptr);
 
-    [[nodiscard]] constexpr auto model() const -> TabListModel* {
-        return model_;
-    }
+    [[nodiscard]] constexpr auto model() const -> TabListModel* { return model_; }
 
-    [[nodiscard]] auto displayingPercents() const -> bool {
-        return displayPercents;
-    }
-
-    void setProgress(u16 row, u32 total, u32 translated);
+    [[nodiscard]] auto displayingPercents() const -> bool { return displayPercents; }
 
     void setProgressDisplay(bool percents);
     [[nodiscard]] auto progressDisplay() const -> bool;

@@ -13,10 +13,7 @@ class BackupSelectDialog : public QDialog {
     Q_OBJECT
 
    public:
-    explicit BackupSelectDialog(
-        const QString& backupPath,
-        QWidget* const parent = nullptr
-    ) :
+    explicit BackupSelectDialog(const QString& backupPath, QWidget* const parent = nullptr) :
         QDialog(parent),
         layout(new QVBoxLayout(this)),
         topLabel(new QLabel(this)),
@@ -24,7 +21,7 @@ class BackupSelectDialog : public QDialog {
         bottomLabel(new QLabel(this)),
         acceptButton(new QPushButton(tr("Load"), this)) {
         topLabel->setText(tr(
-            "Once you click load, your current progress will be LOST! All current changed will be overwritten by a backup and the project will be reloaded."
+            "Once you click load, your current progress will be LOST! All current changes will be overwritten by a backup and the project will be reloaded."
         ));
 
         layout->addWidget(topLabel);
@@ -34,16 +31,11 @@ class BackupSelectDialog : public QDialog {
 
         acceptButton->setEnabled(false);
 
-        auto listing = QDirListing(
-            backupPath,
-            { u"*.tar.xz"_s },
-            QDirListing::IteratorFlag::FilesOnly
-        );
+        auto listing = QDirListing(backupPath, { u"*.tar.xz"_s }, QDirListing::IteratorFlag::FilesOnly);
 
         for (const auto& entry : listing) {
             list->addItem(entry.fileName());
-            list->item(list->count() - 1)
-                ->setData(Qt::UserRole, entry.filePath());
+            list->item(list->count() - 1)->setData(Qt::UserRole, entry.filePath());
         }
 
         connect(
@@ -57,27 +49,21 @@ class BackupSelectDialog : public QDialog {
             const QString backupName = current->text();
 
             const auto dateTime = QDateTime::fromString(
-                QStringView(backupName)
-                    .slice(0, backupName.size() - (sizeof(".tar.xz") - 1)),
+                QStringView(backupName).slice(0, backupName.size() - (sizeof(".tar.xz") - 1)),
                 u"dd-MM-yyyy_hh-mm-ss"
             );
-            bottomLabel->setText(tr("This backup was created %1.")
-                                     .arg(dateTime.toString(Qt::TextDate)));
+            bottomLabel->setText(tr("This backup was created %1.").arg(dateTime.toString(Qt::TextDate)));
 
             acceptButton->setEnabled(true);
         }
         );
 
-        connect(acceptButton, &QPushButton::pressed, this, [this] -> void {
-            accept();
-        });
+        connect(acceptButton, &QPushButton::pressed, this, [this] -> void { accept(); });
 
         show();
     }
 
-    [[nodiscard]] auto backupPath() -> QString {
-        return list->currentItem()->data(Qt::UserRole).toString();
-    };
+    [[nodiscard]] auto backupPath() -> QString { return list->currentItem()->data(Qt::UserRole).toString(); };
 
    private:
     QVBoxLayout* const layout;

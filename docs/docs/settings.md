@@ -1,217 +1,143 @@
 # Settings
 
-Settings are grouped into five sections: Core, Appearance, Controls, Translation, and Project. Changes are saved when you close the Settings window. If any value is invalid (for example, a backup period), the window will show an error and won’t save until you fix it.
+![](./assets/settings.svg) Open Settings from the File menu.
+
+The window is split into five sections, listed on the left: **Core**, **Appearance**, **Controls**, **Translation**, **Project**. Settings save when you close the window - if a field holds an invalid value (e.g. an out-of-range backup period), the window will refuse to close and point you at the offending field instead.
+
+Core, Appearance and Controls are stored once, globally. Translation and Project settings are stored **per project**, so different projects can use different endpoints, languages, and lint configuration.
 
 ## Core
 
 ### Backup
 
-Controls automatic project backups.
+| Setting | Description |
+| --- | --- |
+| Enabled | Turns automatic project backups on or off. |
+| Backup period | How often a backup is created, in seconds (60-3600). |
+| Max backups | How many backups to keep per project before the oldest is deleted. |
 
-- Enabled - Turns automatic backups on or off.
-
-- Period - How often a backup is created. Smaller values create backups more frequently.
-
-- Max backups - The maximum number of backups kept per project. When the limit is reached, older backups are removed.
+To restore one, use File > Load Backup. It lists your project's backups by date and warns you that loading one **overwrites your current, unsaved progress** - make sure that's what you want first.
 
 ### Updates
 
-- Check for updates - If enabled, the app checks for updates automatically.
+| Setting | Description |
+| --- | --- |
+| Check for updates | Checks for a new application release on startup. |
+| Check for source file updates | Checks whether the game's source files changed since you last read them, and offers to re-read them if so. |
+
+### Git
+
+Identity used when you commit from the built-in [git client](./git.md).
+
+| Setting | Description |
+| --- | --- |
+| Prefer the repository's git config | If the repository already has an author identity set in its own `git config`, use that instead of the fields below. |
+| Name / Email | The author identity to commit as, when not deferring to `git config`. |
 
 ## Appearance
 
-### Translation table font
-
-- Font
-
-  Sets the font used in the translation table.
-
-- Font size
-
-  Sets the font size (in points) used in the translation table. Valid range is 8–96.
-
-### Theme and style
-
-- Style
-
-  Selects the Qt UI style (widget theme). This affects the look of buttons, lists, and other controls.
-
-- Theme
-
-  Selects the application color scheme (Light/Dark/System).
+| Setting | Description |
+| --- | --- |
+| Translation table font / size | Font and size (8-96pt) used in the translation table. |
+| Style | The Qt widget style - affects the look of buttons, lists, and other controls. |
+| Theme | Light, Dark, or follow the system. |
+| Language | The application's own UI language (English or Russian). |
+| Display percents | Shows task progress in the tab panel as a percentage instead of a raw item count. |
 
 ## Controls
 
-Keyboard shortcuts
+Keyboard shortcuts for opening panels and menus. Click a shortcut field and press the key combination you want.
 
-This section lets you configure the key bindings used to open panels and menus. Click a shortcut field and press the desired key combination.
+| Action | Default |
+| --- | --- |
+| Search panel | `Ctrl+R` |
+| Tab panel | `Tab` |
+| Go to row | `Ctrl+G` |
+| Batch menu | `Ctrl+B` |
+| Bookmark menu | `Alt+B` |
+| Lint menu | `Ctrl+M` |
+| Glossary menu | `Alt+B` |
+| Translations menu | `Ctrl+S` |
 
-- Search panel
-- Tab panel
-- Go to row
-- Batch menu
-- Bookmark menu
-- Match menu
-- Glossary menu
-- Translations menu
-
-Notes:
-
-- Shortcuts are stored as key sequence strings (for example, `Ctrl+G`).
-- If you assign the same shortcut to multiple actions, behavior will conflict, don't do this.
+Assigning the same shortcut to two actions isn't validated - the actions will conflict, so don't do it.
 
 ## Translation
 
-The Translation section configures translation endpoints. Select an endpoint from the list to see and modify its settings.
+This is the largest section. It configures machine-translation endpoints, LanguageTool, and the lint system.
 
-### General options
+API keys never get written to `settings.json` - they're kept in your OS's own credential store (Windows Credential Manager, or the Secret Service keyring on Linux) instead, and only read back in when needed.
 
-- Single translation
+### Endpoints
 
-  If enabled, the endpoint will be used to translate the source text when the corresponding translation cell is edited. This translation will be shown in the translations menu. Don't use it with priced LLM models, you will burn your tokens.
+Endpoints are listed on the left of this section; add or remove them with the buttons above the list. Each endpoint has:
 
-- Use glossary
+| Setting | Description |
+| --- | --- |
+| Single translation | When enabled, editing a translation cell also translates the source text through this endpoint and shows the result in the translations menu. Watch out with priced LLM APIs - this burns tokens on every edit. |
+| Use glossary | Supplies your [glossary](./glossary.md) terms to the endpoint when translating. |
 
-  If enabled, your glossary from the glossary menu will be used when translating.
+Beyond that, the fields depend on the endpoint type:
 
-### Google
+- **Google** - free, no configuration needed.
+- **Yandex** - requires an API key and a Yandex Cloud folder ID.
+- **DeepL** - requires an API key.
+- **LLM endpoints** (OpenAI-compatible, Ollama, and similar) share one set of fields:
+    - API key / Base URL - credentials and server address. The API key is optional for local providers.
+    - Model - fetched via "Check key", which validates your credentials and populates the model list.
+    - Token limit / Output token limit - request and response token budgets (1000-65536).
+    - Temperature - sampling randomness (0.0-2.0).
+    - Thinking / Reasoning effort - enables extended thinking on models that support it, and how much effort to spend on it.
+    - System prompt / Single-translation system prompt - the instructions sent to the model; each can be reset to its built-in default.
 
-Free and unlimited.
-
-No API key is required.
-
-### Yandex
-
-Requires credentials.
-
-- API key
-
-  Your Yandex Translate API key.
-
-- Folder ID
-
-  The Yandex Cloud folder identifier required by the API.
-
-### DeepL
-
-Requires an API key and can optionally use a glossary.
-
-- API key
-
-  Your DeepL API key.
-
-### LLM endpoints
-
-These endpoints share the same configuration fields.
-
-Credentials and connection
-
-- API key
-
-  Secret key used to authenticate to the provider. It's optional for local providers, which include OpenAI-compatible and Ollama.
-
-- Base URL
-
-  Endpoint base URL for OpenAI-compatible servers and Ollama.
-
-Model
-
-- Model
-
-  The model name to use for translation. Use "Check key" to fetch available models.
-
-- Check key
-
-  Validates the API key/base URL by requesting the list of available models and populating the Model dropdown. If this fails, you’ll see an error message.
-
-Generation limits
-
-- Token limit
-
-  Maximum input/context token budget sent to the model. Valid range: 1000–65536.
-
-- Output token limit
-
-  Maximum tokens the model may generate in its response. Valid range: 1000–65536.
-
-Sampling
-
-- Temperature
-
-  Controls randomness/creativity. Lower values are more deterministic. Valid range: 0.0–2.0.
-
-Behavior
-
-- Use glossary
-
-  If enabled, glossary terms will be supplied in the request.
-
-- Thinking
-
-  Enables thinking/reasoning mode for endpoints/models that support it.
-
-Prompts
-
-- System prompt
-
-  The main instruction prompt used for translation.
-
-- Default
-
-  Resets the system prompt to the built-in default.
-
-- Single-translation system prompt
-
-  A separate system prompt used specifically for single-translation, when it's enabled.
-
-- Default
-
-  Resets the single-translation system prompt to the built-in default.
+Providers not in the type list (e.g. [OpenRouter](https://openrouter.ai/)) work through the generic **OpenAI-Compatible** type - just point Base URL at the provider's OpenAI-compatible endpoint (for OpenRouter, `https://openrouter.ai/api/v1`) and use your API key from that provider.
 
 ### LanguageTool
 
-Currently **WIP**.
+Configures the [LanguageTool](https://languagetool.org/) grammar checker used for [linting](./text-editing.md#linting). Both the local server and the paid hosted API are supported by the settings, but only the local server has actually been tested by us.
 
-### Plugins & Misc
+| Setting | Description |
+| --- | --- |
+| Base URL | Your LanguageTool server, local or hosted. "Check connection" verifies it's reachable. |
+| Username / API key | Needed only for the paid hosted API, to get Premium access. |
+| Mother tongue | Your native language, to enable false-friend checks for some language pairs. |
+| Enabled only | If on, only the categories/rules explicitly listed below are checked - everything else is ignored. |
+| Enabled/disabled categories, enabled/disabled rules | Comma-separated rule/category IDs to narrow or trim what gets checked. |
+| Preferred variants | Comma-separated regional spelling variants LanguageTool should prefer (e.g. `en-US` over `en-GB`). |
+| Dicts | Comma-separated extra dictionaries to pull words from. Leave unset to use the default. |
+| Picky mode | Turns on additional rules mostly useful for formal text. |
 
-Not a lot of options as of sixth release candidate, WIP.
+### Lints
+
+Everything here can also be toggled per-item from the "Lints" button in the [lint menu](./text-editing.md#linting) - this is just where you configure and edit them, not just flip them on/off.
+
+- **Sequence lints** - four read-only tables (Text Codes, Note Tags, Plugin Commands, Comment Tags) listing every built-in plugin/tag pattern RPGMTranslate recognizes, grouped by category. Each row can be given a custom highlight color.
+- **Custom lints** - your own lint patterns, in an editable table: a sequence to match, a tooltip shown on hover, case sensitivity, and an optional highlight color. Double-click a cell to edit it. Custom lints can be exported to and imported from a JSON file, to back them up or share them.
+- **Misc**:
+    - Sequence replacements - a table of character sequences that get silently substituted as you type (e.g. `<<` &rarr; `«`), useful for non-ASCII punctuation your keyboard doesn't have. A few common ones are pre-populated but disabled by default.
+    - Whitespace characters - which Unicode codepoints (`U+XXXX`, comma-separated) count as whitespace for the leading/trailing/contiguous whitespace lints.
 
 ## Project
 
-Project settings are stored per project (not globally). This section controls translation behavior and context for the currently open project.
+Stored per project.
 
-### Line length hint
+| Setting | Description |
+| --- | --- |
+| Line length hint | Draws a thin red line in the translation cell at this many characters (0-255), as a wrapping guide. |
+| Source language / Translation language | The source and target languages, used for [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation) matching. Limited to languages supported by our [text-matching library](https://github.com/savannstm/language-tokenizer/blob/master/src/lib.rs#L139). |
+| Spellcheck dictionary | The Nuspell dictionary to check against. See below for where to get one. |
 
-The number of the hint line in characters. When translation cell is edited, this will draw a thin red line at the supplied character limit.
+### Spell check
 
-### Source language
-
-The language of the source text. Currently, available languages are only those, that are supported by our underlying [text matching library](https://github.com/savannstm/language-tokenizer/blob/master/src/lib.rs#L139).
-
-### Translation language
-
-The language of the translation text. Currently, available languages are only those, that are supported by our underlying [text matching library](https://github.com/savannstm/language-tokenizer/blob/master/src/lib.rs#L139).
-
-### Spell сheck
-
-You can select the desired spellcheck dictionary from the combo box in project settings.
-
-RPGMTranslate automatically picks up dictionaries from `APPLICATION_DIR/dictionaries`, all you need to do in order to activate a dictionary - drop the corresponding `.aff` and `.dic` files into this directory.
-
-However, RPGMTranslate does not ship any spellcheck libraries with the releases, it's up to you to find and download them.
-
-Possible dictionary sources:
+RPGMTranslate doesn't ship spellcheck dictionaries - drop `.aff`/`.dic` files into `APPLICATION_DIR/dictionaries` and they'll show up in the dropdown above. Sources:
 
 - [LibreOffice dictionaries](https://github.com/LibreOffice/dictionaries)
 - [This dictionaries collection](https://github.com/wooorm/dictionaries)
 
-### Project context
+CJK isn't supported yet.
 
-A free-form text field describing the overall project context (setting, tone, terminology, audience). This is automatically supplied to LLMs, when translating.
+### Context
 
-### File context (per file)
+Free-form text supplied to LLM endpoints when translating:
 
-- List (right): shows available files to assign file context to.
-- Text (left): context specific to the selected file (e.g., character names, UI tone, glossary notes, constraints).
-
-This is automatically supplied to LLMs, when translating.
+- **Project context** - overall setting, tone, terminology, audience - applies to the whole project.
+- **File context** - pick a file from the list, then write context specific to it (character names appearing only in that file, tone shifts, constraints, etc.).

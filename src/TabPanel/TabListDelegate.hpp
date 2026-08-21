@@ -10,17 +10,10 @@ class TabListDelegate final : public QStyledItemDelegate {
    public:
     using QStyledItemDelegate::QStyledItemDelegate;
 
-    void paint(
-        QPainter* painter,
-        const QStyleOptionViewItem& option,
-        const QModelIndex& index
-    ) const override;
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
-    [[nodiscard]] auto sizeHint(
-        const QStyleOptionViewItem& option,
-        const QModelIndex& index
-    ) const -> QSize override;
+    [[nodiscard]] auto sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const -> QSize override;
 
-    mutable u16 maxCachedNameWidth = 0;
-    mutable u16 maxCachedProgressWidth = 0;
+    mutable i32 maxCachedNameWidth = 0;
+    mutable i32 maxCachedProgressWidth = 0;
 };

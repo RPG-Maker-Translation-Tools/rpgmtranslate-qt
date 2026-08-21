@@ -1,8 +1,6 @@
 #pragma once
 
-#include "jeaiii_to_text.h"
 #include "magic_enum.hpp"
-#include "zmij.h"
 
 #include <QString>
 #include <atomic>
@@ -28,12 +26,6 @@ namespace fs = std::filesystem;
 namespace views = std::views;
 namespace ranges = std::ranges;
 
-// Previous fix for MSVC u128, we don't need it anymore
-// #if defined(_MSC_VER) && !defined(__clang__)
-// #include <__MSVC_Int128.hpp>
-// using __uint128_t = std::_Unsigned128;
-// #endif
-
 using usize = std::size_t;
 using isize = std::intptr_t;
 using u8 = std::uint8_t;
@@ -46,8 +38,6 @@ using i32 = std::int32_t;
 using i64 = std::int64_t;
 using f32 = float;
 using f64 = double;
-using str = char*;
-using cstr = const char*;
 using wchar = wchar_t;
 using wcstr = const wchar*;
 
@@ -98,99 +88,18 @@ template <typename E>
 using Err = std::unexpected<E>;
 
 template <typename O, typename T>
-[[nodiscard]] constexpr auto as(T&& arg) -> O {
+[[nodiscard]] constexpr auto scast(T&& arg) -> O {
     return static_cast<O>(std::forward<T>(arg));
 }
 
 template <typename O, typename T>
-[[nodiscard]] constexpr auto ras(T&& arg) -> O {
+[[nodiscard]] constexpr auto rcast(T&& arg) -> O {
     return reinterpret_cast<O>(std::forward<T>(arg));
 }
 
-template <typename T, typename U>
-using range_common_t = std::conditional_t<
-    (std::is_signed_v<T> || std::is_signed_v<U>),
-    std::common_type_t<std::make_signed_t<T>, std::make_signed_t<U>>,
-    std::common_type_t<T, U>>;
-
-template <auto Step = 1, typename T, typename U>
-constexpr auto range(const T start, const U stop) {
-    static_assert(Step != 0);
-
-    using Common = range_common_t<T, U>;
-
-    const auto s = static_cast<Common>(start);
-    const auto e = static_cast<Common>(stop);
-
-    if constexpr (Step > 0) {
-        return views::iota(s, e) | views::stride(Step);
-    } else {
-        return views::iota(e + 1, s + 1) | views::reverse |
-               views::stride(-Step);
-    }
+template <typename O, typename T>
+[[nodiscard]] constexpr auto ccast(T&& arg) -> O {
+    return const_cast<O>(std::forward<T>(arg));
 }
 
 using FilenameArray = array<char, 16>;
-
-// Integer to string. Currently handles only numbers up to 16 digits.
-// Returned array must be manually sliced to the first null.
-template <std::integral T>
-inline auto itos(const T integer, const u8 pad = 0, const char padChar = ' ')
-    -> array<char, 16> {
-    array<char, 16> buf{};
-    jeaiii::to_text_from_integer(buf.data(), integer);
-
-    if (pad < buf.size() && pad != 0) {
-        const u8 contentLen = strlen(buf.data());
-
-        if (contentLen < pad) {
-            const u8 padLen = pad - contentLen;
-
-            memmove(buf.data() + padLen, buf.data(), contentLen);
-            memset(buf.data(), padChar, padLen);
-        }
-    }
-
-    return buf;
-}
-
-// Float to string. Currently handles only floats.
-// Returned array must be manually sliced to the first null.
-template <std::floating_point T>
-inline auto ftos(const T flt, i8 precision = 0)
-    -> array<char, zmij::float_buffer_size> {
-    array<char, zmij::float_buffer_size> buf{};
-    zmij::write(buf.data(), buf.size(), flt);
-
-    if (precision >= 0) {
-        bool afterPoint = false;
-        u8 count = 0;
-
-        for (const auto [idx, chr] : views::enumerate(buf)) {
-            if (chr == '\0') {
-                break;
-            }
-
-            if (chr == '.') {
-                if (precision == 0) {
-                    buf[idx] = '\0';
-                    break;
-                }
-
-                afterPoint = true;
-                continue;
-            }
-
-            if (afterPoint) {
-                if (count >= precision) {
-                    buf[idx] = '\0';
-                    break;
-                }
-
-                count++;
-            }
-        }
-    }
-
-    return buf;
-}
