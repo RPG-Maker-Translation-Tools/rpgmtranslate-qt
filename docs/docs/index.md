@@ -30,4 +30,4 @@ From here you can start doing things. Don't know where to start? [Installation](
 
 The icon column shows the toolbar button that opens each feature, where it has one, so you can match a page to a button at a glance.
 
-**Also, help us improve [the docs](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/tree/main/docs/docs/en)!**
+**Also, help us improve [the docs](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/tree/main/docs/docs)!**
