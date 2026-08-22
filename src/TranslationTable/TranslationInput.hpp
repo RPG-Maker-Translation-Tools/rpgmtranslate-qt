@@ -2,6 +2,8 @@
 
 #include "Aliases.hpp"
 #include "LintTooltip.hpp"
+#include "TranslationHighlighter.hpp"
+#include "Types.hpp"
 
 #include <QPlainTextEdit>
 #include <QTimer>
@@ -12,8 +14,13 @@ class TranslationInput final : public QPlainTextEdit {
    public:
     explicit TranslationInput(
         const ProjectSettings* projectSettings,
+        const Settings* settings,
         QWidget* parent = nullptr
     );
+
+    TranslationHighlighter* highlighter;
+
+    void applyLintFormats(vector<LintCharState> charStates, i32 size);
 
    protected:
     void keyPressEvent(QKeyEvent* event) override;
@@ -27,8 +34,8 @@ class TranslationInput final : public QPlainTextEdit {
 
    private:
     struct Replacement {
-        QL1SV original;
-        QStringView replacement;
+        QString original;
+        QString replacement;
         i32 position;
     };
 
@@ -36,18 +43,18 @@ class TranslationInput final : public QPlainTextEdit {
     void updateContentHeight();
     void performAutoReplacements();
     void showPendingTooltip();
+    void applySuggestion(LintType type, i32 lintIndex, i32 suggestionIndex);
 
     LintTooltip tooltip;
-
-    QString pendingTooltipText;
-    QString pendingTooltipCaptured;
+    QList<LintEntry> pendingLints;
 
     vector<Replacement> lastReplacements;
 
     QTimer tooltipDelayTimer;
-    QPoint pendingTooltipPos;
+    QPoint pendingCursorPos;
 
-    const ProjectSettings* projectSettings;
+    const ProjectSettings* const projectSettings;
+    const Settings* const settings;
 
     u32 lastContentHeight = 0;
 

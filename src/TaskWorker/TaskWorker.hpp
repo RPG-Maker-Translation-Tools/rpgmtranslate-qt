@@ -1,17 +1,19 @@
 #pragma once
 
 #include "Aliases.hpp"
-#include "BatchMenu.hpp"
 #include "Enums.hpp"
 #include "ProjectSettings.hpp"
-#include "SearchMenu.hpp"
 #include "SearchPanelDock.hpp"
 #include "Settings.hpp"
+#include "Task.hpp"
 #include "Types.hpp"
-#include "rpgmtranslate.h"
+#include "rpgmtranslate_rs.h"
+
+#ifdef ENABLE_NUSPELL
+#include <nuspell/dictionary.hxx>
+#endif
 
 #include <QObject>
-#include <QThread>
 
 struct FileLines {
     QString content;
@@ -36,24 +38,16 @@ class TaskWorker final : public QObject {
     Q_OBJECT
 
    public:
-    enum class Task : u8 {
-        Search,
-        Replace,
-        Put,
-        BatchTrim,
-        BatchTranslate,
-        BatchWrap
-    };
+    using QObject::QObject;
 
-    explicit TaskWorker(QObject* parent = nullptr);
-    ~TaskWorker() override;
+    [[nodiscard]] auto startTask(TaskKind kind) -> result<TaskToken, TaskKind>;
+    void finishTask(const TaskToken& task);
 
-    void start();
-    void stop();
+    [[nodiscard]] auto runningTask(TaskKind kind) const -> TaskToken;
 
-    void extractArchive(const QString& archivePath, const QString& folder);
+    [[nodiscard]] auto extractArchive(const QString& archivePath, const QString& folder) -> ExtractResult;
 
-    void read(
+    [[nodiscard]] auto read(
         const QString& sourcePath,
         const QString& translationPath,
         ReadMode readMode,
@@ -64,56 +58,75 @@ class TaskWorker final : public QObject {
         bool mapEvents,
         const HashMap<FilenameArray, u64>& hashes,
         const QString& title
-    );
+    ) -> ReadResult;
 
-    void write(const QString& gameTitle, Selected selected);
+    [[nodiscard]] auto write(const QString& gameTitle, Selected selected) -> WriteResult;
 
-    void purge(const QString& gameTitle, Selected selected);
+    [[nodiscard]] auto purge(const QString& gameTitle, Selected selected) -> PurgeResult;
 
-    void search(
-        SearchMenu::Action action,
+    [[nodiscard]] auto serdeExport(
+        const TaskToken& task,
+        vector<FilenameArray>& filenames,
+        const QString& outputDir,
+        SerdeFormat format
+    ) -> SerdeResult;
+
+    [[nodiscard]] auto serdeImport(
+        const TaskToken& task,
+        vector<FilenameArray>& filenames,
+        const QString& inputDir,
+        SerdeFormat format
+    ) -> SerdeResult;
+
+    [[nodiscard]] auto search(
+        const TaskToken& task,
+        SearchAction action,
         Selected selected,
         const QString& searchText,
         SearchLocation searchLocation,
         i8 columnIndex,
         SearchFlags searchFlags,
         u16 tabCount
-    );
+    ) -> SearchResult;
 
-    void performBatchAction(
+    [[nodiscard]] auto performBatchAction(
+        const TaskToken& task,
+        const JSScript& script,
         Selected selected,
-        BatchAction action,
         u8 columnIndex,
-        const std::variant<BatchMenu::TrimFlags, tuple<u8, QString>, u8>&
-            variant,
+        const BatchVariant& variant,
         const Glossary& glossary
-    );
+    ) -> BatchResult;
 
-    void replace(
-        const HashMap<FilenameArray, vector<CellMatch>>& searchMatches,
-        Selected selected,
-        SearchMenu::Action action,
-        const QString& searchText,
-        const QString& replaceText,
-        SearchLocation searchLocation,
-        i8 columnIndex,
-        SearchFlags searchFlags
-    );
+    [[nodiscard]] auto
+    replace(const TaskToken& task, const CellMatches& searchMatches, SearchAction action, const QString& replaceText)
+        -> ReplaceResult;
 
-    void translateSingle(
-        const QString& filename,
-        const QString& text,
-        const Glossary& glossary
-    );
+    [[nodiscard]] auto translateSingle(const QString& filename, const QString& text, const Glossary& glossary)
+        -> TranslateSingleResult;
 
-    void replaceSingle(
+    [[nodiscard]] auto replaceSingle(
         const QString& replaceText,
         SearchPanelDock::Action action,
         const QString& filename,
-        i32 rowIndex,
+        u32 rowIndex,
         u8 columnIndex,
         span<const TextMatch> matches
-    );
+    ) -> ReplaceSingleResult;
+
+    [[nodiscard]] auto languageToolLint(QStringView text, const vector<Span>& sequences) -> LintResult;
+
+    [[nodiscard]] auto lintFiles(const TaskToken& task, Selected selected, const Glossary& glossary)
+        -> GlobalLintResult;
+
+    [[nodiscard]] auto lint(
+        const QString& filename,
+        u32 lineNumber,
+        QStringView source,
+        QStringView translation,
+        const Glossary& glossary,
+        bool highlight
+    ) -> LintOutcome;
 
     void init(
         const shared_ptr<Settings>& settings,
@@ -123,29 +136,55 @@ class TaskWorker final : public QObject {
         this->settings = settings;
         this->projectSettings = projectSettings;
         this->mapSections = mapSections;
-    };
+    }
+
+    void setDictionary(optional<nuspell::Dictionary> dict) { dictionary = std::move(dict); }
 
    signals:
     void lockFile(const QString& file);
-    void message(const QString& message);
-    void progressChanged(Task task, u32 progress, u32 total);
-
-    void readFinished(std::expected<ByteBuffer, FFIString> result);
-    void extractFinished(std::expected<void, FFIString> result);
-    void writeFinished(std::expected<f32, FFIString> result);
-    void purgeFinished(std::expected<void, FFIString> result);
-    void searchFinished(HashMap<FilenameArray, vector<CellMatch>> results);
-    void singleTranslateFinished(const vector<QString>& translations);
-    void singleReplaceFinished(const tuple<QString, TextMatch*>& results);
-    void translateFinished(
-        const std::expected<tuple<ByteBuffer, ByteBuffer>, FFIString>& results
-    );
+    void taskStarted(const TaskToken& task);
+    void taskProgress(u32 taskId, const QString& filename, u32 done, u32 total);
+    void taskFinished(u32 taskId);
 
    private:
-    QThread thread;
+    template <typename ClosureFn>
+    [[nodiscard]] auto runLockedModify(QL1SV filename, ClosureFn&& closure) -> bool;
+
+    [[nodiscard]] auto runBatchTranslate(
+        const TaskToken& task,
+        const vector<FilenameArray>& filenames,
+        const EndpointContext& endpointContext,
+        const Glossary& glossary
+    ) -> TranslateResult;
+
+    [[nodiscard]] auto runBatchScript(
+        const TaskToken& task,
+        const JSScript& script,
+        vector<FilenameArray>& filenames,
+        u8 columnIndex,
+        const BatchVariant& variant
+    ) -> ScriptResult;
+
+    template <typename AttemptFn>
+    [[nodiscard]] inline auto
+    processFilesTrackingSkips(const TaskToken& task, vector<FilenameArray>& filenames, AttemptFn&& attempt) -> u32;
+
+    [[nodiscard]] auto matchGlossaryTerm(
+        const QString& filename,
+        u32 lineNumber,
+        QStringView source,
+        QStringView translation,
+        const Term& term
+    ) -> optional<LintRow>;
+
+    optional<nuspell::Dictionary> dictionary;
+
+    vector<TaskToken> runningTasks;
 
     shared_ptr<Settings> settings;
     shared_ptr<ProjectSettings> projectSettings;
 
     HashMap<u16, QString>* mapSections;
+
+    u32 nextTaskId = 0;
 };

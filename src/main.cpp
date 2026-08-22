@@ -4,14 +4,19 @@
 #include <QDir>
 #include <QLockFile>
 #include <QLoggingCategory>
+#include <QMutex>
 #include <QStandardPaths>
 #include <QtEnvironmentVariables>
 #include <print>
 
-static QFile logFile;
-static QTextStream logStream;
+namespace {
+QFile logFile;
+QTextStream logStream;
 
-[[nodiscard]] static auto levelToString(const QtMsgType type) -> QL1SV {
+// Worker threads (QtConcurrent pools) log too, and the handler is invoked on whichever thread logged.
+QMutex logMutex;
+
+[[nodiscard]] auto levelToString(const QtMsgType type) -> QL1SV {
     switch (type) {
         case QtDebugMsg:
             return "DEBUG"_L1;
@@ -28,7 +33,7 @@ static QTextStream logStream;
     return "LOG"_L1;
 }
 
-[[nodiscard]] static auto levelToColor(const QtMsgType type) -> cstr {
+[[nodiscard]] auto levelToColor(const QtMsgType type) -> const char* {
     switch (type) {
         case QtDebugMsg:
             return "\033[36m";
@@ -44,24 +49,24 @@ static QTextStream logStream;
     return "\033[0m";
 }
 
-[[nodiscard]] static auto shortFile(const cstr file) -> cstr {
+[[nodiscard]] auto shortFile(const char* const file) -> const char* {
     if (file == nullptr) {
         return "";
     }
 
-    constexpr cstr marker = "/src/";
-    const cstr pos = strstr(file, marker);
+    static constexpr const char* marker = "/src/";
+    const char* const pos = strstr(file, marker);
 
     if (pos != nullptr) {
         return pos + strlen(marker);
     }
 
-    if (const cstr slash = strrchr(file, '/')) {
+    if (const char* const slash = strrchr(file, '/')) {
         return slash + 1;
     }
 
 #ifdef Q_OS_WINDOWS
-    if (const cstr bslash = strrchr(file, '\\')) {
+    if (const char* const bslash = strrchr(file, '\\')) {
         return bslash + 1;
     }
 #endif
@@ -69,52 +74,32 @@ static QTextStream logStream;
     return file;
 }
 
-static void messageHandler(
-    const QtMsgType type,
-    const QMessageLogContext& ctx,
-    const QString& msg
-) {
-    const QString formatted = "[%1] %2:%3 (%4): %5"_L1.arg(
-        levelToString(type)
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-            .toString()
-#endif
-            ,
-        QUtf8SV(shortFile(ctx.file))
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-            .toString()
-#endif
-            ,
-        QL1SV(itos(ctx.line).data())
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-            .toString()
-#endif
-            ,
-        QUtf8SV(ctx.function)
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-            .toString()
-#endif
-            ,
+void messageHandler(const QtMsgType type, const QMessageLogContext& ctx, const QString& msg) {
+    const QString formatted = u"[%1] %2:%3 (%4): %5"_qsv.arg(
+        svtostr(levelToString(type)),
+        svtostr(QUtf8SV(shortFile(ctx.file))),
+        itos(ctx.line).qsv(),
+        svtostr(QUtf8SV(ctx.function)),
         msg
     );
 
-    std::println(
-        stdout,
-        "{}{}\x1b[0m",
-        levelToColor(type),
-        formatted.toLocal8Bit().constData()
-    );
-    fflush(stdout);
+    {
+        const QMutexLocker locker(&logMutex);
 
-    if (logStream.device() != nullptr) {
-        logStream << formatted << '\n';
-        logStream.flush();
+        std::println(stdout, "{}{}\x1b[0m", levelToColor(type), formatted.toLocal8Bit().constData());
+        fflush(stdout);
+
+        if (logStream.device() != nullptr) {
+            logStream << formatted << '\n';
+            logStream.flush();
+        }
     }
 
     if (type == QtFatalMsg) {
         abort();
     }
 }
+}  // namespace
 
 auto main(i32 argCount, char* args[]) -> i32 {
     const auto app = QApplication(argCount, args);
@@ -133,88 +118,59 @@ auto main(i32 argCount, char* args[]) -> i32 {
     qApp->setApplicationName(u"rpgmtranslate"_s);
     qApp->setWindowIcon(QIcon(u":/icons/rpgmtranslate-logo.png"_s));
 
-    qApp->connect(
-        &app,
-        &QApplication::aboutToQuit,
-        &app,
-        [&lockFile, &lockFilePath] -> void {
+    qApp->connect(&app, &QApplication::aboutToQuit, &app, [&lockFile, &lockFilePath] -> void {
         lockFile.unlock();
         QFile::remove(lockFilePath);
+    });
+
+    QString dataDir = qEnvironmentVariable("RPGMTRANSLATE_DATA_DIR");
+    bool defaultDataDir = false;
+
+    if (dataDir.isEmpty()) {
+        dataDir = qApp->applicationDirPath();
+        defaultDataDir = true;
     }
-    );
 
-    qSetMessagePattern("%{file}:%{line}: %{message}"_L1);
+    logFile.setFileName(dataDir % u"/rpgmtranslate.log"_qsv);
 
-    logFile.setFileName(qApp->applicationDirPath() + u"/rpgmtranslate.log");
-    if (!logFile.open(QFile::WriteOnly | QFile::Truncate | QFile::Append)) {
-        std::println(
-            stderr,
-            "{} is not writable. Seeking other directory for RPGMTranslate data.",
-            qApp->applicationDirPath().toStdString()
-        );
-
-        const QString dir = qEnvironmentVariable("RPGMTRANSLATE_DATA_DIR");
-
-        if (dir.isEmpty()) {
-            const QString standardDataLocation =
-                QStandardPaths::writableLocation(
-                    QStandardPaths::AppLocalDataLocation
-                );
-
-            const string dirStd = standardDataLocation.toStdString();
-
-            std::println(
-                stdout,
-                "RPGMTRANSLATE_DATA_DIR is not set. Falling back to {} to store RPGMTranslate data.",
-                dirStd
-            );
-
-            logFile.setFileName(standardDataLocation + u"/rpgmtranslate.log");
-
-            if (!logFile.open(
-                    QFile::WriteOnly | QFile::Truncate | QFile::Append
-                )) {
+    if (!logFile.open(QFile::WriteOnly | QFile::Truncate)) {
+        const auto clo = [&] -> i32 {
+            if (defaultDataDir) {
                 std::println(
-                    stderr,
-                    "{} is not writable. Nowhere to place the application data, aborting.",
-                    dirStd
+                    cerr,
+                    "{} is not writable. Seeking other directory for RPGMTranslate data.",
+                    dataDir.toStdString()
                 );
 
-                return 1;
+                dataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+                logFile.setFileName(dataDir + u"/rpgmtranslate.log");
+
+                if (logFile.open(QFile::WriteOnly | QFile::Truncate)) {
+                    return 0;
+                }
             }
 
-            qApp->setProperty("data-location", standardDataLocation);
-        } else {
-            const string dirStd = dir.toStdString();
-
             std::println(
-                stdout,
-                "Found RPGMTRANSLATE_DATA_DIR: {}. Using it to store RPGMTranslate data.",
-                dirStd
+                cerr,
+                "{} is not writable. Nowhere to place the application data, aborting.",
+                dataDir.toStdString()
             );
+            return 1;
+        };
 
-            logFile.setFileName(dir + u"/rpgmtranslate.log");
+        const i32 res = clo();
 
-            if (!logFile.open(
-                    QFile::WriteOnly | QFile::Truncate | QFile::Append
-                )) {
-                std::println(
-                    stderr,
-                    "{} is not writable. Nowhere to place the application data, aborting.",
-                    dirStd
-                );
-
-                return 1;
-            }
-
-            qApp->setProperty("data-location", dir);
+        if (res == 1) {
+            return res;
         }
     }
 
-    qApp->setProperty("data-location", qApp->applicationDirPath());
-
+    qSetMessagePattern(u"%{file}:%{line}: %{message}"_s);
     logStream.setDevice(&logFile);
     qInstallMessageHandler(messageHandler);
+
+    qApp->setProperty("data-location", dataDir);
+    qInfo() << u"Data directory is set to:"_qsv << dataDir;
 
     auto window = MainWindow();
     window.showMaximized();

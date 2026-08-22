@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>338</width>
-    <height>94</height>
+    <width>478</width>
+    <height>80</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,17 +50,7 @@
       <item>
        <widget class="QCheckBox" name="createIgnoreCheckbox">
         <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
          <string>Create .rvpacker-ignore file from purged lines to prevent their further appearance.</string>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
         </property>
        </widget>
       </item>

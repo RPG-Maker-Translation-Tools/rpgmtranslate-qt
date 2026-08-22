@@ -2,37 +2,26 @@
 
 #include "Enums.hpp"
 #include "FileSelectMenu.hpp"
+#include "Notice.hpp"
 #include "ui_SearchMenu.h"
 
 #include <QMessageBox>
 
 void SearchMenu::requestAction(const bool replace) {
     if (fileSelectMenu->selectedCount() == 0) {
-        QMessageBox::warning(
-            this,
-            tr("No files selected"),
-            tr("Select some files to process in file select menu.")
-        );
+        present(this, NOTICE("Select some files to process in file select menu.", Warning, Modal));
         return;
     }
 
     if (replace && ui->searchColumnSelect->currentIndex() <= 1) {
-        QMessageBox::warning(
-            this,
-            tr("Invalid column for replace"),
-            tr("Replace can only be performed in a certain column.")
-        );
+        present(this, NOTICE("Replace can only be performed in a certain column.", Warning, Modal));
         return;
     }
 
     const QString searchText = ui->searchInput->toPlainText();
 
     if (searchText.isEmpty()) {
-        QMessageBox::warning(
-            this,
-            tr("No search text"),
-            tr("Search input is empty.")
-        );
+        present(this, NOTICE("Search input is empty.", Warning, Modal));
         return;
     }
 
@@ -49,8 +38,11 @@ void SearchMenu::requestAction(const bool replace) {
             );
 
             if (pressed != QMessageBox::Yes) {
+                qInfo().noquote() << u"Replacing with empty text was rejected by user."_qsv;
                 return;
             }
+
+            qInfo().noquote() << u"Replacing with empty text was confirmed by user."_qsv;
         }
     }
 
@@ -76,36 +68,33 @@ void SearchMenu::requestAction(const bool replace) {
         searchFlags ^= SearchFlags::Put;
     };
 
+    SearchAction action = SearchAction::Search;
+
+    if (replace) {
+        action = ui->putButton->isChecked() ? SearchAction::Put : SearchAction::Replace;
+    }
+
     emit actionRequested(
         fileSelectMenu->selected(),
-        replace ? (ui->putButton->isChecked() ? Action::Put : Action::Replace)
-                : Action::Search,
+        action,
         searchText,
         replaceText,
-        SearchLocation(
-            ui->searchLocationSelect->currentIndex() == 0
-                ? 3
-                : ui->searchLocationSelect->currentIndex()
-        ),
-        ui->searchColumnSelect->currentIndex() - 1,
+        SearchLocation(ui->searchLocationSelect->currentIndex() == 0 ? 3 : ui->searchLocationSelect->currentIndex()),
+        scast<i8>(ui->searchColumnSelect->currentIndex() - 1),
         searchFlags
     );
 }
 
 SearchMenu::SearchMenu(QWidget* const parent) :
-    PersistentMenu(parent, Qt::FramelessWindowHint),
+    PersistentMenu(parent),
     ui(setupUi()),
 
     fileSelectMenu(new FileSelectMenu(parent)) {
     setDragMoveEnabled(true);
 
-    connect(ui->searchButton, &QPushButton::pressed, this, [=, this] -> void {
-        requestAction(false);
-    });
+    connect(ui->searchButton, &QPushButton::pressed, this, [=, this] -> void { requestAction(false); });
 
-    connect(ui->replaceButton, &QPushButton::pressed, this, [=, this] -> void {
-        requestAction(true);
-    });
+    connect(ui->replaceButton, &QPushButton::pressed, this, [=, this] -> void { requestAction(true); });
 
     connect(ui->fileSelectButton, &QPushButton::pressed, this, [this] -> void {
         fileSelectMenu->setHidden(!fileSelectMenu->isHidden());
@@ -160,7 +149,7 @@ void SearchMenu::addColumn(const QString& name) {
     ui->searchColumnSelect->addItem(name);
 };
 
-void SearchMenu::renameColumn(const u8 index, const QString& name) {
+void SearchMenu::renameColumn(const i32 index, const QString& name) {
     ui->searchColumnSelect->setItemText(index + 1, name);
 };
 
@@ -168,6 +157,6 @@ auto SearchMenu::replaceText() const -> QString {
     return ui->replaceInput->toPlainText();
 };
 
-void SearchMenu::setFiles(const vector<TabListItem>& files) {
-    fileSelectMenu->setFiles(files);
+void SearchMenu::init(const vector<TabListItem>& files) {
+    fileSelectMenu->init(files);
 }

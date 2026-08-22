@@ -4,7 +4,7 @@
 #include "ui_PurgeMenu.h"
 
 PurgeMenu::PurgeMenu(QWidget* const parent) :
-    QWidget(parent),
+    QWidget(parent, Qt::Tool | Qt::FramelessWindowHint),
     ui(setupUi()),
     fileSelectMenu(new FileSelectMenu(parent)) {
     hide();
@@ -59,6 +59,6 @@ auto PurgeMenu::selected(const bool skipped) const -> Selected {
     return fileSelectMenu->selected(skipped);
 }
 
-void PurgeMenu::setFiles(const vector<TabListItem>& files) {
-    fileSelectMenu->setFiles(files);
+void PurgeMenu::init(const vector<TabListItem>& files) {
+    fileSelectMenu->init(files);
 }

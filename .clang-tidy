@@ -1,1 +1,1 @@
-Checks: 'modernize-*, llvm-*, bugprone-*, readability-*, performance-*'
+Checks: 'clang-analyzer-*, modernize-*, llvm-*, bugprone-*, readability-*, performance-*, misc-*, -bugprone-easily-swappable-parameters, -readability-function-cognitive-complexity, -misc-include-cleaner, -readability-isolate-declaration, -clang-analyzer-optin.core.EnumCastOutOfRange, -bugprone-exception-escape, -misc-non-private-member-variables-in-classes, -bugprone-throwing-static-initialization, -llvm-prefer-static-over-anonymous-namespace'

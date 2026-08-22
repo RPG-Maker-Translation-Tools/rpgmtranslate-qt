@@ -24,7 +24,7 @@ class PurgeMenu final : public QWidget {
     ~PurgeMenu() override;
 
     void clear();
-    void setFiles(const vector<TabListItem>& files);
+    void init(const vector<TabListItem>& files);
 
     [[nodiscard]] auto selected(bool skipped = false) const -> Selected;
     [[nodiscard]] auto createIgnore() const -> bool;
@@ -33,25 +33,15 @@ class PurgeMenu final : public QWidget {
         QEventLoop loop;
         QDialog::DialogCode code;
 
-        connect(
-            this,
-            &PurgeMenu::accepted,
-            &loop,
-            [this, &loop, &code] -> void {
+        connect(this, &PurgeMenu::accepted, &loop, [&loop, &code] -> void {
             loop.quit();
             code = QDialog::DialogCode::Accepted;
-        }
-        );
+        });
 
-        connect(
-            this,
-            &PurgeMenu::rejected,
-            &loop,
-            [this, &loop, &code] -> void {
+        connect(this, &PurgeMenu::rejected, &loop, [&loop, &code] -> void {
             loop.quit();
             code = QDialog::DialogCode::Rejected;
-        }
-        );
+        });
 
         loop.exec();
         return code;

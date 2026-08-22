@@ -6,11 +6,7 @@
 #include <QEvent>
 #include <QMouseEvent>
 
-PersistentMenu::PersistentMenu(
-    QWidget* const parent,
-    const Qt::WindowFlags flags
-) :
-    QWidget(parent, flags) {
+PersistentMenu::PersistentMenu(QWidget* const parent, const Qt::WindowFlags flags) : QWidget(parent, flags) {
     setAttribute(Qt::WA_StyledBackground, true);
     setStyleSheet(u"PersistentMenu { background-color: palette(window) }"_s);
     hide();
@@ -44,14 +40,12 @@ auto PersistentMenu::event(QEvent* const event) -> bool {
     return QWidget::event(event);
 }
 
-auto PersistentMenu::canStartDragAt(const QPoint& /* posInWidget */) const
-    -> bool {
+auto PersistentMenu::canStartDragAt(const QPoint& /* posInWidget */) const -> bool {
     return true;
 }
 
 void PersistentMenu::mousePressEvent(QMouseEvent* const event) {
-    if (dragMoveEnabled_ && event->button() == Qt::LeftButton &&
-        canStartDragAt(event->position().toPoint())) {
+    if (dragMoveEnabled_ && event->button() == Qt::LeftButton && canStartDragAt(event->position().toPoint())) {
         dragging_ = true;
         pressPosGlobal_ = event->globalPosition().toPoint();
         startTopLeftGlobal_ = frameGeometry().topLeft();
@@ -67,8 +61,7 @@ void PersistentMenu::mouseMoveEvent(QMouseEvent* const event) {
         const QPoint curGlobal = event->globalPosition().toPoint();
         const QPoint delta = curGlobal - pressPosGlobal_;
 
-        if (!mouseMoved_ &&
-            delta.manhattanLength() >= qApp->startDragDistance()) {
+        if (!mouseMoved_ && delta.manhattanLength() >= qApp->startDragDistance()) {
             setMouseMovedInternal(true);
         }
 

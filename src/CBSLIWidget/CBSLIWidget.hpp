@@ -36,7 +36,7 @@ class CBSLIWidget final : public QWidget {
         requires std::is_arithmetic_v<T>
     [[nodiscard]] auto value() const -> T {
         if constexpr (std::is_floating_point_v<T>) {
-            return f32(slider_->value()) / FLOAT_FACTOR;
+            return scast<f32>(slider_->value()) / FLOAT_FACTOR;
 
         } else {
             return slider_->value();
@@ -54,7 +54,7 @@ class CBSLIWidget final : public QWidget {
     void onSliderValueChanged(i32 value);
     void onEditCommitted();
 
-    static constexpr u16 FLOAT_FACTOR = 1000;
+    static constexpr i32 FLOAT_FACTOR = 1000;
 
     QLabel* const label_;
     QCheckBox* checkbox_;

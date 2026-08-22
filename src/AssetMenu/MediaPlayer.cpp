@@ -2,6 +2,7 @@
 #include "MediaPlayer.hpp"
 
 #include "Constants.hpp"
+#include "Utils.hpp"
 
 #include <QHideEvent>
 #include <QLabel>
@@ -10,17 +11,16 @@
 #include <QSlider>
 #include <QVBoxLayout>
 
-const auto toMMSS = [](const u32 secs) -> QString {
-    return "%1:%2"_L1.arg(
-        QL1SV(itos(secs / 60, 2, '0').data())
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-            .toString()
-#endif
-            ,
-        QL1SV(itos(secs % 60, 2, '0').data())
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-            .toString()
-#endif
+namespace {
+constexpr i32 SECONDS_PER_MINUTE = 60;
+constexpr i32 AUDIO_ONLY_FRAME_INTERVAL_MS = 10;
+constexpr u32 AUDIO_PERIOD_SIZE_IN_FRAMES = 2048;
+}  // namespace
+
+const auto toMMSS = [](const i32 secs) -> QString {
+    return u"%1:%2"_qsv.arg(
+        itos(secs / SECONDS_PER_MINUTE, 2, '0').qsv(),
+        itos(secs % SECONDS_PER_MINUTE, 2, '0').qsv()
     );
 };
 
@@ -61,84 +61,53 @@ MediaPlayer::MediaPlayer(QWidget* const parent) :
         seekSecond(progressSlider->value());
         togglePlayback();
     });
-    connect(
-        pauseButton,
-        &QPushButton::clicked,
-        this,
-        &MediaPlayer::togglePlayback
-    );
+    connect(pauseButton, &QPushButton::clicked, this, &MediaPlayer::togglePlayback);
 }
 
 MediaPlayer::~MediaPlayer() {
     reset();
 }
 
-auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
+auto MediaPlayer::open(const QString& filePath) -> result<void, Notice> {
     reset();
     const string path = filePath.toStdString();
 
     i32 result;
 
-    if (result =
-            avformat_open_input(&formatContext, path.c_str(), nullptr, nullptr);
-        result < 0) {
-        return Err("avformat_open_input: %1"_L1.arg(
-            QUtf8SV(makeError(result))
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-                .toString()
-#endif
-        ));
+    if (result = avformat_open_input(&formatContext, path.c_str(), nullptr, nullptr); result < 0) {
+        return Err(NOTICE("avformat_open_input: %1", Critical, Inline, svtostr(QUtf8SV(makeError(result).data()))));
     }
 
-    if (result = avformat_find_stream_info(formatContext, nullptr);
-        result < 0) {
-        return Err("avformat_find_stream_info: %1"_L1.arg(
-            QUtf8SV(makeError(result))
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-                .toString()
-#endif
-        ));
+    if (result = avformat_find_stream_info(formatContext, nullptr); result < 0) {
+        return Err(
+            NOTICE("avformat_find_stream_info: %1", Critical, Inline, svtostr(QUtf8SV(makeError(result).data())))
+        );
     }
 
     const AVCodec* videoCodec = nullptr;
-    videoStreamIndex = av_find_best_stream(
-        formatContext,
-        AVMEDIA_TYPE_VIDEO,
-        -1,
-        -1,
-        &videoCodec,
-        0
-    );
+    videoStreamIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_VIDEO, -1, -1, &videoCodec, 0);
 
     if (videoStreamIndex >= 0) {
         videoCodecContext = avcodec_alloc_context3(videoCodec);
         if (videoCodecContext == nullptr) {
-            return Err(u"avcodec_alloc_context3 failed for video"_s);
+            return Err(NOTICE("avcodec_alloc_context3 failed for video", Critical, Inline));
         }
 
         videoStream = formatContext->streams[videoStreamIndex];
 
-        if (result = avcodec_parameters_to_context(
-                videoCodecContext,
-                videoStream->codecpar
-            );
-            result < 0) {
-            return Err("avcodec_parameters_to_context (video): %1"_L1.arg(
-                QUtf8SV(makeError(result))
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-                    .toString()
-#endif
+        if (result = avcodec_parameters_to_context(videoCodecContext, videoStream->codecpar); result < 0) {
+            return Err(NOTICE(
+                "avcodec_parameters_to_context (video): %1",
+                Critical,
+                Inline,
+                svtostr(QUtf8SV(makeError(result).data()))
             ));
         }
 
-        if (result = avcodec_open2(videoCodecContext, videoCodec, nullptr);
-            result < 0) {
-            return Err("avcodec_open2 (video): %1"_L1.arg(
-                QUtf8SV(makeError(result))
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-                    .toString()
-#endif
-            ));
+        if (result = avcodec_open2(videoCodecContext, videoCodec, nullptr); result < 0) {
+            return Err(
+                NOTICE("avcodec_open2 (video): %1", Critical, Inline, svtostr(QUtf8SV(makeError(result).data())))
+            );
         }
 
         videoWidth = videoCodecContext->width;
@@ -147,26 +116,17 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
         const AVRational fps = videoStream->avg_frame_rate;
 
         isAudioOnly = false;
-        frameIntervalMS = i32(av_rescale(SECOND_MS, fps.den, fps.num));
+        frameIntervalMS = av_rescale(SECOND_MS, fps.den, fps.num);
     } else {
         isAudioOnly = true;
-        frameIntervalMS = 10;
+        frameIntervalMS = AUDIO_ONLY_FRAME_INTERVAL_MS;
     }
 
     const AVCodec* audioCodec = nullptr;
-    audioStreamIndex = av_find_best_stream(
-        formatContext,
-        AVMEDIA_TYPE_AUDIO,
-        -1,
-        -1,
-        &audioCodec,
-        0
-    );
+    audioStreamIndex = av_find_best_stream(formatContext, AVMEDIA_TYPE_AUDIO, -1, -1, &audioCodec, 0);
 
     if (isAudioOnly && audioStreamIndex < 0) {
-        return Err(
-            "No playable stream (video or audio) found in: %1"_L1.arg(filePath)
-        );
+        return Err(NOTICE("No playable stream (video or audio) found in: %1", Critical, Inline, filePath));
     }
 
     if (audioStreamIndex >= 0 && audioCodec != nullptr) {
@@ -176,10 +136,8 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
             audioStream = formatContext->streams[audioStreamIndex];
             const AVCodecParameters* const codecpar = audioStream->codecpar;
 
-            const bool success =
-                avcodec_parameters_to_context(audioCodecContext, codecpar) >=
-                    0 &&
-                avcodec_open2(audioCodecContext, audioCodec, nullptr) >= 0;
+            const bool success = avcodec_parameters_to_context(audioCodecContext, codecpar) >= 0 &&
+                                 avcodec_open2(audioCodecContext, audioCodec, nullptr) >= 0;
 
             if (!success) {
                 avcodec_free_context(&audioCodecContext);
@@ -203,57 +161,27 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
             }
 
             if (audioStreamIndex != -1) {
-                planarFormat =
-                    audioCodecContext->sample_fmt == AV_SAMPLE_FMT_S16P ||
-                    audioCodecContext->sample_fmt == AV_SAMPLE_FMT_FLTP;
-
-                u32 maxFrameSamples;
-
-                switch (codecpar->codec_id) {
-                    case AV_CODEC_ID_AAC:
-                        maxFrameSamples = u32(audioCodecContext->frame_size);
-                        break;
-                    case AV_CODEC_ID_OPUS:
-                        maxFrameSamples = MAX_OPUS_FRAME_SAMPLES;
-                        break;
-                    case AV_CODEC_ID_VORBIS:
-                        maxFrameSamples = MAX_VORBIS_FRAME_SAMPLES;
-                        break;
-                    default:
-                        avcodec_free_context(&audioCodecContext);
-                        audioCodecContext = nullptr;
-                        audioStreamIndex = -1;
-                }
+                planarFormat = audioCodecContext->sample_fmt == AV_SAMPLE_FMT_S16P ||
+                               audioCodecContext->sample_fmt == AV_SAMPLE_FMT_FLTP;
 
                 if (audioStreamIndex != -1) {
-                    const u8 frameSize =
-                        audioCodecContext->ch_layout.nb_channels * sampleSize;
-
-                    deviceConfig =
-                        ma_device_config_init(ma_device_type_playback);
-                    deviceConfig.playback.format = (sampleSize == I16_SIZE)
-                                                       ? ma_format_s16
-                                                       : ma_format_f32;
-                    deviceConfig.periodSizeInFrames = 2048;
+                    deviceConfig = ma_device_config_init(ma_device_type_playback);
+                    deviceConfig.playback.format = (sampleSize == I16_SIZE) ? ma_format_s16 : ma_format_f32;
+                    deviceConfig.periodSizeInFrames = AUDIO_PERIOD_SIZE_IN_FRAMES;
                     deviceConfig.periods = 2;
-                    deviceConfig.playback.channels =
-                        audioCodecContext->ch_layout.nb_channels;
-                    deviceConfig.sampleRate =
-                        u32(audioCodecContext->sample_rate);
+                    deviceConfig.playback.channels = audioCodecContext->ch_layout.nb_channels;
+                    deviceConfig.sampleRate = scast<u32>(audioCodecContext->sample_rate);
                     deviceConfig.dataCallback = MediaPlayer::audioDataCallback;
                     deviceConfig.pUserData = this;
 
-                    if (ma_device_init(nullptr, &deviceConfig, &device) !=
-                        MA_SUCCESS) {
+                    if (ma_device_init(nullptr, &deviceConfig, &device) != MA_SUCCESS) {
                         avcodec_free_context(&audioCodecContext);
                         audioCodecContext = nullptr;
                         audioStreamIndex = -1;
                     } else {
                         audioDeviceOpen = true;
-                        bytesPerSecond =
-                            (audioCodecContext->sample_rate *
-                             audioCodecContext->ch_layout.nb_channels *
-                             sampleSize);
+                        bytesPerSecond = scast<i64>(audioCodecContext->sample_rate) *
+                                         audioCodecContext->ch_layout.nb_channels * sampleSize;
                     }
                 }
             }
@@ -261,14 +189,14 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
     }
 
     if (isAudioOnly && !audioDeviceOpen) {
-        return Err("Failed to open audio device for: %1"_L1.arg(filePath));
+        return Err(NOTICE("Failed to open audio device for: %1", Critical, Inline, filePath));
     }
 
     audioFrame = av_frame_alloc();
     packet = av_packet_alloc();
 
     if (audioFrame == nullptr || packet == nullptr) {
-        return Err(u"FFmpeg frame/packet alloc failed"_s);
+        return Err(NOTICE("FFmpeg frame/packet alloc failed", Critical, Inline));
     }
 
     if (!isAudioOnly) {
@@ -276,19 +204,14 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
         rgbFrame = av_frame_alloc();
 
         if (frame == nullptr || rgbFrame == nullptr) {
-            return Err(u"FFmpeg frame alloc failed"_s);
+            return Err(NOTICE("FFmpeg frame alloc failed", Critical, Inline));
         }
 
-        const i32 bufSize = av_image_get_buffer_size(
-            AV_PIX_FMT_RGB24,
-            videoWidth,
-            videoHeight,
-            1
-        );
+        const i32 bufSize = av_image_get_buffer_size(AV_PIX_FMT_RGB24, videoWidth, videoHeight, 1);
 
-        rgbBuffer = as<u8*>(av_malloc(usize(bufSize)));
+        rgbBuffer = scast<u8*>(av_malloc(scast<usize>(bufSize)));
         if (rgbBuffer == nullptr) {
-            return Err(u"av_malloc failed for RGB buffer"_s);
+            return Err(NOTICE("av_malloc failed for RGB buffer", Critical, Inline));
         }
 
         av_image_fill_arrays(
@@ -306,19 +229,19 @@ auto MediaPlayer::open(const QString& filePath) -> result<void, QString> {
         mediaLabel->clear();
         mediaLabel->setFixedSize(videoWidth, videoHeight);
     } else {
-        static constexpr u16 AUDIO_PANEL_WIDTH = 320;
-        static constexpr u16 AUDIO_PANEL_HEIGHT = 96;
+        static constexpr i32 AUDIO_PANEL_WIDTH = 320;
+        static constexpr i32 AUDIO_PANEL_HEIGHT = 96;
         videoWidth = AUDIO_PANEL_WIDTH;
         videoHeight = AUDIO_PANEL_HEIGHT;
 
         mediaLabel->setFixedSize(videoWidth, videoHeight);
     }
 
-    duration = formatContext->duration / AV_TIME_BASE;
+    duration = scast<i32>(formatContext->duration / AV_TIME_BASE);
     audioBytesPlayed.store(0, std::memory_order_relaxed);
     progressSlider->setValue(0);
     progressSlider->setRange(0, duration);
-    progressLabel->setText("00:00/%1"_L1.arg(toMMSS(duration)));
+    progressLabel->setText(u"00:00/%1"_qsv.arg(toMMSS(duration)));
     pauseButton->setText(QObject::tr("Pause"));
 
     return {};
@@ -396,19 +319,17 @@ void MediaPlayer::play() {
 
 void MediaPlayer::decodeAudio() {
     const u8 channels = audioCodecContext->ch_layout.nb_channels;
-    const u32 samples = u32(audioFrame->nb_samples);
-    const usize frameBytes = usize(samples) * channels * sampleSize;
+    const i32 samples = audioFrame->nb_samples;
+    const usize frameBytes = scast<usize>(samples) * channels * sampleSize;
 
-    const usize used = ringHead.load(std::memory_order_relaxed) -
-                       ringTail.load(std::memory_order_acquire);
+    const usize used = ringHead.load(std::memory_order_relaxed) - ringTail.load(std::memory_order_acquire);
     if (RING_CAPACITY - used < frameBytes) {
         return;
     }
 
     const usize head = ringHead.load(std::memory_order_relaxed);
 
-    const auto ringWrite =
-        [this](const usize pos, const u8* const src, const usize len) -> void {
+    const auto ringWrite = [this](const usize pos, const u8* const src, const usize len) -> void {
         for (const auto idx : range(0, len)) {
             pcmBuffer[(pos + idx) & RING_MASK] = src[idx];
         }
@@ -419,14 +340,8 @@ void MediaPlayer::decodeAudio() {
     } else {
         for (const auto sample : range(0, samples)) {
             for (const auto channel : range(0, channels)) {
-                const usize dstPos =
-                    head +
-                    (((usize(sample) * channels) + channel) * sampleSize);
-                ringWrite(
-                    dstPos,
-                    audioFrame->data[channel] + (usize(sample) * sampleSize),
-                    sampleSize
-                );
+                const usize dstPos = head + (((scast<usize>(sample) * channels) + channel) * sampleSize);
+                ringWrite(dstPos, audioFrame->data[channel] + (scast<usize>(sample) * sampleSize), sampleSize);
             }
         }
     }
@@ -445,18 +360,15 @@ void MediaPlayer::finishPlayback() {
 void MediaPlayer::processTick() {
     if (isAudioOnly) {
         const i64 bytes = audioBytesPlayed.load(std::memory_order_relaxed);
-        const i64 seconds = bytes / bytesPerSecond;
+        const i32 seconds = scast<i32>(bytes / bytesPerSecond);
 
         if (!progressSlider->isSliderDown()) {
             progressSlider->setValue(seconds);
-            progressLabel->setText(
-                "%1/%2"_L1.arg(toMMSS(seconds), toMMSS(duration))
-            );
+            progressLabel->setText(u"%1/%2"_qsv.arg(toMMSS(seconds), toMMSS(duration)));
         }
 
         if (!refillRingBuffer(AUDIO_BUFFER_THRESHOLD) &&
-            ringHead.load(std::memory_order_acquire) ==
-                ringTail.load(std::memory_order_acquire)) {
+            ringHead.load(std::memory_order_acquire) == ringTail.load(std::memory_order_acquire)) {
             finishPlayback();
         }
 
@@ -473,21 +385,16 @@ void MediaPlayer::processTick() {
             }
 
             if (avcodec_receive_frame(videoCodecContext, frame) == 0) {
-                const i64 timestamp = (frame->pts != AV_NOPTS_VALUE)
-                                          ? frame->pts
-                                          : frame->best_effort_timestamp;
+                const i64 timestamp = (frame->pts != AV_NOPTS_VALUE) ? frame->pts : frame->best_effort_timestamp;
 
-                const i64 seconds =
-                    floor(f64(timestamp) * av_q2d(videoStream->time_base));
+                const i32 seconds = floor(scast<f64>(timestamp) * av_q2d(videoStream->time_base));
 
                 if (seconds != playbackSecond) {
                     playbackSecond = seconds;
 
                     if (!progressSlider->isSliderDown()) {
                         progressSlider->setValue(seconds);
-                        progressLabel->setText(
-                            "%1/%2"_L1.arg(toMMSS(seconds), toMMSS(duration))
-                        );
+                        progressLabel->setText(u"%1/%2"_qsv.arg(toMMSS(seconds), toMMSS(duration)));
                     }
                 }
 
@@ -500,8 +407,7 @@ void MediaPlayer::processTick() {
             }
         } else if (packet->stream_index == audioStreamIndex) {
             if (avcodec_send_packet(audioCodecContext, packet) >= 0) {
-                while (avcodec_receive_frame(audioCodecContext, audioFrame) ==
-                       0) {
+                while (avcodec_receive_frame(audioCodecContext, audioFrame) == 0) {
                     decodeAudio();
                 }
             }
@@ -514,17 +420,14 @@ void MediaPlayer::processTick() {
 
     avcodec_send_packet(videoCodecContext, nullptr);
     if (avcodec_receive_frame(videoCodecContext, frame) == 0) {
-        const auto result = showFrame();
-
-        if (!result) {
-            qCritical() << "Failed to show frame: %1"_L1.arg(result.error());
-        }
+        // The Notice logged itself when showFrame() built it; a per-frame failure has nowhere else to go.
+        [[maybe_unused]] const auto result = showFrame();
     }
 
     finishPlayback();
 }
 
-auto MediaPlayer::showFrame() -> result<void, QString> {
+auto MediaPlayer::showFrame() -> result<void, Notice> {
     swscaleContext = sws_getCachedContext(
         swscaleContext,
         frame->width,
@@ -540,27 +443,15 @@ auto MediaPlayer::showFrame() -> result<void, QString> {
     );
 
     if (swscaleContext == nullptr) {
-        return Err(u"sws_getCachedContext failed"_s);
+        return Err(NOTICE("sws_getCachedContext failed", Critical, Inline));
     }
 
-    sws_scale(
-        swscaleContext,
-        frame->data,
-        frame->linesize,
-        0,
-        frame->height,
-        rgbFrame->data,
-        rgbFrame->linesize
-    );
+    sws_scale(swscaleContext, frame->data, frame->linesize, 0, frame->height, rgbFrame->data, rgbFrame->linesize);
 
     mediaLabel->setPixmap(
-        QPixmap::fromImage(QImage(
-            rgbFrame->data[0],
-            videoWidth,
-            videoHeight,
-            rgbFrame->linesize[0],
-            QImage::Format_RGB888
-        ))
+        QPixmap::fromImage(
+            QImage(rgbFrame->data[0], videoWidth, videoHeight, rgbFrame->linesize[0], QImage::Format_RGB888)
+        )
     );
     mediaLabel->repaint();
     return {};
@@ -572,21 +463,20 @@ void MediaPlayer::audioDataCallback(
     const void* const /* input */,
     const u32 frameCount
 ) {
-    auto* const self = as<MediaPlayer*>(device->pUserData);
+    auto* const self = scast<MediaPlayer*>(device->pUserData);
 
     const usize channels = self->audioCodecContext->ch_layout.nb_channels;
-    const usize bytesNeeded = usize(frameCount) * channels * self->sampleSize;
+    const usize bytesNeeded = scast<usize>(frameCount) * channels * self->sampleSize;
 
-    u8* const dst = as<u8*>(output);
+    u8* const dst = scast<u8*>(output);
 
     if (self->isAudioOnly) {
         self->refillRingBuffer(bytesNeeded);
     }
 
-    const usize tail = self->ringTail.load(std::memory_order_relaxed);
-    const usize available =
-        self->ringHead.load(std::memory_order_acquire) - tail;
-    const usize copySize = (available < bytesNeeded) ? available : bytesNeeded;
+    const u32 tail = self->ringTail.load(std::memory_order_relaxed);
+    const u32 available = self->ringHead.load(std::memory_order_acquire) - tail;
+    const u32 copySize = (available < bytesNeeded) ? available : bytesNeeded;
     self->audioBytesPlayed.fetch_add(copySize, std::memory_order_relaxed);
 
     for (const auto idx : range(0, copySize)) {
@@ -601,12 +491,10 @@ void MediaPlayer::audioDataCallback(
 }
 
 auto MediaPlayer::refillRingBuffer(const usize minBytes) -> bool {
-    while ((ringHead.load(std::memory_order_acquire) -
-            ringTail.load(std::memory_order_relaxed)) < minBytes) {
+    while ((ringHead.load(std::memory_order_acquire) - ringTail.load(std::memory_order_relaxed)) < minBytes) {
         if (av_read_frame(formatContext, packet) < 0) {
             if (avcodec_send_packet(audioCodecContext, nullptr) >= 0) {
-                while (avcodec_receive_frame(audioCodecContext, audioFrame) ==
-                       0) {
+                while (avcodec_receive_frame(audioCodecContext, audioFrame) == 0) {
                     decodeAudio();
                 }
             }
@@ -616,8 +504,7 @@ auto MediaPlayer::refillRingBuffer(const usize minBytes) -> bool {
 
         if (packet->stream_index == audioStreamIndex) {
             if (avcodec_send_packet(audioCodecContext, packet) >= 0) {
-                while (avcodec_receive_frame(audioCodecContext, audioFrame) ==
-                       0) {
+                while (avcodec_receive_frame(audioCodecContext, audioFrame) == 0) {
                     decodeAudio();
                 }
             }
@@ -634,16 +521,13 @@ void MediaPlayer::hideEvent(QHideEvent* const event) {
     QWidget::hideEvent(event);
 }
 
-void MediaPlayer::seekSecond(const u32 second) {
-    const i64 timestamp = second == 0
-                              ? 0
-                              : av_rescale(
-                                    second,
-                                    isAudioOnly ? audioStream->time_base.den
-                                                : videoStream->time_base.den,
-                                    isAudioOnly ? audioStream->time_base.num
-                                                : videoStream->time_base.num
-                                );
+void MediaPlayer::seekSecond(const i32 second) {
+    const i64 timestamp = second == 0 ? 0
+                                      : av_rescale(
+                                            second,
+                                            isAudioOnly ? audioStream->time_base.den : videoStream->time_base.den,
+                                            isAudioOnly ? audioStream->time_base.num : videoStream->time_base.num
+                                        );
 
     if (avformat_seek_file(
             formatContext,
@@ -666,10 +550,7 @@ void MediaPlayer::seekSecond(const u32 second) {
         avcodec_flush_buffers(audioCodecContext);
     }
 
-    audioBytesPlayed.store(
-        i64(second) * bytesPerSecond,
-        std::memory_order_relaxed
-    );
+    audioBytesPlayed.store(second * bytesPerSecond, std::memory_order_relaxed);
 
     ringHead.store(0, std::memory_order_relaxed);
     ringTail.store(0, std::memory_order_relaxed);
@@ -680,6 +561,6 @@ void MediaPlayer::seekSecond(const u32 second) {
         refillRingBuffer(AUDIO_BUFFER_THRESHOLD);
     }
 
-    progressLabel->setText("%1/%2"_L1.arg(toMMSS(second), toMMSS(duration)));
+    progressLabel->setText(u"%1/%2"_qsv.arg(toMMSS(second), toMMSS(duration)));
 }
 #endif

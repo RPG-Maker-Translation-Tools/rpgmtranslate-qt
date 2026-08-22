@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>362</width>
-    <height>814</height>
+    <width>528</width>
+    <height>512</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -203,56 +203,6 @@
        <widget class="QLabel" name="duplicateModeLabel">
         <property name="text">
          <string>Remove duplicates across maps and events. Recommended. In system, scripts and plugins files this mode is always overridden by allow mode.</string>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QWidget" name="romanizeWidget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
-      <property name="spacing">
-       <number>8</number>
-      </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item alignment="Qt::AlignmentFlag::AlignLeft">
-       <widget class="QCheckBox" name="romanizeCheckbox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Romanize: When parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '').</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -572,17 +522,17 @@
         </property>
         <item>
          <property name="text">
-          <string>UTF-8</string>
+          <string notr="true">UTF-8</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>Shift_JIS</string>
+          <string notr="true">Shift_JIS</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>GB18030</string>
+          <string notr="true">GB18030</string>
          </property>
         </item>
        </widget>

@@ -16,8 +16,7 @@ class AssetMenu final : public PersistentMenu {
     void clear();
 
    private:
-    static auto applyFilter(QTreeWidgetItem* item, const QString& lowerFilter)
-        -> bool;
+    static auto applyFilter(QTreeWidgetItem* item, const QString& lowerFilter) -> bool;
 
     void filterTree(const QString& text);
     void refresh();

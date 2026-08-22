@@ -4,11 +4,7 @@
 #include <QNetworkRequest>
 
 void AutoUpdater::checkForUpdates() {
-    connect(
-        &networkManager,
-        &QNetworkAccessManager::finished,
-        this,
-        [this](QNetworkReply* const reply) -> void {
+    connect(&networkManager, &QNetworkAccessManager::finished, this, [this](QNetworkReply* const reply) -> void {
         if (reply->error() != QNetworkReply::NoError) {
             emit updateFailed(reply->error());
         } else {
@@ -17,21 +13,15 @@ void AutoUpdater::checkForUpdates() {
         }
 
         reply->deleteLater();
-    },
-        Qt::SingleShotConnection
-    );
+    }, Qt::SingleShotConnection);
 
-    networkManager.get(QNetworkRequest(QUrl(
-        u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest"_s
-    )));
+    networkManager.get(
+        QNetworkRequest(QUrl(u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest"_s))
+    );
 };
 
 void AutoUpdater::downloadUpdate() {
-    connect(
-        &networkManager,
-        &QNetworkAccessManager::finished,
-        this,
-        [this](QNetworkReply* const reply) -> void {
+    connect(&networkManager, &QNetworkAccessManager::finished, this, [this](QNetworkReply* const reply) -> void {
         if (!aborted) {
             if (reply->error() != QNetworkReply::NoError) {
                 emit updateFailed(reply->error());
@@ -42,18 +32,15 @@ void AutoUpdater::downloadUpdate() {
 
         reply->deleteLater();
         downloadReply = nullptr;
-    },
-        Qt::SingleShotConnection
-    );
+    }, Qt::SingleShotConnection);
 
     downloadReply = networkManager.get(QNetworkRequest(QUrl(
 #ifdef Q_OS_WINDOWS
         u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest/download/rpgmtranslate.7z"_s
 #elifdef Q_OS_LINUX
         u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest/download/rpgmtranslate.tar.xz"_s
-#else
-        // TODO
-        u""_s
+#elifdef Q_OS_MACOS
+        u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest/download/rpgmtranslate.zip"_s
 #endif
     )));
 
@@ -61,9 +48,7 @@ void AutoUpdater::downloadUpdate() {
         downloadReply,
         &QNetworkReply::downloadProgress,
         this,
-        [=, this](const u64 received, const u64 total) -> void {
-        emit updateDownloadProgress(received, total);
-    }
+        [=, this](const u64 received, const u64 total) -> void { emit updateDownloadProgress(received, total); }
     );
 }
 

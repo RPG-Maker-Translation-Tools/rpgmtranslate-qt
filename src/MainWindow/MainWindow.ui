@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>mainWindow</class>
- <widget class="MainWindow" name="mainWindow">
+ <class>MainWindow</class>
+ <widget class="MainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -389,7 +389,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="matchMenuButton">
+        <widget class="QToolButton" name="lintMenuButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -412,7 +412,7 @@
           </size>
          </property>
          <property name="toolTip">
-          <string>Match Menu</string>
+          <string>Lint Menu</string>
          </property>
          <property name="text">
           <string/>
@@ -622,38 +622,31 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="widget_2" native="true">
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QLabel" name="taskLabel">
-            <property name="text">
-             <string>No Tasks</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QProgressBar" name="taskProgressBar">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="toolTip">
-             <string>Displays task progress, in processed lines/total lines format.</string>
-            </property>
-            <property name="maximum">
-             <number>0</number>
-            </property>
-            <property name="value">
-             <number>0</number>
-            </property>
-            <property name="textVisible">
-             <bool>true</bool>
-            </property>
-            <property name="format">
-             <string notr="true">%v/%m</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+        <widget class="QToolButton" name="taskButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>96</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>Running tasks</string>
+         </property>
+         <property name="text">
+          <string>No tasks</string>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonStyle::ToolButtonTextOnly</enum>
+         </property>
         </widget>
        </item>
        <item alignment="Qt::AlignmentFlag::AlignRight">
@@ -671,6 +664,12 @@
           <size>
            <width>192</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>256</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="maximum">
@@ -802,8 +801,8 @@
       <zorder>translationsButton</zorder>
       <zorder>gameTitleInput</zorder>
       <zorder>searchPanelButton</zorder>
-      <zorder>matchMenuButton</zorder>
-      <zorder>widget_2</zorder>
+      <zorder>lintMenuButton</zorder>
+      <zorder>taskWidget</zorder>
       <zorder>assetsButton</zorder>
       <zorder>sourceControlButton</zorder>
       <zorder>locateProjectDirButton</zorder>
@@ -820,7 +819,7 @@
      <x>0</x>
      <y>0</y>
      <width>1693</width>
-     <height>30</height>
+     <height>33</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -833,7 +832,7 @@
     <addaction name="actionSettings"/>
     <addaction name="separator"/>
     <addaction name="actionLoadBackup"/>
-    <addaction name="actionCheckForChanges"/>
+    <addaction name="actionCheckSourceUpdates"/>
     <addaction name="actionCloseProject"/>
     <addaction name="actionCloseTab"/>
     <addaction name="separator"/>
@@ -844,7 +843,9 @@
      <string>Help</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="separator"/>
     <addaction name="actionDocumentation"/>
+    <addaction name="separator"/>
     <addaction name="actionCheckForUpdates"/>
    </widget>
    <widget class="QMenu" name="menuLanguage">
@@ -980,7 +981,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="MatchMenu" name="matchMenu">
+  <widget class="LintMenu" name="lintMenu">
    <property name="features">
     <set>QDockWidget::DockWidgetFeature::DockWidgetClosable</set>
    </property>
@@ -988,12 +989,12 @@
     <set>Qt::DockWidgetArea::BottomDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Match Menu</string>
+    <string>Lint Menu</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
    </attribute>
-   <widget class="QWidget" name="matchMenuWidget">
+   <widget class="QWidget" name="lintMenuWidget">
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <property name="spacing">
       <number>8</number>
@@ -1011,7 +1012,7 @@
       <number>8</number>
      </property>
      <item>
-      <widget class="MatchTable" name="matchMenuTable">
+      <widget class="LintTable" name="lintMenuTable">
        <property name="editTriggers">
         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
        </property>
@@ -1038,39 +1039,193 @@
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="clearMatchMenuButton">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>32</width>
-         <height>32</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>32</width>
-         <height>32</height>
-        </size>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/icons/mop.svg</normaloff>:/icons/mop.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>20</width>
-         <height>20</height>
-        </size>
-       </property>
+     <item alignment="Qt::AlignmentFlag::AlignHCenter">
+      <widget class="QWidget" name="widget_2" native="true">
+       <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,0">
+        <property name="spacing">
+         <number>4</number>
+        </property>
+        <property name="leftMargin">
+         <number>4</number>
+        </property>
+        <property name="topMargin">
+         <number>4</number>
+        </property>
+        <property name="rightMargin">
+         <number>4</number>
+        </property>
+        <property name="bottomMargin">
+         <number>4</number>
+        </property>
+        <item>
+         <widget class="QWidget" name="widget_8" native="true">
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <widget class="QCheckBox" name="disableLintingCheckbox">
+             <property name="text">
+              <string>Disable linting (overrides settings)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="leadingWhitespaceCheckbox">
+             <property name="text">
+              <string>Lint leading whitespace</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="trailingWhitespaceCheckbox">
+             <property name="text">
+              <string>Lint trailing whitespace</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="contiguousWhitespaceCheckbox">
+             <property name="text">
+              <string>Lint contiguous whitespace</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="unclosedPunctuationCheckbox">
+             <property name="text">
+              <string>Lint unclosed punctuation</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="tagMismatchCheckbox">
+             <property name="text">
+              <string>Lint source/translation tag mismatch</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="spellcheckCheckbox">
+             <property name="text">
+              <string>Spellcheck (configure in settings)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="ltCheckbox">
+             <property name="text">
+              <string>LanguageTool (configure in settings)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="termMismatchCheckbox">
+             <property name="text">
+              <string>Glossary check (configure glossary)</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="lintButtonWidget" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <property name="spacing">
+            <number>4</number>
+           </property>
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>4</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>4</number>
+           </property>
+           <item>
+            <widget class="QPushButton" name="lintClearMenuButton">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../../resources.qrc">
+               <normaloff>:/icons/mop.svg</normaloff>:/icons/mop.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="lintFileSelectMenuButton">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../../resources.qrc">
+               <normaloff>:/icons/files.svg</normaloff>:/icons/files.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="lintLintSelectMenuButton">
+             <property name="text">
+              <string>Lints</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="lintCheckButton">
+             <property name="text">
+              <string>Global Check</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
     </layout>
@@ -1091,7 +1246,7 @@
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_3">
+   <widget class="QWidget" name="sourceControlDockContent">
     <layout class="QVBoxLayout" name="verticalLayout_4">
      <property name="spacing">
       <number>4</number>
@@ -1214,11 +1369,7 @@
               </size>
              </property>
              <property name="styleSheet">
-              <string notr="true">border: 1px solid palette(light);
-background-color: palette(button);
-border-right: none;
-border-top-left-radius: 4px;
-border-bottom-left-radius: 4px;</string>
+              <string notr="true"/>
              </property>
              <property name="text">
               <string>Commit</string>
@@ -1246,17 +1397,7 @@ border-bottom-left-radius: 4px;</string>
               </size>
              </property>
              <property name="styleSheet">
-              <string notr="true">QToolButton {
-	border: 1px solid palette(light);
-	background-color: palette(button);
-	border-top-right-radius: 4px;
-	border-bottom-right-radius: 4px;
-}
-
-QToolButton:hover {
-	border: 1px solid palette(accent);
-}
-</string>
+              <string notr="true"/>
              </property>
              <property name="text">
               <string/>
@@ -1337,7 +1478,7 @@ QToolButton:hover {
          </widget>
         </item>
         <item>
-         <widget class="GitChangesList" name="gitChangesList"/>
+         <widget class="GitFileList" name="gitFileList"/>
         </item>
        </layout>
       </widget>
@@ -1424,14 +1565,19 @@ QToolButton:hover {
     <string>Esc</string>
    </property>
   </action>
-  <action name="actionCheckForChanges">
+  <action name="actionCheckSourceUpdates">
    <property name="text">
-    <string>Check for source file changes</string>
+    <string>Check for source updates</string>
    </property>
   </action>
   <action name="actionLoadBackup">
    <property name="text">
     <string>Load Backup</string>
+   </property>
+  </action>
+  <action name="actionThirdParty">
+   <property name="text">
+    <string>Third Party Notice</string>
    </property>
   </action>
  </widget>
@@ -1454,9 +1600,9 @@ QToolButton:hover {
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>MatchMenu</class>
+   <class>LintMenu</class>
    <extends>QDockWidget</extends>
-   <header>MatchMenu.hpp</header>
+   <header>LintMenu.hpp</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -1465,9 +1611,9 @@ QToolButton:hover {
    <header>SearchResultList.hpp</header>
   </customwidget>
   <customwidget>
-   <class>MatchTable</class>
+   <class>LintTable</class>
    <extends>QTableView</extends>
-   <header>MatchTable.hpp</header>
+   <header>LintTable.hpp</header>
   </customwidget>
   <customwidget>
    <class>TabPanel</class>
@@ -1482,9 +1628,9 @@ QToolButton:hover {
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>GitChangesList</class>
+   <class>GitFileList</class>
    <extends>QListView</extends>
-   <header>GitChangesList.hpp</header>
+   <header>GitFileList.hpp</header>
   </customwidget>
   <customwidget>
    <class>GitCommitList</class>

@@ -3,16 +3,19 @@
 #include "Aliases.hpp"
 #include "Constants.hpp"
 #include "Hasher.hpp"
-#include "rpgmtranslate.h"
+#include "glazemeta.hpp"
+#include "rpgmtranslate_rs.h"
 
 #include <QFile>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QStringList>
 
 struct ColumnInfo {
     QString name;
     u16 width;
+};
+
+template <>
+struct glz::meta<ColumnInfo> {
+    static constexpr auto value = glz::array(&ColumnInfo::name, &ColumnInfo::width);
 };
 
 enum class SourceDirectory : u8 {
@@ -23,6 +26,8 @@ enum class SourceDirectory : u8 {
 
 struct ProjectSettings {
     HashMap<FilenameArray, u64> hashes;
+    HashMap<QString, QString> fileContexts;
+
     QStringList completedFiles;
 
     vector<ColumnInfo> columns;
@@ -31,24 +36,55 @@ struct ProjectSettings {
     QString spellcheckDictionary;
 
     QString projectContext;
-    HashMap<QString, QString> fileContexts;
 
-    u16 sourceColumnWidth = DEFAULT_COLUMN_WIDTH;
+    QString sourceLang;
+    QString translationLang;
+
     u16 lineLengthHint = 0;
-
-    EngineType engineType = EngineType::New;
-
-    Algorithm sourceLang = Algorithm::None;
-    Algorithm translationLang = Algorithm::None;
 
     DuplicateMode duplicateMode = DuplicateMode::Allow;
     BaseFlags flags = BaseFlags(0);
 
     SourceDirectory sourceDirectory = SourceDirectory::None;
+    EngineType engineType = EngineType::New;
 
-    [[nodiscard]] auto programDataPath() const -> QString {
-        return projectPath + PROGRAM_DATA_DIRECTORY;
+    [[nodiscard]] constexpr auto engineExtension() const -> QStringView {
+        switch (engineType) {
+            case EngineType::New:
+                return u"json";
+                break;
+            case EngineType::VXAce:
+                return u"rvdata2";
+                break;
+            case EngineType::VX:
+                return u"rvdata";
+                break;
+            case EngineType::XP:
+                return u"rxdata";
+                break;
+        }
     }
+
+    [[nodiscard]] static constexpr auto engineExtension(const EngineType engineType) -> QStringView {
+        switch (engineType) {
+            case EngineType::New:
+                return u"json";
+                break;
+            case EngineType::VXAce:
+                return u"rvdata2";
+                break;
+            case EngineType::VX:
+                return u"rvdata";
+                break;
+            case EngineType::XP:
+                return u"rxdata";
+                break;
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto programDataPath() const -> QString { return projectPath + PROGRAM_DATA_DIRECTORY; }
 
     [[nodiscard]] auto sourcePath() const -> QString {
         switch (sourceDirectory) {
@@ -57,13 +93,11 @@ struct ProjectSettings {
             case SourceDirectory::LowercaseData:
                 return projectPath + u"/data";
             default:
-                return {};
+                std::unreachable();
         }
     }
 
-    [[nodiscard]] auto baselineSourcePath() const -> QString {
-        return programDataPath() + BASELINE_DATA_DIRECTORY;
-    }
+    [[nodiscard]] auto baselineSourcePath() const -> QString { return programDataPath() + BASELINE_DATA_DIRECTORY; }
 
     [[nodiscard]] auto actualSourcePath() const -> QString {
         QString path = baselineSourcePath();
@@ -75,28 +109,46 @@ struct ProjectSettings {
         return sourcePath();
     }
 
-    [[nodiscard]] auto translationPath() const -> QString {
-        return programDataPath() + TRANSLATION_DIRECTORY;
-    }
+    [[nodiscard]] auto translationPath() const -> QString { return programDataPath() + TRANSLATION_DIRECTORY; }
 
-    [[nodiscard]] auto projectSettingsPath() const -> QString {
-        return programDataPath() + PROJECT_SETTINGS_FILE;
-    }
+    [[nodiscard]] auto projectSettingsPath() const -> QString { return programDataPath() + PROJECT_SETTINGS_FILE; }
 
-    [[nodiscard]] auto backupPath() const -> QString {
-        return programDataPath() + BACKUP_DIRECTORY;
-    }
+    [[nodiscard]] auto backupPath() const -> QString { return programDataPath() + BACKUP_DIRECTORY; }
 
-    [[nodiscard]] auto outputPath() const -> QString {
-        return programDataPath() + OUTPUT_DIRECTORY;
-    }
+    [[nodiscard]] auto outputPath() const -> QString { return programDataPath() + OUTPUT_DIRECTORY; }
 
-    [[nodiscard]] auto glossaryPath() const -> QString {
-        return programDataPath() + GLOSSARY_FILE;
-    }
+    [[nodiscard]] auto glossaryPath() const -> QString { return programDataPath() + GLOSSARY_FILE; }
+};
 
-    [[nodiscard]] auto serializeTranslationColumns() const -> QJsonArray;
-    [[nodiscard]] auto toJSON() const -> QJsonObject;
-    [[nodiscard]] static auto fromJSON(const QJsonObject& obj)
-        -> ProjectSettings;
+template <>
+struct glz::meta<ProjectSettings> {
+    using T = ProjectSettings;
+    static constexpr auto value = glz::object(
+        "engineType",
+        &T::engineType,
+        "sourceLang",
+        &T::sourceLang,
+        "translationLang",
+        &T::translationLang,
+        "duplicateMode",
+        &T::duplicateMode,
+        "flags",
+        &T::flags,
+        "hashes",
+        &T::hashes,
+        "completed",
+        &T::completedFiles,
+        "lineLengthHint",
+        &T::lineLengthHint,
+        "translationColumns",
+        &T::columns,
+        "sourceDirectory",
+        &T::sourceDirectory,
+        "spellcheckDictionaryPath",
+        &T::spellcheckDictionary,
+        "projectContext",
+        &T::projectContext,
+        "fileContexts",
+        &T::fileContexts
+    );
 };

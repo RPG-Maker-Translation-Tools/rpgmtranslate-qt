@@ -20,12 +20,12 @@ class BookmarkList final : public QListView {
    public:
     explicit BookmarkList(QWidget* parent);
 
-    [[nodiscard]] auto bookmark(u32 row) const -> Bookmark&;
+    [[nodiscard]] auto bookmark(i32 row) const -> Bookmark&;
 
-    [[nodiscard]] auto rowCount() const -> u32;
+    [[nodiscard]] auto rowCount() const -> i32;
     void appendRow(QStringView description, QStringView file, u32 row) const;
-    void removeRow(u32 row) const;
-    void setRowHidden(u32 row, bool hidden) const;
+    void removeRow(i32 row) const;
+    void setRowHidden(i32 row, bool hidden) const;
 
     void clear() const;
     void refilter() const;
@@ -46,15 +46,12 @@ class BookmarkListModel final : public QAbstractListModel {
    public:
     using QAbstractListModel::QAbstractListModel;
 
-    [[nodiscard]] auto data(const QModelIndex& idx, i32 role) const
-        -> QVariant override;
-    [[nodiscard]] auto bookmark(u32 row) -> Bookmark&;
-    [[nodiscard]] auto rowCount(const QModelIndex& parent = QModelIndex()) const
-        -> i32 override;
-    [[nodiscard]] auto flags(const QModelIndex& idx) const
-        -> Qt::ItemFlags override;
+    [[nodiscard]] auto data(const QModelIndex& idx, i32 role) const -> QVariant override;
+    [[nodiscard]] auto bookmark(i32 row) -> Bookmark&;
+    [[nodiscard]] auto rowCount(const QModelIndex& parent = QModelIndex()) const -> i32 override;
+    [[nodiscard]] auto flags(const QModelIndex& idx) const -> Qt::ItemFlags override;
 
-    void removeRow(u32 row);
+    void removeRow(i32 row);
     void appendRow(QStringView file, QStringView description, u32 row);
 
     void clear();
@@ -80,14 +77,7 @@ class BookmarkListDelegate final : public QStyledItemDelegate {
    public:
     using QStyledItemDelegate::QStyledItemDelegate;
 
-    void paint(
-        QPainter* painter,
-        const QStyleOptionViewItem& option,
-        const QModelIndex& index
-    ) const override;
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
-    [[nodiscard]] auto sizeHint(
-        const QStyleOptionViewItem& option,
-        const QModelIndex& index
-    ) const -> QSize override;
+    [[nodiscard]] auto sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const -> QSize override;
 };

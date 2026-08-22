@@ -4,21 +4,13 @@
 
 class UnfocusLineEdit : public QLineEdit {
     Q_OBJECT
-    Q_PROPERTY(
-        bool unfocusSignalEnabled READ isUnfocusSignalEnabled WRITE
-            setUnfocusSignal
-    )
 
    public:
     using QLineEdit::QLineEdit;
 
-    void setUnfocusSignal(const bool enabled) {
-        unfocusSignalEnabled = enabled;
-    }
+    void setUnfocusSignal(const bool enabled) { unfocusSignalEnabled = enabled; }
 
-    [[nodiscard]] auto isUnfocusSignalEnabled() const -> bool {
-        return unfocusSignalEnabled;
-    }
+    [[nodiscard]] auto isUnfocusSignalEnabled() const -> bool { return unfocusSignalEnabled; }
 
    protected:
     void focusOutEvent(QFocusEvent* const event) override {

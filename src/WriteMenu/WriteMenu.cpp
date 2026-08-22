@@ -7,9 +7,7 @@ WriteMenu::WriteMenu(QWidget* const parent) :
     QDialog(parent, Qt::FramelessWindowHint | Qt::Popup),
     ui(setupUi()),
     fileSelectMenu(new FileSelectMenu(parent)) {
-    connect(ui->applyButton, &QPushButton::pressed, this, [this] -> void {
-        accept();
-    });
+    connect(ui->applyButton, &QPushButton::pressed, this, [this] -> void { accept(); });
 
     connect(ui->fileSelectButton, &QPushButton::pressed, this, [this] -> void {
         fileSelectMenu->setHidden(!fileSelectMenu->isHidden());
@@ -48,6 +46,6 @@ auto WriteMenu::selected(const bool skipped) const -> Selected {
     return fileSelectMenu->selected(skipped);
 }
 
-void WriteMenu::setFiles(const vector<TabListItem>& files) {
-    fileSelectMenu->setFiles(files);
+void WriteMenu::init(const vector<TabListItem>& files) {
+    fileSelectMenu->init(files);
 }

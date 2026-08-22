@@ -2,6 +2,8 @@
 
 #include "FWD.hpp"
 #include "ProjectSettings.hpp"
+#include "Settings.hpp"
+#include "TranslationInput.hpp"
 
 #include <QTableView>
 
@@ -25,21 +27,13 @@ struct RemovedRowInfo {
     static constexpr u32 FLAGS_SHIFT = 24;
     static constexpr u32 FLAGS_MASK = 0x00FF'FFFFU;
 
-    [[nodiscard]] constexpr auto row() const -> u32 {
-        return bits & FLAGS_MASK;
-    }
+    [[nodiscard]] constexpr auto row() const -> u32 { return bits & FLAGS_MASK; }
 
-    [[nodiscard]] constexpr auto flags() const -> RowFlags {
-        return RowFlags(bits >> FLAGS_SHIFT);
-    }
+    [[nodiscard]] constexpr auto flags() const -> RowFlags { return RowFlags(bits >> FLAGS_SHIFT); }
 
-    constexpr void setRow(const u32 row) {
-        bits = (bits & ROW_MASK) | (row & FLAGS_MASK);
-    }
+    constexpr void setRow(const u32 row) { bits = (bits & ROW_MASK) | (row & FLAGS_MASK); }
 
-    constexpr void setFlags(const RowFlags flags) {
-        bits = (bits & FLAGS_MASK) | (u32(flags) << FLAGS_SHIFT);
-    }
+    constexpr void setFlags(const RowFlags flags) { bits = (bits & FLAGS_MASK) | (scast<u32>(flags) << FLAGS_SHIFT); }
 };
 
 class TranslationTable final : public QTableView {
@@ -54,31 +48,21 @@ class TranslationTable final : public QTableView {
 
     explicit TranslationTable(QWidget* parent = nullptr);
 
-    void init(
-        const Settings* settings,
-        const ProjectSettings* projectSettings
-    ) const;
+    void init(const Settings* settings, const ProjectSettings* projectSettings) const;
 
-    void initializeDictionary() const;
     void insertTranslation(const QString& translation);
 
-    [[nodiscard]] constexpr auto model() const -> TranslationTableModel* {
-        return model_;
-    }
+    [[nodiscard]] constexpr auto model() const -> TranslationTableModel* { return model_; }
 
-    [[nodiscard]] constexpr auto header() const -> TranslationTableHeader* {
-        return header_;
-    }
+    [[nodiscard]] constexpr auto header() const -> TranslationTableHeader* { return header_; }
 
-    void fill(
-        const span<QStringView>& lines,
-        const vector<ColumnInfo>& columns,
-        const QString& filename
-    );
+    void fill(const span<QStringView>& lines, const vector<ColumnInfo>& columns, const QString& filename);
 
     auto cut() -> u32;
     auto copy() -> u32;
     auto paste() -> u32;
+
+    auto activeInput() -> TranslationInput*;
 
    signals:
     void bookmarked(u32 row);
@@ -86,12 +70,12 @@ class TranslationTable final : public QTableView {
     void bookmarkChanged(u32 row);
 
     void columnAdded();
-    void columnRenamed(u8 index, const QString& name);
-    void columnResized(u8 index, u16 width);
+    void columnRenamed(i32 index, const QString& name);
+    void columnResized(i32 index, u16 width);
     void rowRemoved(RemovedRowInfo info);
 
     void inputFocused();
-    void textChanged(const QString& text);
+    void textChanged();
 
     void multilineAction(MultilineAction action, u32 count);
 
@@ -99,9 +83,6 @@ class TranslationTable final : public QTableView {
     void keyPressEvent(QKeyEvent* event) override;
 
    private:
-    inline void addRow(QStringView source, const QSVList& translations);
-    inline void addCommentRow(QStringView comment);
-
     TranslationTableModel* model_;
     TranslationTableHeader* header_;
     TranslationTableDelegate* delegate;

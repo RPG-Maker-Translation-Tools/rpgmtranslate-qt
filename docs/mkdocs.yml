@@ -11,9 +11,11 @@ copyright: Licensed under WTFPL.
 
 nav:
   - Home: index.md
-  - Search Features: search.md
+  - Installation: installation.md
   - Text Editing: text-editing.md
+  - Search Features: search.md
   - Batch Processing: batch-processing.md
+  - Tasks: tasks.md
   - Settings: settings.md
   - Glossary: glossary.md
   - Rvpacker: rvpacker.md
@@ -58,9 +60,11 @@ plugins:
           build: true
           nav_translations:
               Home: Главная
+              Installation: Установка
               Search Features: Поиск
               Text Editing: Редактирование текста
               Batch Processing: Массовая обработка
+              Tasks: Задачи
               Settings: Настройки
               Glossary: Глоссарий
               Rvpacker: Rvpacker

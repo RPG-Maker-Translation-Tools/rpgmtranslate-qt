@@ -1,6 +1,6 @@
 # rpgmtranslate-qt
 
-[README на русском (в работе)](./README-ru.md)
+[README на русском](./README-ru.md)
 
 <p align="center">
     <img src="./icons/rpgmtranslate-logo.png" alt="Description" width="256"/>
@@ -16,16 +16,17 @@ A complete rewrite of the [original RPGMTranslate application](https://github.co
 - [x] Exceptional performance, powered by low-level Rust/C++ code.
 - [x] Support for RPG Maker XP/VX/VXAce/MV/MZ, with automated archive decryption and file parsing.
 - [x] Easy plain text format that's manually editable.
+- [x] Translations can be exported into other formats - XLSX, CSV, XML, YAML and JSON.
 - [x] Built-in [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation) features for more than 40 languages.
 - [x] Convenience-oriented user experience with bookmarks, shortcuts, and highly customizable features.
 - [x] Built-in batch processing of files, including batch translation, batch trim and batch text wrap.
-- [x] Integrated APIs for Google Translate, Yandex Translate, DeepL, ChatGPT, Claude, DeepSeek, Gemini, Ollama, and any OpenAI-compatible endpoints (e.g. koboldcpp).
+- [x] Integrated APIs for machine translation - Google Translate, DeepL, AI endpoints, local endpoints, OpenRouter.
 - [x] Integrated asset inspector, which allows to inspect images, videos, fonts, scripts and more.
 - [x] Integrated spell-checking and advanced linting, including linting of tags from different plugins (like Yanfly Message Core) and information about them.
-- [ ] **WIP** Integrated Git client.
-- [ ] **WIP** LanguageTool integration.
+- [x] **partially** Integrated Git client.
+- [x] **i guess** LanguageTool integration.
 
-**Please, request features!** It's possible to implement virtually anything in Rust and C++. Request features that you and others would benefit from, and we will implement them.
+**Feature requests:** It's possible to implement virtually anything in Rust and C++. Request features that you and others would benefit from, and we will implement them.
 
 Under the hood, this application uses:
 
@@ -36,35 +37,31 @@ Under the hood, this application uses:
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
 
-If you have troubled figuring out the program, check the `Help > Usage Documentation` top menu option. That will probably help.
+If you have troubles figuring out the program, check the `Help > Usage Documentation` top menu option. That will probably help.
 
 ## Releases
 
-You can get those in **Releases** section.
+Builds are published in the [Releases](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases) page.
 
-Built releases require AVX instructions, which means the minimum supported processors are Sandy Bridge (3th Gen) for Intel and Bulldozer for AMD (FX-4xxx, FX-6xxx, FX-8xxx).
+Windows releases require Windows 10 or 11. They are linked statically, so there is nothing to install alongside them.
 
-All built executables are compressed by [UPX](https://github.com/upx/upx).
+Every release needs a CPU with **x86-64-v3** support: Intel from Haswell (2013) onwards, AMD from Excavator (2015) onwards. Older hardware has to build from source with a lower `-march`.
 
-### Windows
+Executables are compressed with: `upx --best --lzma --brute --ultra-brute --compress-exports=0`.
 
-Windows builds are linked statically, you don't need any DLLs.
+On Linux you will need [these dependencies](https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/development#getting-development-headers-on-linux) to run the application.
 
-Minimum supported Windows version is Windows 10.
+## Documentation
 
-### Linux
+Full documentation lives at <https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/>.
 
-Linux builds are linked dynamically.
+### Installation
 
-You will need [these dependencies](https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/development#getting-development-headers-on-linux) to run the application.
+See the [installation documentation](https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/installation).
 
-## Usage
+### Development
 
-Documentation is available at <https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/>.
-
-## Development
-
-See [Development Documentation](https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/development).
+See the [development documentation](https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/development).
 
 ## Support
 
@@ -86,7 +83,8 @@ The repository contains third-party software, that is licensed under other condi
 
 - `icons` - contains [Google Material Symbols](https://fonts.google.com/icons) - licensed under `Apache License Version 2.0`.
 - `src/3rdparty` - contains 3rd-party libraries:
-    - `jeaiii_to_text.h` - licensed under MIT.
-    - `miniaudio.h` - public domain.
-    - `magic_enum.hpp` - licensed under MIT.
-    - `zmij.h` and `zmij.cc` - licensed under MIT.
+    - [fast_float](https://github.com/fastfloat/fast_float), [MIT](licenses/fast_float)
+    - [jeaiii/itoa](https://github.com/jeaiii/itoa), [MIT](licenses/jeaiii-itoa)
+    - [magic_enum](https://github.com/Neargye/magic_enum), [MIT](licenses/magic_enum)
+    - [zmij](https://github.com/vitaut/zmij), [MIT](licenses/zmij)
+    - [miniaudio](https://github.com/mackron/miniaudio), [Unlicense](licenses/miniaudio)

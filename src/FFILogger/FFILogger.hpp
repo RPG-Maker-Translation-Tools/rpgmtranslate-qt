@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Aliases.hpp"
-#include "rpgmtranslate.h"
+#include "rpgmtranslate_rs.h"
 
 #include <QObject>
 
