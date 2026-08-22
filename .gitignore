@@ -7,3 +7,4 @@
 /docs/site
 /rust/Cargo.lock
 /rust/target
+/.codegraph
