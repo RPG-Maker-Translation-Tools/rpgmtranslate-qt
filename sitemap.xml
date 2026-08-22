@@ -2,140 +2,168 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/asset-inspector/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/asset-inspector/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/asset-inspector/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/batch-processing/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/batch-processing/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/batch-processing/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/development/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/development/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/development/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/git/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/git/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/git/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/glossary/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/glossary/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/glossary/"/>
     </url>
     <url>
+        <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/installation/</loc>
+        <lastmod>2026-08-22</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/installation/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/installation/"/>
+    </url>
+    <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/rvpacker/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/rvpacker/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/rvpacker/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/search/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/search/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/search/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/settings/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/settings/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/settings/"/>
     </url>
     <url>
+        <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/tasks/</loc>
+        <lastmod>2026-08-22</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/tasks/"/>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/tasks/"/>
+    </url>
+    <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/text-editing/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/text-editing/"/>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/text-editing/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/asset-inspector/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/asset-inspector/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/asset-inspector/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/batch-processing/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/batch-processing/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/batch-processing/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/development/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/development/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/development/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/git/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/git/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/git/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/glossary/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/glossary/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/glossary/"/>
     </url>
     <url>
+        <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/installation/</loc>
+        <lastmod>2026-08-22</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/installation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/installation/"/>
+    </url>
+    <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/rvpacker/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/rvpacker/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/rvpacker/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/search/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/search/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/search/"/>
     </url>
     <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/settings/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/settings/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/settings/"/>
     </url>
     <url>
+        <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/tasks/</loc>
+        <lastmod>2026-08-22</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/tasks/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/tasks/"/>
+    </url>
+    <url>
         <loc>https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/text-editing/</loc>
-        <lastmod>2026-04-19</lastmod>
+        <lastmod>2026-08-22</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ru" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/ru/text-editing/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/text-editing/"/>

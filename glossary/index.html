@@ -29,7 +29,7 @@
       
       
       <link rel="icon" href="../assets/rpgmtranslate-logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -37,7 +37,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -201,13 +201,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../search/" class="md-tabs__link">
+      <a href="../installation/" class="md-tabs__link">
         
   
   
     
   
-  Search Features
+  Installation
 
       </a>
     </li>
@@ -239,6 +239,25 @@
   
   
     <li class="md-tabs__item">
+      <a href="../search/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Search Features
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
       <a href="../batch-processing/" class="md-tabs__link">
         
   
@@ -246,6 +265,25 @@
     
   
   Batch Processing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tasks/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tasks
 
       </a>
     </li>
@@ -452,14 +490,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../search/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Search Features
+    Installation
   
 
     
@@ -506,6 +544,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Search Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../batch-processing/" class="md-nav__link">
         
   
@@ -514,6 +579,33 @@
     
   
     Batch Processing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tasks
   
 
     
@@ -697,34 +789,6 @@
     <span class="md-ellipsis">
       
         Actions
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#match-menu" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Match Menu
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Match Menu">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#columns" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Columns
       
     </span>
   </a>
@@ -967,34 +1031,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#match-menu" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Match Menu
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Match Menu">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#columns" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Columns
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1039,9 +1075,10 @@
 <h1 id="cat-features-and-glossary">CAT Features and Glossary</h1>
 <p>RPGMTranslate introduces some <a href="https://en.wikipedia.org/wiki/Computer-assisted_translation">CAT</a> features.</p>
 <h2 id="glossary">Glossary</h2>
-<p>Glossary menu contains all the present terms in your translation, allows you to add new, and check the consistensy of those terms.</p>
+<p>Open the glossary menu with the <img alt="" src="../assets/book_3.svg" /> button. It contains all the present terms in your translation, allows you to add new, and check the consistensy of those terms.</p>
 <p>You can create new terms with the "+" button. Term and translation text are essential.</p>
-<p>Glossary allows to search specific terms, and provides a <code>QC</code> button to start a quality check: this will match all the text in the files, selected in the file select menu with all the terms.</p>
+<p>Glossary allows to search specific terms. Consistency checking itself now runs from the <a href="../text-editing/#linting">lint menu</a>'s "Global Check" button, alongside the other lints, rather than from a dedicated button here.</p>
+<p>Individual terms can be disabled without deleting them from the "Lints" menu (same place plugin/tag lints are toggled) - a disabled term is kept in the glossary but excluded from linting.</p>
 <p>Inflections are not supported.</p>
 <h3 id="termtranslation-settings">Term/translation settings</h3>
 <h4 id="mode">Mode</h4>
@@ -1061,18 +1098,6 @@
 <ul>
 <li>Edit: Glossary entries are uneditable by default.</li>
 <li>Remove: Remove the glossary entry.</li>
-<li>Match: Matches the text in the files, selected in the file select menu with the term.</li>
-</ul>
-<h2 id="match-menu">Match Menu</h2>
-<p>Results of the text matching are placed in a dedicated menu: match menu. You can access the menu using the button next to the glossary button.</p>
-<p>By default, match menu is docked to the bottom side of the screen. It can be undocked and made floating.</p>
-<h3 id="columns">Columns</h3>
-<ul>
-<li>File: the file of the matched result.</li>
-<li>Row: the row of the matched result.</li>
-<li>Term: shows the term, its occurrences, and translation occurrences.</li>
-<li>Result: shows the highlighted term in the text.</li>
-<li>Info: the info about the match (e.g. term is not present, translation is not present etc.).</li>
 </ul>
 
 
@@ -1136,7 +1161,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.action.edit", "content.action.view", "navigation.tabs", "navigation.tabs.sticky", "navigation.expand", "navigation.path", "navigation.top"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

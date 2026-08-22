@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/batch-processing/">
       
       
-        <link rel="prev" href="../text-editing/">
+        <link rel="prev" href="../search/">
       
       
-        <link rel="next" href="../settings/">
+        <link rel="next" href="../tasks/">
       
       
         
@@ -29,7 +29,7 @@
       
       
       <link rel="icon" href="../assets/rpgmtranslate-logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -37,7 +37,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -201,13 +201,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../search/" class="md-tabs__link">
+      <a href="../installation/" class="md-tabs__link">
         
   
   
     
   
-  Search Features
+  Installation
 
       </a>
     </li>
@@ -237,6 +237,25 @@
   
   
   
+  
+    <li class="md-tabs__item">
+      <a href="../search/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Search Features
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
     
   
   
@@ -248,6 +267,25 @@
     
   
   Batch Processing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tasks/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tasks
 
       </a>
     </li>
@@ -452,14 +490,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../search/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Search Features
+    Installation
   
 
     
@@ -487,6 +525,33 @@
     
   
     Text Editing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Search Features
   
 
     
@@ -566,10 +631,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#batch-menu" class="md-nav__link">
+  <a href="#translate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Batch Menu
+        Translate
       
     </span>
   </a>
@@ -577,10 +642,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#batch-action" class="md-nav__link">
+  <a href="#script" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Batch Action
+        Script
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom scripts
       
     </span>
   </a>
@@ -591,6 +667,33 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -784,10 +887,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#batch-menu" class="md-nav__link">
+  <a href="#translate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Batch Menu
+        Translate
       
     </span>
   </a>
@@ -795,10 +898,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#batch-action" class="md-nav__link">
+  <a href="#script" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Batch Action
+        Script
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom scripts
       
     </span>
   </a>
@@ -847,16 +961,34 @@
 
 
 <h1 id="batch-processing">Batch Processing</h1>
-<p>RPGMTranslate allows to easily apply some batch processing to the translation.</p>
-<h2 id="batch-menu">Batch Menu</h2>
-<p>Batch menu consists of batch action select, translation column select and file select menu.</p>
-<h2 id="batch-action">Batch Action</h2>
-<p>There are three batch actions:</p>
-<ol>
-<li>Trim - Removes leading and trailing whitespace from translation text.</li>
-<li>Translate - Translates source text and fills <strong>all</strong> the translation fields. If you don't want your translation overwritten, create a dedicated column for the machine transaltion.</li>
-<li>Wrap - Wraps translation text to the specified limit. This is the most dangerous tool, since it can make your translation display incorrectly, so <strong>use with caution</strong>.</li>
-</ol>
+<p>RPGMTranslate allows to easily apply some batch processing to the translation. Access it through the <img alt="" src="../assets/construction.svg" /> button.</p>
+<p>Pick which files to run on with the file-select menu, then choose an action:</p>
+<h2 id="translate">Translate</h2>
+<p>Runs machine translation (using your configured <a href="../settings/#translation">translation endpoint</a>) over the selected files' source text, writing the result into the chosen translation column.</p>
+<h2 id="script">Script</h2>
+<p>Runs a script over the selected files' text instead of translating it. Three scripts are built in:</p>
+<ul>
+<li><strong>Trim</strong> - trims whitespace from the text.</li>
+<li><strong>Wrap</strong> - wraps the text at a given character length. The "Use value from settings" button fills this in from the project's line length hint (see <a href="../settings/#project">Project settings</a>).</li>
+<li><strong>Latinize</strong> - transliterates the text into Latin characters.</li>
+</ul>
+<h2 id="custom-scripts">Custom scripts</h2>
+<p>You can write your own script instead, using JavaScript (powered by <a href="https://github.com/quickjs-ng/quickjs">quickjs-ng</a>). Custom scripts are saved to the <code>scripts</code> directory alongside the application, so they persist across sessions and are easy to share.</p>
+<p>A script must define a function:</p>
+<pre><code class="language-js">function rpgmLineCallback(sourceText, translations, filename, lineNumber, options) {
+    // ...
+    return translations;
+}
+</code></pre>
+<p>It's called once per translatable line:</p>
+<ul>
+<li><code>sourceText</code> - the line's source text.</li>
+<li><code>translations</code> - an array with the line's existing translation column(s).</li>
+<li><code>filename</code> - the file the line belongs to.</li>
+<li><code>lineNumber</code> - the line's index within that file.</li>
+<li><code>options</code> - <code>{ action, columnIndex, ... }</code>; <code>action</code> is <code>"trim"</code>/<code>"wrap"</code>/<code>"latinize"</code>/<code>"custom"</code>, <code>columnIndex</code> is the translation column being written to, and <code>trimLeading</code>/<code>trimTrailing</code> (for trim) or <code>wrapLength</code> (for wrap) carry the built-in scripts' settings.</li>
+</ul>
+<p>Return an array of strings to overwrite the translation column(s) - array element <code>i</code> maps to <code>translations[i]</code>. Returning <code>undefined</code>/<code>null</code> for an element (or a shorter array) leaves that column unchanged.</p>
 
 
 
@@ -919,7 +1051,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.action.edit", "content.action.view", "navigation.tabs", "navigation.tabs.sticky", "navigation.expand", "navigation.path", "navigation.top"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
