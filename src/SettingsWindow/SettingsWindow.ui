@@ -1992,12 +1992,6 @@
                    <property name="selectionMode">
                     <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
                    </property>
-                   <property name="keyboardSearchFlags">
-                    <set>Qt::MatchFlag::MatchExactly</set>
-                   </property>
-                   <property name="supportedDragActions">
-                    <set>Qt::DropAction::IgnoreAction</set>
-                   </property>
                    <attribute name="horizontalHeaderHighlightSections">
                     <bool>false</bool>
                    </attribute>
@@ -2063,12 +2057,6 @@
                    </property>
                    <property name="selectionMode">
                     <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
-                   </property>
-                   <property name="keyboardSearchFlags">
-                    <set>Qt::MatchFlag::MatchExactly</set>
-                   </property>
-                   <property name="supportedDragActions">
-                    <set>Qt::DropAction::IgnoreAction</set>
                    </property>
                    <attribute name="horizontalHeaderHighlightSections">
                     <bool>false</bool>
@@ -2136,12 +2124,6 @@
                    <property name="selectionMode">
                     <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
                    </property>
-                   <property name="keyboardSearchFlags">
-                    <set>Qt::MatchFlag::MatchExactly</set>
-                   </property>
-                   <property name="supportedDragActions">
-                    <set>Qt::DropAction::IgnoreAction</set>
-                   </property>
                    <attribute name="horizontalHeaderHighlightSections">
                     <bool>false</bool>
                    </attribute>
@@ -2207,12 +2189,6 @@
                    </property>
                    <property name="selectionMode">
                     <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
-                   </property>
-                   <property name="keyboardSearchFlags">
-                    <set>Qt::MatchFlag::MatchExactly</set>
-                   </property>
-                   <property name="supportedDragActions">
-                    <set>Qt::DropAction::IgnoreAction</set>
                    </property>
                    <attribute name="horizontalHeaderHighlightSections">
                     <bool>false</bool>
@@ -2282,12 +2258,6 @@
                    </property>
                    <property name="selectionBehavior">
                     <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
-                   </property>
-                   <property name="keyboardSearchFlags">
-                    <set>Qt::MatchFlag::MatchExactly</set>
-                   </property>
-                   <property name="supportedDragActions">
-                    <set>Qt::DropAction::IgnoreAction</set>
                    </property>
                    <attribute name="horizontalHeaderHighlightSections">
                     <bool>false</bool>
@@ -2487,9 +2457,6 @@
                 </property>
                 <property name="gridStyle">
                  <enum>Qt::PenStyle::SolidLine</enum>
-                </property>
-                <property name="supportedDragActions">
-                 <set>Qt::DropAction::IgnoreAction</set>
                 </property>
                 <column>
                  <property name="text">

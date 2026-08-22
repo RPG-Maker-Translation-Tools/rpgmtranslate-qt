@@ -4,6 +4,7 @@
 #include "ProjectSettings.hpp"
 #include "Utils.hpp"
 #include "magic_enum.hpp"
+#include "miniaudio.h"
 #include "nuspell-version.h"
 #include "ui_AboutWindow.h"
 #include "version.h"
@@ -30,45 +31,68 @@ extern "C" {
 #endif
 
 namespace {
-constexpr auto widen(const string_view view) -> wstring {
-    wstring str;
-    str.reserve(view.size());
-    for (const unsigned char chr : view) {
-        str.push_back(scast<wchar>(chr));
+constexpr QChar LINE_SEPARATOR = u'\u2028';
+
+// std::format has no hex specifier we can use here without pulling QString through an
+// intermediate wstring, so this is a small local formatter instead.
+[[nodiscard]] auto toHex(const u32 value) -> QString {
+    static constexpr char16_t DIGITS[] = u"0123456789abcdef";
+
+    QString out;
+    bool started = false;
+
+    for (i32 shift = 28; shift >= 0; shift -= 4) {
+        const u32 nibble = (value >> shift) & 0xFU;
+
+        if (nibble != 0) {
+            started = true;
+        }
+
+        if (started) {
+            out += DIGITS[nibble];
+        }
     }
-    return str;
+
+    if (out.isEmpty()) {
+        out += u'0';
+    }
+
+    return out;
 }
 
-inline auto produceBuildInfo() -> wstring {
-    static constexpr wchar LINE_SEPARATOR = L'\u2028';
-    wstring out;
+[[nodiscard]] auto produceBuildInfo() -> QString {
+    QString out;
 
 #ifdef __clang__
-    out += format(L"Compiler: Clang {}{}", widen(__clang_version__), LINE_SEPARATOR);
+    out += u"Compiler: Clang "_qsv % QL1SV(__clang_version__) % LINE_SEPARATOR;
 #elifdef __INTEL_LLVM_COMPILER
-    out += format(L"Compiler: Intel LLVM {}{}", __INTEL_LLVM_COMPILER, LS);
+    out += u"Compiler: Intel LLVM "_qsv % itos(__INTEL_LLVM_COMPILER).qsv() % LINE_SEPARATOR;
 #elifdef __GNUC__
-    out += format(L"Compiler: GCC {}{}", widen(__VERSION__), LS);
+    out += u"Compiler: GCC "_qsv % QL1SV(__VERSION__) % LINE_SEPARATOR;
 #elifdef _MSC_VER
-    out += format(L"Compiler: MSVC {} (toolset {}){}", _MSC_FULL_VER, _MSC_VER, LS);
+    out += u"Compiler: MSVC "_qsv % itos(_MSC_FULL_VER).qsv() % u" (toolset "_qsv % itos(_MSC_VER).qsv()
+        % u")"_qsv % LINE_SEPARATOR;
 #endif
 
 #ifdef _LIBCPP_VERSION
-    out += format(L"STL: libc++ {}{}", _LIBCPP_VERSION, LS);
+    out += u"STL: libc++ "_qsv % itos(_LIBCPP_VERSION).qsv() % LINE_SEPARATOR;
 #elifdef __GLIBCXX__
-    out += format(L"STL: libstdc++ (date {}){}", __GLIBCXX__, LS);
+    out += u"STL: libstdc++ (date "_qsv % itos(__GLIBCXX__).qsv() % u")"_qsv % LINE_SEPARATOR;
 #elifdef _MSVC_STL_VERSION
-    out += format(L"STL: MSVC STL {} update {}{}", _MSVC_STL_VERSION, _MSVC_STL_UPDATE, LINE_SEPARATOR);
+    out += u"STL: MSVC STL "_qsv % itos(_MSVC_STL_VERSION).qsv() % u" update "_qsv % itos(_MSVC_STL_UPDATE).qsv()
+        % LINE_SEPARATOR;
 #endif
 
 #ifdef _WIN32
-    out += format(L"Windows SDK: NTDDI {:x}, build {}{}", NTDDI_VERSION, VER_PRODUCTBUILD, LINE_SEPARATOR);
+    out += u"Windows SDK: NTDDI "_qsv % toHex(NTDDI_VERSION) % u", build "_qsv % itos(VER_PRODUCTBUILD).qsv()
+        % LINE_SEPARATOR;
 #ifdef WDK_NTDDI_VERSION
-    out += format(L"WDK target: NTDDI {:x}{}", WDK_NTDDI_VERSION, LINE_SEPARATOR);
+    out += u"WDK target: NTDDI "_qsv % toHex(WDK_NTDDI_VERSION) % LINE_SEPARATOR;
 #endif
 #endif
 
-    out += format(L"Built: {} {}{}", widen(__DATE__), widen(__TIME__), LINE_SEPARATOR);
+    out += u"Built: "_qsv % QL1SV(__DATE__) % u' ' % QL1SV(__TIME__) % LINE_SEPARATOR;
+
     return out;
 }
 

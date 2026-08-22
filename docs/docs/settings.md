@@ -135,6 +135,18 @@ RPGMTranslate doesn't ship spellcheck dictionaries - drop `.aff`/`.dic` files in
 
 CJK isn't supported yet.
 
+### CJK text matching
+
+Japanese, Chinese, and Korean [CAT matching](#project) needs word-boundary dictionaries (there's no whitespace between words in these languages), and RPGMTranslate doesn't ship them either - they're multi-hundred-megabyte files that would otherwise bloat every install. Grab the matching archive from [Lindera's releases page](https://github.com/lindera/lindera/releases) and unzip it, than move the files from the unpacked folder (`dict.trie`, `dict.words`, `metadata.json`, etc.) into `APPLICATION_DIR/lindera-dictionaries/<language>`, so `dict.trie` and friends sit directly inside it. They're picked up automatically the next time that language is used - no rebuild or restart needed beyond that:
+
+| Language | Folder | Archive to download |
+| --- | --- | --- |
+| Japanese | `lindera-dictionaries/japanese` | `lindera-ipadic-neologd-*.zip` (best matching quality) or `lindera-ipadic-*.zip` (smaller) |
+| Chinese | `lindera-dictionaries/chinese` | `lindera-cc-cedict-*.zip` |
+| Korean | `lindera-dictionaries/korean` | `lindera-ko-dic-*.zip` |
+
+If a language's folder is missing, empty, or its files ended up nested inside an extra subfolder, matching for that language fails with an error instead of silently falling back to something else.
+
 ### Context
 
 Free-form text supplied to LLM endpoints when translating:

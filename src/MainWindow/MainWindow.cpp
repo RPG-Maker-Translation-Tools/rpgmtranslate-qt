@@ -102,6 +102,7 @@ MainWindow::MainWindow(QWidget* const parent) :
     ui->searchPanelButton->setDefaultAction(actionSearchPanel);
 
     init_rust_logger(&FFILogger::rustLogCallback);
+    init_lindera_dictionaries(strtoffi(qApp->property("data-location").toString().toUtf8()));
 
 #ifdef ENABLE_LIBGIT2
     ui->sourceControlDock->init(*ui);

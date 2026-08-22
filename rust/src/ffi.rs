@@ -13,7 +13,7 @@ use std::{
     io::{Cursor, Read},
     mem,
     ops::Deref,
-    path::Path,
+    path::{Path, PathBuf},
     ptr, slice,
     sync::{LazyLock, OnceLock},
 };
@@ -931,6 +931,21 @@ pub extern "C" fn init_rust_logger(callback: LogCallback) {
     log::set_max_level(log::LevelFilter::Trace);
 
     log::info!("Rust FFI initialized");
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn init_lindera_dictionaries(data_root: FFIString) {
+    let data_root = unsafe { ffi_to_str(data_root) };
+    let base = Path::new(data_root).join("lindera-dictionaries");
+
+    let existing_dir = |language: &str| -> Option<PathBuf> {
+        let path = base.join(language);
+        path.is_dir().then_some(path)
+    };
+
+    language_tokenizer::set_dictionary_path(Algorithm::Japanese, existing_dir("japanese"));
+    language_tokenizer::set_dictionary_path(Algorithm::Chinese, existing_dir("chinese"));
+    language_tokenizer::set_dictionary_path(Algorithm::Korean, existing_dir("korean"));
 }
 
 #[unsafe(no_mangle)]

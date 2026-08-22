@@ -473,7 +473,7 @@ void MainWindow::initializeSettings() {
             settings = make_shared<Settings>(std::move(tSettings.value()));
         } else {
             qWarning().noquote() << u"Parsing settings.json failed: %1"_qsv.arg(
-                glz::format_error(tSettings.error(), string_view(json.data(), json.size()))
+                svtostr(QUtf8SV(glz::format_error(tSettings.error(), string_view(json.data(), json.size())).data()))
             );
             settings = make_shared<Settings>();
         }

@@ -430,6 +430,10 @@ if (ENABLE_RUBY_FORMATTING)
     list(APPEND RUST_FEATURES "ruby-formatting")
 endif()
 
+if (ENABLE_MIMALLOC)
+    list(APPEND RUST_FEATURES "mimalloc")
+endif()
+
 corrosion_import_crate(
     MANIFEST_PATH "${RUST_CRATE_DIR}/Cargo.toml"
     FEATURES ${RUST_FEATURES}

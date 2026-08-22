@@ -323,7 +323,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                 projectSettings = make_shared<ProjectSettings>(std::move(projSettings.value()));
             } else {
                 qWarning().noquote() << u"Parsing project-settings.json failed: %1"_qsv.arg(
-                    glz::format_error(projSettings.error(), string_view(json.data(), json.size()))
+                    svtostr(QUtf8SV(glz::format_error(projSettings.error(), string_view(json.data(), json.size()))))
                 );
                 //! Could use improper settings, if application aborted (because
                 //! of crash, power outage etc.).
@@ -552,7 +552,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                     glossaryMenu->fill(result.value());
                 } else {
                     qWarning().noquote() << u"Parsing glossary.json failed: %1"_qsv.arg(
-                        glz::format_error(result.error(), string_view(json.data(), json.size()))
+                        svtostr(QUtf8SV(glz::format_error(result.error(), string_view(json.data(), json.size()))))
                     );
                 }
             } else {

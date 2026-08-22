@@ -101,14 +101,15 @@ local LIBRARY_LIST = {
         spdx = "LGPL-2.1-only",
         notes = { "The copy of FFmpeg linked is built with only built-in decoders and simple filters also licensed under LGPLv2.1." }
     },
-    { name = "freetype", spdx = "FTL" },
-    { name = "harfbuzz", spdx = "LicenseRef-HarfBuzz-Old-MIT" },
+    { name = "freetype",          spdx = "FTL" },
+    { name = "glaze",             spdx = "MIT" },
+    { name = "harfbuzz",          spdx = "LicenseRef-HarfBuzz-Old-MIT" },
     {
         name = "icu",
         spdx = "Unicode-3.0",
         notes = { "LICENSE.txt also bundles licenses for embedded third-party data (e.g. TaBE); those apply only to that data, not to ICU itself." }
     },
-    { name = "jeaiii-itoa", spdx = "MIT", vendored = true },
+    { name = "jeaiii-itoa", spdx = "MIT",         vendored = true },
     {
         name = "libarchive",
         spdx = "BSD-2-Clause",
@@ -124,16 +125,16 @@ local LIBRARY_LIST = {
         spdx = "IJG AND BSD-3-Clause",
         notes = { "The project relies on static linking terms, which also require us to say that this software is based in part on the work of the Independent JPEG Group. IJG README file is included (README.ijg)." }
     },
-    { name = "liblzma", spdx = "0BSD" },
-    { name = "libpng",  spdx = "libpng-2.0" },
-    { name = "libwebp", spdx = "BSD-3-Clause" },
+    { name = "liblzma",     spdx = "0BSD" },
+    { name = "libpng",      spdx = "libpng-2.0" },
+    { name = "libwebp",     spdx = "BSD-3-Clause" },
     {
         name = "lua",
         spdx = "MIT",
         notes = { "Build-time only: lua.exe drives configure.lua, prepare-headers.lua and this script. Not linked, not shipped." }
     },
-    { name = "magic_enum",             spdx = "MIT", vendored = true },
-    { name = "material-design-icons",  spdx = "Apache-2.0" },
+    { name = "magic_enum",            spdx = "MIT",       vendored = true },
+    { name = "material-design-icons", spdx = "Apache-2.0" },
     {
         name = "miniaudio",
         spdx = "Unlicense",

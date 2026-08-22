@@ -145,7 +145,8 @@ void BookmarkListDelegate::paint(
     const Bookmark& bookmark = src->bookmark(sourceRow);
 
     const QString& title = bookmark.description;
-    const QString subtitle = tr("Row %1 / File %2").arg(itos(bookmark.row + 1).qsv(), bookmark.filename.data());
+    const QString subtitle =
+        tr("Row %1 / File %2").arg(itos(bookmark.row + 1).qsv(), svtostr(QUtf8SV(bookmark.filename.data())));
 
     painter->save();
     painter->setClipRect(opt.rect);

@@ -4,18 +4,15 @@
 # We set locale to UTF-8 to avoid any problems related to the locale.
 # We build with Ninja - it's faster, and every stage now uses it consistently.
 # We install curl to get rustup and cargo-binstall.
-# We install a fixed, 1.91 Rust toolchain.
 # We use pkgconf instead of pkg-config where the distro offers a choice - lighter and faster.
 # We install libssl-dev because some Rust dependencies want it.
 # libunwind-dev is required on Alpine because Rust wants it.
-# quickjs-ng and glaze aren't packaged everywhere yet:
-#   - Debian only has libqjs-dev/libglaze-dev via trixie-backports, not plain trixie.
-#   - openSUSE Tumbleweed has glaze-devel, but not quickjs-ng - built from source there.
-#   - Ubuntu 24.04 (noble) has neither - both built from source in that stage.
-# As of Nuspell's latest release it no longer depends on ICU's data component directly, so we pull
-# in ICU ourselves for CMakeLists.txt's own `find_package(ICU REQUIRED COMPONENTS data)`.
-# The bundled `lua` binary (not a distro package - see docs/docs/development.md) drives configure.lua
-# and needs its execute bit restored after `COPY`, since git doesn't preserve it reliably cross-platform.
+#
+# Debian's libgit2-dev also ships a broken libgit2Targets.cmake whose
+# INTERFACE_INCLUDE_DIRECTORIES points at .../include/git2 instead of its parent - that
+# shadows real system headers with git2's bundled MSVC-only compat shims (e.g. stdint.h,
+# a silent no-op under GCC/Clang) for anything included via <stdint.h> etc. afterward.
+# cmake/FindLibgit2.cmake strips the stray /git2 suffix before wrapping the target.
 #
 # Every package manager and the cargo registry download into a BuildKit cache mount, so a rebuild
 # after a source change does not refetch hundreds of MiB of packages and the whole crates.io graph.
@@ -30,13 +27,13 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN rm -f /etc/apt/apt.conf.d/docker-clean \
     && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
-# libqjs-dev (quickjs-ng) and libglaze-dev only exist in trixie-backports, not plain trixie
+# libqjs-dev (quickjs-ng) and libglaze-dev only exist in trixie-backports
 RUN echo 'deb http://deb.debian.org/debian trixie-backports main' > /etc/apt/sources.list.d/backports.list
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt update && apt install -y \
-    git cmake ninja-build g++ clang pkgconf ca-certificates locales curl \
+    git make cmake ninja-build g++ libclang1-19 libclang-common-19-dev pkgconf ca-certificates locales curl \
     libssl-dev libkrb5-dev \
     qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-wayland-dev \
     qt6-l10n-tools qt6-svg-dev \
@@ -63,7 +60,7 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    ./lua configure.lua -B=build -G=Ninja \
+    ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j
 
 # OpenSUSE
@@ -74,19 +71,25 @@ ARG REPO_URL
 RUN --mount=type=cache,target=/var/cache/zypp,sharing=locked \
     zypper --non-interactive modifyrepo --keep-packages --all \
     && zypper refresh && zypper install -y \
-    git cmake ninja gcc-c++ clang curl glibc-locale pkgconf \
+    git make cmake ninja gcc-c++ clang-devel curl glibc-locale pkgconf \
     libopenssl-devel libssh2-devel \
     qt6-base-devel qt6-linguist-devel qt6-tools-devel qt6-svg-devel qt6-wayland-devel \
     libarchive-devel libgit2-devel nuspell nuspell-devel ffmpeg ffmpeg-devel libavcodec-devel libavformat-devel libavutil-devel libswscale-devel libswresample-devel libavfilter-devel \
-    glaze-devel quickjs-ng-devel xz-devel libicu-devel
+    glaze-devel xz-devel libicu-devel
 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
+# Tumbleweed's repos only carry the original quickjs (quickjs-devel)
+RUN git clone --depth 1 --branch v0.16.2 https://github.com/quickjs-ng/quickjs.git /tmp/quickjs-ng \
+    && cmake -G=Ninja -B /tmp/quickjs-ng/build -S /tmp/quickjs-ng -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build /tmp/quickjs-ng/build -j \
+    && cmake --install /tmp/quickjs-ng/build \
+    && rm -rf /tmp/quickjs-ng
+
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.91
-ENV PATH="/root/.cargo/bin:${PATH}" \
-    RUSTFLAGS="-C target-feature=+aes,+sse2"
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
@@ -99,7 +102,7 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    ./lua configure.lua -B=build -G=Ninja \
+    ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j
 
 FROM ubuntu:24.04 AS appimage-build
@@ -115,7 +118,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && apt-get install -y software-properties-common \
     && add-apt-repository universe && apt-get update \
     && apt-get install -y \
-    git cmake ninja-build g++-14 clang pkgconf ca-certificates locales curl wget \
+    git make cmake ninja-build libc6-dev dpkg-dev gcc-14 g++-14 libclang1-18 libclang-common-18-dev pkgconf ca-certificates locales curl wget \
     python3-pip \
     # same app deps as your Debian stage
     libssl-dev libkrb5-dev \
@@ -147,13 +150,13 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
 # Neither quickjs-ng nor glaze is packaged for 24.04 - build and install both from source
-RUN git clone --depth 1 --branch v0.15.1 https://github.com/quickjs-ng/quickjs.git /tmp/quickjs-ng \
-    && cmake -B /tmp/quickjs-ng/build -S /tmp/quickjs-ng -DCMAKE_BUILD_TYPE=Release \
+RUN git clone --depth 1 --branch v0.16.2 https://github.com/quickjs-ng/quickjs.git /tmp/quickjs-ng \
+    && cmake -G=Ninja -B /tmp/quickjs-ng/build -S /tmp/quickjs-ng -DCMAKE_BUILD_TYPE=Release \
     && cmake --build /tmp/quickjs-ng/build -j \
     && cmake --install /tmp/quickjs-ng/build \
     && rm -rf /tmp/quickjs-ng \
-    && git clone --depth 1 --branch v7.9.1 https://github.com/stephenberry/glaze.git /tmp/glaze \
-    && cmake -B /tmp/glaze/build -S /tmp/glaze -DCMAKE_BUILD_TYPE=Release -Dglaze_BUILD_EXAMPLES=OFF \
+    && git clone --depth 1 --branch v8.0.0 https://github.com/stephenberry/glaze.git /tmp/glaze \
+    && cmake -G=Ninja -B /tmp/glaze/build -S /tmp/glaze -DCMAKE_BUILD_TYPE=Release -Dglaze_BUILD_EXAMPLES=OFF \
     && cmake --install /tmp/glaze/build \
     && rm -rf /tmp/glaze
 
@@ -204,7 +207,7 @@ RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
     CMAKE_PREFIX_PATH=/opt/Qt/6.8.2/gcc_64 \
     Qt6_DIR=/opt/Qt/6.8.2/gcc_64/lib/cmake/Qt6 \
-    ./lua configure.lua -G=Ninja ENABLE_ASSET_PLAYBACK=OFF \
+    ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release ENABLE_ASSET_PLAYBACK=OFF \
     && cmake --build build -j
 
 ARG APP_NAME=rpgmtranslate
@@ -227,7 +230,7 @@ RUN sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 10/' /etc/pacman.conf
 
 RUN --mount=type=cache,target=/var/cache/pacman/pkg,sharing=locked \
     pacman -Syu --noconfirm --needed \
-    git cmake ninja gcc clang pkgconf openssl glibc curl \
+    git make cmake ninja gcc clang pkgconf openssl glibc curl \
     qt6-base qt6-tools qt6-svg qt6-wayland \
     libarchive libgit2 nuspell ffmpeg \
     quickjs-ng glaze icu xz \
@@ -251,7 +254,7 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    ./lua configure.lua -B=build -G=Ninja \
+    ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j
 
 # Alpine
@@ -259,7 +262,7 @@ FROM alpine:latest AS alpine-build
 
 RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
     apk update && apk add --cache-dir /var/cache/apk \
-    git cmake samurai g++ clang bash musl-locales musl-locales-lang curl pkgconf \
+    git make cmake samurai g++ clang21-libclang clang21-headers bash musl-locales musl-locales-lang curl pkgconf \
     libunwind-dev openssl-dev \
     qt6-qtbase-dev qt6-qttools-dev qt6-qtsvg-dev qt6-qtwayland-dev \
     libarchive-dev libgit2-dev nuspell-dev ffmpeg-dev \
@@ -283,5 +286,5 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    ./lua configure.lua -B=build -G=Ninja \
+    ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j

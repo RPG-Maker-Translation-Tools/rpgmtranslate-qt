@@ -16,3 +16,9 @@
 /*.tar.xz
 /*.tar.gz
 /*.zip
+/*.md
+/.clang-format
+/.clang-tidy
+/.gitignore
+/Dockerfile
+/lua.exe

@@ -80,6 +80,8 @@ struct ProjectSettings {
                 return u"rxdata";
                 break;
         }
+
+        std::unreachable();
     }
 
     [[nodiscard]] auto programDataPath() const -> QString { return projectPath + PROGRAM_DATA_DIRECTORY; }

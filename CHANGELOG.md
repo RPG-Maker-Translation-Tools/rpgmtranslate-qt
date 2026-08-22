@@ -76,6 +76,7 @@ Versions may carry a codename alongside the semver number.
 - Default application JS scripts can now be found in `scripts` directory.
 - Replaced the hand-rolled tree-sitter highlighting pipeline (manual token buffers, incremental `QSyntaxHighlighter`, per-token color mapping) with [lumis](https://github.com/leandrocp/lumis): the Rust side now hands back HTML directly, and the asset inspector's code viewer just loads it.
 - Fixed a long-standing typo in the CMake option for JS syntax highlighting that meant it was never actually being enabled, regardless of its cached value.
+- Windows releases now use `mimalloc` as the default allocator.
 
 ### Planned
 
