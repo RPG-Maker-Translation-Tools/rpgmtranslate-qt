@@ -17,25 +17,19 @@ class SearchMenu final : public PersistentMenu {
     Q_OBJECT
 
    public:
-    enum class Action : u8 {
-        Search,
-        Replace,
-        Put,
-    };
-
     explicit SearchMenu(QWidget* parent = nullptr);
     ~SearchMenu() override;
 
     void clear();
-    void setFiles(const vector<TabListItem>& files);
+    void init(const vector<TabListItem>& files);
     void addColumn(const QString& name);
-    void renameColumn(u8 index, const QString& name);
+    void renameColumn(i32 index, const QString& name);
     [[nodiscard]] auto replaceText() const -> QString;
 
    signals:
     void actionRequested(
         Selected selected,
-        Action action,
+        SearchAction action,
         const QString& searchText,
         const QString& replaceText,
         SearchLocation searchLocation,

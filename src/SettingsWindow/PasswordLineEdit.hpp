@@ -25,12 +25,7 @@ class PasswordLineEdit final : public UnfocusLineEdit {
 
         addAction(toggleAction, QLineEdit::TrailingPosition);
 
-        connect(
-            toggleAction,
-            &QAction::toggled,
-            this,
-            &PasswordLineEdit::onToggled
-        );
+        connect(toggleAction, &QAction::toggled, this, &PasswordLineEdit::onToggled);
     }
 
    private:

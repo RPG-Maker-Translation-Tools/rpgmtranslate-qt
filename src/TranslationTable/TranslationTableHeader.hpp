@@ -14,11 +14,7 @@ class TranslationTableHeader final : public QHeaderView {
     void addButtonClicked();
 
    protected:
-    void paintSection(
-        QPainter* painter,
-        const QRect& rect,
-        i32 logicalIndex
-    ) const override;
+    void paintSection(QPainter* painter, const QRect& rect, i32 logicalIndex) const override;
     void paintEvent(QPaintEvent* event) override;
 
     void mousePressEvent(QMouseEvent* event) override;

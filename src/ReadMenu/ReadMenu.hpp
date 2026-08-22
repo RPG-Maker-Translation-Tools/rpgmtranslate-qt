@@ -2,7 +2,7 @@
 
 #include "Aliases.hpp"
 #include "FWD.hpp"
-#include "rpgmtranslate.h"
+#include "rpgmtranslate_rs.h"
 
 #include <QDialog>
 #include <QEventLoop>
@@ -12,7 +12,7 @@
 QT_BEGIN_NAMESPACE
 
 namespace Ui {
-    class ReadMenu;
+class ReadMenu;
 }  // namespace Ui
 
 QT_END_NAMESPACE
@@ -25,7 +25,7 @@ class ReadMenu final : public QWidget {
     ~ReadMenu() override;
 
     void clear();
-    void setFiles(const vector<TabListItem>& files);
+    void init(const vector<TabListItem>& files);
 
     [[nodiscard]] auto parseMapEvents() const -> bool;
     [[nodiscard]] auto readMode() const -> ReadMode;
@@ -36,8 +36,7 @@ class ReadMenu final : public QWidget {
 
     void init(const shared_ptr<ProjectSettings>& settings);
 
-    auto exec(const QString& projectPath, EngineType engineType)
-        -> QDialog::DialogCode;
+    auto exec(const QString& projectPath, EngineType engineType) -> QDialog::DialogCode;
 
    signals:
     void accepted();

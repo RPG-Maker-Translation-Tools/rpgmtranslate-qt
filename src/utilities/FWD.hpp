@@ -46,7 +46,13 @@ class QStandardItemModel;
 class QGridLayout;
 class QPlainTextEdit;
 class QTableWidget;
+class QModelIndex;
 class QGraphicsScene;
+class QTextDocument;
+class QGroupBox;
+class QPixmap;
+class QTabWidget;
+using QRgb = unsigned int;
 
 class AboutWindow;
 
@@ -55,7 +61,6 @@ class AssetPreviewWidget;
 class CodeViewer;
 class GraphicsAssetViewer;
 class MediaPlayer;
-class TreeSitterHighlighter;
 class LineNumberArea;
 
 class AutoUpdater;
@@ -72,12 +77,12 @@ class FileSelectMenu;
 
 struct MatchModeInfo;
 struct Term;
-struct Glossary;
 class GlossaryMenu;
 
 class MainWindow;
 
-class MatchMenu;
+class LintMenu;
+class LintSelectMenu;
 
 class PersistentMenu;
 
@@ -91,17 +96,19 @@ class SearchMenu;
 
 class SearchPanelDock;
 
+class SerdeMenu;
+
 struct ColumnInfo;
-class ProjectSettings;
-class TranslationSettings;
-class AppearanceSettings;
-class ControlSettings;
-class CoreSettings;
-class Settings;
+struct ProjectSettings;
+struct TranslationSettings;
+struct AppearanceSettings;
+struct ControlSettings;
+struct CoreSettings;
+struct Settings;
 
 class SettingsWindow;
 
-class GitChangesList;
+class GitFileList;
 class GitCommitList;
 class SourceControlDock;
 
@@ -111,6 +118,7 @@ class TabListDelegate;
 class TabList;
 class TabPanel;
 
+class TaskPanel;
 class TaskWorker;
 
 class TranslationsMenu;
@@ -119,6 +127,8 @@ class TranslationTable;
 class TranslationTableModel;
 class TranslationTableHeader;
 class TranslationTableDelegate;
+class TranslationInput;
+class TranslationHighlighter;
 
 struct FFIString;
 struct ByteBuffer;
@@ -136,8 +146,10 @@ class BookmarkListModel;
 class BookmarkProxy;
 class BookmarkList;
 
-class MatchTable;
-class MatchTableModel;
+class LintTable;
+class LintTableModel;
 class MatchTableDelegate;
 
 class WriteMenu;
+
+struct RemovedRowInfo;

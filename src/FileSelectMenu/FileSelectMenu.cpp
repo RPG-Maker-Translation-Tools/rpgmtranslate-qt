@@ -7,21 +7,19 @@
 #include <QCheckBox>
 #include <QMouseEvent>
 
-FileSelectMenu::FileSelectMenu(QWidget* const parent) :
-    PersistentMenu(parent, Qt::FramelessWindowHint),
-    ui(setupUi()) {
+FileSelectMenu::FileSelectMenu(QWidget* const parent) : PersistentMenu(parent), ui(setupUi()) {
     installEventFilter(this);
 
     connect(ui->selectAllButton, &QPushButton::pressed, this, [this] -> void {
         for (auto* const widget : views::drop(ui->gridWidget->children(), 1)) {
-            auto* const checkbox = as<QCheckBox*>(widget);
+            auto* const checkbox = scast<QCheckBox*>(widget);
             checkbox->setChecked(true);
         }
     });
 
     connect(ui->deselectAllButton, &QPushButton::pressed, this, [this] -> void {
         for (auto* const widget : views::drop(ui->gridWidget->children(), 1)) {
-            auto* const checkbox = as<QCheckBox*>(widget);
+            auto* const checkbox = scast<QCheckBox*>(widget);
             checkbox->setChecked(false);
         }
     });
@@ -31,7 +29,7 @@ FileSelectMenu::~FileSelectMenu() {
     delete ui;
 }
 
-void FileSelectMenu::setFiles(const vector<TabListItem>& files) {
+void FileSelectMenu::init(const vector<TabListItem>& files) {
     for (const auto& file : files) {
         addFile(file.name);
     }
@@ -58,9 +56,9 @@ void FileSelectMenu::addFile(const QString& filename, const bool checked) {
     checkbox->installEventFilter(this);
     checkbox->setFocusPolicy(Qt::NoFocus);
 
-    const u16 index = ui->gridLayout->count();
-    const u16 row = index / 3;
-    const u8 col = index % 3;
+    const i32 index = ui->gridLayout->count();
+    const i32 row = index / 3;
+    const i32 col = index % 3;
 
     ui->gridLayout->addWidget(checkbox, row, col);
 }
@@ -76,38 +74,37 @@ auto FileSelectMenu::selected(const bool skipped) -> Selected {
     Selected selected;
 
     for (const auto idx : range(0, ui->gridLayout->count())) {
-        const auto* const checkbox =
-            as<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
+        const auto* const checkbox = scast<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
 
         if (checkbox->isChecked() ^ skipped) {
             const QString file = checkbox->text();
 
-            if (file == "actors"_L1) {
+            if (file == u"actors"_qsv) {
                 selected.flags |= FileFlags_Actors;
-            } else if (file == "armors"_L1) {
+            } else if (file == u"armors"_qsv) {
                 selected.flags |= FileFlags_Armors;
-            } else if (file == "classes"_L1) {
+            } else if (file == u"classes"_qsv) {
                 selected.flags |= FileFlags_Classes;
-            } else if (file == "commonevents"_L1) {
+            } else if (file == u"commonevents"_qsv) {
                 selected.flags |= FileFlags_CommonEvents;
-            } else if (file == "enemies"_L1) {
+            } else if (file == u"enemies"_qsv) {
                 selected.flags |= FileFlags_Enemies;
-            } else if (file == "items"_L1) {
+            } else if (file == u"items"_qsv) {
                 selected.flags |= FileFlags_Items;
-            } else if (file == "skills"_L1) {
+            } else if (file == u"skills"_qsv) {
                 selected.flags |= FileFlags_Skills;
-            } else if (file == "states"_L1) {
+            } else if (file == u"states"_qsv) {
                 selected.flags |= FileFlags_States;
-            } else if (file == "troops"_L1) {
+            } else if (file == u"troops"_qsv) {
                 selected.flags |= FileFlags_Troops;
-            } else if (file == "weapons"_L1) {
+            } else if (file == u"weapons"_qsv) {
                 selected.flags |= FileFlags_Weapons;
-            } else if (file == "system"_L1) {
+            } else if (file == u"system"_qsv) {
                 selected.flags |= FileFlags_System;
-            } else if (file == "scripts"_L1) {
+            } else if (file == u"scripts"_qsv) {
                 selected.flags |= FileFlags_Scripts;
-            } else if (file.startsWith("map"_L1)) {
-                const u16 index = QStringView(file).sliced(3).toUInt();
+            } else if (file.startsWith(u"map"_qsv)) {
+                const u16 index = stoa<u16>(QStringView(file).sliced(3));
                 selected.validIndices[index] = true;
                 selected.mapIndices[selected.mapCount++] = true;
             }
@@ -121,8 +118,7 @@ auto FileSelectMenu::selectedCount() const -> u16 {
     u16 count = 0;
 
     for (const auto idx : range(0, ui->gridLayout->count())) {
-        const auto* const checkbox =
-            as<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
+        const auto* const checkbox = scast<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
 
         if (checkbox->isChecked()) {
             count++;
@@ -136,14 +132,13 @@ auto FileSelectMenu::empty() const -> bool {
     return ui->gridLayout->count() == 0;
 }
 
-auto FileSelectMenu::eventFilter(QObject* const obj, QEvent* const event)
-    -> bool {
+auto FileSelectMenu::eventFilter(QObject* const obj, QEvent* const event) -> bool {
     auto* const checkbox = qobject_cast<QCheckBox*>(obj);
 
     if (checkbox != nullptr) {
         switch (event->type()) {
             case QEvent::MouseButtonPress: {
-                const auto* const mouseEvent = as<const QMouseEvent*>(event);
+                const auto* const mouseEvent = scast<const QMouseEvent*>(event);
 
                 if (mouseEvent->button() == Qt::LeftButton) {
                     leftButtonDown = true;
@@ -161,20 +156,18 @@ auto FileSelectMenu::eventFilter(QObject* const obj, QEvent* const event)
     }
 
     if (obj == this && event->type() == QEvent::MouseMove && leftButtonDown) {
-        const auto* const mouseEvent = as<const QMouseEvent*>(event);
+        const auto* const mouseEvent = scast<const QMouseEvent*>(event);
         QWidget* const widgetUnderMouse = childAt(mouseEvent->pos());
-        auto* const hoveredCheckbox =
-            qobject_cast<QCheckBox*>(widgetUnderMouse);
+        auto* const hoveredCheckbox = qobject_cast<QCheckBox*>(widgetUnderMouse);
 
-        if (hoveredCheckbox != nullptr &&
-            !dragTouched.contains(hoveredCheckbox)) {
+        if (hoveredCheckbox != nullptr && !dragTouched.contains(hoveredCheckbox)) {
             dragTouched.insert(hoveredCheckbox);
             hoveredCheckbox->setChecked(!hoveredCheckbox->isChecked());
         }
     }
 
     if (event->type() == QEvent::MouseButtonRelease) {
-        const auto* const mouseEvent = as<const QMouseEvent*>(event);
+        const auto* const mouseEvent = scast<const QMouseEvent*>(event);
 
         if (mouseEvent->button() == Qt::LeftButton) {
             leftButtonDown = false;

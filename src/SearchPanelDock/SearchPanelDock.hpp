@@ -20,20 +20,13 @@ class SearchPanelDock final : public QDockWidget {
     explicit SearchPanelDock(QWidget* parent = nullptr);
     ~SearchPanelDock() override;
 
-    void showMatches(
-        HashMap<FilenameArray, vector<CellMatch>> matches,
-        HashMap<u16, QString>& mapSections,
-        shared_ptr<ProjectSettings> projectSettings
-    );
+    void
+    showMatches(CellMatches matches, HashMap<u16, QString>& mapSections, shared_ptr<ProjectSettings> projectSettings);
 
     void clear();
     void setFiles(const vector<TabListItem>& files);
 
-    void init(
-        QComboBox* fileSelect,
-        SearchResultList* searchResultList,
-        QPushButton* clearButton
-    );
+    void init(QComboBox* fileSelect, SearchResultList* searchResultList, QPushButton* clearButton);
 
    signals:
     void actionRequested(
@@ -48,7 +41,7 @@ class SearchPanelDock final : public QDockWidget {
    private:
     inline void clearList();
 
-    HashMap<FilenameArray, vector<CellMatch>> matches;
+    CellMatches matches;
     shared_ptr<ProjectSettings> projectSettings;
 
     QComboBox* fileSelect;

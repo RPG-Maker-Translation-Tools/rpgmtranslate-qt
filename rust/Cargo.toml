@@ -2,58 +2,75 @@
 name = "rpgmtranslate_rs"
 version = "1.0.0"
 edition = "2024"
+publish = false
 
 [lib]
 name = "rpgmtranslate_rs"
 crate-type = ["staticlib"]
 
+[features]
+languagetool = []
+json-highlighting = ["lumis/lang-json"]
+js-highlighting = ["lumis/lang-javascript"]
+ruby-highlighting = ["lumis/lang-ruby"]
+js-formatting = ["dep:dprint-plugin-typescript", "dep:anyhow"]
+ruby-formatting = ["dep:rubyfmt"]
+mimalloc = ["dep:mimalloc"]
+
+[dependencies]
+deepl = "0.8.1"
+gxhash = { version = "3.5.0", features = [
+    "deterministic",
+], default-features = false }
+language-tokenizer = { version = "0.4.0", features = ["full"] }
+languagetool-rust = { version = "3.0.1", default-features = false, features = [
+    "native-tls",
+] }
+keyring = "4.1.6"
+llm-connector = "1.4.0"
+log = "0.4.33"
+lumis = { version = "0.13.0", default-features = false, optional = true }
+marshal-rs = "2.0.1"
+regex = "1.13.1"
+reqwest = { version = "0.12", default-features = false, features = [
+    "native-tls",
+] }
+rpgm-asset-decrypter-lib = "3.2.2"
+rpgmad-lib = "5.0.0"
+rvpacker-txt-rs-lib = { version = "14.0.0", features = [
+    "serde-csv",
+    "serde-xml",
+    "serde-xlsx",
+    "serde-yaml",
+] }
+serde = "1.0.229"
+serde-transcode = "1.1.1"
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tokio = "1.53.1"
+translators = { version = "0.2.0", features = ["google", "tokio-async"] }
+yandex-translate-v2 = { version = "0.1.3", features = [
+    "async",
+], default-features = false }
+dprint-plugin-typescript = { version = "0.96.1", optional = true }
+anyhow = { optional = true, version = "1.0.104" }
+rubyfmt = { version = "0.14.1", optional = true, path = "./librubyfmt" }
+mimalloc = { version = "0.1.52", optional = true }
+
 [profile.release]
-lto = true
+lto = "fat"
+debug = false
+debug-assertions = false
+overflow-checks = false
 codegen-units = 1
 opt-level = 3
 panic = "abort"
 strip = "symbols"
 
-[dependencies]
-log = "0.4.29"
-num_enum = "0.7.6"
-regex = "1.12.3"
-serde = "1.0.228"
-serde_json = "1.0.149"
-strum_macros = "0.28.0"
-thiserror = "2.0.18"
-walkdir = "2.5.0"
-whatlang = "0.18.0"
-tokio = "1.52.1"
-serde-transcode = "1.1.1"
-gxhash = { version = "3.5.0", features = [
-    "deterministic",
-], default-features = false }
-
-rpgmad-lib = "5.0.0"
-rvpacker-txt-rs-lib = "13.0.0"
-rpgm-asset-decrypter-lib = "3.2.2"
-marshal-rs = "2.0.1"
-
-# Translation
-llm-connector = "1.1.20"
-deepl = "0.7.3"
-yandex-translate-v2 = { version = "0.1.3", features = [
-    "async",
-], default-features = false }
-translators = { version = "0.1.5", features = ["google", "tokio-async"] }
-tiktoken-rs = "0.11.0"
-languagetool-rust = { version = "3.0.1", default-features = false, optional = true }
-language-tokenizer = { version = "0.3.0", features = ["snowball"] }
-
-# tree-sitter (Syntax highlighting)
-tree-sitter-highlight = { version = "0.26.8", optional = true }
-tree-sitter-json = { version = "0.24.8", optional = true }
-tree-sitter-javascript = { version = "0.25.0", optional = true }
-tree-sitter-ruby = { version = "0.23.1", optional = true }
-
-[features]
-languagetool = ["dep:languagetool-rust"]
-json-highlighting = ["dep:tree-sitter-highlight", "dep:tree-sitter-json"]
-js-highlighting = ["dep:tree-sitter-highlight", "dep:tree-sitter-javascript"]
-ruby-highlighting = ["dep:tree-sitter-highlight", "dep:tree-sitter-ruby"]
+[profile.release.build-override]
+debug = false
+debug-assertions = false
+overflow-checks = false
+codegen-units = 1
+opt-level = 3
+strip = "symbols"

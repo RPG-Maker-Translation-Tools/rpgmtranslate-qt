@@ -8,7 +8,7 @@ class TranslationTableModel final : public QAbstractItemModel {
     Q_OBJECT
 
    public:
-    static constexpr u8 MAX_COLUMNS = 16;
+    static constexpr i32 MAX_COLUMNS = 16;
 
     struct Cell {
         static constexpr usize EDITABLE_BIT = 1;
@@ -19,58 +19,30 @@ class TranslationTableModel final : public QAbstractItemModel {
         Cell(QString* const ptr, const bool editable) { set(ptr, editable); }
 
         void set(QString* const ptr, const bool editable) {
-            const auto val = ras<usize>(ptr);
+            const auto val = rcast<usize>(ptr);
             bits = val | (editable ? EDITABLE_BIT : 0);
         }
 
-        [[nodiscard]] auto text() const -> QString* {
-            return ras<QString*>(bits & PTR_MASK);
-        }
+        [[nodiscard]] auto text() const -> QString* { return rcast<QString*>(bits & PTR_MASK); }
 
-        [[nodiscard]] auto editable() const -> bool {
-            return (bits & EDITABLE_BIT) != 0;
-        }
+        [[nodiscard]] auto editable() const -> bool { return (bits & EDITABLE_BIT) != 0; }
 
-        void setEditable(const bool editable) {
-            bits = (bits & PTR_MASK) | (editable ? EDITABLE_BIT : 0);
-        }
+        void setEditable(const bool editable) { bits = (bits & PTR_MASK) | (editable ? EDITABLE_BIT : 0); }
     };
 
     explicit TranslationTableModel(QObject* parent = nullptr);
 
-    [[nodiscard]] auto rowCount(const QModelIndex& parent = QModelIndex()) const
-        -> i32 override;
-    [[nodiscard]] auto columnCount(
-        const QModelIndex& parent = QModelIndex()
-    ) const -> i32 override;
-    [[nodiscard]] auto
-    index(i32 row, i32 col, const QModelIndex& parent = QModelIndex()) const
-        -> QModelIndex override;
-    [[nodiscard]] auto parent(
-        const QModelIndex& /* index */ = QModelIndex()
-    ) const -> QModelIndex override;
-    [[nodiscard]] auto data(
-        const QModelIndex& index,
-        i32 role = Qt::DisplayRole
-    ) const -> QVariant override;
-    [[nodiscard]] auto flags(const QModelIndex& index) const
-        -> Qt::ItemFlags override;
-    auto setData(
-        const QModelIndex& index,
-        const QVariant& value,
-        i32 role = Qt::EditRole
-    ) -> bool override;
-    [[nodiscard]] auto headerData(
-        i32 section,
-        Qt::Orientation orientation,
-        i32 role = Qt::DisplayRole
-    ) const -> QVariant override;
-    auto setHeaderData(
-        i32 section,
-        Qt::Orientation orientation,
-        const QVariant& value,
-        i32 role = Qt::DisplayRole
-    ) -> bool override;
+    [[nodiscard]] auto rowCount(const QModelIndex& parent = QModelIndex()) const -> i32 override;
+    [[nodiscard]] auto columnCount(const QModelIndex& parent = QModelIndex()) const -> i32 override;
+    [[nodiscard]] auto index(i32 row, i32 col, const QModelIndex& parent = QModelIndex()) const -> QModelIndex override;
+    [[nodiscard]] auto parent(const QModelIndex& /* index */ = QModelIndex()) const -> QModelIndex override;
+    [[nodiscard]] auto data(const QModelIndex& index, i32 role = Qt::DisplayRole) const -> QVariant override;
+    [[nodiscard]] auto flags(const QModelIndex& index) const -> Qt::ItemFlags override;
+    auto setData(const QModelIndex& index, const QVariant& value, i32 role = Qt::EditRole) -> bool override;
+    [[nodiscard]] auto headerData(i32 section, Qt::Orientation orientation, i32 role = Qt::DisplayRole) const
+        -> QVariant override;
+    auto setHeaderData(i32 section, Qt::Orientation orientation, const QVariant& value, i32 role = Qt::DisplayRole)
+        -> bool override;
 
     void fill(std::span<QStringView> lines, const QString& filename);
     void clear();

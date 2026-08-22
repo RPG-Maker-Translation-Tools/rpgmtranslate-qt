@@ -1,6 +1,6 @@
 BasedOnStyle: Google
 IndentWidth: 4
-ColumnLimit: 80
+ColumnLimit: 120
 Language: Cpp
 LineEnding: LF
 AlignAfterOpenBracket: BlockIndent
@@ -31,7 +31,7 @@ DeriveLineEnding: true
 FixNamespaceComments: false
 IndentCaseLabels: true
 LambdaBodyIndentation: OuterScope
-NamespaceIndentation: All
+NamespaceIndentation: None
 PackConstructorInitializers: CurrentLine
 QualifierAlignment: Left
 ReferenceAlignment: Left
@@ -40,15 +40,15 @@ SeparateDefinitionBlocks: Always
 SortIncludes: true
 IncludeBlocks: Regroup
 IncludeCategories:
-    - Regex: '"[[:alnum:]._-]+"'
-      Priority: 1
-      SortPriority: 1
-    - Regex: '^((<|").*/)'
-      Priority: 2
-      SortPriority: 2
-    - Regex: "<[[:alnum:]._-]+>"
-      Priority: 3
-      SortPriority: 3
+  - Regex: '"[[:alnum:]._-]+"'
+    Priority: 1
+    SortPriority: 1
+  - Regex: '^((<|").*/)'
+    Priority: 2
+    SortPriority: 2
+  - Regex: "<[[:alnum:]._-]+>"
+    Priority: 3
+    SortPriority: 3
 SortUsingDeclarations: true
 SpaceBeforeCtorInitializerColon: true
 SpacesInContainerLiterals: false

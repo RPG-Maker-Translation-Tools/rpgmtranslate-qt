@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=RPGMTranslate
+Exec=rpgmtranslate
+Icon=rpgmtranslate-logo
+Categories=Utility;
+Terminal=false

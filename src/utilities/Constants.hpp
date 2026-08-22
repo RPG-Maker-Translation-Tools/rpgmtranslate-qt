@@ -1,51 +1,47 @@
 #pragma once
 
 #include "Aliases.hpp"
+#include "scripts.h"
 
-// Time and data unit conversions
-constexpr u16 SECOND_MS = 1000;
+#include <QTextFormat>
 
-constexpr QL1SV NEW_LINE = "\\#"_L1;
-constexpr QL1SV LINE_FEED = "\n"_L1;
-constexpr QL1SV SEPARATORL1 = "<#>"_L1;
-constexpr QStringView SEPARATOR = u"<#>";
+static constexpr i32 SECOND_MS = 1000;
 
-constexpr QStringView SETTINGS_PATH = u"/settings.json";
-constexpr QStringView PROGRAM_DATA_DIRECTORY = u"/.rpgmtranslate";
-constexpr QStringView MATCHES_DIRECTORY = u"/matches";
-constexpr QStringView BASELINE_DATA_DIRECTORY = u"/baseline-data";
-constexpr QStringView TRANSLATION_DIRECTORY = u"/translation";
-constexpr QStringView TEMP_MAPS_DIRECTORY = u"/temp-maps";
-constexpr QStringView LOG_FILE = u"/replacement-log.json";
-constexpr QStringView PROJECT_SETTINGS_FILE = u"/project-settings.json";
-constexpr QStringView BACKUP_DIRECTORY = u"/backups";
-constexpr QStringView GLOSSARY_FILE = u"/glossary.json";
-constexpr QStringView OUTPUT_DIRECTORY = u"/output";
-constexpr QStringView RVPACKER_METADATA_FILE = u"/.rvpacker-metadata";
+// rpgm_decrypt_asset decrypts in place, so the RPG Maker header stays at the
+// front of the returned buffer and must be skipped by consumers.
+static constexpr i32 HEADER_LENGTH = 16;
 
-constexpr u8 PERCENT_MULTIPLIER = 100;
+static constexpr QL1SV NEW_LINE = "\\#"_L1;
+static constexpr QL1SV LINE_FEED = "\n"_L1;
+static constexpr QStringView SEPARATOR = u"<#>";
 
-constexpr u8 MIN_BACKUP_PERIOD = 60;
-constexpr u16 MAX_BACKUP_PERIOD = 3600;
+static constexpr QStringView PROGRAM_DATA_DIRECTORY = u"/.rpgmtranslate";
+static constexpr QStringView MATCHES_DIRECTORY = u"/matches";
+static constexpr QStringView BASELINE_DATA_DIRECTORY = u"/baseline-data";
+static constexpr QStringView TRANSLATION_DIRECTORY = u"/translation";
+static constexpr QStringView TEMP_MAPS_DIRECTORY = u"/temp-maps";
+static constexpr QStringView LOG_FILE = u"/replacement-log.json";
+static constexpr QStringView PROJECT_SETTINGS_FILE = u"/project-settings.json";
+static constexpr QStringView BACKUP_DIRECTORY = u"/backups";
+static constexpr QStringView GLOSSARY_FILE = u"/glossary.json";
+static constexpr QStringView OUTPUT_DIRECTORY = u"/output";
 
-constexpr u8 MAX_BACKUPS = 99;
+static constexpr i32 MIN_BACKUP_PERIOD = 60;
+static constexpr i32 MAX_BACKUP_PERIOD = 3600;
+static constexpr i32 MAX_BACKUPS = 99;
 
-constexpr QL1SV MAP_DISPLAY_NAME_COMMENT_PREFIX =
-    "<!-- IN-GAME DISPLAYED NAME: "_L1;
+static constexpr QStringView MAP_DISPLAY_NAME_COMMENT_PREFIX = u"<!-- IN-GAME DISPLAYED NAME: ";
 
-constexpr QL1SV TXT_EXTENSION = ".txt"_L1;
-constexpr QL1SV JSON_EXTENSION = ".json"_L1;
+static constexpr QStringView COMMENT_PREFIX = u"<!--";
+static constexpr QStringView BOOKMARK_COMMENT = u"<!-- BOOKMARK -->";
+static constexpr QStringView NAME_COMMENT = u"<!-- NAME -->";
 
-constexpr QL1SV COMMENT_SUFFIX = " -->"_L1;
-constexpr QL1SV COMMENT_PREFIX = "<!--"_L1;
-constexpr QL1SV BOOKMARK_COMMENT = "<!-- BOOKMARK -->"_L1;
-constexpr QL1SV ID_COMMENT = "<!-- ID -->"_L1;
-constexpr QL1SV NAME_COMMENT = "<!-- NAME -->"_L1;
+static constexpr i32 DEFAULT_COLUMN_WIDTH = 768;
 
-constexpr u16 DEFAULT_COLUMN_WIDTH = 768;
+static constexpr f32 DEFAULT_FUZZY_THRESHOLD = 0.8;
 
-constexpr f32 DEFAULT_FUZZY_THRESHOLD = 0.8;
+static constexpr QChar LINE_SEPARATOR = QChar(0x2028);
 
-constexpr u8 MAX_RECENT_PROJECTS = 10;
+static constexpr i32 LINT_ENTRIES_ID = QTextFormat::UserProperty + 10;
 
-constexpr QChar LINE_SEPARATOR = QChar(0x2028);
+static constexpr i32 TOOLTIP_DELAY_MS = 1250;

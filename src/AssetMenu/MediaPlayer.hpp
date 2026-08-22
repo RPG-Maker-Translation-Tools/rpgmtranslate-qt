@@ -3,6 +3,7 @@
 #ifdef ENABLE_ASSET_PLAYBACK
 #include "Aliases.hpp"
 #include "FWD.hpp"
+#include "Notice.hpp"
 #include "miniaudio.h"
 
 #include <QTimer>
@@ -22,14 +23,14 @@ class MediaPlayer final : public QWidget {
     explicit MediaPlayer(QWidget* parent = nullptr);
     ~MediaPlayer() override;
 
-    [[nodiscard]] auto open(const QString& filePath) -> result<void, QString>;
+    [[nodiscard]] auto open(const QString& filePath) -> result<void, Notice>;
     void play();
 
    protected:
     void hideEvent(QHideEvent* event) override;
 
    private:
-    [[nodiscard]] auto showFrame() -> result<void, QString>;
+    [[nodiscard]] auto showFrame() -> result<void, Notice>;
 
     void togglePlayback();
     void processTick();
@@ -37,35 +38,28 @@ class MediaPlayer final : public QWidget {
     void decodeAudio();
     auto refillRingBuffer(usize minBytes) -> bool;
 
-    void seekSecond(u32 second);
+    void seekSecond(i32 second);
     void finishPlayback();
     void reset();
 
-    static void audioDataCallback(
-        ma_device* device,
-        void* output,
-        const void* input,
-        u32 frameCount
-    );
+    static void audioDataCallback(ma_device* device, void* output, const void* input, u32 frameCount);
 
-    [[nodiscard]] static auto makeError(const i32 errnum)
-        -> array<char, AV_ERROR_MAX_STRING_SIZE> {
+    [[nodiscard]] static auto makeError(const i32 errnum) -> array<char, AV_ERROR_MAX_STRING_SIZE> {
         array<char, AV_ERROR_MAX_STRING_SIZE> buf{};
         av_strerror(errnum, buf.data(), AV_ERROR_MAX_STRING_SIZE);
         return buf;
     }
 
-    static constexpr u16 MAX_OPUS_FRAME_SAMPLES = 5760;
-    static constexpr u16 MAX_VORBIS_FRAME_SAMPLES = 8192;
-    static constexpr u8 I16_SIZE = sizeof(i16);
-    static constexpr u8 F32_SIZE = sizeof(f32);
+    static constexpr i32 MAX_OPUS_FRAME_SAMPLES = 5760;
+    static constexpr i32 MAX_VORBIS_FRAME_SAMPLES = 8192;
+    static constexpr i32 I16_SIZE = sizeof(i16);
+    static constexpr i32 F32_SIZE = sizeof(f32);
 
-    static constexpr u32 MAX_FRAME_SIZE =
-        MAX_VORBIS_FRAME_SAMPLES * 2 * F32_SIZE;
-    static constexpr u32 RING_CAPACITY = MAX_FRAME_SIZE * 2;
-    static constexpr u32 RING_MASK = RING_CAPACITY - 1;
+    static constexpr i32 MAX_FRAME_SIZE = MAX_VORBIS_FRAME_SAMPLES * 2 * F32_SIZE;
+    static constexpr i32 RING_CAPACITY = MAX_FRAME_SIZE * 2;
+    static constexpr i32 RING_MASK = RING_CAPACITY - 1;
 
-    static constexpr u16 AUDIO_BUFFER_THRESHOLD = 4096;
+    static constexpr i32 AUDIO_BUFFER_THRESHOLD = 4096;
 
     array<u8, RING_CAPACITY> pcmBuffer;
 
@@ -98,7 +92,7 @@ class MediaPlayer final : public QWidget {
 
     u8* rgbBuffer = nullptr;
 
-    i64 duration = 0;
+    i32 duration = 0;
     i64 playbackSecond = 0;
 
     atomicI64 audioBytesPlayed = 0;

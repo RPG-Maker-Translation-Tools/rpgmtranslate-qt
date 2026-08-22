@@ -1,9 +1,12 @@
-/build
+/build*
 /.clangd
 /.cache
 /.vscode
 /.zed
 /dist
 /docs/site
+/docs/venv
 /rust/Cargo.lock
 /rust/target
+/.claude
+/.codegraph

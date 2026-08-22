@@ -1,65 +1,67 @@
 # Search Features
 
+Open the search panel with the ![](./assets/search.svg) button. Type into the search input and press Enter (or the search button) to run it.
+
+The same input and options drive three different actions - **Search**, **Replace**, and **Put** - covered below in order of how dangerous they are. Search only looks; Replace and Put write to your translation, so read their sections before using them on anything you'd mind losing.
+
+## Matching options
+
+These apply to all three actions:
+
+| Option | Effect |
+| --- | --- |
+| Match Case | Case-sensitive matching. |
+| Search Whole | Only matches whole words. |
+| Search By Regular Expression | Treats the input as a regex - see [Regular expressions](#regular-expressions) below. |
+| Search In Comments | Also searches comment lines, which are skipped by default. |
+| File select | Scopes the action to specific files instead of the whole project. |
+| Location | Search Everywhere, Only Source, or Only Translation. |
+| Column | All Columns, Rightmost Column, or any other translation column. |
+
 ## Search
 
-Search can be used by putting some text in search input, and pressing Enter or search button.
+Search just finds matches and lists them - it never changes anything. Results appear in the ![](./assets/dock.svg) results panel, docked on the right by default (drag it out to float it if you want it elsewhere).
 
-Depending on active search patterns, search will behave differently.
+Search is heavily optimized: matches are stored as tightly-packed in-memory indices, so even a project with millions of matches stays responsive.
 
-Search is heavily optimized, by storing tightly-packed indices of the matches in-memory, which allows to display millions of matches in one page.
+From the results panel, per-match:
 
-### Search Results Panel
-
-Search results panel is located on the right side of the main window when docked. It can be undocked and made floating.
-
-The panel allows the following interaction for the matches:
-
-- LMB: Navigate to text location
-- RMB: Replace matched text with replace input's text
-- MMB: Put text from replace input to the translation input of matched source text
-
-Note: Consider testing search patterns on a small subset before performing large-scale replacements.
-
-### Regular Expression Support
-
-It's recommended that you perform regular expression replaces somewhere outside the program, just so you have the ability to easily revert everything.
-
-The application uses [Qt's regular expression implementation](https://doc.qt.io/qt-6/qregularexpression.html), which is essentially [PCRE2](https://www.pcre.org/current/doc/html/pcre2syntax.html).
-
-Here's a quick breakdown over the regex features:
-
-- Unicode in regular expressions is fully supported.
-- The following substitutions are allowed:
-    - `` \` `` - Inserts the text before the full match.
-    - `\'` - Inserts the text after the full match.
-    - `\+` - Inserts the last captured group.
-    - `\\` - Literal `\`.
-    - `\{n}`/`\{nn}` - Inserts the captured group `n`. `\0` is reserved for the full match.
-
-Example of searching for `\c` pattern:
-
-![Regex demonstration](assets/regex-demonstration.png)
+| Click | Action |
+| --- | --- |
+| Left | Jump to that match in the translation table. |
+| Right | Replace just that match with the replace input's text. |
+| Middle | Put the replace input's text into that row's translation (see [Put](#put)). |
 
 ## Replace
 
-Global replace is used to globally replace the text from search input to the text from replace input.
+The global Replace button replaces every match with the replace input's text, across every file the search covers - not just the visible results.
 
-If you're not sure about replacing, first use the search, browse the search results, and if you're sure that everything is okay, use global replace. You can also perform single replace, by clicking one of the search results with right mouse button.
-
-Depending on active search patterns, search will behave differently.
+**Before running a global replace**, run the search first, skim the results panel, and confirm they're actually what you want to change. A single wrong match slipping through a whole-project replace is hard to notice after the fact. If you'd rather do it one at a time, right-click individual results instead of using the global button.
 
 ## Put
 
-Global put is used to globally put the text from replace input to the translation textarea, if source text of that textarea matches the text in search input.
+Put is the one to be careful with: it **overwrites the translation cell** for every row whose source text matches the search input, replacing it with the replace input's text - even if that cell already had a translation.
 
-Put is an extremely dangerous feature, as it will replace the existing translation in a textarea. So make sure you won't overwrite something important with it. You can also perform single put, by clicking one of the search results with middle mouse button.
+Put always matches the *source* text and always writes to the *translation* column, regardless of the Location option above. It also matches the **entire** source string, start to end, not just a substring - so searching for `Hello` only hits a source string that's exactly `Hello`, not `Hello, world!`. To match a variable ending, use a regex with a greedy quantifier, e.g. `Hello .+` matches `Hello World`, `Hello Rust`, `Hello Whatever`, and so on.
 
-Global put behaves slightly different from search, as it will match from the start of the string to the end of the string.
+As with Replace: search first, check the results panel, and only then use the global Put button. Middle-click a single result to put just that one row instead.
 
-For example, if you want to put text to the textarea, that corresponds to `Hello` source text, you must type `Hello` to the search input, and this won't match any string, that has something else than `Hello` in it.
+## Regular expressions
 
-For powerful puts, you can use regular expressions. They also match from the start of the string to the end of the string, but you can account for that using greedy `*` or `+` modifiers. For example, `Hello .+` will match both `Hello World`, `Hello Rust`, `Hello Whatever` etc.
+The application uses [Qt's regular expression implementation](https://doc.qt.io/qt-6/qregularexpression.html), which is essentially [PCRE2](https://www.pcre.org/current/doc/html/pcre2syntax.html) - Unicode is fully supported.
 
-If you're not sure about put, first use the search, browse the search results, and if you're sure that everything is okay, use global put.
+In the replace/put text, these substitutions are available:
 
-Depending on active search patterns, search will behave differently.
+| Sequence | Inserts |
+| --- | --- |
+| `` \` `` | The text before the full match. |
+| `\'` | The text after the full match. |
+| `\+` | The last captured group. |
+| `\{n}` / `\{nn}` | Captured group `n`. `\0` is the full match. |
+| `\\` | A literal `\`. |
+
+Consider doing regex-based replaces somewhere outside the program first (a text editor, a script) if you want an easy way to fully revert them - the application doesn't track replace/put history for you.
+
+Example of searching for a `\c` pattern:
+
+![Regex demonstration](assets/regex-demonstration.png)

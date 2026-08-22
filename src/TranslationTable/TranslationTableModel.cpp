@@ -3,23 +3,17 @@
 #include "Constants.hpp"
 #include "Utils.hpp"
 
-TranslationTableModel::TranslationTableModel(QObject* const parent) :
-    QAbstractItemModel(parent) {}
+TranslationTableModel::TranslationTableModel(QObject* const parent) : QAbstractItemModel(parent) {}
 
-auto TranslationTableModel::rowCount(const QModelIndex& parent) const -> i32 {
-    return i32(rows.size());
+auto TranslationTableModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
+    return scast<i32>(rows.size());
 }
 
-auto TranslationTableModel::columnCount(const QModelIndex& parent) const
-    -> i32 {
+auto TranslationTableModel::columnCount(const QModelIndex& /* parent */) const -> i32 {
     return colCount;
 }
 
-auto TranslationTableModel::index(
-    const i32 row,
-    const i32 col,
-    const QModelIndex& parent
-) const -> QModelIndex {
+auto TranslationTableModel::index(const i32 row, const i32 col, const QModelIndex& parent) const -> QModelIndex {
     if (!hasIndex(row, col, parent)) {
         return {};
     }
@@ -27,14 +21,11 @@ auto TranslationTableModel::index(
     return createIndex(row, col);
 }
 
-[[nodiscard]] auto
-TranslationTableModel::parent(const QModelIndex& /* index */) const
-    -> QModelIndex {
+[[nodiscard]] auto TranslationTableModel::parent(const QModelIndex& /* index */) const -> QModelIndex {
     return {};
 };
 
-auto TranslationTableModel::data(const QModelIndex& index, const i32 role) const
-    -> QVariant {
+auto TranslationTableModel::data(const QModelIndex& index, const i32 role) const -> QVariant {
     if (!index.isValid()) {
         return {};
     }
@@ -44,19 +35,15 @@ auto TranslationTableModel::data(const QModelIndex& index, const i32 role) const
         case Qt::EditRole:
             return rows[index.row()][index.column()];
         case Qt::TextAlignmentRole:
-            return i32(Qt::AlignLeft | Qt::AlignTop);
+            return scast<i32>(Qt::AlignLeft | Qt::AlignTop);
         default:
             return {};
     }
 }
 
-auto TranslationTableModel::headerData(
-    const i32 section,
-    const Qt::Orientation orientation,
-    const i32 role
-) const -> QVariant {
-    if (orientation == Qt::Horizontal && role == Qt::DisplayRole &&
-        section < headers.size()) {
+auto TranslationTableModel::headerData(const i32 section, const Qt::Orientation orientation, const i32 role) const
+    -> QVariant {
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section < headers.size()) {
         return headers[section];
     }
 
@@ -70,12 +57,7 @@ auto TranslationTableModel::setHeaderData(
     const i32 role
 ) -> bool {
     if (role != Qt::DisplayRole) {
-        return QAbstractItemModel::setHeaderData(
-            section,
-            orientation,
-            value,
-            role
-        );
+        return QAbstractItemModel::setHeaderData(section, orientation, value, role);
     }
 
     if (headers.size() <= section) {
@@ -87,8 +69,7 @@ auto TranslationTableModel::setHeaderData(
     return true;
 }
 
-auto TranslationTableModel::flags(const QModelIndex& index) const
-    -> Qt::ItemFlags {
+auto TranslationTableModel::flags(const QModelIndex& index) const -> Qt::ItemFlags {
     if (!index.isValid()) {
         return Qt::NoItemFlags;
     }
@@ -105,11 +86,7 @@ auto TranslationTableModel::flags(const QModelIndex& index) const
     return flags;
 }
 
-auto TranslationTableModel::setData(
-    const QModelIndex& index,
-    const QVariant& value,
-    const i32 role
-) -> bool {
+auto TranslationTableModel::setData(const QModelIndex& index, const QVariant& value, const i32 role) -> bool {
     if (!index.isValid()) {
         return false;
     }
@@ -141,17 +118,14 @@ auto TranslationTableModel::setData(
     return true;
 }
 
-void TranslationTableModel::fill(
-    std::span<QStringView> lines,
-    const QString& filename
-) {
+void TranslationTableModel::fill(std::span<QStringView> lines, const QString& filename) {
     beginResetModel();
 
     rows = {};
     editableFlags = {};
     colCount = 0;
-    rows.reserve(isize(lines.size()));
-    editableFlags.reserve(isize(lines.size()));
+    rows.reserve(scast<isize>(lines.size()));
+    editableFlags.reserve(scast<isize>(lines.size()));
 
     for (const auto [row, line] : views::enumerate(lines)) {
         if (line.trimmed().isEmpty()) {
@@ -168,24 +142,17 @@ void TranslationTableModel::fill(
         const QSVList translations = getTranslations(parts);
 
         if (source.startsWith(COMMENT_PREFIX)) {
-            const bool editable =
-                line.startsWith(MAP_DISPLAY_NAME_COMMENT_PREFIX) ||
-                line.startsWith(BOOKMARK_COMMENT);
+            const bool editable = line.startsWith(MAP_DISPLAY_NAME_COMMENT_PREFIX) || line.startsWith(BOOKMARK_COMMENT);
 
-            QString commentText =
-                editable ? line.sliced(0, line.indexOf(SEPARATORL1)).toString()
-                         : line.toString();
+            QString commentText = editable ? line.sliced(0, line.indexOf(SEPARATOR)).toString() : line.toString();
 
             QString counterpartText;
 
             if (editable) {
-                const u32 start =
-                    line.indexOf(SEPARATORL1) + SEPARATORL1.size();
-                const isize end = line.indexOf(SEPARATORL1, start);
+                const u32 start = line.indexOf(SEPARATOR) + SEPARATOR.size();
+                const isize end = line.indexOf(SEPARATOR, start);
 
-                counterpartText = (end == -1 ? line.sliced(start)
-                                             : line.sliced(start, end - start))
-                                      .toString();
+                counterpartText = (end == -1 ? line.sliced(start) : line.sliced(start, end - start)).toString();
             }
 
             bitset<MAX_COLUMNS> flags;
@@ -201,16 +168,15 @@ void TranslationTableModel::fill(
             continue;
         }
 
-        const u8 cols = 1 + i32(translations.size());
+        const u8 cols = scast<u8>(1 + translations.size());
 
         array<QString, MAX_COLUMNS> newRow;
         bitset<MAX_COLUMNS> flags;
 
         newRow[0] = qsvReplace(source, NEW_LINE, LINE_FEED);
 
-        for (const auto [column, translation] :
-             views::enumerate(translations)) {
-            const u8 col = 1 + column;
+        for (const auto [column, translation] : views::enumerate(translations)) {
+            const u32 col = 1 + column;
             newRow[col] = qsvReplace(translation, NEW_LINE, LINE_FEED);
             flags[col] = true;
         }
@@ -236,7 +202,7 @@ void TranslationTableModel::clear() {
 
 void TranslationTableModel::setHeaderLabels(QStringList labels) {
     for (const auto& [idx, label] : views::enumerate(labels)) {
-        setHeaderData(i32(idx), Qt::Horizontal, label);
+        setHeaderData(scast<i32>(idx), Qt::Horizontal, label);
     }
 };
 
@@ -254,7 +220,7 @@ void TranslationTableModel::appendColumn(QStringList cells) {
 }
 
 void TranslationTableModel::insertRow(const u32 row, QStringList cells) {
-    beginInsertRows({}, i32(row), i32(row));
+    beginInsertRows({}, scast<i32>(row), scast<i32>(row));
 
     array<QString, MAX_COLUMNS> newRow;
     bitset<MAX_COLUMNS> flags;
@@ -273,6 +239,5 @@ auto TranslationTableModel::item(const u32 row, const u8 column) -> Cell {
 };
 
 auto TranslationTableModel::itemFromIndex(const QModelIndex& index) -> Cell {
-    return { &rows[index.row()][index.column()],
-             editableFlags[index.row()][index.column()] };
+    return { &rows[index.row()][index.column()], editableFlags[index.row()][index.column()] };
 };

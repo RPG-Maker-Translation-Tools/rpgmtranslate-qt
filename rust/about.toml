@@ -1,0 +1,14 @@
+accepted = [
+    "Apache-2.0",
+    "MIT",
+    "WTFPL",
+    "Unicode-3.0",
+    "ISC",
+    "Zlib",
+    "0BSD",
+    "BSD-1-Clause",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "MIT-0",
+    "CDLA-Permissive-2.0",
+]
