@@ -63,6 +63,7 @@ jobs:
         env:
           CC: clang-19
           CXX: clang++-19
+          LD: clang-19
           AR: llvm-ar-19
           RANLIB: llvm-ranlib-19
           NM: llvm-nm-19
@@ -107,7 +108,7 @@ jobs:
             -Cpanic=abort
             -Cstrip=symbols
             -Cdebuginfo=0
-            -Clinker=ld.lld
+            -Clinker=clang-19
             -Clinker-features=-lld
             -Clink-arg=-fuse-ld=lld
             -Cprefer-dynamic=no

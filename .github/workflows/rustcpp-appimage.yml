@@ -108,6 +108,7 @@ jobs:
         env:
           CC: clang-20
           CXX: clang++-20
+          LD: clang-20
           AR: llvm-ar-20
           RANLIB: llvm-ranlib-20
           NM: llvm-nm-20
@@ -152,7 +153,7 @@ jobs:
             -Cpanic=abort
             -Cstrip=symbols
             -Cdebuginfo=0
-            -Clinker=ld.lld
+            -Clinker=clang-20
             -Clinker-features=-lld
             -Clink-arg=-fuse-ld=lld
             -Cprefer-dynamic=no
