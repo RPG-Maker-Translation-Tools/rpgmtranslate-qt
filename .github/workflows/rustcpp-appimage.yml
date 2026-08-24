@@ -67,9 +67,9 @@ jobs:
           --modules qtwaylandcompositor
 
           echo "QT_ROOT=/opt/Qt/6.8.2/gcc_64" >> $GITHUB_ENV
-          echo "$QT_ROOT/bin" >> $GITHUB_ENV
+          echo "$QT_ROOT/bin" >> $GITHUB_PATH
           echo "$QT_ROOT/lib:${LD_LIBRARY_PATH:-}" >> $GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH='$QT_ROOT'" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$QT_ROOT" >> $GITHUB_ENV
           echo "Qt6_DIR='$QT_ROOT/lib/cmake/Qt6'" >> $GITHUB_ENV
 
       - name: Install Rust
