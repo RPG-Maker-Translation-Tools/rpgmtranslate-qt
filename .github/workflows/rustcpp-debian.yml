@@ -26,7 +26,7 @@ jobs:
           apt-get update && apt-get install -y \
             build-essential make cmake ninja-build g++ \
             clang-19 lld-19 llvm-19-tools libclang-common-19-dev \
-            curl ca-certificates locales pkgconf git \
+            curl ca-certificates locales pkgconf git upx \
             libssl-dev libkrb5-dev \
             qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-wayland-dev \
             qt6-l10n-tools qt6-svg-dev \
@@ -51,6 +51,7 @@ jobs:
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall -y cbindgen
+          cargo binstall -y cargo-about
 
       - name: Cache CMake build
         uses: actions/cache@v4
