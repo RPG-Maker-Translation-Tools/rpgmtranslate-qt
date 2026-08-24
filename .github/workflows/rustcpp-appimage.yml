@@ -152,7 +152,7 @@ jobs:
             -Cpanic=abort
             -Cstrip=symbols
             -Cdebuginfo=0
-            -Clinker=lld-link
+            -Clinker=ld.lld
             -Clinker-features=-lld
             -Clink-arg=-fuse-ld=lld
             -Cprefer-dynamic=no
