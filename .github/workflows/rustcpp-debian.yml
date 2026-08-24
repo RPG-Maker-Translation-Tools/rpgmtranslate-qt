@@ -84,7 +84,6 @@ jobs:
             -fno-trapping-math
             -fvisibility=hidden
             -fvisibility-inlines-hidden
-            -fno-exceptions
             -pipe
           CXXFLAGS: >-
             -march=${{ env.TARGET_ARCH }}
@@ -97,8 +96,6 @@ jobs:
             -fno-trapping-math
             -fvisibility=hidden
             -fvisibility-inlines-hidden
-            -fno-exceptions
-            -fno-cxx-exceptions
             -pipe
           RUSTFLAGS: >-
             -Ctarget-cpu=${{ env.TARGET_ARCH }}
