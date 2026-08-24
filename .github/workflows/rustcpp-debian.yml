@@ -88,6 +88,7 @@ jobs:
           CFLAGS: >-
             -march=${{ env.TARGET_ARCH }}
             -O3
+            -fuse-ld=lld
             -fmerge-all-constants
             -ffunction-sections
             -fdata-sections
@@ -100,6 +101,7 @@ jobs:
           CXXFLAGS: >-
             -march=${{ env.TARGET_ARCH }}
             -O3
+            -fuse-ld=lld
             -fmerge-all-constants
             -ffunction-sections
             -fdata-sections
@@ -118,6 +120,9 @@ jobs:
             -Cpanic=abort
             -Cstrip=symbols
             -Cdebuginfo=0
+            -Clinker=lld-link
+            -Clinker-features=-lld
+            -Clink-arg=-fuse-ld=lld
             -Cprefer-dynamic=no
             -Cembed-bitcode=yes
             -Cllvm-args=-function-sections=true
