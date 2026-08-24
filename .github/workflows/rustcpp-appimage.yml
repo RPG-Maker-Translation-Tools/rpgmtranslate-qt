@@ -179,6 +179,7 @@ jobs:
 
       - name: Create AppImage
         run: |
+          sudo chmod +x lua
           ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release
           cmake --build build -j
 
