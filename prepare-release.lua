@@ -334,16 +334,24 @@ local function main_linux()
     end
     local archive_paths_str = table.concat(archive_paths, " ")
 
-    os.execute("rm -f rpgmtranslate.tar.xz")
-    os.execute("cp build/target/bin/rpgmtranslate rpgmtranslate")
-
     if (arg[1] == "--appimage") then
-        upx_compress({ "rpgmtranslate" })
+        os.execute("rm -f rpgmtranslate-appimage.tar.xz")
     else
-        upx_compress({ "RPGMTranslate-x86_64.AppImage" })
+        os.execute("rm -f rpgmtranslate.tar.xz")
     end
 
-    os.execute("tar -cJf rpgmtranslate.tar.xz rpgmtranslate " .. archive_paths_str)
+    os.execute("cp build/target/bin/rpgmtranslate rpgmtranslate")
+
+    if (arg[1] ~= "--appimage") then
+        upx_compress({ "rpgmtranslate" })
+    end
+
+    if (arg[1] == "--appimage") then
+        os.execute("tar -cJf rpgmtranslate-appimage.tar.xz RPGMTranslate-x86_64.AppImage " .. archive_paths_str)
+    else
+        os.execute("tar -cJf rpgmtranslate.tar.xz rpgmtranslate " .. archive_paths_str)
+    end
+
     os.execute("rm -f rpgmtranslate")
 
     os.execute("rm -rf licenses/rust")

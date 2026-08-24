@@ -204,5 +204,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rustcpp-appimage-release
-          path: "*.AppImage*"
+          path: ./rpgmtranslate-appimage.tar.xz
           retention-days: 30

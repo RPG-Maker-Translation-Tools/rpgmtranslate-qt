@@ -138,5 +138,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rustcpp-debian-release
-          path: build/target/bin/*
+          path: ./rpgmtranslate.tar.xz
           retention-days: 30
