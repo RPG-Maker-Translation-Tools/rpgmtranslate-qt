@@ -913,8 +913,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ruby-enable_ruby_formatting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Форматирование Ruby (ENABLE_RUBY_FORMATTING)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Опции не нуждающиеся в доп. библиотеках
+      
+    </span>
+  </a>
   
 </li>
         
@@ -975,6 +997,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ubuntu-appimage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ubuntu (AppImage)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dockerfile" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -996,7 +1029,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
         Настройка
@@ -1007,7 +1040,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       
         Билдинг
@@ -1018,7 +1051,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       
         Заметки для платформ
@@ -1186,8 +1219,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ruby-enable_ruby_formatting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Форматирование Ruby (ENABLE_RUBY_FORMATTING)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Опции не нуждающиеся в доп. библиотеках
+      
+    </span>
+  </a>
   
 </li>
         
@@ -1248,6 +1303,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#ubuntu-appimage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ubuntu (AppImage)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dockerfile" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1269,7 +1335,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
         Настройка
@@ -1280,7 +1346,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       
         Билдинг
@@ -1291,7 +1357,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_8" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       
         Заметки для платформ
@@ -1379,7 +1445,8 @@
 </ul>
 </li>
 <li>CMake (&gt;= 3.25)</li>
-<li>C++23-compatible compiler (<code>clang</code>, <code>gcc</code>, <code>msvc</code>).</li>
+<li>C++23-совместимый компилятор (<code>clang 18+</code>, <code>gcc 14+</code>, <code>MSVC 2022+</code>)</li>
+<li>C++23-готовый STL (<code>&gt;libstdc++14</code>, <code>&gt;libc++23</code>, <code>&gt;MSVC 2022</code>).</li>
 </ul>
 <h2 id="_3">Необходимые библиотеки</h2>
 <h3 id="_4">Необходимые</h3>
@@ -1457,68 +1524,116 @@
 <ul>
 <li>libgit2</li>
 </ul>
+<h4 id="ruby-enable_ruby_formatting">Форматирование Ruby (<code>ENABLE_RUBY_FORMATTING</code>)</h4>
+<ul>
+<li>libclang (библиотека + хедеры, <strong>не</strong> полный тулчейн компилятора)</li>
+</ul>
+<p>Билд скрипт <code>prism-sys</code> для <code>rubyfmt</code> использует <code>bindgen</code> с <code>libclang</code> для генерации FFI биндов, так что этот флаг нуждается в библиотеке clang даже при компиляции с GCC. Установите пакеты с библиотекой и хедерами clang (например <code>libclang-common-*-dev</code> на Debian/Ubuntu, <code>clang-devel</code> на OpenSUSE, <code>clang21-libclang</code>/<code>clang21-headers</code> на Alpine) вместо полного пакета компилятора <code>clang</code>.</p>
+<h3 id="_6">Опции не нуждающиеся в доп. библиотеках</h3>
+<p>Эти CMake опции переключают отдельные опции библиотек Rust и не нуждаются в дополнительных системных библиотеках - переключайте их чтоыб уменьшить билд:</p>
+<ul>
+<li>Точки машинного перевода: <code>ENABLE_GOOGLE_TRANSLATE</code>, <code>ENABLE_YANDEX_TRANSLATE</code>, <code>ENABLE_DEEPL</code>, <code>ENABLE_LLM_CONNECTOR</code> (OpenAI, Anthropic, DeepSeek, Gemini, Mistral, Ollama, и другие OpenAI-совместимые/локальные провайдеры).</li>
+<li>Экспорт/импорт форматов: <code>ENABLE_SERDE_CSV</code>, <code>ENABLE_SERDE_XML</code>, <code>ENABLE_SERDE_XLSX</code>, <code>ENABLE_SERDE_YAML</code>.</li>
+<li>Бэкэнды сегментации и стемминга для глоссария: <code>ENABLE_TOKENIZER_CHINESE_ICU</code>, <code>ENABLE_TOKENIZER_CHINESE_LINDERA</code>, <code>ENABLE_TOKENIZER_JAPANESE_ICU</code>, <code>ENABLE_TOKENIZER_JAPANESE_LINDERA</code>, <code>ENABLE_TOKENIZER_KOREAN_LINDERA</code>, <code>ENABLE_TOKENIZER_SNOWBALL</code>, <code>ENABLE_TOKENIZER_SOUTHEAST_ASIAN</code>.</li>
+</ul>
+<p>Все они установлены на <code>ON</code> по умолчанию, кроме токенизаторов основнных на ICU (<code>ENABLE_TOKENIZER_CHINESE_ICU</code>, <code>ENABLE_TOKENIZER_JAPANESE_ICU</code>), которые по умолчанию установлены на <code>OFF</code> поскольку вместо них включены эквиваленты основанные на Lindera.</p>
 <h3 id="linux">Получение файлов для разработки на Linux</h3>
 <h4 id="debian">Debian</h4>
-<p>Основа для проекта - Debian 13 (Trixie). Ubuntu имеет старые пакеты, на нём компиляция не гарантируется.</p>
+<p>Основа для проекта - Debian 13 (Trixie). Ubuntu 24.04 можно посмотреть снизу, там всё по-другому.</p>
 <p><code>libqjs-dev</code> (quickjs-ng) и <code>libglaze-dev</code> существуют только в <code>trixie-backports</code>, не в trixie - сначала включите их:</p>
 <pre><code class="language-bash">echo 'deb http://deb.debian.org/debian trixie-backports main' | sudo tee /etc/apt/sources.list.d/backports.list
 </code></pre>
 <pre><code class="language-bash">sudo apt update &amp;&amp; sudo apt install -y \
-  git cmake g++ clang \
+  git cmake ninja-build g++ libclang1-19 libclang-common-19-dev \
   qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-wayland-dev \
   qt6-l10n-tools qt6-svg-dev \
   libarchive-dev liblzma-dev \
   libgit2-dev libnuspell-dev libicu-dev \
   libqjs-dev libglaze-dev \
-  pkg-config libssl-dev
+  pkg-config libssl-dev libkrb5-dev
 </code></pre>
 <h4 id="opensuse">OpenSUSE</h4>
+<p>Репозитории Tumbleweed имеют только оригинальный <code>quickjs</code> (<code>quickjs-devel</code>), не <code>quickjs-ng</code>. Забилдите и установите из исходников:</p>
+<pre><code class="language-bash">git clone --depth 1 --branch v0.16.2 https://github.com/quickjs-ng/quickjs.git /tmp/quickjs-ng
+cmake -G Ninja -B /tmp/quickjs-ng/build -S /tmp/quickjs-ng -DCMAKE_BUILD_TYPE=Release
+cmake --build /tmp/quickjs-ng/build -j
+sudo cmake --install /tmp/quickjs-ng/build
+rm -rf /tmp/quickjs-ng
+</code></pre>
 <pre><code class="language-bash">sudo zypper refresh &amp;&amp; sudo zypper install -y \
-  git cmake gcc-c++ clang \
+  git cmake ninja gcc-c++ clang-devel \
   qt6-base-devel qt6-linguist-devel qt6-tools-devel qt6-svg-devel qt6-wayland-devel \
   libarchive-devel xz-devel \
   libgit2-devel nuspell libicu-devel \
-  glaze-devel quickjs-ng-devel \
-  pkg-config libopenssl-devel
+  glaze-devel \
+  pkg-config libopenssl-devel libssh2-devel
 </code></pre>
 <h4 id="arch">Arch</h4>
 <pre><code class="language-bash">sudo pacman -Syu --needed \
-  git cmake gcc clang glibc pkgconf \
+  git cmake ninja gcc clang glibc pkgconf \
   qt6-base qt6-tools qt6-svg qt6-wayland \
   openssl libarchive xz libgit2 nuspell icu ffmpeg \
   quickjs-ng glaze
 </code></pre>
 <h4 id="alpine">Alpine</h4>
+<p>У Alpine есть какая-то проблема с <code>ENABLE_RUBY_FORMATTING</code> где не получается линкануть библиотеку libclang необходимую билд скриптом библиотеки <code>prism-sys</code>, так что обходите это сами если хотите рабочий билд. Или просто установите <code>ENABLE_RUBY_FORMATTING</code> на <code>OFF</code>.</p>
 <pre><code class="language-bash">sudo apk update &amp;&amp; sudo apk add \
-  git cmake g++ clang \
+  git cmake samurai g++ clang21-libclang clang21-headers \
   qt6-qtbase-dev qt6-qttools-dev qt6-qtsvg-dev qt6-qtwayland-dev \
   libarchive-dev xz-dev \
-  libgit2-dev nuspell-dev icu-dev \
+  libgit2-dev nuspell-dev icu-dev ffmpeg-dev \
   quickjs-ng-dev glaze \
   pkgconf openssl-dev \
   libunwind-dev
 </code></pre>
+<h4 id="ubuntu-appimage">Ubuntu (AppImage)</h4>
+<p>AppImage билд нацелен на Ubuntu 24.04 для максимальной совместимости. Список зависимостей куда более сложны чем для других дистрибутивов - Qt 6.8.2 нет в репозиториях 24.04, так что нужно установить его через <code>aqtinstall</code>, а <code>quickjs-ng</code>/<code>glaze</code> вообще не запакованы и надо билдить с исходников. Вместо того чтобы дублировать всё сюда, прочтите Dockerfile и следуйте этапам оттуда.</p>
+<p>Как минимум, вам нужны:</p>
+<pre><code class="language-bash">sudo add-apt-repository universe &amp;&amp; sudo apt update &amp;&amp; sudo apt install -y \
+  git cmake ninja-build libc6-dev dpkg-dev gcc-14 g++-14 libclang1-18 libclang-common-18-dev \
+  python3-pip \
+  libssl-dev libkrb5-dev \
+  libarchive-dev libgit2-dev libnuspell-dev \
+  libavutil-dev libavcodec-dev libavfilter-dev libavformat-dev libswresample-dev libswscale-dev \
+  liblzma-dev libicu-dev \
+  libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
+  libfontconfig1-dev libfreetype6-dev \
+  libx11-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev \
+  libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev \
+  libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev \
+  libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev \
+  libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev \
+  libxcb-xinerama0-dev libxcb-xkb-dev \
+  libxkbcommon-dev libxkbcommon-x11-dev \
+  libwayland-dev libwayland-egl-backend-dev \
+  libdbus-1-dev \
+  libfuse2 file patchelf
+</code></pre>
+<p>Сам Qt, <code>quickjs-ng</code>, <code>glaze</code>, и <code>linuxdeploy</code>/<code>linuxdeploy-plugin-qt</code> нуждаются в отдельной установке - бегом в Dockerfile за шагами.</p>
 <h4 id="dockerfile">Dockerfile</h4>
 <p>Вы можете найти Dockerfile в корне репозитория, который включает билды на вышеуказанных платформах, они всегда удадутся.</p>
-<h2 id="_6">Настройка</h2>
+<h2 id="_7">Настройка</h2>
 <p><code>configure.lua</code> - обёртка вокруг CMake для лучшего опыта:</p>
 <pre><code class="language-bash">./lua configure.lua --fresh -G=Ninja CMAKE_BUILD_TYPE=Release
 </code></pre>
 <p>Доступные CMake опции могут быть получены через <code>./lua configure.lua --help</code>.</p>
 <p>Обычный CMake работает как надо, если вы хотите использовать его.</p>
-<h2 id="_7">Билдинг</h2>
+<h2 id="_8">Билдинг</h2>
 <pre><code class="language-bash">cmake --build build
 </code></pre>
 <p>Артефакты помещаются в <code>build/target/bin/</code>.</p>
-<h2 id="_8">Заметки для платформ</h2>
+<h2 id="_9">Заметки для платформ</h2>
 <h3 id="windows">Windows</h3>
 <p>Насчёт деталей того, как библиотеки для официальный билдов скомпилированы - проверьте <a href="https://github.com/savannstm/personal">https://github.com/savannstm/personal</a>, конкретнее - скрипты dev/build-dev-libraries.</p>
 <h3 id="linux_1">Linux</h3>
-<p><code>Dockerfile</code> создаёт воспроизводимые билды на четырёх дистрибутивах, каждый имеет свою стадию:</p>
+<p><code>Dockerfile</code> создаёт воспроизводимые билды на пяти дистрибутивах, каждый имеет свою стадию:</p>
 <pre><code class="language-bash">docker build --target debian-build .
 docker build --target opensuse-build .
 docker build --target arch-build .
 docker build --target alpine-build .
+</code></pre>
+<p>Каждый билд принимает аргумент <code>TARGET_ARCH</code> (по умолчанию <code>x86-64-v3</code>), который контролирует переменные <code>-march</code>/<code>-Ctarget-cpu</code> для кода C/C++/Rust:</p>
+<pre><code class="language-bash">docker build --target debian-build --build-arg TARGET_ARCH=x86-64-v2 .
 </code></pre>
 
 

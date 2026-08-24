@@ -913,8 +913,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ruby-formatting-enable_ruby_formatting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ruby Formatting (ENABLE_RUBY_FORMATTING)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-flags-without-extra-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature flags without extra libraries
+      
+    </span>
+  </a>
   
 </li>
         
@@ -968,6 +990,17 @@
     <span class="md-ellipsis">
       
         Alpine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ubuntu-appimage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ubuntu (AppImage)
       
     </span>
   </a>
@@ -1186,8 +1219,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ruby-formatting-enable_ruby_formatting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ruby Formatting (ENABLE_RUBY_FORMATTING)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-flags-without-extra-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature flags without extra libraries
+      
+    </span>
+  </a>
   
 </li>
         
@@ -1241,6 +1296,17 @@
     <span class="md-ellipsis">
       
         Alpine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ubuntu-appimage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ubuntu (AppImage)
       
     </span>
   </a>
@@ -1379,7 +1445,8 @@
 </ul>
 </li>
 <li>CMake (&gt;= 3.25)</li>
-<li>C++23-compatible compiler (<code>clang</code>, <code>gcc</code>, <code>msvc</code>).</li>
+<li>C++23-compatible compiler (<code>clang 18+</code>, <code>gcc 14+</code>, <code>MSVC 2022+</code>)</li>
+<li>C++23-complete STL (<code>&gt;libstdc++14</code>, <code>&gt;libc++23</code>, <code>&gt;MSVC 2022</code>).</li>
 </ul>
 <h2 id="required-libraries">Required libraries</h2>
 <h3 id="required">Required</h3>
@@ -1457,49 +1524,94 @@
 <ul>
 <li>libgit2</li>
 </ul>
+<h4 id="ruby-formatting-enable_ruby_formatting">Ruby Formatting (<code>ENABLE_RUBY_FORMATTING</code>)</h4>
+<ul>
+<li>libclang (library + headers only, <strong>not</strong> the full clang compiler toolchain)</li>
+</ul>
+<p><code>rubyfmt</code>'s <code>prism-sys</code> build script uses <code>bindgen</code> against <code>libclang</code> to generate FFI bindings, so this flag needs the clang library and headers to be present even when the project itself is compiled entirely with GCC/MSVC. Install the distro's "clang library/headers" package (e.g. <code>libclang-common-*-dev</code> on Debian/Ubuntu, <code>clang-devel</code> on OpenSUSE, <code>clang21-libclang</code>/<code>clang21-headers</code> on Alpine) rather than the full <code>clang</code> compiler package where the distro distinguishes the two.</p>
+<h3 id="feature-flags-without-extra-libraries">Feature flags without extra libraries</h3>
+<p>These CMake options gate individual Rust cargo features and don't require any additional system libraries - toggle them freely to trim the build:</p>
+<ul>
+<li>Machine translation backends: <code>ENABLE_GOOGLE_TRANSLATE</code>, <code>ENABLE_YANDEX_TRANSLATE</code>, <code>ENABLE_DEEPL</code>, <code>ENABLE_LLM_CONNECTOR</code> (OpenAI, Anthropic, DeepSeek, Gemini, Mistral, Ollama, and other OpenAI-compatible/local providers).</li>
+<li>Export/Import serde formats: <code>ENABLE_SERDE_CSV</code>, <code>ENABLE_SERDE_XML</code>, <code>ENABLE_SERDE_XLSX</code>, <code>ENABLE_SERDE_YAML</code>.</li>
+<li>Glossary matching word segmentation/stemming backends: <code>ENABLE_TOKENIZER_CHINESE_ICU</code>, <code>ENABLE_TOKENIZER_CHINESE_LINDERA</code>, <code>ENABLE_TOKENIZER_JAPANESE_ICU</code>, <code>ENABLE_TOKENIZER_JAPANESE_LINDERA</code>, <code>ENABLE_TOKENIZER_KOREAN_LINDERA</code>, <code>ENABLE_TOKENIZER_SNOWBALL</code>, <code>ENABLE_TOKENIZER_SOUTHEAST_ASIAN</code>.</li>
+</ul>
+<p>All of these default to <code>ON</code>, except the ICU-based tokenizers (<code>ENABLE_TOKENIZER_CHINESE_ICU</code>, <code>ENABLE_TOKENIZER_JAPANESE_ICU</code>), which default to <code>OFF</code> since the Lindera-based equivalents are enabled by default.</p>
 <h3 id="getting-development-headers-on-linux">Getting development headers on Linux</h3>
 <h4 id="debian">Debian</h4>
-<p>Project's baseline is Debian 13 (Trixie). Ubuntu has slightly older packages, so compilation is not guaranteed to succeed.</p>
+<p>Project's baseline is Debian 13 (Trixie). Check Ubuntu 24.04 build below, it's very different.</p>
 <p><code>libqjs-dev</code> (quickjs-ng) and <code>libglaze-dev</code> only exist in <code>trixie-backports</code>, not plain trixie - enable it first:</p>
 <pre><code class="language-bash">echo 'deb http://deb.debian.org/debian trixie-backports main' | sudo tee /etc/apt/sources.list.d/backports.list
 </code></pre>
 <pre><code class="language-bash">sudo apt update &amp;&amp; sudo apt install -y \
-  git cmake g++ clang \
+  git cmake ninja-build g++ libclang1-19 libclang-common-19-dev \
   qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-wayland-dev \
   qt6-l10n-tools qt6-svg-dev \
   libarchive-dev liblzma-dev \
   libgit2-dev libnuspell-dev libicu-dev \
   libqjs-dev libglaze-dev \
-  pkg-config libssl-dev
+  pkg-config libssl-dev libkrb5-dev
 </code></pre>
 <h4 id="opensuse">OpenSUSE</h4>
+<p>Tumbleweed's repos only carry the original <code>quickjs</code> (<code>quickjs-devel</code>), not <code>quickjs-ng</code> . Build and install it from source instead:</p>
+<pre><code class="language-bash">git clone --depth 1 --branch v0.16.2 https://github.com/quickjs-ng/quickjs.git /tmp/quickjs-ng
+cmake -G Ninja -B /tmp/quickjs-ng/build -S /tmp/quickjs-ng -DCMAKE_BUILD_TYPE=Release
+cmake --build /tmp/quickjs-ng/build -j
+sudo cmake --install /tmp/quickjs-ng/build
+rm -rf /tmp/quickjs-ng
+</code></pre>
 <pre><code class="language-bash">sudo zypper refresh &amp;&amp; sudo zypper install -y \
-  git cmake gcc-c++ clang \
+  git cmake ninja gcc-c++ clang-devel \
   qt6-base-devel qt6-linguist-devel qt6-tools-devel qt6-svg-devel qt6-wayland-devel \
   libarchive-devel xz-devel \
   libgit2-devel nuspell libicu-devel \
-  glaze-devel quickjs-ng-devel \
-  pkg-config libopenssl-devel
+  glaze-devel \
+  pkg-config libopenssl-devel libssh2-devel
 </code></pre>
 <h4 id="arch">Arch</h4>
 <pre><code class="language-bash">sudo pacman -Syu --needed \
-  git cmake gcc clang glibc pkgconf \
+  git cmake ninja gcc clang glibc pkgconf \
   qt6-base qt6-tools qt6-svg qt6-wayland \
   openssl libarchive xz libgit2 nuspell icu ffmpeg \
   quickjs-ng glaze
 </code></pre>
 <h4 id="alpine">Alpine</h4>
+<p>Alpine has some musl problem with <code>ENABLE_RUBY_FORMATTING</code> where it's unable to link libclang requires by the underlying prism-sys' build script, so I guess you have to work around this if you want a working build. Or just set <code>ENABLE_RUBY_FORMATTING</code> to <code>OFF</code>.</p>
 <pre><code class="language-bash">sudo apk update &amp;&amp; sudo apk add \
-  git cmake g++ clang \
+  git cmake samurai g++ clang21-libclang clang21-headers \
   qt6-qtbase-dev qt6-qttools-dev qt6-qtsvg-dev qt6-qtwayland-dev \
   libarchive-dev xz-dev \
-  libgit2-dev nuspell-dev icu-dev \
+  libgit2-dev nuspell-dev icu-dev ffmpeg-dev \
   quickjs-ng-dev glaze \
   pkgconf openssl-dev \
   libunwind-dev
 </code></pre>
+<h4 id="ubuntu-appimage">Ubuntu (AppImage)</h4>
+<p>The AppImage build targets Ubuntu 24.04 specifically for the widest compatibility. Its dependency list is more involved than the other distros: Qt 6.8.2 doesn't ship in the 24.04 repos so it's installed via <code>aqtinstall</code>, and <code>quickjs-ng</code>/<code>glaze</code> aren't packaged either so they're built from source. Rather than duplicating all of that here, follow the <code>appimage-build</code> stage in the Dockerfile step by step - it's kept as the single source of truth for this target.</p>
+<p>At a minimum, expect to need:</p>
+<pre><code class="language-bash">sudo add-apt-repository universe &amp;&amp; sudo apt update &amp;&amp; sudo apt install -y \
+  git cmake ninja-build libc6-dev dpkg-dev gcc-14 g++-14 libclang1-18 libclang-common-18-dev \
+  python3-pip \
+  libssl-dev libkrb5-dev \
+  libarchive-dev libgit2-dev libnuspell-dev \
+  libavutil-dev libavcodec-dev libavfilter-dev libavformat-dev libswresample-dev libswscale-dev \
+  liblzma-dev libicu-dev \
+  libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
+  libfontconfig1-dev libfreetype6-dev \
+  libx11-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev \
+  libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev \
+  libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev \
+  libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev \
+  libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev \
+  libxcb-xinerama0-dev libxcb-xkb-dev \
+  libxkbcommon-dev libxkbcommon-x11-dev \
+  libwayland-dev libwayland-egl-backend-dev \
+  libdbus-1-dev \
+  libfuse2 file patchelf
+</code></pre>
+<p>Qt itself, <code>quickjs-ng</code>, <code>glaze</code>, and the <code>linuxdeploy</code>/<code>linuxdeploy-plugin-qt</code> tooling still need to be installed/built separately - see the Dockerfile for the exact steps.</p>
 <h4 id="dockerfile">Dockerfile</h4>
-<p>You can find a Dockerfile in the root of repository that includes builds on aforementioned platforms, they're always guaranteed to succeed.</p>
+<p>You can find a Dockerfile in the root of repository that includes builds on aforementioned platforms plus the Ubuntu AppImage build, they're always guaranteed to succeed.</p>
 <h2 id="configuring">Configuring</h2>
 <p><code>configure.lua</code> wraps CMake for better UX:</p>
 <pre><code class="language-bash">./lua configure.lua --fresh -G=Ninja CMAKE_BUILD_TYPE=Release
@@ -1514,11 +1626,15 @@
 <h3 id="windows">Windows</h3>
 <p>For the details of how the libraries for the official static Windows build are compiled - check <a href="https://github.com/savannstm/personal">https://github.com/savannstm/personal</a>, specifically - dev/build-dev-libraries scripts.</p>
 <h3 id="linux">Linux</h3>
-<p>The <code>Dockerfile</code> builds reproducibly on four distributions, each as its own stage:</p>
+<p>The <code>Dockerfile</code> builds reproducibly on five distributions/targets, each as its own stage:</p>
 <pre><code class="language-bash">docker build --target debian-build .
 docker build --target opensuse-build .
+docker build --target appimage-build .
 docker build --target arch-build .
 docker build --target alpine-build .
+</code></pre>
+<p>Each stage accepts a <code>TARGET_ARCH</code> build argument (default <code>x86-64-v3</code>) controlling the <code>-march</code>/<code>-Ctarget-cpu</code> value the C/C++/Rust code is compiled for:</p>
+<pre><code class="language-bash">docker build --target debian-build --build-arg TARGET_ARCH=x86-64-v2 .
 </code></pre>
 
 
