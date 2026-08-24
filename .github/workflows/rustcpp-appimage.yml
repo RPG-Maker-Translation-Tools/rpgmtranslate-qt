@@ -40,8 +40,8 @@ jobs:
           libdbus-1-dev \
           libfuse2 file patchelf
 
-          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 \
-          && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 \
+          && sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
 
       - name: Set locale
         run: |
