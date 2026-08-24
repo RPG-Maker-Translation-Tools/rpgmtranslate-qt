@@ -179,6 +179,8 @@ jobs:
           DESKTOP_FILE="${APP_NAME}.desktop"
           ICON_FILE="icons/${APP_NAME}-logo.png"
 
+          echo "QMAKE=$QT_ROOT/bin/qmake" >> $GITHUB_ENV
+
           QMAKE="$QT_ROOT/bin/qmake" \
           APPIMAGE_EXTRACT_AND_RUN=1 \
           linuxdeploy \
