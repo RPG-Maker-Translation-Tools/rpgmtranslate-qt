@@ -172,15 +172,12 @@ jobs:
             -Wl,-z,norelro
             -Wl,-z,nosectionheader
         run: |
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build build -j $(nproc)
-
-      - name: Create AppImage
-        run: |
           sudo chmod +x lua
           ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release
           cmake --build build -j
 
+      - name: Create AppImage
+        run: |
           APP_NAME="rpgmtranslate"
           APP_BINARY="build/target/bin/rpgmtranslate"
           DESKTOP_FILE="${APP_NAME}.desktop"
