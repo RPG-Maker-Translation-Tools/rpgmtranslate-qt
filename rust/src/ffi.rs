@@ -3,6 +3,7 @@
 use crate::api::*;
 use gxhash::{HashMap, HashMapExt, gxhash64};
 use language_tokenizer::{Algorithm, MatchResult};
+#[cfg(feature = "languagetool")]
 use languagetool_rust::api::check::{Data, DataAnnotation};
 use log::{Log, Metadata, Record};
 use marshal_rs::Get;
@@ -267,10 +268,22 @@ pub unsafe extern "C" fn rpgm_read(
         let translation_path = ffi_to_str(translation_path);
         let ini_title = ffi_to_str(ini_title);
         let read_mode = match read_mode {
-            ReadMode::Default => rvpacker_txt_rs_lib::ReadMode::Default { force: false },
-            ReadMode::DefaultForce => rvpacker_txt_rs_lib::ReadMode::Default { force: true },
-            ReadMode::AppendDefault => rvpacker_txt_rs_lib::ReadMode::Append { force: false },
-            ReadMode::AppendForce => rvpacker_txt_rs_lib::ReadMode::Append { force: true },
+            ReadMode::Default => rvpacker_txt_rs_lib::Mode::Read {
+                append: false,
+                force: false,
+            },
+            ReadMode::DefaultForce => rvpacker_txt_rs_lib::Mode::Read {
+                append: false,
+                force: true,
+            },
+            ReadMode::AppendDefault => rvpacker_txt_rs_lib::Mode::Read {
+                append: true,
+                force: false,
+            },
+            ReadMode::AppendForce => rvpacker_txt_rs_lib::Mode::Read {
+                append: true,
+                force: true,
+            },
         };
 
         let cap = hashes.cap;
@@ -353,7 +366,6 @@ pub unsafe extern "C" fn rpgm_write(
     output_path: FFIString,
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
-    game_title: FFIString,
     flags: BaseFlags,
     selected: Selected,
     elapsed_out: *mut f32,
@@ -362,7 +374,6 @@ pub unsafe extern "C" fn rpgm_write(
         let source_path = ffi_to_str(source_path);
         let translation_path = ffi_to_str(translation_path);
         let output_path = ffi_to_str(output_path);
-        let game_title = ffi_to_str(game_title);
 
         let elapsed = write(
             Path::new(&source_path),
@@ -370,7 +381,6 @@ pub unsafe extern "C" fn rpgm_write(
             Path::new(&output_path),
             engine_type,
             duplicate_mode,
-            &game_title,
             flags,
             selected.file_flags,
         )?;
@@ -397,21 +407,18 @@ pub unsafe extern "C" fn rpgm_purge(
     translation_path: FFIString,
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
-    game_title: FFIString,
     flags: BaseFlags,
     selected: Selected,
 ) -> bool {
     let result = (|| -> Result<(), Error> {
         let source_path = ffi_to_str(source_path);
         let translation_path = ffi_to_str(translation_path);
-        let game_title = ffi_to_str(game_title);
 
         purge(
             Path::new(&source_path),
             Path::new(&translation_path),
             engine_type,
             duplicate_mode,
-            &game_title,
             flags,
             selected.file_flags,
         )?;
@@ -568,7 +575,7 @@ pub unsafe fn parse_strings<'a>(buf: &'a [u8]) -> Vec<&'a str> {
 }
 
 pub fn split_into_sections(input: &str) -> Vec<&str> {
-    const MARKER: &str = "<!-- ID -->";
+    const MARKER: &str = "<#>ID";
 
     let mut starts: Vec<usize> = Vec::from([0]);
 
@@ -676,11 +683,11 @@ pub unsafe extern "C" fn rpgm_translate<'a>(
                             continue;
                         }
 
-                        let not_name = !line.starts_with("<!-- NAME");
-                        let not_in_game_name = !line.starts_with("<!-- IN-GAME");
-                        let not_map_name = !line.starts_with("<!-- MAP NAME");
+                        let not_name = !line.starts_with("<!>NAME");
+                        let not_in_game_name = !line.starts_with("<!>IN-GAME");
+                        let not_map_name = !line.starts_with("<!>MAP NAME");
 
-                        if line.starts_with("<!--") && not_name && not_in_game_name && not_map_name {
+                        if line.starts_with("<!>") && not_name && not_in_game_name && not_map_name {
                             continue;
                         }
 
@@ -704,14 +711,14 @@ pub unsafe extern "C" fn rpgm_translate<'a>(
 
                 for (idx, line) in lines.enumerate() {
                     if line.is_empty()
-                        || line.starts_with("<!--") && !line.starts_with("<!-- ID") && !line.starts_with("<!-- NAME")
+                        || line.starts_with("<!>") && !line.starts_with("<!>ID") && !line.starts_with("<!>NAME")
                     {
                         continue;
                     }
 
                     let entry = files.get_mut(filename).unwrap_unchecked();
 
-                    if !line.starts_with("<!-- ID") && !line.starts_with("<!-- NAME") {
+                    if !line.starts_with("<!>ID") && !line.starts_with("<!>NAME") {
                         if let Some(separator_pos) = line.rfind("<#>") {
                             entry.push(line[0..separator_pos].to_string());
                         } else {
@@ -943,9 +950,19 @@ pub unsafe extern "C" fn init_lindera_dictionaries(data_root: FFIString) {
         path.is_dir().then_some(path)
     };
 
+    #[cfg(feature = "japanese-lindera")]
     language_tokenizer::set_dictionary_path(Algorithm::Japanese, existing_dir("japanese"));
+    #[cfg(feature = "chinese-lindera")]
     language_tokenizer::set_dictionary_path(Algorithm::Chinese, existing_dir("chinese"));
+    #[cfg(feature = "korean-lindera")]
     language_tokenizer::set_dictionary_path(Algorithm::Korean, existing_dir("korean"));
+
+    #[cfg(not(any(
+        feature = "japanese-lindera",
+        feature = "chinese-lindera",
+        feature = "korean-lindera"
+    )))]
+    let _ = existing_dir;
 }
 
 #[unsafe(no_mangle)]
@@ -968,6 +985,7 @@ pub unsafe extern "C" fn rpgm_count_words(text: FFIString, algorithm: FFIString,
     }
 }
 
+#[cfg(feature = "languagetool")]
 #[unsafe(no_mangle)]
 #[must_use]
 pub unsafe extern "C" fn rpgm_language_tool_lint(
@@ -1151,13 +1169,6 @@ pub unsafe extern "C" fn rpgm_serde_import(bytes: ByteBuffer, format: SerdeForma
             false
         }
     }
-}
-
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rpgm_beautify_json(json: FFIString, out: *mut FFIString) {
-    let beautified = beautify_json(ffi_to_str(json));
-    *out = str_to_ffi(&beautified);
-    mem::forget(beautified);
 }
 
 #[unsafe(no_mangle)]

@@ -424,7 +424,6 @@ auto TaskWorker::write(const QString& gameTitle, const Selected selected) -> Wri
     const QByteArray sourcePathUtf8 = projectSettings->actualSourcePath().toUtf8();
     const QByteArray translationPathUtf8 = projectSettings->translationPath().toUtf8();
     const QByteArray outputPathUtf8 = projectSettings->outputPath().toUtf8();
-    const QByteArray gameTitleUtf8 = gameTitle.toUtf8();
 
     f32 elapsed;
 
@@ -434,7 +433,6 @@ auto TaskWorker::write(const QString& gameTitle, const Selected selected) -> Wri
         strtoffi(outputPathUtf8),
         projectSettings->engineType,
         projectSettings->duplicateMode,
-        strtoffi(gameTitleUtf8),
         projectSettings->flags,
         selected,
         &elapsed
@@ -455,14 +453,12 @@ auto TaskWorker::extractArchive(const QString& archivePath, const QString& folde
 auto TaskWorker::purge(const QString& gameTitle, const Selected selected) -> PurgeResult {
     const QByteArray sourcePathUtf8 = projectSettings->actualSourcePath().toUtf8();
     const QByteArray translationPathUtf8 = projectSettings->translationPath().toUtf8();
-    const QByteArray gameTitleUtf8 = gameTitle.toUtf8();
 
     const bool success = rpgm_purge(
         strtoffi(sourcePathUtf8),
         strtoffi(translationPathUtf8),
         projectSettings->engineType,
         projectSettings->duplicateMode,
-        strtoffi(gameTitleUtf8),
         projectSettings->flags,
         selected
     );
@@ -2073,6 +2069,7 @@ auto TaskWorker::replaceSingle(
     return success ? ReplaceSingleResult{ std::move(replacedData) } : ReplaceSingleResult{ Err(filename) };
 }
 
+#ifdef ENABLE_LANGUAGETOOL
 auto TaskWorker::languageToolLint(const QStringView text, const vector<Span>& sequences) -> LintResult {
     const QByteArray baseURL = settings->translation.languageTool.baseURL.toUtf8();
     const QByteArray apiKey = settings->translation.languageTool.apiKey.toUtf8();
@@ -2111,3 +2108,4 @@ auto TaskWorker::languageToolLint(const QStringView text, const vector<Span>& se
 
     return success ? LintResult{ outJSON } : LintResult{ Err(rpgm_error()) };
 }
+#endif

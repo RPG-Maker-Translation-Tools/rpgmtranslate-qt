@@ -1,0 +1,219 @@
+name: Rust+C++ AppImage Release Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  TARGET_ARCH: x86-64-v3
+  LLVM_VERSION: 20
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install base dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y software-properties-common \
+          && sudo add-apt-repository universe && sudo apt-get update \
+          && sudo apt-get install -y \
+          git make cmake ninja-build libc6-dev dpkg-dev gcc-14 g++-14 clang-20 libclang-common-20-dev lld-20 llvm-20-tools pkgconf ca-certificates locales curl wget \
+          python3-pip \
+          libssl-dev libkrb5-dev \
+          libarchive-dev libgit2-dev libnuspell-dev \
+          libavutil-dev libavcodec-dev libavfilter-dev libavformat-dev libswresample-dev libswscale-dev \
+          liblzma-dev libicu-dev \
+          libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
+          libfontconfig1-dev libfreetype6-dev \
+          libx11-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev \
+          libxcb1-dev libxcb-cursor-dev libxcb-glx0-dev \
+          libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev \
+          libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev \
+          libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev \
+          libxcb-xinerama0-dev libxcb-xkb-dev \
+          libxkbcommon-dev libxkbcommon-x11-dev \
+          libwayland-dev libwayland-egl-backend-dev \
+          libdbus-1-dev \
+          libfuse2 file patchelf
+
+          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 \
+          && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+
+      - name: Set locale
+        run: |
+          sudo sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen
+          sudo locale-gen
+
+      - name: Install missing deps
+        run: |
+          git clone --depth 1 --branch v0.16.2 https://github.com/quickjs-ng/quickjs.git /tmp/quickjs-ng \
+          && cmake -G=Ninja -B /tmp/quickjs-ng/build -S /tmp/quickjs-ng -DCMAKE_BUILD_TYPE=Release \
+          && cmake --build /tmp/quickjs-ng/build -j \
+          && sudo cmake --install /tmp/quickjs-ng/build \
+          && rm -rf /tmp/quickjs-ng \
+          && git clone --depth 1 --branch v8.0.0 https://github.com/stephenberry/glaze.git /tmp/glaze \
+          && cmake -G=Ninja -B /tmp/glaze/build -S /tmp/glaze -DCMAKE_BUILD_TYPE=Release -Dglaze_BUILD_EXAMPLES=OFF \
+          && sudo cmake --install /tmp/glaze/build \
+          && rm -rf /tmp/glaze
+
+          pip3 install --break-system-packages aqtinstall
+
+          aqt install-qt linux desktop 6.8.2 linux_gcc_64 \
+          --outputdir /opt/Qt \
+          --modules qtwaylandcompositor
+
+          echo "QT_ROOT=/opt/Qt/6.8.2/gcc_64" >> $GITHUB_ENV
+          echo "$QT_ROOT/bin" >> $GITHUB_ENV
+          echo "$QT_ROOT/lib:${LD_LIBRARY_PATH:-}" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH='$QT_ROOT'" >> $GITHUB_ENV
+          echo "Qt6_DIR='$QT_ROOT/lib/cmake/Qt6'" >> $GITHUB_ENV
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y cbindgen
+
+      - name: Install linuxdeploy
+        run: |
+          sudo wget -q "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" \
+            -O /usr/local/bin/linuxdeploy
+          sudo wget -q "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage" \
+            -O /usr/local/bin/linuxdeploy-plugin-qt
+          sudo chmod +x /usr/local/bin/linuxdeploy /usr/local/bin/linuxdeploy-plugin-qt
+          cd /usr/local/bin
+          sudo bash -c 'APPIMAGE_EXTRACT_AND_RUN=1 ./linuxdeploy --appimage-extract'
+          sudo mv squashfs-root linuxdeploy.appdir
+          sudo rm linuxdeploy
+          sudo ln -s linuxdeploy.appdir/AppRun linuxdeploy
+          sudo bash -c 'APPIMAGE_EXTRACT_AND_RUN=1 ./linuxdeploy-plugin-qt --appimage-extract'
+          sudo mv squashfs-root linuxdeploy-plugin-qt.appdir
+          sudo rm linuxdeploy-plugin-qt
+          sudo ln -s linuxdeploy-plugin-qt.appdir/AppRun linuxdeploy-plugin-qt
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: rustcpp-appimage-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: rustcpp-appimage-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: rustcpp-appimage-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: rustcpp-appimage-cmake-build-${{ github.sha }}
+          restore-keys: rustcpp-appimage-cmake-build-
+
+      - name: Build release
+        env:
+          CC: clang-20
+          CXX: clang++-20
+          AR: llvm-ar-20
+          RANLIB: llvm-ranlib-20
+          NM: llvm-nm-20
+          STRIP: llvm-strip-20
+          OBJCOPY: llvm-objcopy-20
+          OBJDUMP: llvm-objdump-20
+          READELF: llvm-readelf-20
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+          CFLAGS: >-
+            -march=${{ env.TARGET_ARCH }}
+            -O3
+            -fmerge-all-constants
+            -ffunction-sections
+            -fdata-sections
+            -fno-math-errno
+            -fno-trapping-math
+            -fvisibility=hidden
+            -fvisibility-inlines-hidden
+            -fno-exceptions
+            -pipe
+          CXXFLAGS: >-
+            -march=${{ env.TARGET_ARCH }}
+            -O3
+            -fmerge-all-constants
+            -ffunction-sections
+            -fdata-sections
+            -fno-math-errno
+            -fno-trapping-math
+            -fvisibility=hidden
+            -fvisibility-inlines-hidden
+            -fno-exceptions
+            -fno-cxx-exceptions
+            -pipe
+          RUSTFLAGS: >-
+            -Ctarget-cpu=${{ env.TARGET_ARCH }}
+            -Ctarget-feature=+aes,+sse2
+            -Copt-level=3
+            -Ccodegen-units=1
+            -Cpanic=abort
+            -Cstrip=symbols
+            -Cdebuginfo=0
+            -Cprefer-dynamic=no
+            -Cembed-bitcode=yes
+            -Cllvm-args=-function-sections=true
+            -Cllvm-args=-data-sections=true
+            -Cllvm-args=-fp-contract=fast
+            -Cllvm-args=-denormal-fp-math=positive-zero
+            -Cllvm-args=-enable-no-trapping-fp-math=true
+            -Cllvm-args=-unroll-threshold=750
+          LDFLAGS: >-
+            -Wl,-O3
+            -Wl,--gc-sections
+            -Wl,--as-needed
+            -Wl,--strip-all
+            -Wl,--build-id=none
+            -Wl,--icf=all
+            -Wl,-z,now
+            -Wl,-z,norelro
+            -Wl,-z,nosectionheader
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j $(nproc)
+
+      - name: Create AppImage
+        run: |
+          ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release
+          cmake --build build -j
+
+          APP_NAME="rpgmtranslate"
+          APP_BINARY="build/target/bin/rpgmtranslate"
+          DESKTOP_FILE="${APP_NAME}.desktop"
+          ICON_FILE="icons/${APP_NAME}-logo.png"
+
+          QMAKE="$QT_ROOT/bin/qmake" \
+          APPIMAGE_EXTRACT_AND_RUN=1 \
+          linuxdeploy \
+            --appdir AppDir \
+            --executable "$APP_BINARY" \
+            --desktop-file "$DESKTOP_FILE" \
+            --icon-file "$ICON_FILE" \
+            --plugin qt \
+            --output appimage
+
+          ./lua prepare-release.lua --appimage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustcpp-appimage-release
+          path: "*.AppImage*"
+          retention-days: 30

@@ -132,7 +132,7 @@ void AssetMenu::refresh() {
 
     const QString& base = projectSettings->projectPath;
 
-    if (projectSettings->engineType == EngineType::New) {
+    if (projectSettings->engineType == EngineType::MVMZ) {
         const bool wwwExists = QFile::exists(base + u"/www");
 
         populate(

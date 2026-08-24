@@ -381,10 +381,10 @@ auto getWindowColors(const QString& projectPath, const EngineType engineType)
 
     array<QRgb, WINDOW_COLOR_COUNT> colors;
 
-    const i32 windowOffsetX = engineType == EngineType::New ? NEWER_WINDOW_COLOR_OFFSET_X : OLDER_WINDOW_COLOR_OFFSET_X;
-    const i32 windowOffsetY = engineType == EngineType::New ? NEWER_WINDOW_COLOR_OFFSET_Y : OLDER_WINDOW_COLOR_OFFSET_Y;
+    const i32 windowOffsetX = engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_OFFSET_X : OLDER_WINDOW_COLOR_OFFSET_X;
+    const i32 windowOffsetY = engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_OFFSET_Y : OLDER_WINDOW_COLOR_OFFSET_Y;
     const i32 windowSquareSize =
-        engineType == EngineType::New ? NEWER_WINDOW_COLOR_SQUARE_SIZE : OLDER_WINDOW_COLOR_SQUARE_SIZE;
+        engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_SQUARE_SIZE : OLDER_WINDOW_COLOR_SQUARE_SIZE;
 
     for (const auto row : range(0, 4)) {
         for (const auto col : range(0, 8)) {
@@ -403,7 +403,7 @@ auto getWindowColors(const QString& projectPath, const EngineType engineType)
 auto getIcon(const i32 iconIndex, const QString& projectPath, const EngineType engineType) -> result<QPixmap, Notice> {
     i32 iconSize;
 
-    if (engineType == EngineType::New) {
+    if (engineType == EngineType::MVMZ) {
         iconSize = ICONSET_NEWER_ICON_SIZE;
     } else {
         iconSize = ICONSET_OLDER_ICON_SIZE;

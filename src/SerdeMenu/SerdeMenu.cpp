@@ -6,6 +6,43 @@
 
 #include <QFileDialog>
 
+namespace {
+// Returns the format's display name if its rvpacker-txt-rs-lib feature wasn't compiled into
+// this build, or nullptr if the format is available.
+[[nodiscard]] auto unavailableSerdeFormatName(const SerdeFormat format) -> const char* {
+    switch (format) {
+        case SerdeFormat::Csv:
+#ifndef ENABLE_SERDE_CSV
+            return "CSV";
+#else
+            return nullptr;
+#endif
+        case SerdeFormat::Xlsx:
+#ifndef ENABLE_SERDE_XLSX
+            return "XLSX";
+#else
+            return nullptr;
+#endif
+        case SerdeFormat::Xml:
+#ifndef ENABLE_SERDE_XML
+            return "XML";
+#else
+            return nullptr;
+#endif
+        case SerdeFormat::Json:
+            return nullptr;
+        case SerdeFormat::Yaml:
+#ifndef ENABLE_SERDE_YAML
+            return "YAML";
+#else
+            return nullptr;
+#endif
+    }
+
+    std::unreachable();
+}
+}  // namespace
+
 SerdeMenu::SerdeMenu(QWidget* const parent) :
     QWidget(parent, Qt::Tool | Qt::FramelessWindowHint),
     ui(setupUi()),
@@ -28,6 +65,14 @@ SerdeMenu::SerdeMenu(QWidget* const parent) :
             return;
         }
 
+        if (const auto* const unavailable = unavailableSerdeFormatName(format())) {
+            present(
+                this,
+                NOTICE("%1 support was not compiled into this build.", Warning, Modal, QString::fromLatin1(unavailable))
+            );
+            return;
+        }
+
         emit exportRequested();
         hide();
     });
@@ -35,6 +80,14 @@ SerdeMenu::SerdeMenu(QWidget* const parent) :
     connect(ui->importButton, &QPushButton::pressed, this, [this] -> void {
         if (ui->directoryInput->text().isEmpty()) {
             present(this, NOTICE("Pick a source folder first.", Warning, Modal));
+            return;
+        }
+
+        if (const auto* const unavailable = unavailableSerdeFormatName(format())) {
+            present(
+                this,
+                NOTICE("%1 support was not compiled into this build.", Warning, Modal, QString::fromLatin1(unavailable))
+            );
             return;
         }
 

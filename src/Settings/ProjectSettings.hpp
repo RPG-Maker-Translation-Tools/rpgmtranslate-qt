@@ -46,11 +46,11 @@ struct ProjectSettings {
     BaseFlags flags = BaseFlags(0);
 
     SourceDirectory sourceDirectory = SourceDirectory::None;
-    EngineType engineType = EngineType::New;
+    EngineType engineType = EngineType::MVMZ;
 
     [[nodiscard]] constexpr auto engineExtension() const -> QStringView {
         switch (engineType) {
-            case EngineType::New:
+            case EngineType::MVMZ:
                 return u"json";
                 break;
             case EngineType::VXAce:
@@ -67,7 +67,7 @@ struct ProjectSettings {
 
     [[nodiscard]] static constexpr auto engineExtension(const EngineType engineType) -> QStringView {
         switch (engineType) {
-            case EngineType::New:
+            case EngineType::MVMZ:
                 return u"json";
                 break;
             case EngineType::VXAce:

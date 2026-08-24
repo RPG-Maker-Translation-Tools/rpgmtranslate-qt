@@ -13,7 +13,7 @@ use crate::types::{LineNumber, SourceOffset};
 /// Note: The Prism Ruby API does track lines, but it's currently not exposed
 /// by the Rust crate, so this is our alternative while we're building Prism support
 /// and can always clean it up later.
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct LineIndex {
     // Stores the byte offset of each line's start position
     line_starts: Vec<usize>,

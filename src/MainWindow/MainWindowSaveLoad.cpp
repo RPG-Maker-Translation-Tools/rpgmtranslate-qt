@@ -324,8 +324,6 @@ auto MainWindow::saveProjectSettings() -> bool {
 
     QVariantHash metadata;
 
-    metadata[u"disableCustomProcessing"_s] = (projectSettings->flags & BaseFlags_DisableCustomProcessing) != 0;
-    metadata[u"trim"_s] = (projectSettings->flags & BaseFlags_Trim) != 0;
     metadata[u"duplicateMode"_s] = scast<u8>(projectSettings->duplicateMode);
 
     QJsonObject hashes;

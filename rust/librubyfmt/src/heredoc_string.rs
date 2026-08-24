@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::types::ColNumber;
 use crate::util::get_indent;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HeredocKind {
     Bare,
     Dash,
@@ -33,7 +33,7 @@ impl HeredocKind {
 /// A segment of heredoc content. Used to distinguish between content that should
 /// receive squiggly indentation and content from nested non-squiggly heredocs
 /// that should not be indented.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum HeredocSegment {
     Normal(Vec<u8>),
     /// Content from nested non-squiggly heredocs, should never receive squiggly indentation.
@@ -41,7 +41,7 @@ pub enum HeredocSegment {
     Raw(Vec<u8>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct HeredocString<'src> {
     symbol: Cow<'src, [u8]>,
     pub kind: HeredocKind,

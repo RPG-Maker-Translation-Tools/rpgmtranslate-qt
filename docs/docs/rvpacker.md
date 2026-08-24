@@ -12,8 +12,6 @@ The first time you open a new project, a Read options dialog pops up automatical
 | --- | --- |
 | Read Mode | **Default** does nothing if the source files are unchanged since the last read - use **Force** to re-read anyway. **Append**/**Force Append** add newly-found text without discarding your existing translation. |
 | Duplicate Mode | **Remove Duplicates** (recommended) collapses repeated lines across maps and events. **Allow Duplicates** keeps every occurrence separately. System, scripts, and plugin files always behave as if Allow is set, regardless of this option. |
-| Trim | Strips leading/trailing whitespace from extracted strings. Only use this if you're sure it won't change behavior in-game. |
-| Disable Custom Processing | Turns off special-cased handling built in for specific games - currently *LISA: The Painful* (and derivatives) and *Fear & Hunger 2: Termina*. |
 | Ignore | Skips entries listed in a `.rvpacker-ignore` file (see [Purge](#purge)). |
 | Skip Obsolete | Drops entries from the previous read that no longer exist in the source, instead of keeping them around. |
 | Parse Map Events | Also extracts map event metadata - event ID, name, and X/Y position - alongside the dialogue text. |
@@ -36,4 +34,3 @@ Accessible through the `rv` button (choose "Export/Import" from its menu). This 
 Pick a format, pick a folder (destination for Export, source for Import), select which files to include with the file-select button, then Export or Import. Each translation file becomes one file of the chosen format in that folder, named the same way with a different extension (e.g. `actors.txt` &rarr; `actors.csv`) - Import expects the same naming back.
 
 **Import overwrites the corresponding translation file's content**, so make sure the folder you're importing from actually has what you want before running it.
-

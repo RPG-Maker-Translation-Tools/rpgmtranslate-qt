@@ -10,7 +10,7 @@ use log::debug;
 use std::borrow::Cow;
 use std::io::{self, Write};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FormattingContext {
     Main,
     Binary,
@@ -21,13 +21,13 @@ pub enum FormattingContext {
     HashType(HashType),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HashType {
     SymbolKey,
     HashRocket,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct IndentDepth {
     depth: ColNumber,
 }

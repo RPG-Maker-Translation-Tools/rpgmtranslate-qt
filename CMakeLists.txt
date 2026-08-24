@@ -25,6 +25,46 @@ option(ENABLE_LANGUAGETOOL
     ON
 )
 
+option(ENABLE_GOOGLE_TRANSLATE
+    "Google Translate backend. Used for machine translation."
+    ON
+)
+
+option(ENABLE_YANDEX_TRANSLATE
+    "Yandex Translate backend. Used for machine translation."
+    ON
+)
+
+option(ENABLE_DEEPL
+    "DeepL backend. Used for machine translation."
+    ON
+)
+
+option(ENABLE_LLM_CONNECTOR
+    "LLM-based translation backends (OpenAI, Anthropic, DeepSeek, Gemini, Mistral, Ollama, and other OpenAI-compatible/local providers)."
+    ON
+)
+
+option(ENABLE_SERDE_CSV
+    "Serde menu: allows exporting/importing translation files as CSV."
+    ON
+)
+
+option(ENABLE_SERDE_XML
+    "Serde menu: allows exporting/importing translation files as XML."
+    ON
+)
+
+option(ENABLE_SERDE_XLSX
+    "Serde menu: allows exporting/importing translation files as XLSX."
+    ON
+)
+
+option(ENABLE_SERDE_YAML
+    "Serde menu: allows exporting/importing translation files as YAML."
+    ON
+)
+
 option(ENABLE_LIBGIT2
     "libgit2 - allows using built-in Git client for managing repositories."
     ON
@@ -57,6 +97,35 @@ option(ENABLE_RUBY_FORMATTING
 )
 
 option(ENABLE_MIMALLOC "Use mimalloc instead of a standard memory allocator." OFF)
+
+option(ENABLE_TOKENIZER_CHINESE_ICU
+    "Glossary matching: ICU-based word segmentation for Chinese."
+    OFF
+)
+option(ENABLE_TOKENIZER_CHINESE_LINDERA
+    "Glossary matching: Lindera-based word segmentation for Chinese."
+    ON
+)
+option(ENABLE_TOKENIZER_JAPANESE_ICU
+    "Glossary matching: ICU-based word segmentation for Japanese."
+    OFF
+)
+option(ENABLE_TOKENIZER_JAPANESE_LINDERA
+    "Glossary matching: Lindera-based word segmentation for Japanese."
+    ON
+)
+option(ENABLE_TOKENIZER_KOREAN_LINDERA
+    "Glossary matching: Lindera-based word segmentation for Korean."
+    ON
+)
+option(ENABLE_TOKENIZER_SNOWBALL
+    "Glossary matching: Snowball stemming for Latin-alphabet languages."
+    ON
+)
+option(ENABLE_TOKENIZER_SOUTHEAST_ASIAN
+    "Glossary matching: ICU-based word segmentation for Thai, Khmer, Lao and Burmese."
+    ON
+)
 
 set(MSVC_RUNTIME
     "MT"
@@ -361,6 +430,14 @@ target_compile_definitions(${PROJECT_NAME}
 
         $<$<BOOL:${ENABLE_NUSPELL}>:ENABLE_NUSPELL>
         $<$<BOOL:${ENABLE_LANGUAGETOOL}>:ENABLE_LANGUAGETOOL>
+        $<$<BOOL:${ENABLE_GOOGLE_TRANSLATE}>:ENABLE_GOOGLE_TRANSLATE>
+        $<$<BOOL:${ENABLE_YANDEX_TRANSLATE}>:ENABLE_YANDEX_TRANSLATE>
+        $<$<BOOL:${ENABLE_DEEPL}>:ENABLE_DEEPL>
+        $<$<BOOL:${ENABLE_LLM_CONNECTOR}>:ENABLE_LLM_CONNECTOR>
+        $<$<BOOL:${ENABLE_SERDE_CSV}>:ENABLE_SERDE_CSV>
+        $<$<BOOL:${ENABLE_SERDE_XML}>:ENABLE_SERDE_XML>
+        $<$<BOOL:${ENABLE_SERDE_XLSX}>:ENABLE_SERDE_XLSX>
+        $<$<BOOL:${ENABLE_SERDE_YAML}>:ENABLE_SERDE_YAML>
         $<$<BOOL:${ENABLE_LIBGIT2}>:ENABLE_LIBGIT2>
         $<$<BOOL:${ENABLE_ASSET_PLAYBACK}>:ENABLE_ASSET_PLAYBACK>
         $<$<BOOL:${ENABLE_JSON_HIGHLIGHTING}>:ENABLE_JSON_HIGHLIGHTING>
@@ -410,6 +487,38 @@ if (ENABLE_LANGUAGETOOL)
     list(APPEND RUST_FEATURES "languagetool")
 endif()
 
+if (ENABLE_GOOGLE_TRANSLATE)
+    list(APPEND RUST_FEATURES "google-translate")
+endif()
+
+if (ENABLE_YANDEX_TRANSLATE)
+    list(APPEND RUST_FEATURES "yandex-translate")
+endif()
+
+if (ENABLE_DEEPL)
+    list(APPEND RUST_FEATURES "deepl")
+endif()
+
+if (ENABLE_LLM_CONNECTOR)
+    list(APPEND RUST_FEATURES "llm-connector")
+endif()
+
+if (ENABLE_SERDE_CSV)
+    list(APPEND RUST_FEATURES "serde-csv")
+endif()
+
+if (ENABLE_SERDE_XML)
+    list(APPEND RUST_FEATURES "serde-xml")
+endif()
+
+if (ENABLE_SERDE_XLSX)
+    list(APPEND RUST_FEATURES "serde-xlsx")
+endif()
+
+if (ENABLE_SERDE_YAML)
+    list(APPEND RUST_FEATURES "serde-yaml")
+endif()
+
 if (ENABLE_JSON_HIGHLIGHTING)
     list(APPEND RUST_FEATURES "json-highlighting")
 endif()
@@ -432,6 +541,34 @@ endif()
 
 if (ENABLE_MIMALLOC)
     list(APPEND RUST_FEATURES "mimalloc")
+endif()
+
+if (ENABLE_TOKENIZER_CHINESE_ICU)
+    list(APPEND RUST_FEATURES "chinese-icu")
+endif()
+
+if (ENABLE_TOKENIZER_CHINESE_LINDERA)
+    list(APPEND RUST_FEATURES "chinese-lindera")
+endif()
+
+if (ENABLE_TOKENIZER_JAPANESE_ICU)
+    list(APPEND RUST_FEATURES "japanese-icu")
+endif()
+
+if (ENABLE_TOKENIZER_JAPANESE_LINDERA)
+    list(APPEND RUST_FEATURES "japanese-lindera")
+endif()
+
+if (ENABLE_TOKENIZER_KOREAN_LINDERA)
+    list(APPEND RUST_FEATURES "korean-lindera")
+endif()
+
+if (ENABLE_TOKENIZER_SNOWBALL)
+    list(APPEND RUST_FEATURES "snowball")
+endif()
+
+if (ENABLE_TOKENIZER_SOUTHEAST_ASIAN)
+    list(APPEND RUST_FEATURES "southeast-asian")
 endif()
 
 corrosion_import_crate(

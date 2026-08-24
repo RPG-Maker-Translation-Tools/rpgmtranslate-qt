@@ -1,30 +1,32 @@
 #![allow(clippy::too_many_arguments)]
 use gxhash::{HashMap, HashMapExt};
 use language_tokenizer::{Algorithm, MatchMode, MatchResult, find_all_matches as find_all_matches_, tokenize};
+#[cfg(feature = "languagetool")]
 use languagetool_rust::api::{
     check::{Data, Level, Match, Request as LTRequest},
     server::ServerClient,
 };
+#[cfg(feature = "llm-connector")]
 use llm_connector::{
     LlmClient, LlmConnectorError,
     types::{ChatRequest, Message, ReasoningEffort, Role},
 };
 use log::{debug, info};
 use marshal_rs::Get;
-use regex::Regex;
 use rpgmad_lib::{Decrypter, ExtractError};
 use rvpacker_txt_rs_lib::{
-    BaseFlags, DuplicateMode, EngineType, FileFlags, GameType, PurgerBuilder, ReadMode, ReaderBuilder, WriterBuilder,
-    constants::NEW_LINE, get_system_title,
+    BaseFlags, DuplicateMode, EngineType, FileFlags, Mode, Processor, constants::DEFAULT_LINE_BREAK,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, from_str, to_string};
+#[cfg(feature = "languagetool")]
+use std::time::Duration;
 use std::{
-    fs::{self, create_dir_all, read_to_string},
+    fs::{self, create_dir_all},
     io::{self},
     path::{Path, PathBuf},
     str::FromStr,
-    time::{Duration, Instant},
+    time::Instant,
 };
 use thiserror::Error;
 
@@ -44,6 +46,7 @@ pub(crate) fn delete_credential(account: &str) -> Result<(), Error> {
 
 /// Builds the `LlmClient` for any endpoint reachable through `llm-connector`.
 /// Never call with `Google`/`Yandex`/`DeepL` - those aren't `llm-connector` providers.
+#[cfg(feature = "llm-connector")]
 fn build_llm_client(
     endpoint: TranslationEndpoint,
     api_key: &str,
@@ -83,22 +86,6 @@ fn build_llm_client(
     })
 }
 
-fn get_game_type(game_title: &str, disable_custom_processing: bool) -> GameType {
-    if disable_custom_processing {
-        GameType::None
-    } else {
-        let lowercased = game_title.to_lowercase();
-
-        if unsafe { Regex::new(r"\btermina\b").unwrap_unchecked() }.is_match(&lowercased) {
-            GameType::Termina
-        } else if unsafe { Regex::new(r"\blisa\b").unwrap_unchecked() }.is_match(&lowercased) {
-            GameType::LisaRPG
-        } else {
-            GameType::None
-        }
-    }
-}
-
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct MatchModeInfo {
@@ -115,30 +102,41 @@ pub(crate) enum Error {
     Rvpacker(#[from] rvpacker_txt_rs_lib::Error),
     #[error(transparent)]
     Extract(#[from] ExtractError),
+    #[error(
+        "{0} support was not compiled into this build. Rebuild with the corresponding CMake option enabled, or choose \
+         a different option."
+    )]
+    BackendNotCompiled(&'static str),
+    #[cfg(feature = "google-translate")]
     #[error(transparent)]
     Translators(#[from] translators::Error),
+    #[cfg(feature = "llm-connector")]
     #[error(transparent)]
     LLMConnectorError(#[from] LlmConnectorError),
+    #[cfg(feature = "yandex-translate")]
     #[error(transparent)]
     Yandex(#[from] yandex_translate_v2::Error),
+    #[cfg(feature = "yandex-translate")]
     #[error("Yandex folder ID is not specified. Input it in settings.")]
     YandexFolderNotSpecified,
     #[error(transparent)]
     JSON(#[from] serde_json::Error),
+    #[cfg(feature = "deepl")]
     #[error(transparent)]
     DeepL(#[from] deepl::Error),
+    #[cfg(feature = "deepl")]
     #[error(transparent)]
     DeepLLangConvert(#[from] deepl::LangConvertError),
     #[error(transparent)]
     LanguageTokenizer(#[from] language_tokenizer::Error),
+    #[cfg(feature = "languagetool")]
     #[error(transparent)]
     LanguageTool(#[from] languagetool_rust::error::Error),
+    #[cfg(feature = "languagetool")]
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
     AssetDecrypt(#[from] rpgm_asset_decrypter_lib::Error),
-    #[error(transparent)]
-    Marshal(#[from] marshal_rs::load::LoadError),
     #[error("Key {0} does not exist in file {1}")]
     InvalidKey(String, String),
     #[error(transparent)]
@@ -223,21 +221,20 @@ pub(crate) fn write(
     output_path: &Path,
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
-    game_title: &str,
     flags: BaseFlags,
     skip_files: FileFlags,
 ) -> Result<f32, Error> {
     let start_time = Instant::now();
-    let game_type = get_game_type(game_title, flags.contains(BaseFlags::DisableCustomProcessing));
 
-    let mut writer = WriterBuilder::new()
-        .with_files(FileFlags::all() & !skip_files)
-        .with_flags(flags)
-        .game_type(game_type)
-        .duplicate_mode(duplicate_mode)
-        .build();
+    let mut processor = Processor {
+        mode: Mode::Write,
+        file_flags: FileFlags::all() & !skip_files,
+        flags,
+        duplicate_mode,
+        ..Default::default()
+    };
 
-    writer.write(source_path, translation_path, output_path, engine_type)?;
+    processor.process(engine_type, source_path, translation_path, Some(output_path))?;
 
     Ok(start_time.elapsed().as_secs_f32())
 }
@@ -245,7 +242,7 @@ pub(crate) fn write(
 pub(crate) fn read(
     source_path: &Path,
     translation_path: &Path,
-    read_mode: ReadMode,
+    read_mode: Mode,
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
     skip_files: FileFlags,
@@ -254,42 +251,20 @@ pub(crate) fn read(
     hashes: HashMap<String, u64>,
     ini_title: &str,
 ) -> Result<HashMap<String, u64>, Error> {
-    let game_title: String = if engine_type.is_new() {
-        let system_file_path = source_path.join("System.json");
-        let system_file_content = read_to_string(&system_file_path).map_err(|err| Error::Io(system_file_path, err))?;
-        get_system_title(&system_file_content)?
-    } else {
-        if ini_title.is_empty() {
-            let system_file_path = source_path.join(format!("System.{ext}", ext = engine_type.extension()));
-            let system_file_content = fs::read(&system_file_path).map_err(|err| Error::Io(system_file_path, err))?;
-            let value = marshal_rs::load::load_utf8(&system_file_content, None)?;
-
-            value
-                .get("game_title")
-                .and_then(|t| t.as_str())
-                .map(Into::into)
-                .unwrap_or(String::new())
-        } else {
-            ini_title.to_owned()
-        }
+    let mut processor = Processor {
+        mode: read_mode,
+        file_flags: FileFlags::all().difference(skip_files),
+        flags,
+        duplicate_mode,
+        game_title: ini_title.to_owned(),
+        hashes,
+        map_events,
+        ..Default::default()
     };
 
-    let game_type = get_game_type(&game_title, flags.contains(BaseFlags::DisableCustomProcessing));
+    processor.process(engine_type, source_path, translation_path, None)?;
 
-    let mut reader = ReaderBuilder::new()
-        .with_files(FileFlags::all().difference(skip_files))
-        .with_flags(flags)
-        .game_title(ini_title)
-        .game_type(game_type)
-        .read_mode(read_mode)
-        .duplicate_mode(duplicate_mode)
-        .map_events(map_events)
-        .hashes(hashes.into_iter())
-        .build();
-
-    reader.read(source_path, translation_path, engine_type)?;
-
-    Ok(reader.hashes().collect())
+    Ok(processor.hashes)
 }
 
 pub(crate) fn purge(
@@ -297,19 +272,18 @@ pub(crate) fn purge(
     translation_path: &Path,
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
-    game_title: &str,
     flags: BaseFlags,
     skip_files: FileFlags,
 ) -> Result<(), Error> {
-    let game_type = get_game_type(game_title, flags.contains(BaseFlags::DisableCustomProcessing));
+    let mut processor = Processor {
+        mode: Mode::Purge,
+        file_flags: FileFlags::all() & !skip_files,
+        flags,
+        duplicate_mode,
+        ..Default::default()
+    };
 
-    PurgerBuilder::new()
-        .with_files(FileFlags::all() & !skip_files)
-        .with_flags(flags)
-        .game_type(game_type)
-        .duplicate_mode(duplicate_mode)
-        .build()
-        .purge(source_path, translation_path, engine_type)?;
+    processor.process(engine_type, source_path, translation_path, None)?;
 
     Ok(())
 }
@@ -319,7 +293,16 @@ pub(crate) async fn get_models(
     api_key: &str,
     base_url: &str,
 ) -> Result<Vec<String>, Error> {
-    Ok(build_llm_client(endpoint, api_key, base_url)?.models().await?)
+    #[cfg(feature = "llm-connector")]
+    {
+        Ok(build_llm_client(endpoint, api_key, base_url)?.models().await?)
+    }
+
+    #[cfg(not(feature = "llm-connector"))]
+    {
+        let _ = (endpoint, api_key, base_url);
+        Err(Error::BackendNotCompiled("LLM connector"))
+    }
 }
 
 pub(crate) async fn translate_single<'a>(
@@ -338,6 +321,7 @@ pub(crate) async fn translate_single<'a>(
     let endpoint = unsafe { std::mem::transmute(endpoint_settings["type"].as_u64().unwrap_unchecked() as u8) };
 
     let translated = match endpoint {
+        #[cfg(feature = "google-translate")]
         TranslationEndpoint::Google => {
             use translators::{GoogleTranslator, Translator};
 
@@ -345,11 +329,14 @@ pub(crate) async fn translate_single<'a>(
                 .translate_async(text, source_language, translation_language)
                 .await?
         }
+        #[cfg(not(feature = "google-translate"))]
+        TranslationEndpoint::Google => return Err(Error::BackendNotCompiled("Google Translate")),
 
         _ => {
             let api_key = unsafe { endpoint_settings["apiKey"].as_str().unwrap_unchecked() };
 
             match endpoint {
+                #[cfg(feature = "yandex-translate")]
                 TranslationEndpoint::Yandex => {
                     use yandex_translate_v2::{TranslateRequest, YandexTranslateClient};
 
@@ -372,7 +359,10 @@ pub(crate) async fn translate_single<'a>(
                         .map(|x| x.text)
                         .unwrap_or_default()
                 }
+                #[cfg(not(feature = "yandex-translate"))]
+                TranslationEndpoint::Yandex => return Err(Error::BackendNotCompiled("Yandex Translate")),
 
+                #[cfg(feature = "deepl")]
                 TranslationEndpoint::DeepL => {
                     use deepl::*;
 
@@ -382,7 +372,10 @@ pub(crate) async fn translate_single<'a>(
                         .await?
                         .to_string()
                 }
+                #[cfg(not(feature = "deepl"))]
+                TranslationEndpoint::DeepL => return Err(Error::BackendNotCompiled("DeepL")),
 
+                #[cfg(feature = "llm-connector")]
                 _ => {
                     let base_url = unsafe { endpoint_settings["baseUrl"].as_str().unwrap_unchecked() };
                     let client = build_llm_client(endpoint, api_key, base_url)?;
@@ -418,6 +411,8 @@ pub(crate) async fn translate_single<'a>(
                     let response = client.chat(&request).await?;
                     response.content
                 }
+                #[cfg(not(feature = "llm-connector"))]
+                _ => return Err(Error::BackendNotCompiled("LLM connector")),
             }
         }
     };
@@ -442,6 +437,7 @@ pub(crate) async fn translate<'a>(
     let endpoint = unsafe { std::mem::transmute(endpoint_settings["type"].as_u64().unwrap_unchecked() as u8) };
 
     let result: HashMap<String, Vec<String>> = match endpoint {
+        #[cfg(feature = "google-translate")]
         TranslationEndpoint::Google => {
             use translators::{GoogleTranslator, Translator};
             let translator = GoogleTranslator::default();
@@ -462,17 +458,20 @@ pub(crate) async fn translate<'a>(
                     let translated = translator
                         .translate_async(string, source_language, translation_language)
                         .await?;
-                    response_file.push(translated.replace('\n', NEW_LINE));
+                    response_file.push(translated.replace('\n', DEFAULT_LINE_BREAK));
                 }
             }
 
             response
         }
+        #[cfg(not(feature = "google-translate"))]
+        TranslationEndpoint::Google => return Err(Error::BackendNotCompiled("Google Translate")),
 
         _ => {
             let api_key = unsafe { endpoint_settings["apiKey"].as_str().unwrap_unchecked() };
 
             match endpoint {
+                #[cfg(feature = "yandex-translate")]
                 TranslationEndpoint::Yandex => {
                     use yandex_translate_v2::{TranslateRequest, YandexTranslateClient};
 
@@ -502,7 +501,7 @@ pub(crate) async fn translate<'a>(
                         let strings = response
                             .translations
                             .into_iter()
-                            .map(|x| x.text.replace('\n', NEW_LINE))
+                            .map(|x| x.text.replace('\n', DEFAULT_LINE_BREAK))
                             .collect();
 
                         *response_file = strings;
@@ -510,7 +509,10 @@ pub(crate) async fn translate<'a>(
 
                     response
                 }
+                #[cfg(not(feature = "yandex-translate"))]
+                TranslationEndpoint::Yandex => return Err(Error::BackendNotCompiled("Yandex Translate")),
 
+                #[cfg(feature = "deepl")]
                 TranslationEndpoint::DeepL => {
                     use deepl::{glossary::*, *};
 
@@ -544,7 +546,7 @@ pub(crate) async fn translate<'a>(
                                 .await?
                                 .to_string();
 
-                            new_strings.push(translated.replace('\n', NEW_LINE));
+                            new_strings.push(translated.replace('\n', DEFAULT_LINE_BREAK));
                         }
 
                         *response_file = new_strings;
@@ -552,7 +554,10 @@ pub(crate) async fn translate<'a>(
 
                     response
                 }
+                #[cfg(not(feature = "deepl"))]
+                TranslationEndpoint::DeepL => return Err(Error::BackendNotCompiled("DeepL")),
 
+                #[cfg(feature = "llm-connector")]
                 _ => {
                     let base_url = unsafe { endpoint_settings["baseUrl"].as_str().unwrap_unchecked() };
                     let client = build_llm_client(endpoint, api_key, base_url)?;
@@ -624,12 +629,14 @@ pub(crate) async fn translate<'a>(
 
                     for strings in result.values_mut() {
                         for string in strings.iter_mut() {
-                            *string = string.replace('\n', NEW_LINE);
+                            *string = string.replace('\n', DEFAULT_LINE_BREAK);
                         }
                     }
 
                     result
                 }
+                #[cfg(not(feature = "llm-connector"))]
+                _ => return Err(Error::BackendNotCompiled("LLM connector")),
             }
         }
     };
@@ -726,8 +733,10 @@ pub(crate) fn count_words(text: &str, algorithm: Algorithm) -> Result<u32, Error
     Ok(tokens.len() as u32)
 }
 
+#[cfg(feature = "languagetool")]
 const LANGUAGETOOL_TIMEOUT: Duration = Duration::from_secs(20);
 
+#[cfg(feature = "languagetool")]
 pub(crate) async fn language_tool_lint<'a>(
     data: Data<'a>,
     base_url: &str,
@@ -800,57 +809,89 @@ pub enum SerdeFormat {
 }
 
 pub(crate) fn serde_export(content: &str, format: SerdeFormat) -> Result<Vec<u8>, Error> {
-    use rvpacker_txt_rs_lib::serde::{export_csv, export_json, export_xlsx, export_xml, export_yaml};
+    #[cfg(feature = "serde-csv")]
+    use rvpacker_txt_rs_lib::serde::export_csv;
+    use rvpacker_txt_rs_lib::serde::export_json;
+    #[cfg(feature = "serde-xlsx")]
+    use rvpacker_txt_rs_lib::serde::export_xlsx;
+    #[cfg(feature = "serde-xml")]
+    use rvpacker_txt_rs_lib::serde::export_xml;
+    #[cfg(feature = "serde-yaml")]
+    use rvpacker_txt_rs_lib::serde::export_yaml;
 
     match format {
+        #[cfg(feature = "serde-csv")]
         SerdeFormat::Csv => export_csv(content).map(String::into_bytes),
+        #[cfg(not(feature = "serde-csv"))]
+        SerdeFormat::Csv => return Err(Error::BackendNotCompiled("CSV")),
+
+        #[cfg(feature = "serde-xlsx")]
         SerdeFormat::Xlsx => export_xlsx(content),
+        #[cfg(not(feature = "serde-xlsx"))]
+        SerdeFormat::Xlsx => return Err(Error::BackendNotCompiled("XLSX")),
+
+        #[cfg(feature = "serde-xml")]
         SerdeFormat::Xml => export_xml(content).map(String::into_bytes),
+        #[cfg(not(feature = "serde-xml"))]
+        SerdeFormat::Xml => return Err(Error::BackendNotCompiled("XML")),
+
         SerdeFormat::Json => export_json(content).map(String::into_bytes),
+
+        #[cfg(feature = "serde-yaml")]
         SerdeFormat::Yaml => export_yaml(content).map(String::into_bytes),
+        #[cfg(not(feature = "serde-yaml"))]
+        SerdeFormat::Yaml => return Err(Error::BackendNotCompiled("YAML")),
     }
     .map_err(|err| Error::Serde(err.to_string()))
 }
 
 pub(crate) fn serde_import(bytes: &[u8], format: SerdeFormat) -> Result<String, Error> {
-    use rvpacker_txt_rs_lib::serde::{import_csv, import_json, import_xlsx, import_xml, import_yaml};
+    #[cfg(feature = "serde-csv")]
+    use rvpacker_txt_rs_lib::serde::import_csv;
+    use rvpacker_txt_rs_lib::serde::import_json;
+    #[cfg(feature = "serde-xlsx")]
+    use rvpacker_txt_rs_lib::serde::import_xlsx;
+    #[cfg(feature = "serde-xml")]
+    use rvpacker_txt_rs_lib::serde::import_xml;
+    #[cfg(feature = "serde-yaml")]
+    use rvpacker_txt_rs_lib::serde::import_yaml;
 
     if let SerdeFormat::Xlsx = format {
-        return import_xlsx(bytes).map_err(|err| Error::Serde(err.to_string()));
+        #[cfg(feature = "serde-xlsx")]
+        {
+            return import_xlsx(bytes).map_err(|err| Error::Serde(err.to_string()));
+        }
+        #[cfg(not(feature = "serde-xlsx"))]
+        {
+            return Err(Error::BackendNotCompiled("XLSX"));
+        }
     }
 
     let text = std::str::from_utf8(bytes).map_err(|err| Error::Serde(err.to_string()))?;
 
     match format {
+        #[cfg(feature = "serde-csv")]
         SerdeFormat::Csv => import_csv(text),
+        #[cfg(not(feature = "serde-csv"))]
+        SerdeFormat::Csv => return Err(Error::BackendNotCompiled("CSV")),
+
+        #[cfg(feature = "serde-xml")]
         SerdeFormat::Xml => import_xml(text),
+        #[cfg(not(feature = "serde-xml"))]
+        SerdeFormat::Xml => return Err(Error::BackendNotCompiled("XML")),
+
         SerdeFormat::Json => import_json(text),
+
+        #[cfg(feature = "serde-yaml")]
         SerdeFormat::Yaml => import_yaml(text),
+        #[cfg(not(feature = "serde-yaml"))]
+        SerdeFormat::Yaml => return Err(Error::BackendNotCompiled("YAML")),
+
         SerdeFormat::Xlsx => unreachable!(),
     }
     .map_err(|err| Error::Serde(err.to_string()))
 }
 
-pub(crate) fn beautify_json(json: &str) -> String {
-    let mut deserializer = serde_json::Deserializer::from_str(json);
-
-    let mut out = Vec::new();
-    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"  ");
-    let mut serializer = serde_json::Serializer::with_formatter(&mut out, formatter);
-
-    unsafe {
-        serde_transcode::transcode(&mut deserializer, &mut serializer).unwrap_unchecked();
-        String::from_utf8_unchecked(out)
-    }
-}
-
-#[cfg(any(
-    feature = "json-highlighting",
-    feature = "js-highlighting",
-    feature = "ruby-highlighting",
-    feature = "js-formatting",
-    feature = "ruby-formatting"
-))]
 #[repr(u8)]
 pub enum HighlightLanguage {
     JS,
@@ -916,7 +957,7 @@ pub(crate) fn highlight_code(input: &str, lang: HighlightLanguage) -> Result<Str
 pub(crate) fn get_ini_title(project_path: &str) -> Result<Vec<u8>, Error> {
     let ini_path = Path::new(project_path).join("Game.ini");
 
-    Ok(rvpacker_txt_rs_lib::core::get_ini_title(
+    Ok(rvpacker_txt_rs_lib::get_ini_title(
         &fs::read(&ini_path).map_err(|err| Error::Io(ini_path, err))?,
     )?)
 }
@@ -924,6 +965,7 @@ pub(crate) fn get_ini_title(project_path: &str) -> Result<Vec<u8>, Error> {
 #[cfg(any(feature = "js-formatting", feature = "ruby-formatting"))]
 pub(crate) fn format_src(src: &str, lang: HighlightLanguage) -> Result<String, Error> {
     match lang {
+        #[cfg(feature = "js-formatting")]
         HighlightLanguage::JS => {
             use dprint_plugin_typescript::{configuration::*, *};
             let config = ConfigurationBuilder::new().build();
@@ -938,6 +980,10 @@ pub(crate) fn format_src(src: &str, lang: HighlightLanguage) -> Result<String, E
 
             Ok(unsafe { result.unwrap_unchecked() })
         }
+        #[cfg(not(feature = "js-formatting"))]
+        HighlightLanguage::JS => return Err(Error::BackendNotCompiled("JavaScript formatting")),
+
+        #[cfg(feature = "ruby-formatting")]
         HighlightLanguage::Ruby => {
             use rubyfmt::format_buffer;
             let result = unsafe {
@@ -947,6 +993,9 @@ pub(crate) fn format_src(src: &str, lang: HighlightLanguage) -> Result<String, E
             };
             Ok(result)
         }
+        #[cfg(not(feature = "ruby-formatting"))]
+        HighlightLanguage::Ruby => return Err(Error::BackendNotCompiled("Ruby formatting")),
+
         _ => unreachable!(),
     }
 }

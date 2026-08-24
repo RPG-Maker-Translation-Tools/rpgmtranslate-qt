@@ -335,11 +335,11 @@ You receive a JSON object with:
 
 Line semantics:
 
-- HTML-like comments (`<!-- ... -->`) are context only - DO NOT translate.
-- `<!-- ID -->` starts a new independent entry.
-- `<!-- NAME -->` is an internal identifier.
-- `<!-- IN-GAME DISPLAY NAME -->` is the visible map name.
-- `<!-- EVENT NAME -->` starts a new event block.
+- Comments starting with <!> are context only - DO NOT translate.
+- `<!>ID` starts a new independent entry.
+- `<!>NAME` is an internal identifier.
+- `<!>IN-GAME DISPLAY NAME` is the visible map name.
+- `<!>EVENT NAME` starts a new event block.
 
 Translation rules:
 
@@ -1445,5 +1445,38 @@ void SettingsWindow::onTypeChange(const TranslationEndpoint endpoint) {
                 ));
             }
             break;
+    }
+
+    QString unavailableBackend;
+
+    switch (endpoint) {
+        case TranslationEndpoint::Google:
+#ifndef ENABLE_GOOGLE_TRANSLATE
+            unavailableBackend = u"Google Translate"_s;
+#endif
+            break;
+        case TranslationEndpoint::Yandex:
+#ifndef ENABLE_YANDEX_TRANSLATE
+            unavailableBackend = u"Yandex Translate"_s;
+#endif
+            break;
+        case TranslationEndpoint::DeepL:
+#ifndef ENABLE_DEEPL
+            unavailableBackend = u"DeepL"_s;
+#endif
+            break;
+        default:
+#ifndef ENABLE_LLM_CONNECTOR
+            unavailableBackend = tr("LLM connector");
+#endif
+            break;
+    }
+
+    if (!unavailableBackend.isEmpty()) {
+        ui->typeDescriptionLabel->setText(
+            ui->typeDescriptionLabel->text() % u"\n\n"_qsv %
+            tr("Warning: %1 support was not compiled into this build. Selecting this endpoint will fail when used.")
+                .arg(unavailableBackend)
+        );
     }
 }

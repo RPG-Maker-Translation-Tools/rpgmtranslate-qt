@@ -1,0 +1,149 @@
+name: Rust+C++ Release Build (Debian)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  TARGET_ARCH: x86-64-v3
+
+jobs:
+  build-debian:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get backports
+        run: |
+          echo 'deb http://deb.debian.org/debian trixie-backports main' > /etc/apt/sources.list.d/backports.list
+
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y \
+            build-essential make cmake ninja-build g++ \
+            clang-19 lld-19 llvm-19-tools libclang-common-19-dev \
+            curl ca-certificates locales pkgconf git \
+            libssl-dev libkrb5-dev \
+            qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-wayland-dev \
+            qt6-l10n-tools qt6-svg-dev \
+            libarchive-dev libgit2-dev libnuspell-dev \
+            libavutil-dev libavcodec-dev libavfilter-dev libavformat-dev libswresample-dev libswscale-dev \
+            libqjs-dev libglaze-dev liblzma-dev libicu-dev
+
+      - name: Set locale
+        run: |
+          sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen
+          locale-gen
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y cbindgen
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: rustcpp-debian-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: rustcpp-debian-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: rustcpp-debian-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: rustcpp-debian-cmake-build-${{ github.sha }}
+          restore-keys: rustcpp-debian-cmake-build-
+
+      - name: Build release
+        env:
+          CC: clang-19
+          CXX: clang++-19
+          AR: llvm-ar-19
+          RANLIB: llvm-ranlib-19
+          NM: llvm-nm-19
+          STRIP: llvm-strip-19
+          OBJCOPY: llvm-objcopy-19
+          OBJDUMP: llvm-objdump-19
+          READELF: llvm-readelf-19
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+          CFLAGS: >-
+            -march=${{ env.TARGET_ARCH }}
+            -O3
+            -fmerge-all-constants
+            -ffunction-sections
+            -fdata-sections
+            -fno-math-errno
+            -fno-trapping-math
+            -fvisibility=hidden
+            -fvisibility-inlines-hidden
+            -fno-exceptions
+            -pipe
+          CXXFLAGS: >-
+            -march=${{ env.TARGET_ARCH }}
+            -O3
+            -fmerge-all-constants
+            -ffunction-sections
+            -fdata-sections
+            -fno-math-errno
+            -fno-trapping-math
+            -fvisibility=hidden
+            -fvisibility-inlines-hidden
+            -fno-exceptions
+            -fno-cxx-exceptions
+            -pipe
+          RUSTFLAGS: >-
+            -Ctarget-cpu=${{ env.TARGET_ARCH }}
+            -Ctarget-feature=+aes,+sse2
+            -Copt-level=3
+            -Ccodegen-units=1
+            -Cpanic=abort
+            -Cstrip=symbols
+            -Cdebuginfo=0
+            -Cprefer-dynamic=no
+            -Cembed-bitcode=yes
+            -Cllvm-args=-function-sections=true
+            -Cllvm-args=-data-sections=true
+            -Cllvm-args=-fp-contract=fast
+            -Cllvm-args=-denormal-fp-math=positive-zero
+            -Cllvm-args=-enable-no-trapping-fp-math=true
+            -Cllvm-args=-unroll-threshold=750
+          LDFLAGS: >-
+            -Wl,-O3
+            -Wl,--gc-sections
+            -Wl,--as-needed
+            -Wl,--strip-all
+            -Wl,--build-id=none
+            -Wl,--icf=all
+            -Wl,-z,now
+            -Wl,-z,norelro
+            -Wl,-z,nosectionheader
+        run: |
+          ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release
+          cmake --build build -j
+          ./lua prepare-release.lua
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustcpp-debian-release
+          path: build/target/bin/*
+          retention-days: 30

@@ -22,13 +22,13 @@ fn tokens_contain_hard_newline(token: &AbstractLineToken<'_>) -> bool {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum ConvertType {
     MultiLine,
     SingleLine,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct BaseQueue<'src> {
     tokens: Vec<ConcreteLineTokenAndTargets<'src>>,
 }
@@ -97,7 +97,7 @@ pub trait AbstractTokenTarget<'src>: std::fmt::Debug {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct BreakableEntry<'src> {
     tokens: Vec<AbstractLineToken<'src>>,
     multiline_tracker: MultilineTracker,
@@ -209,7 +209,7 @@ impl<'src> BreakableEntry<'src> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct BreakableCallChainEntry<'src> {
     tokens: Vec<AbstractLineToken<'src>>,
     is_user_multilined: bool,
@@ -500,13 +500,13 @@ impl<'src> Breakable<'src> {
 }
 
 /// Tracks whether tokens span multiple source lines.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 struct MultilineTracker {
     first_line: Option<LineNumber>,
     is_multiline: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ConditionalLayoutPhase {
     Predicate,
     Statement,
@@ -517,7 +517,7 @@ pub enum ConditionalLayoutPhase {
 /// This is used for conditionals like:
 /// - Inline: `statement if predicate`
 /// - Block:  `if predicate\n  statement\nend`
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct ConditionalLayoutEntry<'src> {
     predicate_tokens: Vec<AbstractLineToken<'src>>,
     statement_tokens: Vec<AbstractLineToken<'src>>,

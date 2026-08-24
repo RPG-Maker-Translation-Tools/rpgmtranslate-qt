@@ -35,7 +35,7 @@
 #include <archive_entry.h>
 
 namespace {
-constexpr QStringView ID_COMMENT = u"<!-- ID -->";
+constexpr QStringView ID_COMMENT = u"<!>ID";
 constexpr i32 MAX_RECENT_PROJECTS = 10;
 }  // namespace
 
@@ -170,7 +170,7 @@ void MainWindow::checkForUpdates(const bool manual) {
 
     connect(updater, &AutoUpdater::versionFetched, this, [=, this](const QString& version) -> void {
         const auto newVersion = QVersionNumber::fromString(version);
-        const auto currentVersion = QVersionNumber::fromString(QL1SV(RPGMT_VERSION));
+        const auto currentVersion = QVersionNumber::fromString(QStringView(RPGMT_VERSION));
 
         if (newVersion <= currentVersion) {
             if (manual) {
@@ -185,9 +185,7 @@ void MainWindow::checkForUpdates(const bool manual) {
         auto msgBox = QMessageBox(this);
         auto* const checkbox = new QCheckBox(tr("Don't remind me"), &msgBox);
         msgBox.setWindowTitle(tr("New version is available"));
-        msgBox.setText(
-            tr("Version %1 is available.\nCurrent version is %2.").arg(version, QString::fromLatin1(RPGMT_VERSION))
-        );
+        msgBox.setText(tr("Version %1 is available.\nCurrent version is %2.").arg(version, QStringView(RPGMT_VERSION)));
         const QPushButton* const installButton = msgBox.addButton(tr("Install"), QMessageBox::AcceptRole);
         const QPushButton* const skipButton = msgBox.addButton(tr("Skip"), QMessageBox::RejectRole);
         msgBox.setCheckBox(checkbox);
@@ -500,7 +498,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
 
             tabs.emplace_back(basename, fileTotal, fileTranslated, projectSettings->completedFiles.contains(basename));
 
-            if (isSystem && contentView.lastIndexOf(u"<!-- ID --><#>8") != -1) {
+            if (isSystem && contentView.lastIndexOf(u"<!>ID<#>8") != -1) {
                 const QStringView titleLine = contentView.sliced(contentView.lastIndexOf(u'\n') + 1);
                 const QSVList parts = lineParts(titleLine, 0, basename);
                 const QStringView translation = getTranslation(parts).translation;
@@ -772,7 +770,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                 bool systemExists = false;
 
                 if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.json")) {
-                    tempProjectSettings->engineType = EngineType::New;
+                    tempProjectSettings->engineType = EngineType::MVMZ;
                     systemExists = true;
                 } else if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.rvdata2")) {
                     tempProjectSettings->engineType = EngineType::VXAce;
@@ -968,7 +966,9 @@ void MainWindow::closeProject() {
     writeMenu->clear();
     serdeMenu->clear();
 
+#ifdef ENABLE_LIBGIT2
     ui->sourceControlDock->clear();
+#endif
 
     actionTabPanel->setEnabled(false);
     actionSave->setEnabled(false);
@@ -1272,6 +1272,7 @@ void MainWindow::read(
     });
 }
 
+#ifdef ENABLE_NUSPELL
 auto MainWindow::initDictionary() -> result<void, QString> {
     const QString path =
         qApp->property("data-location").toString() % u"/dictionaries"_qsv % projectSettings->spellcheckDictionary;
@@ -1290,3 +1291,4 @@ auto MainWindow::initDictionary() -> result<void, QString> {
 
     return {};
 }
+#endif

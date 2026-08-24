@@ -275,7 +275,7 @@ struct Selected {
                     name = { "system" };
                     break;
                 case FileFlags_Scripts:
-                    if (engineType == EngineType::New) {
+                    if (engineType == EngineType::MVMZ) {
                         name = { "plugins" };
                     } else {
                         name = { "scripts" };

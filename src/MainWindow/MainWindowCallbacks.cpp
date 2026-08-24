@@ -26,7 +26,7 @@ constexpr i32 GO_TO_ROW_INPUT_WIDTH = 256;
 constexpr i32 GO_TO_ROW_INPUT_X_OFFSET = 128;
 constexpr i32 GO_TO_ROW_INPUT_Y_OFFSET = 64;
 
-constexpr string_view COMMENT_PREFIX_BYTES = "<!--";
+constexpr string_view COMMENT_PREFIX_BYTES = "<!>";
 }  // namespace
 
 void MainWindow::logFFI(const u8 level, const QString& message) {

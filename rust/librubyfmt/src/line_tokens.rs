@@ -26,7 +26,7 @@ pub fn clats_indent<'src>(depth: ColNumber) -> ConcreteLineTokenAndTargets<'src>
 
 // represents something that will actually end up as a ruby token, as opposed to
 // something that has to be transformed to become a ruby token
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ConcreteLineToken<'src> {
     HardNewLine,
     Indent {
@@ -240,7 +240,7 @@ impl<'src> From<ConcreteLineTokenAndTargets<'src>> for AbstractLineToken<'src> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum ConcreteLineTokenAndTargets<'src> {
     ConcreteLineToken(ConcreteLineToken<'src>),
     BreakableEntry(BreakableEntry<'src>),
@@ -264,7 +264,7 @@ impl ConcreteLineTokenAndTargets<'_> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum AbstractLineToken<'src> {
     // this is all bodil's fault
     ConcreteLineToken(ConcreteLineToken<'src>),

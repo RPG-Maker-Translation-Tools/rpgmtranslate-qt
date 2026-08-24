@@ -1,6 +1,6 @@
 use crate::line_tokens::ConcreteLineToken;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct DelimiterPair {
     open: &'static [u8],
     close: &'static [u8],
@@ -12,7 +12,7 @@ impl DelimiterPair {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BreakableDelims {
     single_line: DelimiterPair,
     multi_line: DelimiterPair,

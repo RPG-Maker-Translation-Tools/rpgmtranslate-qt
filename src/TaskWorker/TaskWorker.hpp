@@ -114,7 +114,9 @@ class TaskWorker final : public QObject {
         span<const TextMatch> matches
     ) -> ReplaceSingleResult;
 
+#ifdef ENABLE_LANGUAGETOOL
     [[nodiscard]] auto languageToolLint(QStringView text, const vector<Span>& sequences) -> LintResult;
+#endif
 
     [[nodiscard]] auto lintFiles(const TaskToken& task, Selected selected, const Glossary& glossary)
         -> GlobalLintResult;
@@ -138,7 +140,9 @@ class TaskWorker final : public QObject {
         this->mapSections = mapSections;
     }
 
+#ifdef ENABLE_NUSPELL
     void setDictionary(optional<nuspell::Dictionary> dict) { dictionary = std::move(dict); }
+#endif
 
    signals:
     void lockFile(const QString& file);
@@ -177,7 +181,9 @@ class TaskWorker final : public QObject {
         const Term& term
     ) -> optional<LintRow>;
 
+#ifdef ENABLE_NUSPELL
     optional<nuspell::Dictionary> dictionary;
+#endif
 
     vector<TaskToken> runningTasks;
 

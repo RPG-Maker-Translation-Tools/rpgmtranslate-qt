@@ -48,7 +48,7 @@ impl RichFormatError {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Clone, Copy, Debug)]
 pub enum FormatError {
     OK = 0,
     SyntaxError = 1,

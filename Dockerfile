@@ -22,6 +22,7 @@
 FROM debian:trixie AS debian-build
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG TARGET_ARCH=x86-64-v3
 
 # the image ships a hook that deletes downloaded archives, which would empty the cache mount
 RUN rm -f /etc/apt/apt.conf.d/docker-clean \
@@ -60,13 +61,17 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
+    export CFLAGS="-march=${TARGET_ARCH}" \
+           CXXFLAGS="-march=${TARGET_ARCH}" \
+           RUSTFLAGS="-Ctarget-cpu=${TARGET_ARCH} -Ctarget-feature=+aes,+sse2" \
+    && ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j
 
 # OpenSUSE
 FROM opensuse/tumbleweed AS opensuse-build
 
 ARG REPO_URL
+ARG TARGET_ARCH=x86-64-v3
 
 RUN --mount=type=cache,target=/var/cache/zypp,sharing=locked \
     zypper --non-interactive modifyrepo --keep-packages --all \
@@ -102,12 +107,16 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
+    export CFLAGS="-march=${TARGET_ARCH}" \
+           CXXFLAGS="-march=${TARGET_ARCH}" \
+           RUSTFLAGS="-Ctarget-cpu=${TARGET_ARCH} -Ctarget-feature=+aes,+sse2" \
+    && ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j
 
 FROM ubuntu:24.04 AS appimage-build
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG TARGET_ARCH=x86-64-v3
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean \
     && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
@@ -120,12 +129,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get install -y \
     git make cmake ninja-build libc6-dev dpkg-dev gcc-14 g++-14 libclang1-18 libclang-common-18-dev pkgconf ca-certificates locales curl wget \
     python3-pip \
-    # same app deps as your Debian stage
     libssl-dev libkrb5-dev \
     libarchive-dev libgit2-dev libnuspell-dev \
     libavutil-dev libavcodec-dev libavfilter-dev libavformat-dev libswresample-dev libswscale-dev \
     liblzma-dev libicu-dev \
-    # Qt platform/render deps (Qt itself comes from aqtinstall below)
+    # Qt deps
     libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
     libfontconfig1-dev libfreetype6-dev \
     libx11-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev \
@@ -205,9 +213,12 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    CMAKE_PREFIX_PATH=/opt/Qt/6.8.2/gcc_64 \
-    Qt6_DIR=/opt/Qt/6.8.2/gcc_64/lib/cmake/Qt6 \
-    ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release ENABLE_ASSET_PLAYBACK=OFF \
+    export CMAKE_PREFIX_PATH=/opt/Qt/6.8.2/gcc_64 \
+           Qt6_DIR=/opt/Qt/6.8.2/gcc_64/lib/cmake/Qt6 \
+           CFLAGS="-march=${TARGET_ARCH}" \
+           CXXFLAGS="-march=${TARGET_ARCH}" \
+           RUSTFLAGS="-Ctarget-cpu=${TARGET_ARCH} -Ctarget-feature=+aes,+sse2" \
+    && ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release ENABLE_ASSET_PLAYBACK=OFF \
     && cmake --build build -j
 
 ARG APP_NAME=rpgmtranslate
@@ -225,6 +236,8 @@ RUN QMAKE="$QT_ROOT/bin/qmake" \
 
 # Arch
 FROM archlinux:latest AS arch-build
+
+ARG TARGET_ARCH=x86-64-v3
 
 RUN sed -i 's/^#\?ParallelDownloads.*/ParallelDownloads = 10/' /etc/pacman.conf
 
@@ -254,11 +267,16 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
+    export CFLAGS="-march=${TARGET_ARCH}" \
+           CXXFLAGS="-march=${TARGET_ARCH}" \
+           RUSTFLAGS="-Ctarget-cpu=${TARGET_ARCH} -Ctarget-feature=+aes,+sse2" \
+    && ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j
 
 # Alpine
 FROM alpine:latest AS alpine-build
+
+ARG TARGET_ARCH=x86-64-v3
 
 RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
     apk update && apk add --cache-dir /var/cache/apk \
@@ -286,5 +304,8 @@ WORKDIR /app
 RUN chmod +x lua
 RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
     --mount=type=cache,target=/root/.cargo/git,sharing=locked \
-    ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
+    export CFLAGS="-march=${TARGET_ARCH}" \
+           CXXFLAGS="-march=${TARGET_ARCH}" \
+           RUSTFLAGS="-Ctarget-cpu=${TARGET_ARCH} -Ctarget-feature=+aes,+sse2" \
+    && ./lua configure.lua -B=build -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j

@@ -336,7 +336,13 @@ local function main_linux()
 
     os.execute("rm -f rpgmtranslate.tar.xz")
     os.execute("cp build/target/bin/rpgmtranslate rpgmtranslate")
-    upx_compress({ "rpgmtranslate" })
+
+    if (arg[1] == "--appimage") then
+        upx_compress({ "rpgmtranslate" })
+    else
+        upx_compress({ "RPGMTranslate-x86_64.AppImage" })
+    end
+
     os.execute("tar -cJf rpgmtranslate.tar.xz rpgmtranslate " .. archive_paths_str)
     os.execute("rm -f rpgmtranslate")
 

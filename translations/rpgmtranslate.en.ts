@@ -10,7 +10,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AboutWindow/AboutWindow.cpp" line="151"/>
+        <location filename="../src/AboutWindow/AboutWindow.cpp" line="178"/>
         <source>Failed to load THIRD-PARTY-NOTICE.md: %1. It usually comes bundled with RPGMTranslate.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -66,269 +66,269 @@
 <context>
     <name>AssetPreviewWidget</name>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="112"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="114"/>
         <source> pt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="394"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="414"/>
         <source>Any</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="412"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="432"/>
         <source>Arabic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="406"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="426"/>
         <source>Armenian</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="570"/>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="586"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="590"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="606"/>
         <source>Asset playback is disabled. You can open asset in the default app.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="54"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="56"/>
         <source>Beautify</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="424"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="444"/>
         <source>Bengali</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="403"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="423"/>
         <source>Cyrillic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="421"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="441"/>
         <source>Devanagari</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="302"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="322"/>
         <source>Extension is unsupported.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="344"/>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="525"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="364"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="545"/>
         <source>Failed to decrypt asset %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="226"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="247"/>
         <source>Failed to format: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="619"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="639"/>
         <source>Failed to generate JSON for file %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="328"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="348"/>
         <source>Failed to load asset %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="378"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="398"/>
         <source>Failed to load font %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="354"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="374"/>
         <source>Failed to load pixmap from %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="597"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="617"/>
         <source>Failed to open file %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="536"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="556"/>
         <source>Failed to open temporary file %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="463"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="483"/>
         <source>Georgian</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="400"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="420"/>
         <source>Greek</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="430"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="450"/>
         <source>Gujarati</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="427"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="447"/>
         <source>Gurmukhi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="409"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="429"/>
         <source>Hebrew</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="718"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="738"/>
         <source>Invalid regex</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="475"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="495"/>
         <source>Japanese</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="442"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="462"/>
         <source>Kannada</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="466"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="486"/>
         <source>Khmer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="478"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="498"/>
         <source>Korean</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="454"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="474"/>
         <source>Lao</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="397"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="417"/>
         <source>Latin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="50"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="52"/>
         <source>Locate file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="445"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="465"/>
         <source>Malayalam</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="98"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="100"/>
         <source>Media playback not available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="460"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="480"/>
         <source>Myanmar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="493"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="513"/>
         <source>Nko</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="742"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="762"/>
         <source>No results</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="487"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="507"/>
         <source>Ogham</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="51"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="53"/>
         <source>Open in default app</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="433"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="453"/>
         <source>Oriya</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="490"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="510"/>
         <source>Runic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="469"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="489"/>
         <source>Simplified Chinese</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="448"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="468"/>
         <source>Sinhala</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="500"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="520"/>
         <source>Supported writing systems: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="484"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="504"/>
         <source>Symbol</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="415"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="435"/>
         <source>Syriac</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="436"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="456"/>
         <source>Tamil</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="439"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="459"/>
         <source>Telugu</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="418"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="438"/>
         <source>Thaana</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="451"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="471"/>
         <source>Thai</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="109"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="111"/>
         <source>The quick brown fox jumps over the lazy dog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="457"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="477"/>
         <source>Tibetan</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="472"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="492"/>
         <source>Traditional Chinese</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="481"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="501"/>
         <source>Vietnamese</source>
         <translation type="unfinished"></translation>
     </message>
@@ -468,7 +468,7 @@
 <context>
     <name>BookmarkListDelegate</name>
     <message>
-        <location filename="../src/BookmarkMenu/BookmarkList.cpp" line="148"/>
+        <location filename="../src/BookmarkMenu/BookmarkList.cpp" line="149"/>
         <source>Row %1 / File %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -748,18 +748,18 @@ The files have been changed. Do you want to append any new text?%2</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="227"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="920"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="918"/>
         <source>%1 Lines / %2 Comments</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindowConnections.cpp" line="210"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="924"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="922"/>
         <source>%1 Translated / %2 Total</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="242"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="240"/>
         <source>%n row(s) copied.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -767,7 +767,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="239"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="237"/>
         <source>%n row(s) cut.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -775,7 +775,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="245"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="243"/>
         <source>%n row(s) pasted.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -796,7 +796,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="201"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="199"/>
         <source>Abort</source>
         <translation type="unfinished"></translation>
     </message>
@@ -811,7 +811,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="827"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="825"/>
         <source>Another task is already running.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -837,7 +837,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="621"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="619"/>
         <source>Before working with the program, check out documentation in Help &gt; Documentation!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -922,7 +922,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="657"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="655"/>
         <source>Copying the data directory to .rpgmtranslate/baseline-data as a baseline.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -942,7 +942,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="745"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="743"/>
         <source>Existing translation folder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -962,7 +962,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="669"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="667"/>
         <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1183"/>
         <source>Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead.</source>
         <translation type="unfinished"></translation>
@@ -973,19 +973,19 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="724"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="838"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="864"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="722"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="836"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="862"/>
         <source>Failed to load project: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="644"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="642"/>
         <source>Failed to open git repository with error: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="905"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="903"/>
         <source>Failed to open tab: %1.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -995,12 +995,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="268"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="266"/>
         <source>Failed to opened project because couldn&apos;t locate `.rpgmtranslate` program directory that was previously located at this path: %1. If this is intentional, please reopen the directory manually.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="156"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="157"/>
         <source>Failed to retranslate the interface. This is most like an internal application issue.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1010,12 +1010,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="896"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="894"/>
         <source>File is currently processed and is being locked.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="257"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="255"/>
         <source>Folder %1 does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1056,12 +1056,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="191"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="189"/>
         <source>Install</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="201"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="199"/>
         <source>Installing update...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1151,12 +1151,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.cpp" line="135"/>
+        <location filename="../src/MainWindow/MainWindow.cpp" line="136"/>
         <source>Open a project by using &apos;Open Folder&apos; button!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="378"/>
+        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="376"/>
         <source>Opening backup %1 failed: %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1191,12 +1191,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="820"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="818"/>
         <source>Read was rejected by user.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="389"/>
+        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="387"/>
         <source>Reading archive failed with %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1290,12 +1290,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="192"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="190"/>
         <source>Skip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="564"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="562"/>
         <source>Source</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1311,7 +1311,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="807"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="805"/>
         <source>Source files, translation or archive file do not exist.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1333,7 +1333,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="627"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="625"/>
         <source>The program failed to split some lines into parts because of absence of &lt;#&gt; delimiter. Check log to see skipped lines.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1357,12 +1357,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <location filename="../src/MainWindow/MainWindowConnections.cpp" line="220"/>
         <location filename="../src/MainWindow/MainWindowConnections.cpp" line="221"/>
         <location filename="../src/MainWindow/MainWindowConnections.cpp" line="222"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="568"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="566"/>
         <source>Translation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="746"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="744"/>
         <source>Translation folder is found in the root of the project. Use it?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1373,7 +1373,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="227"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="225"/>
         <source>Update failed with error: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1383,7 +1383,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="189"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="188"/>
         <source>Version %1 is available.
 Current version is %2.</source>
         <translation type="unfinished"></translation>
@@ -1401,7 +1401,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="404"/>
+        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="402"/>
         <source>Writing entry %1 failed: %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1637,7 +1637,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="79"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="60"/>
         <source>Allow duplicates across maps and events. This may bloat your translation. This mode is always set for system, scripts, and plugins files.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1647,22 +1647,22 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="57"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="45"/>
         <source>Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="42"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="37"/>
         <source>Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event. Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="581"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="502"/>
         <source>Apply</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="574"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="495"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1682,17 +1682,12 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="305"/>
-        <source>Disable Custom Processing: Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear &amp; Hunger 2: Termina.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/ReadMenu/ReadMenu.ui" line="175"/>
         <source>Duplicate Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="105"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="86"/>
         <source>Failed to extract title from the Game.ini file: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1712,12 +1707,12 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="358"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="279"/>
         <source>Ignore: Ignore entries from .rvpacker-ignore file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="458"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="379"/>
         <source>Parse Map Events: Parses map events metadata, such as event ID, name, x/y position.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1738,27 +1733,22 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/ReadMenu/ReadMenu.ui" line="205"/>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="84"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="65"/>
         <source>Remove duplicates across maps and events. Recommended. In system, scripts and plugins files this mode is always overridden by allow mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="411"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="332"/>
         <source>Skip Obsolete: Don&apos;t preserve obsolete entries from the previous read.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="111"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="92"/>
         <source>Title is empty in Game.ini file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="255"/>
-        <source>Trim: Removes the leading and trailing whitespace from extracted strings. Don&apos;t use this option unless you know that trimming the text won&apos;t cause any incorrect behavior.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="502"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="423"/>
         <source>Use title from Game.ini: If game is RPG Maker XP/VX/VX Ace, it may not necessarily contain game title in the system file. Use this option to take it from Game.ini. You will have to pick the right encoding. If this option is not set, we&apos;ll try to use the title from system file, if it&apos;s there.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1952,17 +1942,23 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SerdeMenu/SerdeMenu.cpp" line="27"/>
+        <location filename="../src/SerdeMenu/SerdeMenu.cpp" line="64"/>
         <source>Pick a destination folder first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SerdeMenu/SerdeMenu.cpp" line="37"/>
+        <location filename="../src/SerdeMenu/SerdeMenu.cpp" line="71"/>
+        <location filename="../src/SerdeMenu/SerdeMenu.cpp" line="89"/>
+        <source>%1 support was not compiled into this build.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SerdeMenu/SerdeMenu.cpp" line="82"/>
         <source>Pick a source folder first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SerdeMenu/SerdeMenu.cpp" line="18"/>
+        <location filename="../src/SerdeMenu/SerdeMenu.cpp" line="55"/>
         <source>Select a folder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1995,7 +1991,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="481"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
         <source>Appearance</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2010,7 +2006,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="811"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="835"/>
         <source>Backup period must be between %1 and %2 seconds.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2030,15 +2026,15 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2319"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2289"/>
         <source>Case insensitive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2023"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2095"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2167"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2239"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2017"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2083"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2149"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2215"/>
         <source>Category</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2068,42 +2064,52 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="702"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1021"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="726"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1047"/>
         <source>Choose Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2188"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2170"/>
         <source>Comment Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2826"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2793"/>
         <source>Context</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="481"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
         <source>Controls</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="481"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
         <source>Core</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2260"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1470"/>
+        <source>LLM connector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1478"/>
+        <source>Warning: %1 support was not compiled into this build. Selecting this endpoint will fail when used.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2236"/>
         <source>Custom Lints</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2033"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2105"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2177"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2249"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2329"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2027"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2093"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2159"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2225"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2299"/>
         <source>Custom color</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2113,7 +2119,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1400"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1426"/>
         <source>DeepL. Requires API key and folder ID. Configured options don&apos;t work with this endpoint, except glossary usage.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2150,7 +2156,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2661"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2628"/>
         <source>Display words/characters count for a file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2160,7 +2166,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2506"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2473"/>
         <source>Enabled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2180,7 +2186,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="497"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="521"/>
         <source>Endpoint %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2190,37 +2196,37 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="459"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="477"/>
         <source>English</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2407"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2377"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1189"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1215"/>
         <source>Export custom lints</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2896"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2863"/>
         <source>File context</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2865"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2832"/>
         <source>File context select</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="440"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="458"/>
         <source>Frequency penalty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1325"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1351"/>
         <source>Getting available models failed with error: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2230,7 +2236,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="630"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="654"/>
         <source>Given URL is invalid. Please check the validity of submitted URL.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2245,7 +2251,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1391"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1417"/>
         <source>Google Translate. Free and unlimited. Configured options don&apos;t work with this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2260,17 +2266,17 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2414"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2384"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1224"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1250"/>
         <source>Import custom lints</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2765"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2732"/>
         <source>In characters. Allowed range: 0-255.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2280,7 +2286,7 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="429"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="447"/>
         <source>Input token limit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2290,13 +2296,13 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1189"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1224"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1215"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1250"/>
         <source>JSON files (*.json)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1408"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1434"/>
         <source>LLM endpoint with pre-defined base URL. Don&apos;t change the base URL, unless you know what you&apos;re doing. Configured options will affect this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2311,12 +2317,12 @@ Current version is %2.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1373"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1399"/>
         <source>LanguageTool connection check failed with error: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1365"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1391"/>
         <source>LanguageTool connection check failed with error: %1
 If the server doesn&apos;t actually support HTTPS (e.g. local server, started with org.languagetool.server.HTTPServer), try an http:// URL instead.</source>
         <translation type="unfinished"></translation>
@@ -2327,12 +2333,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2752"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2719"/>
         <source>Line length hint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="832"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="856"/>
         <source>Line length hint must be between 0 and %1.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2342,7 +2348,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1417"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1443"/>
         <source>Local endpoint. You need to set correct base url, that should probably end with &apos;/v1&apos;. Configured options will affect this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2362,7 +2368,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="824"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="848"/>
         <source>Max backups must be between 1 and %1.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2372,7 +2378,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2430"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2400"/>
         <source>Misc</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2382,7 +2388,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="601"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="625"/>
         <source>Model that was previously selected for translation: %1 is not longer in the list of models provided by the endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2397,31 +2403,31 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2044"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2038"/>
         <source>Note Tags</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1413"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1439"/>
         <source>OpenAI-compatible endpoint. This category fits many providers, including OpenAI itself, DeepSeek, Mistral, OpenRouter and local providers, such as llama.cpp and koboldcpp. Requires valid base URL, that should probably end with &apos;/v1&apos;. Configured options will affect this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="432"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="450"/>
         <source>Output token limit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1243"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1269"/>
         <source>Parsing %1 failed: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2018"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2090"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2162"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2234"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2309"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2012"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2078"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2144"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2210"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2279"/>
         <source>Pattern</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2431,12 +2437,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2116"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2104"/>
         <source>Plugin Commands</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="442"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="460"/>
         <source>Precense penalty</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2451,12 +2457,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="481"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
         <source>Project</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2927"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2894"/>
         <source>Project сontext</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2466,7 +2472,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1233"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1259"/>
         <source>Reading %1 failed: %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2476,7 +2482,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="719"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="743"/>
         <source>Regular expression is invalid: %1. Offset: %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2486,12 +2492,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2501"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2468"/>
         <source>Replacement</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="460"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="478"/>
         <source>Russian</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2506,7 +2512,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2496"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2463"/>
         <source>Sequence</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2516,23 +2522,23 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2451"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2421"/>
         <source>Sequence Replacements</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2458"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2428"/>
         <source>Sequence replacement is a feature that allows you to specify character sequences that will be converted into some other symbols. It&apos;s mainly useful when you need a non-ASCII punctuation symbol (e.g. em dash, guillemets).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1202"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1228"/>
         <source>Serializing custom lints failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="32"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2710"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2677"/>
         <source>Settings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2548,12 +2554,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2778"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2745"/>
         <source>Source language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2804"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2771"/>
         <source>Spellcheck dictionary</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2563,12 +2569,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1355"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1381"/>
         <source>Successfully connected to the LanguageTool server.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2623"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2590"/>
         <source>Symbols that should be considered space, comma-separated list of Unicode U+XXXX code points:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2584,7 +2590,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="438"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="456"/>
         <source>Temperature</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2599,7 +2605,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="435"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="453"/>
         <source>Thinking budget limit</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2609,22 +2615,22 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2314"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2284"/>
         <source>Tooltip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="444"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="462"/>
         <source>Top P</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="481"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
         <source>Translation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2794"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2761"/>
         <source>Translation language</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2634,7 +2640,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="447"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="465"/>
         <source>Translation table font size</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2649,16 +2655,16 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2633"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2600"/>
         <source>U+3000, U+00A0, U+200B</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2028"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2100"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2172"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2244"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2324"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2022"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2088"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2154"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2220"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2294"/>
         <source>Use custom color</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2688,12 +2694,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1215"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1241"/>
         <source>Writing %1 failed: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1395"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1421"/>
         <source>Yandex Translate. Requires API key and folder ID. Configured options don&apos;t work with this endpoint.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2713,7 +2719,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="654"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="678"/>
         <source>`.dic` file corresponding to the `.aff` file does not exist. Dictionary won&apos;t work properly without the `.dic` file.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2781,64 +2787,64 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
 <context>
     <name>TaskWorker</name>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="765"/>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="776"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="761"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="772"/>
         <source>Exact</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1434"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1430"/>
         <source>Failed to parse LanguageTool response.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="765"/>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="776"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="761"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="772"/>
         <source>Fuzzy (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1414"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1410"/>
         <source>LanguageTool check failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1404"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1400"/>
         <source>LanguageTool check skipped: set the LanguageTool base URL in settings to enable it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1403"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1399"/>
         <source>LanguageTool check skipped: set the translation language in settings to enable it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="790"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="786"/>
         <source>Match.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="788"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="784"/>
         <source>Number of term occurrences doesn&apos;t match the number of translation occurrences.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1557"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1553"/>
         <source>Script must define function rpgmLineCallback(sourceText, translations, filename, lineNumber, options)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="892"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="888"/>
         <source>Tags do not match between source and translation.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="786"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="782"/>
         <source>Term translation is not present.</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="793"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="789"/>
         <source>Term: %1, %n occurrence(s): %2</source>
         <translation type="unfinished">
             <numerusform></numerusform>
@@ -2846,12 +2852,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         </translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="784"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="780"/>
         <source>Translation is empty.</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="796"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="792"/>
         <source>Translation: %1, %n occurrence(s): %2</source>
         <translation type="unfinished">
             <numerusform></numerusform>

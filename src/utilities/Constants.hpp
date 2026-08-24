@@ -30,11 +30,11 @@ static constexpr i32 MIN_BACKUP_PERIOD = 60;
 static constexpr i32 MAX_BACKUP_PERIOD = 3600;
 static constexpr i32 MAX_BACKUPS = 99;
 
-static constexpr QStringView MAP_DISPLAY_NAME_COMMENT_PREFIX = u"<!-- IN-GAME DISPLAYED NAME: ";
+static constexpr QStringView MAP_DISPLAY_NAME_COMMENT_PREFIX = u"<!>IN-GAME DISPLAYED NAME: ";
 
-static constexpr QStringView COMMENT_PREFIX = u"<!--";
-static constexpr QStringView BOOKMARK_COMMENT = u"<!-- BOOKMARK -->";
-static constexpr QStringView NAME_COMMENT = u"<!-- NAME -->";
+static constexpr QStringView COMMENT_PREFIX = u"<!>";
+static constexpr QStringView BOOKMARK_COMMENT = u"<!>BOOKMARK";
+static constexpr QStringView NAME_COMMENT = u"<!>NAME";
 
 static constexpr i32 DEFAULT_COLUMN_WIDTH = 768;
 

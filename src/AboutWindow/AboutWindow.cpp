@@ -70,8 +70,8 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 #elifdef __GNUC__
     out += u"Compiler: GCC "_qsv % QL1SV(__VERSION__) % LINE_SEPARATOR;
 #elifdef _MSC_VER
-    out += u"Compiler: MSVC "_qsv % itos(_MSC_FULL_VER).qsv() % u" (toolset "_qsv % itos(_MSC_VER).qsv()
-        % u")"_qsv % LINE_SEPARATOR;
+    out += u"Compiler: MSVC "_qsv % itos(_MSC_FULL_VER).qsv() % u" (toolset "_qsv % itos(_MSC_VER).qsv() % u")"_qsv %
+           LINE_SEPARATOR;
 #endif
 
 #ifdef _LIBCPP_VERSION
@@ -79,13 +79,13 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 #elifdef __GLIBCXX__
     out += u"STL: libstdc++ (date "_qsv % itos(__GLIBCXX__).qsv() % u")"_qsv % LINE_SEPARATOR;
 #elifdef _MSVC_STL_VERSION
-    out += u"STL: MSVC STL "_qsv % itos(_MSVC_STL_VERSION).qsv() % u" update "_qsv % itos(_MSVC_STL_UPDATE).qsv()
-        % LINE_SEPARATOR;
+    out += u"STL: MSVC STL "_qsv % itos(_MSVC_STL_VERSION).qsv() % u" update "_qsv % itos(_MSVC_STL_UPDATE).qsv() %
+           LINE_SEPARATOR;
 #endif
 
 #ifdef _WIN32
-    out += u"Windows SDK: NTDDI "_qsv % toHex(NTDDI_VERSION) % u", build "_qsv % itos(VER_PRODUCTBUILD).qsv()
-        % LINE_SEPARATOR;
+    out += u"Windows SDK: NTDDI "_qsv % toHex(NTDDI_VERSION) % u", build "_qsv % itos(VER_PRODUCTBUILD).qsv() %
+           LINE_SEPARATOR;
 #ifdef WDK_NTDDI_VERSION
     out += u"WDK target: NTDDI "_qsv % toHex(WDK_NTDDI_VERSION) % LINE_SEPARATOR;
 #endif
@@ -97,7 +97,7 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 }
 
 constexpr QStringView ABOUT_TEMPLATE =
-    u"RPGMTranslate v%1**\u{2028}\u{2028}Direct dependencies:\u{2028}\u{2028}**fast_float %2\u{2028}jeaii-itoa\u{2028}magic_enum %3\u{2028}miniaudio %4\u{2028}zmij\u{2028}glaze %5\u{2028}Qt %6\u{2028}%7\u{2028}FFmpeg %8\u{2028}libgit2 %9\u{2028}quickjs-ng %10\u{2028}Nuspell %11**\u{2028}\u{2028}Legal info:\u{2028}\u{2028}**RPGMTranslate is licensed under [WTPFL](https://www.wtfpl.net/).\u{2028}RPGMTranslate bundles assets and statically links to the libraries licensed by other terms. See \"Third Party Notice\" tab for more information.\u{2028}See [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt) GitHub repository for more information.**\u{2028}\u{2028}Build info:\u{2028}\u{2028}**%12"_qsv;
+    u"RPGMTranslate v%1 'Death of RPG Maker forums'**\u{2028}\u{2028}Direct dependencies:\u{2028}\u{2028}**fast_float %3\u{2028}jeaii-itoa\u{2028}magic_enum %4\u{2028}miniaudio %5\u{2028}zmij\u{2028}glaze %6\u{2028}Qt %7\u{2028}%8\u{2028}FFmpeg %9\u{2028}libgit2 %10\u{2028}quickjs-ng %11\u{2028}Nuspell %12**\u{2028}\u{2028}Legal info:\u{2028}\u{2028}**RPGMTranslate is licensed under [WTPFL](https://www.wtfpl.net/).\u{2028}RPGMTranslate bundles assets and statically links to the libraries licensed by other terms. See \"Third Party Notice\" tab for more information.\u{2028}See [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt) GitHub repository for more information.**\u{2028}\u{2028}Build info:\u{2028}\u{2028}**%13"_qsv;
 
 constexpr i32 SEMVER_STRING_MAX_LEN = 8;
 constexpr i32 SINGLE_DIGIT_MAX = 9;
@@ -136,11 +136,14 @@ constexpr i32 SINGLE_DIGIT_MAX = 9;
 }  // namespace
 
 AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi()) {
+#ifdef ENABLE_LIBGIT2
     i32 maj, min, pth;
     git_libgit2_version(&maj, &min, &pth);
+#endif
 
     ui->aboutLabel->setText(ABOUT_TEMPLATE.arg(
-        svtostr(QL1SV(RPGMT_VERSION)),
+        QStringView(RPGMT_VERSION),
+        svtostr(QL1SV()),
         svtostr(QL1SV(FASTFLOAT_VERSION_STR)),
         QStringView(
             constructSemverString(MAGIC_ENUM_VERSION_MAJOR, MAGIC_ENUM_VERSION_MINOR, MAGIC_ENUM_VERSION_PATCH).data()

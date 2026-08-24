@@ -32,11 +32,6 @@ ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::Frame
 
                 ui->duplicateModeSelect->setCurrentIndex(false);
                 ui->duplicateModeSelect->setEnabled(true);
-
-                ui->trimCheckbox->setChecked(false);
-                ui->trimCheckbox->setEnabled(true);
-                ui->disableCustomProcessingCheckbox->setChecked(false);
-                ui->disableCustomProcessingCheckbox->setEnabled(true);
                 break;
             case ReadMode::AppendDefault:
                 ui->readModeLabel->setText(tr(
@@ -45,13 +40,6 @@ ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::Frame
 
                 ui->duplicateModeSelect->setCurrentIndex(scast<i32>(projectSettings->duplicateMode));
                 ui->duplicateModeSelect->setEnabled(false);
-
-                ui->trimCheckbox->setChecked(scast<bool>(projectSettings->flags & BaseFlags_Trim));
-                ui->trimCheckbox->setEnabled(false);
-                ui->disableCustomProcessingCheckbox->setChecked(
-                    scast<bool>(projectSettings->flags & BaseFlags_DisableCustomProcessing)
-                );
-                ui->disableCustomProcessingCheckbox->setEnabled(false);
                 break;
             case ReadMode::AppendForce:
                 ui->readModeLabel->setText(tr(
@@ -60,13 +48,6 @@ ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::Frame
 
                 ui->duplicateModeSelect->setCurrentIndex(scast<i32>(projectSettings->duplicateMode));
                 ui->duplicateModeSelect->setEnabled(false);
-
-                ui->trimCheckbox->setChecked(scast<bool>(projectSettings->flags & BaseFlags_Trim));
-                ui->trimCheckbox->setEnabled(false);
-                ui->disableCustomProcessingCheckbox->setChecked(
-                    scast<bool>(projectSettings->flags & BaseFlags_DisableCustomProcessing)
-                );
-                ui->disableCustomProcessingCheckbox->setEnabled(false);
                 break;
         }
 
@@ -182,8 +163,6 @@ void ReadMenu::clear() {
     ui->readModeSelect->setDisabled(true);
     ui->duplicateModeSelect->setDisabled(false);
 
-    ui->trimCheckbox->setChecked(false);
-    ui->disableCustomProcessingCheckbox->setChecked(false);
     ui->ignoreCheckbox->setChecked(false);
     ui->skipObsoleteCheckbox->setChecked(false);
     ui->mapEventsCheckbox->setChecked(false);
@@ -195,7 +174,7 @@ void ReadMenu::init(const shared_ptr<ProjectSettings>& settings) {
     projectPath = projectSettings->projectPath.toUtf8();
     engineType = projectSettings->engineType;
 
-    if (engineType == EngineType::New) {
+    if (engineType == EngineType::MVMZ) {
         ui->iniTitleWidget->hide();
     } else {
         ui->iniTitleWidget->show();
@@ -212,7 +191,7 @@ auto ReadMenu::exec(const QString& projectPath, const EngineType engineType) -> 
     this->projectPath = projectPath.toUtf8();
     this->engineType = engineType;
 
-    if (engineType == EngineType::New) {
+    if (engineType == EngineType::MVMZ) {
         ui->iniTitleWidget->hide();
     } else {
         ui->iniTitleWidget->show();
@@ -262,14 +241,6 @@ auto ReadMenu::duplicateMode() const -> DuplicateMode {
 
 auto ReadMenu::flags() const -> BaseFlags {
     auto flags = scast<BaseFlags>(0);
-
-    if (ui->trimCheckbox->isChecked()) {
-        flags |= BaseFlags_Trim;
-    }
-
-    if (ui->disableCustomProcessingCheckbox->isChecked()) {
-        flags |= BaseFlags_DisableCustomProcessing;
-    }
 
     if (ui->ignoreCheckbox->isChecked()) {
         flags |= BaseFlags_Ignore;

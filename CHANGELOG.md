@@ -10,6 +10,19 @@ Versions may carry a codename alongside the semver number.
 
 ## [Unreleased]
 
+## [v1.0.1] "Death of RPG Maker forums" - 24.08.2026
+
+### Changed
+
+- Updated to `rvpacker-txt-rs-lib` v15: See [its release notes](https://github.com/RPG-Maker-Translation-Tools/rvpacker-txt-rs-lib/releases/tag/v15.0.0).
+
+### Development
+
+- Fixed the unability to compile the applications with some features disabled because the code was unguarded.
+- Added a lot more features to CMakeLists so that the builds are more modular.
+- Linux builds in Docker are now compiled with `x86-64-v3` baseline.
+- Adjusted documentation.
+
 ## [v1.0.0] "Death of RPG Maker forums" - 21.08.2026
 
 ### Added

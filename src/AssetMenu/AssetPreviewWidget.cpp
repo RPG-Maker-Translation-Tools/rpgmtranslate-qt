@@ -6,6 +6,8 @@
 #include "Utils.hpp"
 #include "rpgmtranslate_rs.h"
 
+#include "glazemeta.hpp"
+
 #include <QDesktopServices>
 #include <QDir>
 #include <QFontDatabase>
@@ -201,24 +203,43 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
     connect(fontSizeInput, &QSpinBox::valueChanged, this, [this] -> void { updateFontPreview(); });
 
     connect(beautifyButton, &QPushButton::clicked, this, [this] -> void {
-        FFIString formatted;
+        QByteArray formatted;
         bool success = false;
 
         switch (formatLanguage) {
-            case HighlightLanguage::JSON:
-                rpgm_beautify_json(strtoffi(formatSource), &formatted);
+            case HighlightLanguage::JSON: {
+                // Prettifies straight from/to UTF-8, unlike Qt's QJsonDocument, which would round-trip
+                // through UTF-16 QString/QVariant internally.
+                const string prettified =
+                    glz::prettify_json(string_view(formatSource.constData(), scast<usize>(formatSource.size())));
+                formatted = QByteArray(prettified.data(), scast<isize>(prettified.size()));
                 success = true;
                 break;
-            case HighlightLanguage::JS:
+            }
+            case HighlightLanguage::JS: {
 #ifdef ENABLE_JS_FORMATTING
-                success = rpgm_format_src(strtoffi(formatSource), HighlightLanguage::JS, &formatted);
+                FFIString formattedFFI;
+                success = rpgm_format_src(strtoffi(formatSource), HighlightLanguage::JS, &formattedFFI);
+
+                if (success) {
+                    formatted = QByteArray(rcast<const char*>(formattedFFI.ptr), scast<isize>(formattedFFI.len));
+                    rpgm_string_free(formattedFFI);
+                }
 #endif
                 break;
-            case HighlightLanguage::Ruby:
+            }
+            case HighlightLanguage::Ruby: {
 #ifdef ENABLE_RUBY_FORMATTING
-                success = rpgm_format_src(strtoffi(formatSource), HighlightLanguage::Ruby, &formatted);
+                FFIString formattedFFI;
+                success = rpgm_format_src(strtoffi(formatSource), HighlightLanguage::Ruby, &formattedFFI);
+
+                if (success) {
+                    formatted = QByteArray(rcast<const char*>(formattedFFI.ptr), scast<isize>(formattedFFI.len));
+                    rpgm_string_free(formattedFFI);
+                }
 #endif
                 break;
+            }
         }
 
         if (!success) {
@@ -230,19 +251,18 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
 #if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || defined(ENABLE_RUBY_HIGHLIGHTING)
         FFIString highlightedHtml;
 
-        if (rpgm_highlight_code(formatted, formatLanguage, &highlightedHtml)) {
+        if (rpgm_highlight_code(strtoffi(formatted), formatLanguage, &highlightedHtml)) {
             codeViewer->setHighlightedHtml(QString::fromUtf8(highlightedHtml.ptr, scast<isize>(highlightedHtml.len))
             );
             rpgm_string_free(highlightedHtml);
         } else {
-            codeViewer->setPlainText(QString::fromUtf8(formatted.ptr, formatted.len));
+            codeViewer->setPlainText(QString::fromUtf8(formatted));
         }
 #else
-        codeViewer->setPlainText(QString::fromUtf8(formatted.ptr, formatted.len));
+        codeViewer->setPlainText(QString::fromUtf8(formatted));
 #endif
 
-        formatSource = QByteArray(formatted.ptr, scast<isize>(formatted.len));
-        rpgm_string_free(formatted);
+        formatSource = std::move(formatted);
     });
 }
 
