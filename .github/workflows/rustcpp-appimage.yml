@@ -6,13 +6,74 @@ on:
       - "v*"
   workflow_dispatch:
 
-env:
-  TARGET_ARCH: x86-64-v3
-  LLVM_VERSION: 20
-
 jobs:
   build-appimage:
     runs-on: ubuntu-24.04
+    env:
+      CC: clang-20
+      CXX: clang++-20
+      LD: clang-20
+      AR: llvm-ar-20
+      RANLIB: llvm-ranlib-20
+      NM: llvm-nm-20
+      STRIP: llvm-strip-20
+      OBJCOPY: llvm-objcopy-20
+      OBJDUMP: llvm-objdump-20
+      READELF: llvm-readelf-20
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+      CFLAGS: >-
+        -march=x86-64-v3
+        -O3
+        -fuse-ld=lld
+        -fmerge-all-constants
+        -ffunction-sections
+        -fdata-sections
+        -fno-math-errno
+        -fno-trapping-math
+        -fvisibility=hidden
+        -fvisibility-inlines-hidden
+        -pipe
+      CXXFLAGS: >-
+        -march=x86-64-v3
+        -O3
+        -fuse-ld=lld
+        -fmerge-all-constants
+        -ffunction-sections
+        -fdata-sections
+        -fno-math-errno
+        -fno-trapping-math
+        -fvisibility=hidden
+        -fvisibility-inlines-hidden
+        -pipe
+      RUSTFLAGS: >-
+        -Ctarget-cpu=x86-64-v3
+        -Ctarget-feature=+aes,+sse2
+        -Copt-level=3
+        -Ccodegen-units=1
+        -Cpanic=abort
+        -Cstrip=symbols
+        -Cdebuginfo=0
+        -Clinker=clang-20
+        -Clinker-features=-lld
+        -Clink-arg=-fuse-ld=lld
+        -Cprefer-dynamic=no
+        -Cembed-bitcode=yes
+        -Cllvm-args=-function-sections=true
+        -Cllvm-args=-data-sections=true
+        -Cllvm-args=-fp-contract=fast
+        -Cllvm-args=-denormal-fp-math=positive-zero
+        -Cllvm-args=-enable-no-trapping-fp-math=true
+        -Cllvm-args=-unroll-threshold=750
+      LDFLAGS: >-
+        -Wl,-O3
+        -Wl,--gc-sections
+        -Wl,--as-needed
+        -Wl,--strip-all
+        -Wl,--build-id=none
+        -Wl,--icf=all
+        -Wl,-z,now
+        -Wl,-z,norelro
     steps:
       - uses: actions/checkout@v5
 
@@ -106,72 +167,6 @@ jobs:
           restore-keys: rustcpp-appimage-cmake-build-
 
       - name: Build release
-        env:
-          CC: clang-20
-          CXX: clang++-20
-          LD: clang-20
-          AR: llvm-ar-20
-          RANLIB: llvm-ranlib-20
-          NM: llvm-nm-20
-          STRIP: llvm-strip-20
-          OBJCOPY: llvm-objcopy-20
-          OBJDUMP: llvm-objdump-20
-          READELF: llvm-readelf-20
-          LANG: en_US.UTF-8
-          LC_ALL: en_US.UTF-8
-          CFLAGS: >-
-            -march=${{ env.TARGET_ARCH }}
-            -O3
-            -fuse-ld=lld
-            -fmerge-all-constants
-            -ffunction-sections
-            -fdata-sections
-            -fno-math-errno
-            -fno-trapping-math
-            -fvisibility=hidden
-            -fvisibility-inlines-hidden
-            -pipe
-          CXXFLAGS: >-
-            -march=${{ env.TARGET_ARCH }}
-            -O3
-            -fuse-ld=lld
-            -fmerge-all-constants
-            -ffunction-sections
-            -fdata-sections
-            -fno-math-errno
-            -fno-trapping-math
-            -fvisibility=hidden
-            -fvisibility-inlines-hidden
-            -pipe
-          RUSTFLAGS: >-
-            -Ctarget-cpu=${{ env.TARGET_ARCH }}
-            -Ctarget-feature=+aes,+sse2
-            -Copt-level=3
-            -Ccodegen-units=1
-            -Cpanic=abort
-            -Cstrip=symbols
-            -Cdebuginfo=0
-            -Clinker=clang-20
-            -Clinker-features=-lld
-            -Clink-arg=-fuse-ld=lld
-            -Cprefer-dynamic=no
-            -Cembed-bitcode=yes
-            -Cllvm-args=-function-sections=true
-            -Cllvm-args=-data-sections=true
-            -Cllvm-args=-fp-contract=fast
-            -Cllvm-args=-denormal-fp-math=positive-zero
-            -Cllvm-args=-enable-no-trapping-fp-math=true
-            -Cllvm-args=-unroll-threshold=750
-          LDFLAGS: >-
-            -Wl,-O3
-            -Wl,--gc-sections
-            -Wl,--as-needed
-            -Wl,--strip-all
-            -Wl,--build-id=none
-            -Wl,--icf=all
-            -Wl,-z,now
-            -Wl,-z,norelro
-            -Wl,-z,nosectionheader
         run: |
           sudo chmod +x lua
           ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release
