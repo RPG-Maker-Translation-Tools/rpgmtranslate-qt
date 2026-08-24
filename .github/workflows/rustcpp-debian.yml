@@ -78,7 +78,7 @@ jobs:
     container:
       image: debian:trixie
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Get backports
         run: |
@@ -117,7 +117,7 @@ jobs:
           cargo binstall -y cargo-about
 
       - name: Cache CMake build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: build
           key: rustcpp-debian-cmake-build-${{ github.sha }}
@@ -131,8 +131,8 @@ jobs:
           ./lua prepare-release.lua
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: rustcpp-debian-release
           path: ./rpgmtranslate.tar.xz
+          archive: false
           retention-days: 30

@@ -75,7 +75,7 @@ jobs:
         -Wl,-z,now
         -Wl,-z,norelro
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install base dependencies
         run: |
@@ -122,7 +122,7 @@ jobs:
           && rm -rf /tmp/glaze
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
             version: "6.8.2"
             modules: "qtwaylandcompositor"
@@ -160,7 +160,7 @@ jobs:
           sudo ln -s linuxdeploy-plugin-qt.appdir/AppRun linuxdeploy-plugin-qt
 
       - name: Cache CMake build
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: build
           key: rustcpp-appimage-cmake-build-${{ github.sha }}
@@ -194,8 +194,8 @@ jobs:
           ./lua prepare-release.lua --appimage
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: rustcpp-appimage-release
           path: ./rpgmtranslate-appimage.tar.xz
+          archive: false
           retention-days: 30
