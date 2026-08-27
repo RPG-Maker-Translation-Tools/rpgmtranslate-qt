@@ -476,6 +476,7 @@ SettingsWindow::SettingsWindow(
 
     ui->languageSelect->addItem(tr("English"), scast<i32>(QLocale::English));
     ui->languageSelect->addItem(tr("Russian"), scast<i32>(QLocale::Russian));
+    ui->languageSelect->addItem(tr("Chinese (Simplified)"), scast<i32>(QLocale::Chinese));
 
     const QList<std::pair<QString, QString>> languageTags = listLanguageTags();
 

@@ -1,6 +1,6 @@
 # rpgmtranslate-qt
 
-[README на русском](./README-ru.md)
+[README на русском](./README-ru.md) | [简体中文](./README.zh-CN.md)
 
 <p align="center">
     <img src="./icons/rpgmtranslate-logo.png" alt="Description" width="256"/>
