@@ -1,5 +1,7 @@
 # rpgmtranslate-qt
 
+[English](./README.md) | [简体中文](./README.zh-CN.md)
+
 <p align="center">
     <img src="./icons/rpgmtranslate-logo.png" alt="Description" width="256"/>
 </p>

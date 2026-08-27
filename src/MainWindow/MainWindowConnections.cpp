@@ -57,6 +57,8 @@ void MainWindow::setupConnections() {
 
     connect(ui->actionRussian, &QAction::triggered, this, [this] -> void { retranslate(QLocale::Russian); });
 
+    connect(ui->actionChinese, &QAction::triggered, this, [this] -> void { retranslate(QLocale::Chinese); });
+
     connect(ui->actionCheckForUpdates, &QAction::triggered, this, [this] -> void { checkForUpdates(true); });
 
     connect(actionGoToRow, &QAction::triggered, this, &MainWindow::handleGoToRow);
