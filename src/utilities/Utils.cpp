@@ -235,7 +235,7 @@ auto qsvReplace(const QStringView input, const QChar needle, const QChar replace
     const QChar* const data = input.data();
     const isize size = input.size();
 
-    for (const auto idx : range(0, size)) {
+    for (i32 idx = 0; idx < size; idx++) {
         const QChar chr = data[idx];
         result.push_back(chr == needle ? replacement : chr);
     }
@@ -259,7 +259,7 @@ auto joinQSVList(const QSVList& list, const QL1SV separator) -> QString {
         result.append(separator);
     }
 
-    for (const auto idx : range(0, separator.size())) {
+    for (i32 idx = 0; idx < separator.size(); idx++) {
         Q_UNUSED(idx);
         result.removeLast();
     }
@@ -305,7 +305,7 @@ auto joinQSVList(const QSVList& list, const QStringView separator) -> QString {
         result.append(separator);
     }
 
-    for (const auto idx : range(0, separator.size())) {
+    for (i32 idx = 0; idx < separator.size(); idx++) {
         Q_UNUSED(idx);
         result.removeLast();
     }
@@ -328,7 +328,7 @@ auto intLen(const i32 num) -> i32 {
 }
 
 auto lastPathComponent(const QString& path) -> QStringView {
-    for (const auto idx : range<-1>(path.size() - 1, -1)) {
+    for (i32 idx = path.size() - 1; idx >= 0; idx--) {
         const QChar chr = path[idx];
 
         if (chr == u'/' || chr == u'\\') {
@@ -386,8 +386,8 @@ auto getWindowColors(const QString& projectPath, const EngineType engineType)
     const i32 windowSquareSize =
         engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_SQUARE_SIZE : OLDER_WINDOW_COLOR_SQUARE_SIZE;
 
-    for (const auto row : range(0, 4)) {
-        for (const auto col : range(0, 8)) {
+    for (i32 row = 0; row < 4; row++) {
+        for (i32 col = 0; col < 8; col++) {
             const i32 offsetX = windowOffsetX + (col * windowSquareSize);
             const i32 offsetY = windowOffsetY + (row * windowSquareSize);
             const u32 pixel = img.pixel(QPoint(offsetX, offsetY));

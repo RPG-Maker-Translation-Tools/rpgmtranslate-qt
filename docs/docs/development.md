@@ -4,7 +4,7 @@
 
 - Git
 - Rust (>= 1.91)
-    - cbindgen
+  - cbindgen
 - CMake (>= 3.25)
 - C++23-compatible compiler (`clang 18+`, `gcc 14+`, `MSVC 2022+`)
 - C++23-complete STL (`>libstdc++14`, `>libc++23`, `>MSVC 2022`).
@@ -15,7 +15,7 @@
 
 - Qt6
 - libarchive
-    - liblzma
+  - liblzma
 - quickjs-ng
 - glaze
 
@@ -43,27 +43,27 @@ These are conditionally required based on build flags.
 #### Spellchecking (`ENABLE_NUSPELL`)
 
 - Nuspell
-    - ICU (`uc`, `data` components only)
+  - ICU (`uc`, `data` components only)
 
 #### Media / Asset Playback (`ENABLE_ASSET_PLAYBACK`)
 
 - FFmpeg (≥ 7.1.1)
-    - Libraries:
-        - avutil
-        - avcodec
-        - avformat
-        - swresample
-        - swscale
+  - Libraries:
+    - avutil
+    - avcodec
+    - avformat
+    - swresample
+    - swscale
 
-    - Required decoders:
-        - Vorbis, Opus, Theora
-        - AAC, H.264, VP9
+  - Required decoders:
+    - Vorbis, Opus, Theora
+    - AAC, H.264, VP9
 
-    - Required demuxers:
-        - OGG, MP4
+  - Required demuxers:
+    - OGG, MP4
 
-    - Required parsers:
-        - AAC, H.264
+  - Required parsers:
+    - AAC, H.264
 
 #### Git Integration (`ENABLE_LIBGIT2`)
 

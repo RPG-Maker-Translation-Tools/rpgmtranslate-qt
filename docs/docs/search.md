@@ -8,15 +8,15 @@ The same input and options drive three different actions - **Search**, **Replace
 
 These apply to all three actions:
 
-| Option | Effect |
-| --- | --- |
-| Match Case | Case-sensitive matching. |
-| Search Whole | Only matches whole words. |
+| Option                       | Effect                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| Match Case                   | Case-sensitive matching.                                                             |
+| Search Whole                 | Only matches whole words.                                                            |
 | Search By Regular Expression | Treats the input as a regex - see [Regular expressions](#regular-expressions) below. |
-| Search In Comments | Also searches comment lines, which are skipped by default. |
-| File select | Scopes the action to specific files instead of the whole project. |
-| Location | Search Everywhere, Only Source, or Only Translation. |
-| Column | All Columns, Rightmost Column, or any other translation column. |
+| Search In Comments           | Also searches comment lines, which are skipped by default.                           |
+| File select                  | Scopes the action to specific files instead of the whole project.                    |
+| Location                     | Search Everywhere, Only Source, or Only Translation.                                 |
+| Column                       | All Columns, Rightmost Column, or any other translation column.                      |
 
 ## Search
 
@@ -26,10 +26,10 @@ Search is heavily optimized: matches are stored as tightly-packed in-memory indi
 
 From the results panel, per-match:
 
-| Click | Action |
-| --- | --- |
-| Left | Jump to that match in the translation table. |
-| Right | Replace just that match with the replace input's text. |
+| Click  | Action                                                                      |
+| ------ | --------------------------------------------------------------------------- |
+| Left   | Jump to that match in the translation table.                                |
+| Right  | Replace just that match with the replace input's text.                      |
 | Middle | Put the replace input's text into that row's translation (see [Put](#put)). |
 
 ## Replace
@@ -42,7 +42,7 @@ The global Replace button replaces every match with the replace input's text, ac
 
 Put is the one to be careful with: it **overwrites the translation cell** for every row whose source text matches the search input, replacing it with the replace input's text - even if that cell already had a translation.
 
-Put always matches the *source* text and always writes to the *translation* column, regardless of the Location option above. It also matches the **entire** source string, start to end, not just a substring - so searching for `Hello` only hits a source string that's exactly `Hello`, not `Hello, world!`. To match a variable ending, use a regex with a greedy quantifier, e.g. `Hello .+` matches `Hello World`, `Hello Rust`, `Hello Whatever`, and so on.
+Put always matches the _source_ text and always writes to the _translation_ column, regardless of the Location option above. It also matches the **entire** source string, start to end, not just a substring - so searching for `Hello` only hits a source string that's exactly `Hello`, not `Hello, world!`. To match a variable ending, use a regex with a greedy quantifier, e.g. `Hello .+` matches `Hello World`, `Hello Rust`, `Hello Whatever`, and so on.
 
 As with Replace: search first, check the results panel, and only then use the global Put button. Middle-click a single result to put just that one row instead.
 
@@ -52,13 +52,13 @@ The application uses [Qt's regular expression implementation](https://doc.qt.io/
 
 In the replace/put text, these substitutions are available:
 
-| Sequence | Inserts |
-| --- | --- |
-| `` \` `` | The text before the full match. |
-| `\'` | The text after the full match. |
-| `\+` | The last captured group. |
+| Sequence         | Inserts                                     |
+| ---------------- | ------------------------------------------- |
+| `` \` ``         | The text before the full match.             |
+| `\'`             | The text after the full match.              |
+| `\+`             | The last captured group.                    |
 | `\{n}` / `\{nn}` | Captured group `n`. `\0` is the full match. |
-| `\\` | A literal `\`. |
+| `\\`             | A literal `\`.                              |
 
 Consider doing regex-based replaces somewhere outside the program first (a text editor, a script) if you want an easy way to fully revert them - the application doesn't track replace/put history for you.
 

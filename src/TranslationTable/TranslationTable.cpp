@@ -173,7 +173,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
                 flags |= RowFlags::BookmarkFlag;
             }
         } else {
-            for (const auto column : range(1, model_->columnCount())) {
+            for (i32 column = 1; column < model_->columnCount(); column++) {
                 if (model_->item(first, column).text()->isEmpty()) {
                     flags |= RowFlags::TranslatedFlag;
                     break;
@@ -233,7 +233,7 @@ void TranslationTable::fill(
 
     auto headerLabels = QStringList(model_->columnCount());
 
-    for (const auto column : range(0, model_->columnCount())) {
+    for (i32 column = 0; column < model_->columnCount(); column++) {
         headerLabels[column] = columns[column].name;
         header_->resizeSection(column, columns[column].width);
     }
@@ -349,7 +349,7 @@ auto TranslationTable::paste() -> u32 {
 
     u32 pasted = 0;
 
-    for (const auto idx : range(0, count)) {
+    for (i32 idx = 0; idx < count; idx++) {
         const i32 row = firstRow + idx;
         const QModelIndex dst = model_->index(row, column);
 

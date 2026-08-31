@@ -12,7 +12,7 @@
 
 - [x] Кросс-платформенное, портабельное, быстрое и мощное.
 - [x] Невероятная производительность, поддерживаемая низкоуровневым кодом Rust/C++.
-- [x] Поддержка движков RPG Maker XP/VX/VXAce/MV/MZ, с автоматическим расшифровыванием архивов и парсингом файлов.
+- [x] Поддержка движков RPG Maker 2000/2003/XP/VX/VXAce/MV/MZ, с автоматическим расшифровыванием архивов и парсингом файлов.
 - [x] Простой текстовый формат файлов перевода, который можно редактировать вручную.
 - [x] Перевод может быть экспортирован в другие форматы - XLSX, CSV, XML, YAML and JSON.
 - [x] Встроенные [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation)-функции для более чем сорока языков.
@@ -81,8 +81,8 @@
 
 - `icons` - содержит [Google Material Symbols](https://fonts.google.com/icons) - лицензировано под `Apache License Version 2.0`.
 - `src/3rdparty` - содержит библиотеки третьей стороны:
-    - [fast_float](https://github.com/fastfloat/fast_float), [MIT](licenses/fast_float)
-    - [jeaiii/itoa](https://github.com/jeaiii/itoa), [MIT](licenses/jeaiii-itoa)
-    - [magic_enum](https://github.com/Neargye/magic_enum), [MIT](licenses/magic_enum)
-    - [zmij](https://github.com/vitaut/zmij), [MIT](licenses/zmij)
-    - [miniaudio](https://github.com/mackron/miniaudio), [Unlicense](licenses/miniaudio)
+  - [fast_float](https://github.com/fastfloat/fast_float), [MIT](licenses/fast_float)
+  - [jeaiii/itoa](https://github.com/jeaiii/itoa), [MIT](licenses/jeaiii-itoa)
+  - [magic_enum](https://github.com/Neargye/magic_enum), [MIT](licenses/magic_enum)
+  - [zmij](https://github.com/vitaut/zmij), [MIT](licenses/zmij)
+  - [miniaudio](https://github.com/mackron/miniaudio), [Unlicense](licenses/miniaudio)

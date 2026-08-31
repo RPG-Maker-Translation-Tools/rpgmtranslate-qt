@@ -1,36 +1,38 @@
-# Rvpacker features
+# Функции rvpacker
 
-`rvpacker-txt-rs` is responsible for reading the text from RPG Maker games and writing it back. It has four parts.
+`rvpacker-txt-rs-lib` отвечает за чтение текста из RPG Maker игр и его записи обратно. Он имеет четыре части.
 
-## Read
+## Чтение
 
-Reading decrypts the source archive if needed, parses the game's data files, and produces the plain-text files you edit.
+Чтение расшифровывает исходный архив (если необходимо), парсит файлы данных игры, и высирает обычные текстовые файлы для редактирования.
 
-The first time you open a new project, a Read options dialog pops up automatically before anything is parsed - you have to configure it and click Apply to proceed. Later on, you can trigger another read manually from the `rv` button (choose "Read" from its menu) to re-parse the project, for example after the source files changed. This opens the same dialog:
+Когда вы впервые откроете проект, вам будет выведен диалог с опциями чтения перед тем как парсить файлы - вам нужно всё настроить и нажать "применить". Затем, вы можете перечитать файлы вручную через кнопку `rv` чтобы всё перепарсить, например если игра была обновлена и её исходные файлы тоже.
 
-| Option | What it does |
-| --- | --- |
-| Read Mode | **Default** does nothing if the source files are unchanged since the last read - use **Force** to re-read anyway. **Append**/**Force Append** add newly-found text without discarding your existing translation. |
-| Duplicate Mode | **Remove Duplicates** (recommended) collapses repeated lines across maps and events. **Allow Duplicates** keeps every occurrence separately. System, scripts, and plugin files always behave as if Allow is set, regardless of this option. |
-| Ignore | Skips entries listed in a `.rvpacker-ignore` file (see [Purge](#purge)). |
-| Skip Obsolete | Drops entries from the previous read that no longer exist in the source, instead of keeping them around. |
-| Parse Map Events | Also extracts map event metadata - event ID, name, and X/Y position - alongside the dialogue text. |
-| Use title from Game.ini | For RPG Maker XP/VX/VX Ace, the game title isn't always in the system file. Enable this to pull it from `Game.ini` instead, and pick the right text encoding for it. |
+| Опция                                   | Действие                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Режим чтения                            | **По-умолчанию:** не делает ничего, если файлы не изменены с прошлого чтения. Используйте **принудительный** режим чтобы полностью перечитать текст. **Добавление**/**Принудительное добавление** добавляют новый текст к уже имеющемуся переводы.                                                                                                                                                                                                                         |
+| Режим дубликатов                        | **Удалить дубликаты** (рекомендуется) удаляет повторяющиеся линии в картах и ивентах. **Разрешить дубликаты** сохраняет каждую строку в пределах одной карты или ивента. Файлы System, scripts, и plugin всегда обрабатываются в режиме разрешённых дубликатов.                                                                                                                                                                                                            |
+| Игнорирование                           | Пропускает строки указанные в файле `.rvpacker-ignore` (посмотрите [чистку](#purge)).                                                                                                                                                                                                                                                                                                                                                                                      |
+| Пропустить устаревшее                   | Удаляет строки с прошлого чтения которые больше не существуют в исходном тексте.                                                                                                                                                                                                                                                                                                                                                                                           |
+| Распарсить ивенты карт                  | Также парсит метаданные ивентов карт - айди, название, и позицию X/Y.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Использовать название игры из ini файла | Для RPG Maker 2000/2003/XP/VX/VX Ace, название игры не всегда присутствует в System файле. Включите эту опцию чтобы достать его из `Game.ini` (XP/VX/VX Ace) или `RPG_RT.ini` (2000/2003). Заголовок расшифровывается с использованием указанной кодировки сверху - если название выходит сломанным, это знак того что кодировка указана неверно. Если в названии присутсвуют не только ASCII символы, оно может помочь вам узнать использованную в файлах игры кодировку. |
 
-A file-select button in the dialog lets you scope a manual re-read to specific files instead of the whole project.
+Кнопка выбора файлов в окне позволяет вам ограничить чтение для определённых файлов вместо всего проекта.
 
-## Write
+## Запись
 
-Write is accessible through the ![](./assets/manufacturing.svg) button. It writes your current translation back into game files, ready to run.
+Запись доступна через кнопку ![](./assets/manufacturing.svg). Она записывает ваш текущий перевод обратно в игровые файлы, совместимые с игрой.
 
-## Purge
+Для движков 2000/2003/XP/VX присутствует очень важная опция записи - кодировка текста. Прочтите [настройки](./settings.md#проект) для дополнительной информации.
 
-Purge is accessible through the `rv` button (choose "Purge" from its menu). It gets rid of untranslated lines, and can optionally create a `.rvpacker-ignore` file so those lines don't reappear the next time the project is read.
+## Чистка
 
-## Export/Import
+Чистка избавляется от непереведённых строк, и может опционально создать файл `.rvpacker-ignore`, чтобы строки не появлялись снова при повторных чтениях.
 
-Accessible through the `rv` button (choose "Export/Import" from its menu). This converts your translation files to and from CSV, XLSX, XML, JSON, or YAML - useful for editing in a spreadsheet, sending to someone who doesn't want to run the application, or archiving a snapshot outside the app's own format.
+## Экспорт/импорт
 
-Pick a format, pick a folder (destination for Export, source for Import), select which files to include with the file-select button, then Export or Import. Each translation file becomes one file of the chosen format in that folder, named the same way with a different extension (e.g. `actors.txt` &rarr; `actors.csv`) - Import expects the same naming back.
+Конвертирует ваши файлы перевода в/из CSV, XLSX, XML, JSON и YAML - полезно для редактирования в качестве таблицы, отправки кому-нибудь кто не хочет использовать приложение, или архивации.
 
-**Import overwrites the corresponding translation file's content**, so make sure the folder you're importing from actually has what you want before running it.
+Выберите формат, папку, какие файлы включить, а затем экспортировать ли или импортировать. Каждый файл перевода экспортируется в файл выбранного формата (например `actors.txt -> actors.csv`) - импорт требует правильного наименования.
+
+**Импорт перезаписывает содержимое файла перевода**, так что убедитесь что файл который вы импортируете содержит нужные данные.

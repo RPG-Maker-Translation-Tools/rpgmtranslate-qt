@@ -392,7 +392,7 @@ class GitFileDelegate final : public QStyledItemDelegate {
             return;
         }
         if (((status & GIT_STATUS_INDEX_TYPECHANGE) != 0) || ((status & GIT_STATUS_WT_TYPECHANGE) != 0)) {
-            // TODO(v1.x)
+            // TODO(v1.2)
             return;
         }
         if ((status & GIT_STATUS_WT_NEW) != 0) {

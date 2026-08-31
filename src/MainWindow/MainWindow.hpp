@@ -61,7 +61,8 @@ class MainWindow final : public QMainWindow {
         Selected selected,
         BaseFlags flags,
         bool mapEvents,
-        const QString& title
+        const QString& title,
+        const QString& readEncoding
     );
     [[nodiscard]] auto initDictionary() -> result<void, QString>;
 

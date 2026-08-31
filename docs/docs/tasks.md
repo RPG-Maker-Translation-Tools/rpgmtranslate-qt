@@ -11,7 +11,7 @@ The button in the top bar (reads "No tasks" when idle) opens the task list. Each
 Tasks aren't limited to one at a time - several can genuinely run in parallel, each on its own background thread. Whether two tasks are allowed to run together depends on what they touch, not just whether the app is "busy":
 
 - **Write, Search, Export, and Global Check** only read project state, so any combination of these can run simultaneously - search while writing, global-check while writing, etc.
-- Every other task (**Read, Purge, Extract archive, Replace, Batch Script, Batch Translate, Import**) mutates project state, so it blocks *everything* else, including another instance of itself, until it finishes.
+- Every other task (**Read, Purge, Extract archive, Replace, Batch Script, Batch Translate, Import**) mutates project state, so it blocks _everything_ else, including another instance of itself, until it finishes.
 
 If you try to start a task that isn't allowed to run alongside what's currently running, you'll get a notice naming the task that's in the way instead of the new one silently queuing or failing.
 

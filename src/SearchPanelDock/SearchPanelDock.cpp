@@ -105,11 +105,11 @@ void SearchPanelDock::init(
 
     connect(fileSelect, &QComboBox::currentIndexChanged, this, [this](const u16 index) -> void {
         if (index == 0) {
-            for (const auto row : range(0, this->searchResultList->model()->rowCount())) {
+            for (i32 row = 0; row < this->searchResultList->model()->rowCount(); row++) {
                 this->searchResultList->model()->item(row).hidden = false;
             }
         } else {
-            for (const auto row : range(0, this->searchResultList->model()->rowCount())) {
+            for (i32 row = 0; row < this->searchResultList->model()->rowCount(); row++) {
                 this->searchResultList->model()->item(row).hidden =
                     this->searchResultList->model()->item(row).filename != this->fileSelect->itemText(index);
             }

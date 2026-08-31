@@ -22,6 +22,8 @@ enum class SourceDirectory : u8 {
     None,
     UppercaseData,
     LowercaseData,
+    /// RPG Maker 2000/2003 data lives at the project root
+    Root,
 };
 
 struct ProjectSettings {
@@ -48,6 +50,28 @@ struct ProjectSettings {
     SourceDirectory sourceDirectory = SourceDirectory::None;
     EngineType engineType = EngineType::MVMZ;
 
+    /// A codepage's WHATWG label (`"Shift_JIS"`, `"windows-1252"`, ...), or
+    /// empty for "guess it" - see `rvpacker_txt_rs_lib::Processor::readEncoding`.
+    /// Needed for RPG Maker 2000/2003, whose files carry no encoding of their
+    /// own; optional elsewhere. Chosen once via `ReadMenu` when the project is
+    /// first read; independent of `writeEncoding` below.
+    QString readEncoding;
+
+    /// A codepage's WHATWG label, or empty (the default) to always write
+    /// translated text as UTF-8 - see `rvpacker_txt_rs_lib::Processor::writeEncoding`.
+    /// Leaving this empty is deliberate: a translation is not generally
+    /// representable in the source game's own codepage, so guessing otherwise
+    /// risks silently corrupting it. Set from the "Write encoding" field in
+    /// `SettingsWindow`'s Project tab, not from any per-write prompt - it
+    /// takes effect on every write from then on.
+    QString writeEncoding;
+
+    /// # Panics
+    ///
+    /// RPG Maker 2000/2003 files don't follow the "one extension per entity
+    /// file" convention the other engines use - `RPG_RT.ldb`/`.lmt`/`.lmu`
+    /// each have their own fixed name, not a per-kind extension - so this is
+    /// never meaningful to call for it.
     [[nodiscard]] constexpr auto engineExtension() const -> QStringView {
         switch (engineType) {
             case EngineType::MVMZ:
@@ -62,9 +86,14 @@ struct ProjectSettings {
             case EngineType::XP:
                 return u"rxdata";
                 break;
+            case EngineType::RM2K:
+                std::unreachable();
         }
     }
 
+    /// # Panics
+    ///
+    /// See the member overload's docs.
     [[nodiscard]] static constexpr auto engineExtension(const EngineType engineType) -> QStringView {
         switch (engineType) {
             case EngineType::MVMZ:
@@ -79,6 +108,8 @@ struct ProjectSettings {
             case EngineType::XP:
                 return u"rxdata";
                 break;
+            case EngineType::RM2K:
+                std::unreachable();
         }
 
         std::unreachable();
@@ -92,6 +123,8 @@ struct ProjectSettings {
                 return projectPath + u"/Data";
             case SourceDirectory::LowercaseData:
                 return projectPath + u"/data";
+            case SourceDirectory::Root:
+                return projectPath;
             default:
                 std::unreachable();
         }
@@ -149,6 +182,10 @@ struct glz::meta<ProjectSettings> {
         "projectContext",
         &T::projectContext,
         "fileContexts",
-        &T::fileContexts
+        &T::fileContexts,
+        "encoding",
+        &T::readEncoding,
+        "writeEncoding",
+        &T::writeEncoding
     );
 };

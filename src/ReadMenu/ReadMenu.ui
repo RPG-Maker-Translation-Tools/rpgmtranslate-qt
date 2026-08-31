@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>528</width>
-    <height>512</height>
+    <width>527</width>
+    <height>544</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -213,8 +213,8 @@
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="trimWidget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_8">
+    <widget class="QWidget" name="encodingWidget" native="true">
+     <layout class="QVBoxLayout" name="verticalLayout_encoding">
       <property name="spacing">
        <number>8</number>
       </property>
@@ -230,6 +230,129 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
+      <item>
+       <widget class="QWidget" name="widget_9" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_12">
+         <property name="spacing">
+          <number>8</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_10">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Text Encoding</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="encodingSelect">
+           <item>
+            <property name="text">
+             <string notr="true"/>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">UTF-8</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">Shift_JIS</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">GB18030</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">EUC-KR</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">Big5</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1250</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1251</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1252</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1253</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1254</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1255</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1256</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1257</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1258</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="encodingLabel">
+        <property name="text">
+         <string>Forces text decoding to the given codepage, instead of guessing it. Needed for RPG Maker 2000/2003, XP and VX - these are legacy engines having no encoding of their own, defaulting to the system's codepage (unlike VX Ace, MV and MZ). Leave blank to guess. If the game's title below has native, non-ASCII characters, it can help pinpoint the right encoding.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -420,7 +543,7 @@
       <item>
        <widget class="QLabel" name="label_9">
         <property name="text">
-         <string>Use title from Game.ini: If game is RPG Maker XP/VX/VX Ace, it may not necessarily contain game title in the system file. Use this option to take it from Game.ini. You will have to pick the right encoding. If this option is not set, we'll try to use the title from system file, if it's there.</string>
+         <string>Use title from ini file: If game is RPG Maker XP/VX/VX Ace or RM2K/2003, it may not necessarily contain game title in the system file. Use this option to take it from Game.ini (XP/VX/VX Ace) or RPG_RT.ini (RM2K/2003), whichever is present in the game directory. You will have to pick the right encoding in &quot;Text Encoding&quot; field above. If the title comes out garbled, that's a hint the encoding is wrong. If this option is not set, we'll try to use the title from system file, if it's there.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -433,31 +556,6 @@
    <item>
     <widget class="QWidget" name="iniTitleDisplayWidget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout_11">
-      <item>
-       <widget class="QComboBox" name="titleEncodingSelect">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <item>
-         <property name="text">
-          <string notr="true">UTF-8</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string notr="true">Shift_JIS</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string notr="true">GB18030</string>
-         </property>
-        </item>
-       </widget>
-      </item>
       <item>
        <widget class="QLabel" name="iniTitleLabel">
         <property name="text">

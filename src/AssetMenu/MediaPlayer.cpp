@@ -330,7 +330,7 @@ void MediaPlayer::decodeAudio() {
     const usize head = ringHead.load(std::memory_order_relaxed);
 
     const auto ringWrite = [this](const usize pos, const u8* const src, const usize len) -> void {
-        for (const auto idx : range(0, len)) {
+        for (i32 idx = 0; idx < len; idx++) {
             pcmBuffer[(pos + idx) & RING_MASK] = src[idx];
         }
     };
@@ -338,8 +338,8 @@ void MediaPlayer::decodeAudio() {
     if (!planarFormat) {
         ringWrite(head, audioFrame->data[0], frameBytes);
     } else {
-        for (const auto sample : range(0, samples)) {
-            for (const auto channel : range(0, channels)) {
+        for (i32 sample = 0; sample < samples; sample++) {
+            for (i32 channel = 0; channel < channels; channel++) {
                 const usize dstPos = head + (((scast<usize>(sample) * channels) + channel) * sampleSize);
                 ringWrite(dstPos, audioFrame->data[channel] + (scast<usize>(sample) * sampleSize), sampleSize);
             }
@@ -479,7 +479,7 @@ void MediaPlayer::audioDataCallback(
     const u32 copySize = (available < bytesNeeded) ? available : bytesNeeded;
     self->audioBytesPlayed.fetch_add(copySize, std::memory_order_relaxed);
 
-    for (const auto idx : range(0, copySize)) {
+    for (i32 idx = 0; idx < copySize; idx++) {
         dst[idx] = self->pcmBuffer[(tail + idx) & RING_MASK];
     }
 

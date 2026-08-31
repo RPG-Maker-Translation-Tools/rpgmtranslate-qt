@@ -30,6 +30,7 @@ class ReadMenu final : public QWidget {
     [[nodiscard]] auto parseMapEvents() const -> bool;
     [[nodiscard]] auto readMode() const -> ReadMode;
     [[nodiscard]] auto duplicateMode() const -> DuplicateMode;
+    [[nodiscard]] auto readEncoding() const -> QString;
     [[nodiscard]] auto flags() const -> BaseFlags;
     [[nodiscard]] auto selected(bool skipped = false) const -> Selected;
     [[nodiscard]] auto title() -> QString;
@@ -52,6 +53,7 @@ class ReadMenu final : public QWidget {
     QByteArray projectPath;
     QString decodedTitle;
     ByteBuffer title_{};
+    QStringView iniFileName;
 
     Ui::ReadMenu* const ui;
 

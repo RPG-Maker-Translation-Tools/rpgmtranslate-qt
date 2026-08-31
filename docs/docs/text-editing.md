@@ -58,10 +58,10 @@ All individual plugin lints can be enabled and disabled in a menu opened with "L
 As for misc lints, there's the list of those:
 
 - Whitespace
-    - Leading whitespace - adds a lint to the lint menu, highlights leading whitespace.
-    - Trailing whitespace - adds a lint to the lint menu, highlights trailing whitespace.
-    - Contiguous whitespace - adds a lint to the lint menu, highlights contiguous whitespace.
-    - Which characters count as whitespace for these three lints is configurable, see [Translation > Lints settings](./settings.md#lints).
+  - Leading whitespace - adds a lint to the lint menu, highlights leading whitespace.
+  - Trailing whitespace - adds a lint to the lint menu, highlights trailing whitespace.
+  - Contiguous whitespace - adds a lint to the lint menu, highlights contiguous whitespace.
+  - Which characters count as whitespace for these three lints is configurable, see [Translation > Lints settings](./settings.md#lints).
 - Unclosed punctuation - adds a lint to the lint menu, highlights unclosed punctuation, such as unclosed quotes.
 - Source/translation tag mismatch - adds a lint to the lint menu when source tags and translation tags differ. This happens when the translation cell don't has the tags present in the source text.
 

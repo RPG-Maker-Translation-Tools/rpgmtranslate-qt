@@ -634,22 +634,6 @@
              <property name="bottomMargin">
               <number>0</number>
              </property>
-             <item>
-              <widget class="QLabel" name="label_47">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Interface language</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="languageSelect"/>
-             </item>
             </layout>
            </widget>
           </item>
@@ -2777,6 +2761,95 @@
                <item>
                 <property name="text">
                  <string/>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_write_encoding">
+               <property name="text">
+                <string>Write encoding</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QComboBox" name="writeEncodingSelect">
+               <property name="toolTip">
+                <string>Forces the translation to be encoded to the given codepage when writing it back, instead of always writing UTF-8. Leave blank unless you know the target game engine has no Unicode-aware renderer and the translation's script fits the chosen codepage.</string>
+               </property>
+               <item>
+                <property name="text">
+                 <string notr="true"/>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">UTF-8</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">Shift_JIS</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">GB18030</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">EUC-KR</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">Big5</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1250</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1251</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1252</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1253</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1254</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1255</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1256</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1257</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string notr="true">windows-1258</string>
                 </property>
                </item>
               </widget>

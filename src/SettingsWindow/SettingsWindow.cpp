@@ -24,8 +24,6 @@
 #include <QTableWidgetItem>
 #include <QUuid>
 
-// TODO(v1.x): Do not allow repeated hotkeys
-
 namespace {
 using Dir = SettingsWindow::Direction;
 
@@ -474,8 +472,6 @@ SettingsWindow::SettingsWindow(
         ui->styleSelect->addItem(style);
     }
 
-    ui->languageSelect->addItem(tr("English"), scast<i32>(QLocale::English));
-    ui->languageSelect->addItem(tr("Russian"), scast<i32>(QLocale::Russian));
 
     const QList<std::pair<QString, QString>> languageTags = listLanguageTags();
 
@@ -859,6 +855,43 @@ auto SettingsWindow::validate() -> bool {
         return false;
     }
 
+    const array<std::pair<QStringView, QKeySequenceEdit*>, 8> hotkeyInputs{
+        { { u"Search Panel"_qsv, ui->searchPanelInput },
+         { u"Tab Panel"_qsv, ui->tabPanelInput },
+         { u"Go To Row"_qsv, ui->goToRowInput },
+         { u"Batch Menu"_qsv, ui->batchMenuInput },
+         { u"Bookmark Menu"_qsv, ui->bookmarkMenuInput },
+         { u"Lint Menu"_qsv, ui->lintMenuInput },
+         { u"Glossary Menu"_qsv, ui->glossaryMenuInput },
+         { u"Translations Menu"_qsv, ui->translationsMenuInput } }
+    };
+
+    for (const auto [i, first] : views::enumerate(hotkeyInputs)) {
+        const QKeySequence sequence = first.second->keySequence();
+
+        if (sequence.isEmpty()) {
+            continue;
+        }
+
+        for (const auto& second : views::drop(hotkeyInputs, i + 1)) {
+            if (second.second->keySequence() == sequence) {
+                present(
+                    this,
+                    NOTICE(
+                        "Hotkey %1 is already assigned to both \"%2\" and \"%3\". Please assign a different hotkey.",
+                        Warning,
+                        Modal,
+                        sequence.toString(),
+                        first.first.toString(),
+                        second.first.toString()
+                    )
+                );
+                first.second->setFocus();
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 
@@ -898,7 +931,6 @@ void SettingsWindow::syncAll(const Direction direction) {
     sync(direction, ui->translationTableFontSizeWidget, appearance.translationTableFontSize);
     sync(direction, ui->styleSelect, appearance.style);
     sync(direction, ui->themeSelect, appearance.theme);
-    sync(direction, ui->languageSelect, appearance.language);
     sync(direction, ui->displayPercentsCheckbox, appearance.displayPercents);
 
     // Controls
@@ -956,6 +988,7 @@ void SettingsWindow::syncAll(const Direction direction) {
     sync(direction, ui->translationLanguageSelect, projectSettings->translationLang, true);
 
     sync(direction, ui->spellcheckDictionarySelect, projectSettings->spellcheckDictionary);
+    sync(direction, ui->writeEncodingSelect, projectSettings->writeEncoding);
     sync(direction, ui->projectContextInput, projectSettings->projectContext);
 
     if (direction == Direction::Save) {
@@ -1106,7 +1139,7 @@ void SettingsWindow::syncCustomLints(const Direction direction) {
     vector<CustomLint> lints;
     lints.reserve(scast<usize>(ui->customLintsTable->rowCount()));
 
-    for (const auto row : range(0, ui->customLintsTable->rowCount())) {
+    for (i32 row = 0; row < ui->customLintsTable->rowCount(); row++) {
         const QString sequence = ui->customLintsTable->item(row, 0)->text();
 
         if (sequence.isEmpty()) {
@@ -1167,7 +1200,7 @@ void SettingsWindow::syncReplacements(const Direction direction) {
     vector<Replacement> replacements;
     replacements.reserve(scast<usize>(ui->replacementsTable->rowCount()));
 
-    for (const auto row : range(0, ui->replacementsTable->rowCount())) {
+    for (i32 row = 0; row < ui->replacementsTable->rowCount(); row++) {
         QString source = ui->replacementsTable->item(row, 0)->text();
 
         if (source.isEmpty()) {
@@ -1335,7 +1368,7 @@ void SettingsWindow::checkKey() {
     const auto endpoint = TranslationEndpoint(ui->typeSelect->currentIndex());
 
     if (endpoint <= TranslationEndpoint::DeepL) {
-        // TODO(v1.x): Check
+        // TODO(v1.2): Check
         return;
     }
 

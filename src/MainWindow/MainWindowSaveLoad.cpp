@@ -77,13 +77,13 @@ auto MainWindow::saveCurrentTab(QString tabName) -> bool {
 
     TranslationTableModel* const model = ui->translationTable->model();
 
-    for (const auto row : range(0, model->rowCount())) {
+    for (i32 row = 0; row < model->rowCount(); row++) {
         if ((model->flags(model->index(row, 1)) & Qt::ItemIsEditable) == 0) {
             *stream << *model->item(row, 0).text();
         } else {
             auto fields = QStringList(model->columnCount());
 
-            for (const auto column : range(0, model->columnCount())) {
+            for (i32 column = 0; column < model->columnCount(); column++) {
                 const auto item = model->item(row, column);
 
                 if (item.text()->isNull()) {
@@ -333,6 +333,16 @@ auto MainWindow::saveProjectSettings() -> bool {
     }
 
     metadata[u"hashes"_s] = hashes;
+
+    // RPGMTranslate always uses the default line_separator, line_break and comment_prefix, so
+    // write them out as null - same as the rvpacker-txt-rs CLI does when a project has never
+    // overridden them - rather than duplicating rvpacker_txt_rs_lib's default literals here.
+    metadata[u"lineSeparator"_s] = QVariant();
+    metadata[u"lineBreak"_s] = QVariant();
+    metadata[u"commentPrefix"_s] = QVariant();
+
+    metadata[u"readEncoding"_s] = projectSettings->readEncoding.isEmpty() ? QVariant()
+                                                                           : QVariant(projectSettings->readEncoding);
 
     metadataFile->write(QJsonDocument(QJsonObject::fromVariantHash(metadata)).toJson(QJsonDocument::Compact));
 

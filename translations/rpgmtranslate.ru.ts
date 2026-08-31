@@ -10,7 +10,7 @@
         <translation>О RPGMTranslate</translation>
     </message>
     <message>
-        <location filename="../src/AboutWindow/AboutWindow.cpp" line="178"/>
+        <location filename="../src/AboutWindow/AboutWindow.cpp" line="182"/>
         <source>Failed to load THIRD-PARTY-NOTICE.md: %1. It usually comes bundled with RPGMTranslate.</source>
         <translation>Не удалось загрузить THIRD-PARTY-NOTICE.md: %1. Как правило, данные о библиотеках третьей стороны поставляются вместе с RPGMTranslate.</translation>
     </message>
@@ -23,42 +23,42 @@
 <context>
     <name>AssetMenu</name>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.cpp" line="109"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="111"/>
         <source>Audio</source>
         <translation>Аудио</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.cpp" line="110"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="112"/>
         <source>Data</source>
         <translation>Данные</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.cpp" line="113"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="115"/>
         <source>Fonts</source>
         <translation>Шрифты</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.cpp" line="112"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="114"/>
         <source>Icons</source>
         <translation>Иконки</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.cpp" line="111"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="113"/>
         <source>Images</source>
         <translation>Изображения</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.cpp" line="115"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="117"/>
         <source>JS</source>
         <translation>JS</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.cpp" line="114"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="116"/>
         <source>Movies</source>
         <translation>Видео</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetMenu.cpp" line="31"/>
+        <location filename="../src/AssetMenu/AssetMenu.cpp" line="33"/>
         <source>Search file...</source>
         <translation>Найти файл...</translation>
     </message>
@@ -66,269 +66,269 @@
 <context>
     <name>AssetPreviewWidget</name>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="114"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="111"/>
         <source> pt</source>
         <translation> пт</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="414"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="411"/>
         <source>Any</source>
         <translation>Любая</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="432"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="429"/>
         <source>Arabic</source>
         <translation>Арабская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="426"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="423"/>
         <source>Armenian</source>
         <translation>Армянская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="590"/>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="606"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="587"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="603"/>
         <source>Asset playback is disabled. You can open asset in the default app.</source>
         <translation>Проигрывание ассетов выключено. Вы можете открыть ассет в приложении по умолчанию.</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="56"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="55"/>
         <source>Beautify</source>
         <translation>Отформатировать</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="444"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="441"/>
         <source>Bengali</source>
         <translation>Бегальская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="423"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="420"/>
         <source>Cyrillic</source>
         <translation>Кириллическая</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="441"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="438"/>
         <source>Devanagari</source>
         <translation>Деванагари</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="322"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="319"/>
         <source>Extension is unsupported.</source>
         <translation>Расширение не поддерживается.</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="364"/>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="545"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="361"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="542"/>
         <source>Failed to decrypt asset %1: %2</source>
         <translation>Не удалось расшифровать ассет %1: %2</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="247"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="244"/>
         <source>Failed to format: %1</source>
         <translation>Не удалось отформатировать: %1</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="639"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="637"/>
         <source>Failed to generate JSON for file %1: %2</source>
         <translation>Не удалось сгенерировать JSON для файла %1: %2</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="348"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="345"/>
         <source>Failed to load asset %1: %2</source>
         <translation>Не удалось загрузить ассет %1: %2</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="398"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="395"/>
         <source>Failed to load font %1</source>
         <translation>Не удалось загрузить шрифт %1</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="374"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="371"/>
         <source>Failed to load pixmap from %1</source>
         <translation>Не удалось загрузить изображение из %1</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="617"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="614"/>
         <source>Failed to open file %1: %2</source>
         <translation>Не удалось открыть файл %1: %2</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="556"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="553"/>
         <source>Failed to open temporary file %1: %2</source>
         <translation>Не удалось открыть временный файл %1: %2</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="483"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="480"/>
         <source>Georgian</source>
         <translation>Грузинская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="420"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="417"/>
         <source>Greek</source>
         <translation>Греческая</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="450"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="447"/>
         <source>Gujarati</source>
         <translation>Гуджарати</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="447"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="444"/>
         <source>Gurmukhi</source>
         <translation>Гурмухи</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="429"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="426"/>
         <source>Hebrew</source>
         <translation>Иврит</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="738"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="736"/>
         <source>Invalid regex</source>
         <translation>Неверное регулярное выражение</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="495"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="492"/>
         <source>Japanese</source>
         <translation>Японская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="462"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="459"/>
         <source>Kannada</source>
         <translation>Каннада</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="486"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="483"/>
         <source>Khmer</source>
         <translation>Кхмерская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="498"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="495"/>
         <source>Korean</source>
         <translation>Корейская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="474"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="471"/>
         <source>Lao</source>
         <translation>Лаосская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="417"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="414"/>
         <source>Latin</source>
         <translation>Латинская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="52"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="51"/>
         <source>Locate file</source>
         <translation>Открыть расположение</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="465"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="462"/>
         <source>Malayalam</source>
         <translation>Малаялам</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="100"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="97"/>
         <source>Media playback not available</source>
         <translation>Проигрывание медиа недоступно</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="480"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="477"/>
         <source>Myanmar</source>
         <translation>Бирманская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="513"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="510"/>
         <source>Nko</source>
         <translation>Нко</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="762"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="760"/>
         <source>No results</source>
         <translation>Нет результатов</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="507"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="504"/>
         <source>Ogham</source>
         <translation>Огхам</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="53"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="52"/>
         <source>Open in default app</source>
         <translation>Открыть в стандартном приложении</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="453"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="450"/>
         <source>Oriya</source>
         <translation>Ория</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="510"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="507"/>
         <source>Runic</source>
         <translation>Руническая</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="489"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="486"/>
         <source>Simplified Chinese</source>
         <translation>Упрощённый китайский</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="468"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="465"/>
         <source>Sinhala</source>
         <translation>Синхала</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="520"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="517"/>
         <source>Supported writing systems: </source>
         <translation>Поддерживаемые системы записи:</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="504"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="501"/>
         <source>Symbol</source>
         <translation>Символьная</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="435"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="432"/>
         <source>Syriac</source>
         <translation>Сирийская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="456"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="453"/>
         <source>Tamil</source>
         <translation>Тамиль</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="459"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="456"/>
         <source>Telugu</source>
         <translation>Телугу</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="438"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="435"/>
         <source>Thaana</source>
         <translation>Тана</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="471"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="468"/>
         <source>Thai</source>
         <translation>Тайская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="111"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="108"/>
         <source>The quick brown fox jumps over the lazy dog</source>
         <translation>Съешь ещё этих мягких французских булок, да выпей чаю</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="477"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="474"/>
         <source>Tibetan</source>
         <translation>Тибетская</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="492"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="489"/>
         <source>Traditional Chinese</source>
         <translation>Традиционный китайский</translation>
     </message>
     <message>
-        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="501"/>
+        <location filename="../src/AssetMenu/AssetPreviewWidget.cpp" line="498"/>
         <source>Vietnamese</source>
         <translation>Вьетнамская</translation>
     </message>
@@ -694,7 +694,7 @@
     </message>
     <message>
         <location filename="../src/TranslationTable/LintTooltip.cpp" line="542"/>
-        <location filename="../src/TranslationTable/LintTooltip.cpp" line="605"/>
+        <location filename="../src/TranslationTable/LintTooltip.cpp" line="606"/>
         <source>Suggestions: %1</source>
         <translation>Предложения: %1</translation>
     </message>
@@ -733,7 +733,7 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1116"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1179"/>
         <source>
 
 Skipped files:
@@ -744,7 +744,7 @@ Skipped files:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1164"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1227"/>
         <source>%1
 
 The files have been changed. Do you want to append any new text?%2</source>
@@ -753,19 +753,19 @@ The files have been changed. Do you want to append any new text?%2</source>
 Файлы были изменены. Вы хотите добавить новый текст?%2</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="227"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="918"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="225"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="973"/>
         <source>%1 Lines / %2 Comments</source>
         <translation>%1 строк / %2 комментариев</translation>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindowConnections.cpp" line="210"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="922"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="977"/>
         <source>%1 Translated / %2 Total</source>
         <translation>%1 переведено / %2 всего</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="240"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="277"/>
         <source>%n row(s) copied.</source>
         <translation>
             <numerusform>%n строка скопирована.</numerusform>
@@ -774,7 +774,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="237"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="274"/>
         <source>%n row(s) cut.</source>
         <translation>
             <numerusform>%n строка вырезана.</numerusform>
@@ -783,7 +783,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="243"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="280"/>
         <source>%n row(s) pasted.</source>
         <translation>
             <numerusform>%n строка вставлена.</numerusform>
@@ -792,7 +792,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/MainWindow/MainWindowConnections.cpp" line="430"/>
+        <location filename="../src/MainWindow/MainWindowConnections.cpp" line="429"/>
         <source>%n task(s)</source>
         <translation>
             <numerusform>%n задача</numerusform>
@@ -806,7 +806,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>- Отфильтровать по файлу -</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="199"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="236"/>
         <source>Abort</source>
         <translation>Отменить</translation>
     </message>
@@ -816,17 +816,17 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>О RPGMTranslate</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1204"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1268"/>
         <source>All source files are up-to-date.%1</source>
         <translation>Все исходные файлы остались без изменений.%1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="825"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="880"/>
         <source>Another task is already running.</source>
         <translation>Другая задача уже запущена.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="172"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="173"/>
         <source>Assets</source>
         <translation>Ассеты</translation>
     </message>
@@ -837,22 +837,22 @@ The files have been changed. Do you want to append any new text?%2</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="327"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="165"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="166"/>
         <source>Batch Menu</source>
         <translation>Меню обработки</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="325"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="323"/>
         <source>Batch translation failed with error: %1</source>
         <translation>Массовый перевод провалился с ошибкой: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="619"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="658"/>
         <source>Before working with the program, check out documentation in Help &gt; Documentation!</source>
         <translation>Перед работой с программой, изучите документацию в меню Помощь &gt; Документация!</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="170"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="171"/>
         <source>Bookmark Menu</source>
         <translation>Меню закладок</translation>
     </message>
@@ -862,17 +862,17 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Закладки</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="255"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="253"/>
         <source>Cannot perform batch-translate. You need to set source language in Settings &gt; Project first.</source>
         <translation>Невозможно начать массовый перевод. Вам нужно установить исходный язык в меню Настройки &gt; Проект.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="267"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="265"/>
         <source>Cannot perform batch-translate. You need to set translation language in Settings &gt; Project first.</source>
         <translation>Невозможно начать массовый перевод. Вам нужно установить язык перевода в меню Настройки &gt; Проект.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1012"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1067"/>
         <source>Cannot start %1 while %2 is running.</source>
         <translation>Нельзя начать %1 пока задача %2 запущена.</translation>
     </message>
@@ -882,7 +882,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Нельзя записать, исходные файлы отсутствуют.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1150"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1213"/>
         <source>Changed files: [%1]</source>
         <translation>Изменённые файлы: [%1]</translation>
     </message>
@@ -932,17 +932,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Скопировать перевод в корень</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="655"/>
-        <source>Copying the data directory to .rpgmtranslate/baseline-data as a baseline.</source>
-        <translation>Копируем папку data в .rpgmtranslate/baseline-data в качестве основы.</translation>
-    </message>
-    <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="1066"/>
         <source>Disable linting (overrides settings)</source>
         <translation>Отключить линтинг (приоритет над настройками)</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="186"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="223"/>
         <source>Don&apos;t remind me</source>
         <translation>Не напоминать</translation>
     </message>
@@ -952,7 +947,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Esc</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="743"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="795"/>
         <source>Existing translation folder</source>
         <translation>Существующая папка с переводом</translation>
     </message>
@@ -972,40 +967,40 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Экспорт/импорт</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="667"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1183"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="710"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1246"/>
         <source>Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead.</source>
         <translation>Не удалось скопировать %1 в %2 в качестве основы: %3. Оригинальная папка data из корня будет использована.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="155"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="192"/>
         <source>Failed to extract update archive.</source>
         <translation>Не удалось распаковать архив обновления.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="722"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="836"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="862"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="767"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="891"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="917"/>
         <source>Failed to load project: %1</source>
         <translation>Не удалось загрузить проект: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="642"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="681"/>
         <source>Failed to open git repository with error: %1</source>
         <translation>Не удалось открыть Git репозиторий с ошибкой: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="903"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="958"/>
         <source>Failed to open tab: %1.</source>
         <translation>Не удалось открыть вкладку: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="86"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="123"/>
         <source>Failed to open update archive.</source>
         <translation>Не удалось открыть архив обновления.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="266"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="303"/>
         <source>Failed to opened project because couldn&apos;t locate `.rpgmtranslate` program directory that was previously located at this path: %1. If this is intentional, please reopen the directory manually.</source>
         <translation>Не удалось открыть проект по причине того, что программная папка .rpgmtranslate не была найдена по старому пути: %1. Если это намеренно, пожалуйста откройте нужный проект заново.</translation>
     </message>
@@ -1020,12 +1015,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Файл</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="894"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="949"/>
         <source>File is currently processed and is being locked.</source>
         <translation>Файл сейчас заблокирован, поскольку он обрабатывается.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="255"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="292"/>
         <source>Folder %1 does not exist.</source>
         <translation>Папка %1 не существует.</translation>
     </message>
@@ -1041,7 +1036,7 @@ The files have been changed. Do you want to append any new text?%2</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="371"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="166"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="167"/>
         <source>Glossary Menu</source>
         <translation>Меню глоссария</translation>
     </message>
@@ -1066,12 +1061,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Введите строку от %1 до %2</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="189"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="226"/>
         <source>Install</source>
         <translation>Установить</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="199"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="236"/>
         <source>Installing update...</source>
         <translation>Устанавливаем обновление...</translation>
     </message>
@@ -1088,7 +1083,7 @@ The files have been changed. Do you want to append any new text?%2</source>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="415"/>
         <location filename="../src/MainWindow/MainWindow.ui" line="992"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="167"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="168"/>
         <source>Lint Menu</source>
         <translation>Меню линтов</translation>
     </message>
@@ -1128,22 +1123,22 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Загрузить резервную копию</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="174"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="175"/>
         <source>Locate Project Directory</source>
         <translation>Перейти к папке проекта</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1158"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1221"/>
         <source>New files: [%1]</source>
         <translation>Новые файлы: [%1]</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="187"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="224"/>
         <source>New version is available</source>
         <translation>Новая версия доступна</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1109"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1172"/>
         <source>No matching source files were found in:
 %1</source>
         <translation>Не было найдено подходящих исходных файлов в:
@@ -1151,7 +1146,7 @@ The files have been changed. Do you want to append any new text?%2</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="645"/>
-        <location filename="../src/MainWindow/MainWindowConnections.cpp" line="430"/>
+        <location filename="../src/MainWindow/MainWindowConnections.cpp" line="429"/>
         <source>No tasks</source>
         <translation>Нет задач</translation>
     </message>
@@ -1167,12 +1162,12 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Откройте проект, используя кнопку &quot;Открыть проект&quot;!</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="376"/>
+        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="386"/>
         <source>Opening backup %1 failed: %2</source>
         <translation>Открытие резервной копии %1 не удалось: %2</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="177"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="214"/>
         <source>Program is up-to-date.</source>
         <translation>Программа обновлена до последней версии.</translation>
     </message>
@@ -1197,17 +1192,17 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Чтение</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1242"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1308"/>
         <source>Read failed: %1</source>
         <translation>Чтение не удалось: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="818"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="873"/>
         <source>Read was rejected by user.</source>
         <translation>Чтение было отменено пользователем.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="387"/>
+        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="397"/>
         <source>Reading archive failed with %1</source>
         <translation>Чтение архива не удалось с ошибкой: %1</translation>
     </message>
@@ -1222,7 +1217,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Обновить изменения</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="478"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="476"/>
         <source>Replace failed, unable to open file %1</source>
         <translation>Замена провалилась, не удалось открыть файл %1</translation>
     </message>
@@ -1233,30 +1228,30 @@ The files have been changed. Do you want to append any new text?%2</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="163"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="162"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="163"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="299"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="297"/>
         <source>Script failed at %1, line %2: %3</source>
         <translation>Скрипт провалился в файле %1, строка %2: %3</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="295"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="293"/>
         <source>Script failed: %1</source>
         <translation>Скрипт провалился: %1</translation>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="283"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="164"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="165"/>
         <source>Search</source>
         <translation>Поиск</translation>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="770"/>
         <location filename="../src/MainWindow/MainWindow.ui" line="884"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="175"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="176"/>
         <source>Search Panel</source>
         <translation>Панель поиска</translation>
     </message>
@@ -1266,32 +1261,32 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Выберите папку игры</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="588"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="586"/>
         <source>Set source and translation languages in Settings &gt; Project to show glossary matches.</source>
         <translation>Установите язык исходного текста и язык перевода в меню Настройки &gt; Проект чтобы отображать совпадения по глоссарию.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="651"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="649"/>
         <source>Set source and translation languages in Settings &gt; Project to show translations.</source>
         <translation>Установите язык исходного текста и язык перевода в меню Настройки &gt; Проект чтобы отображать перевод.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="590"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="588"/>
         <source>Set source language in Settings &gt; Project to show glossary matches.</source>
         <translation>Установите язык исходного текста в меню Настройки &gt; Проект чтобы отображать совпадения по глоссарию.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="653"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="651"/>
         <source>Set source language in Settings &gt; Project to show translations.</source>
         <translation>Установите язык исходного текста в меню Настройки &gt; Проект чтобы отображать перевод.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="585"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="583"/>
         <source>Set translation language in Settings &gt; Project to show glossary matches.</source>
         <translation>Установите язык перевода в меню Настройки &gt; Проект чтобы отображать совпадения по глоссарию.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="648"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="646"/>
         <source>Set translation language in Settings &gt; Project to show translations.</source>
         <translation>Установите язык исходного текста в меню Настройки &gt; Проект чтобы отображать перевод.</translation>
     </message>
@@ -1301,28 +1296,28 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="190"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="227"/>
         <source>Skip</source>
         <translation>Пропустить</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="562"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="601"/>
         <source>Source</source>
         <translation>Исходный текст</translation>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="1244"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="171"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="172"/>
         <source>Source Control</source>
         <translation>Контроль исходного кода</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1163"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1226"/>
         <source>Source files have been updated</source>
         <translation>Исходные файлы были обновлены</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="805"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="860"/>
         <source>Source files, translation or archive file do not exist.</source>
         <translation>Исходные файлы, перевод или зашифрованный архив не существуют.</translation>
     </message>
@@ -1339,24 +1334,29 @@ The files have been changed. Do you want to append any new text?%2</source>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="122"/>
         <location filename="../src/MainWindow/MainWindow.ui" line="1236"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="161"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="162"/>
         <source>Tab Panel</source>
         <translation>Панель вкладок</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="625"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="664"/>
         <source>The program failed to split some lines into parts because of absence of &lt;#&gt; delimiter. Check log to see skipped lines.</source>
         <translation>Программе не удалось разбить некоторые линии на части из-за отсутствия разделителя &lt;#&gt;. Проверьте лог, чтобы увидеть пропущенные строки.</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1032"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="694"/>
+        <source>Copying the game data to .rpgmtranslate/baseline-data as a baseline.</source>
+        <translation>Копируем данные игры в .rpgmtranslate/baseline-data в качестве базы.</translation>
+    </message>
+    <message>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1087"/>
         <source>The program was unable to open the following files:
  %1</source>
         <translation>Программе не удалось открыть следующие файлы:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1039"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="1094"/>
         <source>The source path %1 does not exist.</source>
         <translation>Исходный путь %1 не существует.</translation>
     </message>
@@ -1369,23 +1369,23 @@ The files have been changed. Do you want to append any new text?%2</source>
         <location filename="../src/MainWindow/MainWindowConnections.cpp" line="220"/>
         <location filename="../src/MainWindow/MainWindowConnections.cpp" line="221"/>
         <location filename="../src/MainWindow/MainWindowConnections.cpp" line="222"/>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="566"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="605"/>
         <source>Translation</source>
         <translation>Перевод</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="744"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="796"/>
         <source>Translation folder is found in the root of the project. Use it?</source>
         <translation>Папка перевода найдена в корне проекта. Использовать её?</translation>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="459"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="169"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="170"/>
         <source>Translations Menu</source>
         <translation>Меню переводов</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="225"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="262"/>
         <source>Update failed with error: %1</source>
         <translation>Обновление не удалось с ошибкой: %1</translation>
     </message>
@@ -1395,7 +1395,7 @@ The files have been changed. Do you want to append any new text?%2</source>
         <translation>Документация по использованию</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="188"/>
+        <location filename="../src/MainWindow/MainWindowFunctions.cpp" line="225"/>
         <source>Version %1 is available.
 Current version is %2.</source>
         <translation>Версия %1 доступна.
@@ -1403,24 +1403,24 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/MainWindow/MainWindow.ui" line="204"/>
-        <location filename="../src/MainWindow/MainWindow.hpp" line="163"/>
+        <location filename="../src/MainWindow/MainWindow.hpp" line="164"/>
         <source>Write</source>
         <translation>Записать</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="133"/>
-        <location filename="../src/MainWindow/MainWindowConnections.cpp" line="397"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="131"/>
+        <location filename="../src/MainWindow/MainWindowConnections.cpp" line="396"/>
         <source>Write failed: %1</source>
         <translation>Запись не удалась: %1</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="402"/>
+        <location filename="../src/MainWindow/MainWindowSaveLoad.cpp" line="412"/>
         <source>Writing entry %1 failed: %2</source>
         <translation>Запись элемента %1 не удалась: %2</translation>
     </message>
     <message>
-        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="137"/>
-        <location filename="../src/MainWindow/MainWindowConnections.cpp" line="401"/>
+        <location filename="../src/MainWindow/MainWindowCallbacks.cpp" line="135"/>
+        <location filename="../src/MainWindow/MainWindowConnections.cpp" line="400"/>
         <source>Written successfully. Elapsed: %1s.</source>
         <translation>Запись прошла успешно. Затрачено: %1 с.</translation>
     </message>
@@ -1650,9 +1650,19 @@ Current version is %2.</source>
         <translation>Оставить дубликаты</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="60"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="73"/>
         <source>Allow duplicates across maps and events. This may bloat your translation. This mode is always set for system, scripts, and plugins files.</source>
         <translation>Позволить дубликаты среди карт и событий. Это может раздуть ваш перевод. Этот режим всегда установлен для файлов system, scripts и plugins.</translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="120"/>
+        <source>Failed to extract title from the Game.ini/RPG_RT.ini file: %1</source>
+        <translation>Не удалось достать название из файла Game.ini/RPG_RT.ini: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="132"/>
+        <source>Title is empty in %1 file.</source>
+        <translation>Название игры пустое в файле %1.</translation>
     </message>
     <message>
         <location filename="../src/ReadMenu/ReadMenu.ui" line="104"/>
@@ -1660,22 +1670,22 @@ Current version is %2.</source>
         <translation>Добавление</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="45"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="56"/>
         <source>Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event.</source>
         <translation>Добавляет новый текст из игры в файлы перевода, если его там ещё нет. Порядок строк отсортирован, неиспользуемые строки переносятся в конец карты/ивента.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="37"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="46"/>
         <source>Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event. Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode.</source>
         <translation>Добавляет новый текст из игры в файлы перевода, если его там ещё нет. Порядок строк отсортирован, неиспользуемые строки переносятся в конец карты/ивента. Стандартный режим ничего не делает, если исходные файлы не изменены с последнего чтения - в таком случае используйте режим принудительного добавления.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="502"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="600"/>
         <source>Apply</source>
         <translation>Применить</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="495"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="593"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -1685,7 +1695,7 @@ Current version is %2.</source>
         <translation>Стандартный</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="22"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="25"/>
         <source>Default mode does nothing when files are already read.</source>
         <translation>Стандартный режим не делает ничего когда файлы уже прочитаны.</translation>
     </message>
@@ -1700,11 +1710,6 @@ Current version is %2.</source>
         <translation>Режим дубликатов</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="86"/>
-        <source>Failed to extract title from the Game.ini file: %1</source>
-        <translation>Не удалось извлечь название игры из файла Game.ini: %1</translation>
-    </message>
-    <message>
         <location filename="../src/ReadMenu/ReadMenu.ui" line="99"/>
         <source>Force</source>
         <translation>Принудительный</translation>
@@ -1715,22 +1720,22 @@ Current version is %2.</source>
         <translation>Принудительное добавление</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="31"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="34"/>
         <source>Force rewrites existing translation files.</source>
         <translation>Принудительно перезаписывает существующий перевод.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="279"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="402"/>
         <source>Ignore: Ignore entries from .rvpacker-ignore file.</source>
         <translation>Игнорирование: игнорировать строки из файла .rvpacker-ignore.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="379"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="502"/>
         <source>Parse Map Events: Parses map events metadata, such as event ID, name, x/y position.</source>
         <translation>Распарсить ивенты карт: парсит метаданные ивентов в картах, по типу их ID, названий и x/y позиций.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="28"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="31"/>
         <source>Parses the game text.</source>
         <translation>Парсит текст игры.</translation>
     </message>
@@ -1746,24 +1751,29 @@ Current version is %2.</source>
     </message>
     <message>
         <location filename="../src/ReadMenu/ReadMenu.ui" line="205"/>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="65"/>
+        <location filename="../src/ReadMenu/ReadMenu.cpp" line="78"/>
         <source>Remove duplicates across maps and events. Recommended. In system, scripts and plugins files this mode is always overridden by allow mode.</source>
         <translation>Удаляет дубликаты среди карт и ивентов. В файлах system, scripts и plugins этот режим всегда установлен на &quot;Разрешить&quot;.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="332"/>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="260"/>
+        <source>Text Encoding</source>
+        <translation>Кодировка текста</translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="349"/>
+        <source>Forces text decoding to the given codepage, instead of guessing it. Needed for RPG Maker 2000/2003, XP and VX - these are legacy engines having no encoding of their own, defaulting to the system&apos;s codepage (unlike VX Ace, MV and MZ). Leave blank to guess. If the game&apos;s title below has native, non-ASCII characters, it can help pinpoint the right encoding.</source>
+        <translation>Указывает кодировку для декодирования текста вместо её отгадывания. Опция необходима для движков RPG Maker 2000/2003, XP и VX - это устаревшие движки которые не поддерживают разные кодировки, и по-умолчанию используют системную кодировку (в отличие от VX Ace, MV и MZ). Оставьте пустым чтобы угадывать. Если название игры снизу имеет символы не из ASCII, оно может помочь отгадать нужную кодировку прямо здесь.</translation>
+    </message>
+    <message>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="455"/>
         <source>Skip Obsolete: Don&apos;t preserve obsolete entries from the previous read.</source>
         <translation>Пропустить устаревшее: не сохранять устаревшие строки, оставшиеся с прошлого чтения.</translation>
     </message>
     <message>
-        <location filename="../src/ReadMenu/ReadMenu.cpp" line="92"/>
-        <source>Title is empty in Game.ini file.</source>
-        <translation>Название игры пустое в файле Game.ini.</translation>
-    </message>
-    <message>
-        <location filename="../src/ReadMenu/ReadMenu.ui" line="423"/>
-        <source>Use title from Game.ini: If game is RPG Maker XP/VX/VX Ace, it may not necessarily contain game title in the system file. Use this option to take it from Game.ini. You will have to pick the right encoding. If this option is not set, we&apos;ll try to use the title from system file, if it&apos;s there.</source>
-        <translation>Использовать название игры из Game.ini: Если игра построена на движке RPG Maker XP/VX/VX Ace, она может не содержать название игры в System файле. Используйте эту опцию, чтобы взять его из файла Game.ini. Вам нужно будет подобрать нужную кодировку. Если эта опция не установлена, приложение попытается использовать значение из System файла, если оно там есть.</translation>
+        <location filename="../src/ReadMenu/ReadMenu.ui" line="546"/>
+        <source>Use title from ini file: If game is RPG Maker XP/VX/VX Ace or RM2K/2003, it may not necessarily contain game title in the system file. Use this option to take it from Game.ini (XP/VX/VX Ace) or RPG_RT.ini (RM2K/2003), whichever is present in the game directory. You will have to pick the right encoding in &quot;Text Encoding&quot; field above. If the title comes out garbled, that&apos;s a hint the encoding is wrong. If this option is not set, we&apos;ll try to use the title from system file, if it&apos;s there.</source>
+        <translation>Использовать название игры из ini файла: если движок игры RPG Maker 2000/2003, XP, VX или VX Ace, он не всегда может иметь название игры в системном файле. Используйте эту опцию чтобы взять название из Game.ini (XP/VX/VX Ace) или RPG_RT.ini (2000/2003). Вам придётся выбрать подходящую кодировку в поле кодировки сверху. Если текст получается сломанным, это признак того что выбрана неверная кодировка. Если эта опция не используется, мы попробуем использовать название из файла System, если оно там есть.</translation>
     </message>
 </context>
 <context>
@@ -1994,17 +2004,17 @@ Current version is %2.</source>
 <context>
     <name>SettingsWindow</name>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1406"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1390"/>
         <source>API key</source>
         <translation>API ключ</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1167"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1151"/>
         <source>Add Endpoint</source>
         <translation>Добавить точку</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="501"/>
         <source>Appearance</source>
         <translation>Внешний вид</translation>
     </message>
@@ -2019,40 +2029,40 @@ Current version is %2.</source>
         <translation>Интервал резервного копирования</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="835"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="831"/>
         <source>Backup period must be between %1 and %2 seconds.</source>
         <translation>Период резервного копирования должен иметь значение от %1 до %2 секунд.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1476"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1460"/>
         <source>Base URL</source>
         <translation>Базовый URL</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="815"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="799"/>
         <source>Batch Menu</source>
         <translation>Меню обработки</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="846"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="830"/>
         <source>Bookmark Menu</source>
         <translation>Меню закладок</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2289"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2273"/>
         <source>Case insensitive</source>
         <translation>Учитывать регистр</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2017"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2083"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2149"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2215"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2001"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2067"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2133"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2199"/>
         <source>Category</source>
         <translation>Категория</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1842"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1826"/>
         <source>Check connection</source>
         <translation>Проверить подключение</translation>
     </message>
@@ -2067,7 +2077,7 @@ Current version is %2.</source>
         <translation>Проверять обновления</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1513"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1497"/>
         <source>Check key</source>
         <translation>Проверить ключ</translation>
     </message>
@@ -2077,52 +2087,67 @@ Current version is %2.</source>
         <translation>Проверить, изменились ли исходные файлы игры с последнего чтения, и предложить перечитать их.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="726"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1047"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="722"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1080"/>
         <source>Choose Color</source>
         <translation>Выбрать цвет</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2170"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2154"/>
         <source>Comment Tags</source>
         <translation>Comment тэги</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2793"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2771"/>
+        <source>Write encoding</source>
+        <translation>Кодировка для записи</translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2778"/>
+        <source>Forces the translation to be encoded to the given codepage when writing it back, instead of always writing UTF-8. Leave blank unless you know the target game engine has no Unicode-aware renderer and the translation&apos;s script fits the chosen codepage.</source>
+        <translation>При записи, записывает перевод в определённой кодировке вместо UTF-8. Оставьте пустым если только вы не уверены полностью что игра не поддерживает юникод, и если вы уверены что система записи букв в вашем переводе совпадает с кодировкой игры.</translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2866"/>
         <source>Context</source>
         <translation>Контекст</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="501"/>
         <source>Controls</source>
         <translation>Управление</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="501"/>
         <source>Core</source>
         <translation>Основные</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1470"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="880"/>
+        <source>Hotkey %1 is already assigned to both &quot;%2&quot; and &quot;%3&quot;. Please assign a different hotkey.</source>
+        <translation>Горячая клавиша %1 назначена сразу на &quot;%2&quot; и &quot;%3&quot;. Пожалуйста, выберите другую горячую клавишу.</translation>
+    </message>
+    <message>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1503"/>
         <source>LLM connector</source>
         <translation>ИИ-коннектор</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1478"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1511"/>
         <source>Warning: %1 support was not compiled into this build. Selecting this endpoint will fail when used.</source>
         <translation>Ахтунг: поддержка %1 не было скомпилирована в этом билде. Выбор этой точки будет выдавать ошибку при использовании.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2236"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2220"/>
         <source>Custom Lints</source>
         <translation>Пользовательские линты</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2027"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2093"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2159"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2225"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2299"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2011"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2077"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2143"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2209"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2283"/>
         <source>Custom color</source>
         <translation>Пользовательский цвет</translation>
     </message>
@@ -2132,44 +2157,44 @@ Current version is %2.</source>
         <translation>Тёмная</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1426"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1459"/>
         <source>DeepL. Requires API key and folder ID. Configured options don&apos;t work with this endpoint, except glossary usage.</source>
         <translation>DeepL. Требует API ключ и идентификатор папки. Настройки не будут работать для этой точки, кроме использования глоссария.</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="601"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1493"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1477"/>
         <source>Default</source>
         <translation>Стандартная</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1684"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1732"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1668"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1716"/>
         <source>Default System Prompt</source>
         <translation>Стандартный системный промпт</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1873"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1857"/>
         <source>Dicts: Comma-separated list of dictionaries to include words from; uses special default dictionary if this is unset.</source>
         <translation>Словари: Список словарей, разделённых запятой, из которых будут использованы слова; использует особый стандартный словарь, если ничего не указано.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1932"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1916"/>
         <source>Disabled categories: IDs of categories to be disabled, comma-separated.</source>
         <translation>Выключенные категории: идентификаторы категорий которые необходимо выключить, разделённые запятой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1894"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1878"/>
         <source>Disabled rules: IDs of rules to be disabled, comma-separated.</source>
         <translation>Выключенные правила: идентификаторы правил которые необходимо выключить, разделённые запятой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="665"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="649"/>
         <source>Display progress as percents</source>
         <translation>Отображать прогресс в процентах</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2628"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2612"/>
         <source>Display words/characters count for a file</source>
         <translation>Отображать количество слов/символов для файла</translation>
     </message>
@@ -2179,67 +2204,62 @@ Current version is %2.</source>
         <translation>Электронная почта для авторства над коммитами</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2473"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2457"/>
         <source>Enabled</source>
         <translation>Включено</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1901"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1885"/>
         <source>Enabled categories: IDs of categories to be enabled, comma-separated.</source>
         <translation>Включённые категории: идентификаторы категорий которые необходимо включить, разделённые запятой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1790"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1774"/>
         <source>Enabled only: If true, only the rules and categories whose IDs are specified with enabledRules or enabledCategories are enabled.</source>
         <translation>Только включённое: Если включено, только правила и категории, идентификаторы которых присутствуют во включённых правилах или включённых категориях будут использоваться.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1887"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1871"/>
         <source>Enabled rules: IDs of rules to be enabled, comma-separated.</source>
         <translation>Включённые правила: идентификаторы правил которые необходимо включить, разделённые запятой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="521"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="517"/>
         <source>Endpoint %1</source>
         <translation>Точка %1</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1092"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1076"/>
         <source>Endpoint List</source>
         <translation>Список точек</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="477"/>
-        <source>English</source>
-        <translation>Английский</translation>
-    </message>
-    <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2377"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2361"/>
         <source>Export</source>
         <translation>Экспорт</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1215"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1248"/>
         <source>Export custom lints</source>
         <translation>Экспортировать пользовательские линты</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2863"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2936"/>
         <source>File context</source>
         <translation>Контекст файла</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2832"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2905"/>
         <source>File context select</source>
         <translation>Выбор контекста файла</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="458"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="456"/>
         <source>Frequency penalty</source>
         <translation>Штраф за частоту</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1351"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1384"/>
         <source>Getting available models failed with error: %1</source>
         <translation>Получение доступных моделей провалилось с ошибкой: %1</translation>
     </message>
@@ -2249,47 +2269,47 @@ Current version is %2.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="654"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="650"/>
         <source>Given URL is invalid. Please check the validity of submitted URL.</source>
         <translation>Данный адрес неверен. Проверьте правильность введённого адреса.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="908"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="892"/>
         <source>Glossary Menu</source>
         <translation>Меню глоссария</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="784"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="768"/>
         <source>Go To Row</source>
         <translation>Переход к строке</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1417"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1450"/>
         <source>Google Translate. Free and unlimited. Configured options don&apos;t work with this endpoint.</source>
         <translation>Google Translate. Бесплатный и без лимитов. Настроенные опции не будут работать с этой точкой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1621"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1605"/>
         <source>High</source>
         <translation>Высокий</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1503"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1487"/>
         <source>If &quot;Check key&quot; outputs something about incorrect URL, missing page etc., make sure that your base URL includes the API version. For example: &quot;https://api.openai.com/v1&quot; or &quot;https://generativelanguage.googleapis.com/v1beta&quot;. Don&apos;t include parts like &quot;/chat/completions&quot; in the URL!</source>
         <translation>Если &quot;проверка ключа&quot; напишет что-то о неправильном адресе, отсутствующей странице и так далее, убедитесь что ваш базовый адрес включает в себе версию API. Например &quot;https://api.openai.com/v1&quot; или &quot;https://generativelanguage.googleapis.com/v1beta&quot;. Не используйте части вроде &quot;/chat/completions&quot; в адресе!</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2384"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2368"/>
         <source>Import</source>
         <translation>Импорт</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1250"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1283"/>
         <source>Import custom lints</source>
         <translation>Импортировать пользовательские линты</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2732"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2716"/>
         <source>In characters. Allowed range: 0-255.</source>
         <translation>В символах. Лимит: 0-255</translation>
     </message>
@@ -2299,43 +2319,38 @@ Current version is %2.</source>
         <translation>В секундах. Лимит от 60 до 3600</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="447"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="445"/>
         <source>Input token limit</source>
         <translation>Лимит входных токенов</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="646"/>
-        <source>Interface language</source>
-        <translation>Язык интерфейса</translation>
-    </message>
-    <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1215"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1250"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1248"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1283"/>
         <source>JSON files (*.json)</source>
         <translation>JSON файлы (*.json)</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1434"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1467"/>
         <source>LLM endpoint with pre-defined base URL. Don&apos;t change the base URL, unless you know what you&apos;re doing. Configured options will affect this endpoint.</source>
         <translation>Точка нейросети с фиксированным базовым адресом. Не меняйте базовый адрес если не знаете, что делаете. Настроенные опции будут работать с этой точкой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1769"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1753"/>
         <source>LanguageTool</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1810"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1794"/>
         <source>LanguageTool base URL</source>
         <translation>Базовый адрес LanguageTool</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1399"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1432"/>
         <source>LanguageTool connection check failed with error: %1</source>
         <translation>Подключение LanguageTool не удалось с ошибкой: %1</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1391"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1424"/>
         <source>LanguageTool connection check failed with error: %1
 If the server doesn&apos;t actually support HTTPS (e.g. local server, started with org.languagetool.server.HTTPServer), try an http:// URL instead.</source>
         <translation>Подключение LanguageTool не удалось с ошибкой: %1
@@ -2347,32 +2362,32 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Светлая</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2719"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2703"/>
         <source>Line length hint</source>
         <translation>Лимит длины строки</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="856"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="852"/>
         <source>Line length hint must be between 0 and %1.</source>
         <translation>Лимит длины строки должен быть между 0 и %1.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="877"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="861"/>
         <source>Lint Menu</source>
         <translation>Меню линтов</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1443"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1476"/>
         <source>Local endpoint. You need to set correct base url, that should probably end with &apos;/v1&apos;. Configured options will affect this endpoint.</source>
         <translation>Локальная точка. Нуждается в правильном базовом адресе, который скорее всего должен оканчиваться на &apos;/v1&apos;. Настроенные опции будут работать с этой точкой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1611"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1595"/>
         <source>Low</source>
         <translation>Низкий</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1044"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1028"/>
         <source>Machine Translation</source>
         <translation>Машинный перевод</translation>
     </message>
@@ -2382,32 +2397,32 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Макс. резервные копии</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="848"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="844"/>
         <source>Max backups must be between 1 and %1.</source>
         <translation>Число макс. резервных копии должно быть между 1 и %1.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1616"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1600"/>
         <source>Medium</source>
         <translation>Средний</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2400"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2384"/>
         <source>Misc</source>
         <translation>Другое</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1544"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1528"/>
         <source>Model</source>
         <translation>Модель</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="625"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="621"/>
         <source>Model that was previously selected for translation: %1 is not longer in the list of models provided by the endpoint.</source>
         <translation>Модель которая была ранее выбрана для перевода: %1 больше не находится в списке моделей предоставляемых данной точкой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1866"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1850"/>
         <source>Mother tongue: A language code of the user&apos;s native language, enabling false friends checks for some language pairs.</source>
         <translation>Материнский язык: Языковой код родного языка переводчика, который включает проверки на &quot;ложных друзей&quot; для некоторых комбинаций языков.</translation>
     </message>
@@ -2417,46 +2432,46 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Имя автора коммита</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2038"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2022"/>
         <source>Note Tags</source>
         <translation>Note тэги</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1439"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1472"/>
         <source>OpenAI-compatible endpoint. This category fits many providers, including OpenAI itself, DeepSeek, Mistral, OpenRouter and local providers, such as llama.cpp and koboldcpp. Requires valid base URL, that should probably end with &apos;/v1&apos;. Configured options will affect this endpoint.</source>
         <translation>Совместимая с OpenAI точка. Эта категория включает в себя множество сервисов, включая сам OpenAI, DeepSeek, Mistral, OpenRouter и локальных провайдеров вроде llama.cpp и koboldcpp. Нуждается в правильном базовом адресе, который скорее всего должен оканчиваться на &quot;/v1&quot;. Настроенные опции будут работать с этой точкой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="450"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="448"/>
         <source>Output token limit</source>
         <translation>Лимит выходных токенов</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1269"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1302"/>
         <source>Parsing %1 failed: %2</source>
         <translation>Парсинг %1 не удался: %2</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2012"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2078"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2144"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2210"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2279"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1996"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2062"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2128"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2194"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2263"/>
         <source>Pattern</source>
         <translation>Паттерн</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1797"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1781"/>
         <source>Picky mode: additional rules will be activated, i.e. rules that you might only find useful when checking formal text.</source>
         <translation>Придирчивый режим: будут активированы дополнительные правила, например правила полезные только при проверке формального текста.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2104"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2088"/>
         <source>Plugin Commands</source>
         <translation>Команды плагинов</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="460"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="458"/>
         <source>Precense penalty</source>
         <translation>Штраф за присутствие</translation>
     </message>
@@ -2466,17 +2481,17 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Предпочитать Git конфигурацию репозитория</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1880"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1864"/>
         <source>Preferred variants: Comma-separated list of preferred language variants.</source>
         <translation>Предпочитаемые варианты: Список предпочитаемых вариантов языков, разделённый запятой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="501"/>
         <source>Project</source>
         <translation>Проект</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2894"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2967"/>
         <source>Project сontext</source>
         <translation>Контекст проекта</translation>
     </message>
@@ -2486,94 +2501,89 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Диапазон от 1 до 99</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1259"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1292"/>
         <source>Reading %1 failed: %2</source>
         <translation>Чтение %1 не удалось: %2</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1603"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1587"/>
         <source>Reasoning effort</source>
         <translation>Сила мышления</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="743"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="739"/>
         <source>Regular expression is invalid: %1. Offset: %2</source>
         <translation>Регулярное выражение неверно %1. Позиция: %2</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1205"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1189"/>
         <source>Remove Selected Endpoint</source>
         <translation>Удалить выбранную точку</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2468"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2452"/>
         <source>Replacement</source>
         <translation>Замена</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="478"/>
-        <source>Russian</source>
-        <translation>Русский</translation>
-    </message>
-    <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="722"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="706"/>
         <source>Search Panel</source>
         <translation>Панель поиска</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1142"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1126"/>
         <source>Select endpoints by clicking on them. You can change the name by double-clicking an endpoint.</source>
         <translation>Выбирайте точки кликая на них. Вы можете изменить название, кликнув по точке дважды.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2463"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2447"/>
         <source>Sequence</source>
         <translation>Последовательность</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1948"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1932"/>
         <source>Sequence Lints</source>
         <translation>Линты последовательностей</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2421"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2405"/>
         <source>Sequence Replacements</source>
         <translation>Замена последовательностей</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2428"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2412"/>
         <source>Sequence replacement is a feature that allows you to specify character sequences that will be converted into some other symbols. It&apos;s mainly useful when you need a non-ASCII punctuation symbol (e.g. em dash, guillemets).</source>
         <translation>Замена последовательностей это функция, позволяющая вам обозначать последовательности символов, которые будут заменены другими символами. Она наиболее полезна когда вам нужна пунктуация не из ASCII (например длинное тире, &quot;ёлочки&quot;)</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1228"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1261"/>
         <source>Serializing custom lints failed: %1</source>
         <translation>Сериализация пользовательских линтов не удалась: %1</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="32"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2677"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2661"/>
         <source>Settings</source>
         <translation>Настройки</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="662"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="646"/>
         <source>Show tab progress as a percentage instead of a translated/total count.</source>
         <translation>Показывает прогресс во вкладках в виде процента, а не количества.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1712"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1725"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1696"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1709"/>
         <source>Single Translate System Prompt</source>
         <translation>Системный промпт для единичного перевода</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2745"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2729"/>
         <source>Source language</source>
         <translation>Исходный язык</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2771"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2755"/>
         <source>Spellcheck dictionary</source>
         <translation>Словарь для правописания</translation>
     </message>
@@ -2583,33 +2593,33 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Стиль</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1381"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1414"/>
         <source>Successfully connected to the LanguageTool server.</source>
         <translation>Успешное подключение к серверу LanguageTool.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2590"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2574"/>
         <source>Symbols that should be considered space, comma-separated list of Unicode U+XXXX code points:</source>
         <translation>Символы которые должны считаться пробелами, список разделённый запятыми состоящий из точек Unicode U+XXXX:</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1664"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1677"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1648"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1661"/>
         <source>System Prompt</source>
         <translation>Системный промпт</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="753"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="737"/>
         <source>Tab Panel</source>
         <translation>Панель вкладок</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="456"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="454"/>
         <source>Temperature</source>
         <translation>Температура</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1969"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1953"/>
         <source>Text Codes</source>
         <translation>Текстовые коды</translation>
     </message>
@@ -2619,32 +2629,32 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Тема</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="453"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="451"/>
         <source>Thinking budget limit</source>
         <translation>Лимит на бюджет для мышления</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1632"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1616"/>
         <source>Thinking/reasoning</source>
         <translation>Мышление</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2284"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2268"/>
         <source>Tooltip</source>
         <translation>Подсказка</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="462"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="460"/>
         <source>Top P</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="505"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="501"/>
         <source>Translation</source>
         <translation>Перевод</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2761"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2745"/>
         <source>Translation language</source>
         <translation>Язык перевода</translation>
     </message>
@@ -2654,41 +2664,41 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Шрифт таблицы для перевода</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="465"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="463"/>
         <source>Translation table font size</source>
         <translation>Размер шрифта таблицы для перевода</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="939"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="923"/>
         <source>Translations Menu</source>
         <translation>Меню переводов</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1267"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1251"/>
         <source>Type</source>
         <translation>Тип</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2600"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2584"/>
         <source>U+3000, U+00A0, U+200B</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2022"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2088"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2154"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2220"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2294"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2006"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2072"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2138"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2204"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2278"/>
         <source>Use custom color</source>
         <translation>Использовать другой цвет</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1381"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1365"/>
         <source>Use for single translation (will display text translation through the endpoint in translations menu)</source>
         <translation>Использовать для единичного перевода (будет отображать перевод в поле в меню переводов)</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1639"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1623"/>
         <source>Use glossary</source>
         <translation>Использовать глоссарий</translation>
     </message>
@@ -2708,38 +2718,38 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         <translation>Имя пользователя</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1241"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1274"/>
         <source>Writing %1 failed: %2</source>
         <translation>Запись %1 не удалась: %2</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1421"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1454"/>
         <source>Yandex Translate. Requires API key and folder ID. Configured options don&apos;t work with this endpoint.</source>
         <translation>Яндекс переводчик. Требует API ключ и идентификатор папки. Настроенные опции не будут работать с этой точкой.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1441"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1425"/>
         <source>Yandex folder ID</source>
         <translation>Идентификатор папки Яндекса</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1859"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1843"/>
         <source>Your API key (see https://languagetool.org/editor/settings/api): Set to get Premium API access.</source>
         <translation>Ваш API ключ (https://languagetool.org/editor/settings/api). Установите чтобы получить доступ к премиум функциям.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1852"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1836"/>
         <source>Your username/email as used to log in at languagetool.org: Set to get Premium API access.</source>
         <translation>Ваш username/email с languagetool.org: установите чтобы получить доступ к премиум функциям.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="678"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="674"/>
         <source>`.dic` file corresponding to the `.aff` file does not exist. Dictionary won&apos;t work properly without the `.dic` file.</source>
         <translation>`.dic` файл необходимый для `.aff` файла не существует. Словари не будут работать без подходящего `.dic` файла.</translation>
     </message>
     <message>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1483"/>
-        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1835"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1467"/>
+        <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1819"/>
         <source>https://localhost:8000</source>
         <translation></translation>
     </message>
@@ -2801,64 +2811,64 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
 <context>
     <name>TaskWorker</name>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="761"/>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="772"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="774"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="785"/>
         <source>Exact</source>
         <translation>Точный</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1430"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1443"/>
         <source>Failed to parse LanguageTool response.</source>
         <translation>Не удалось распарсить ответ LanguageTool.</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="761"/>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="772"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="774"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="785"/>
         <source>Fuzzy (%1)</source>
         <translation>Нечёткое (%1)</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1410"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1423"/>
         <source>LanguageTool check failed: %1</source>
         <translation>Проверка LanguageTool провалилась: %1</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1400"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1413"/>
         <source>LanguageTool check skipped: set the LanguageTool base URL in settings to enable it.</source>
         <translation>Проверка LanguageTool пропущена: задайте базовый адрес LanguageTool в настройках.</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1399"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1412"/>
         <source>LanguageTool check skipped: set the translation language in settings to enable it.</source>
         <translation>Проверка LanguageTool пропущена: задайте язык перевода в настройках.</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="786"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="799"/>
         <source>Match.</source>
         <translation>Совпадение.</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="784"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="797"/>
         <source>Number of term occurrences doesn&apos;t match the number of translation occurrences.</source>
         <translation>Количество появлений термина не совпадает с количеством его перевода.</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1553"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="1566"/>
         <source>Script must define function rpgmLineCallback(sourceText, translations, filename, lineNumber, options)</source>
         <translation>Скрипт должен определять функцию rpgmLineCallback(sourceText, translations, filename, lineNumber, options)</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="888"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="901"/>
         <source>Tags do not match between source and translation.</source>
         <translation>Тэги не совпадают между исходным текстом и переводом.</translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="782"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="795"/>
         <source>Term translation is not present.</source>
         <translation>Перевод термина не представлен.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="789"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="802"/>
         <source>Term: %1, %n occurrence(s): %2</source>
         <translation>
             <numerusform>Термин %1, %n совпадение: %2</numerusform>
@@ -2867,12 +2877,12 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
         </translation>
     </message>
     <message>
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="780"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="793"/>
         <source>Translation is empty.</source>
         <translation>Перевод пуст.</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/TaskWorker/TaskWorker.cpp" line="792"/>
+        <location filename="../src/TaskWorker/TaskWorker.cpp" line="805"/>
         <source>Translation: %1, %n occurrence(s): %2</source>
         <translation>
             <numerusform>Перевод %1, %n совпадение: %2</numerusform>

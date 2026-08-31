@@ -250,19 +250,3 @@ using range_common_t = std::conditional_t<
     (std::is_signed_v<T> || std::is_signed_v<U>),
     std::common_type_t<std::make_signed_t<T>, std::make_signed_t<U>>,
     std::common_type_t<T, U>>;
-
-template <auto Step = 1, typename T, typename U>
-static constexpr auto range(const T start, const U stop) {
-    static_assert(Step != 0);
-
-    using Common = range_common_t<T, U>;
-
-    const auto strt = static_cast<Common>(start);
-    const auto stp = static_cast<Common>(stop);
-
-    if constexpr (Step > 0) {
-        return views::iota(strt, stp) | views::stride(Step);
-    } else {
-        return views::iota(stp + 1, strt + 1) | views::reverse | views::stride(-Step);
-    }
-}

@@ -23,9 +23,15 @@ RPGMTranslate позволяет легко применять массовую 
 Скрипт должен определять следующую функцию:
 
 ```js
-function rpgmLineCallback(sourceText, translations, filename, lineNumber, options) {
-    // ...
-    return translations;
+function rpgmLineCallback(
+  sourceText,
+  translations,
+  filename,
+  lineNumber,
+  options,
+) {
+  // ...
+  return translations;
 }
 ```
 

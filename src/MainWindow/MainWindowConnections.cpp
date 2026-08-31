@@ -298,7 +298,8 @@ void MainWindow::setupConnections() {
             readMenu->selected(true),
             readMenu->flags(),
             readMenu->parseMapEvents(),
-            readMenu->title()
+            readMenu->title(),
+            readMenu->readEncoding()
         );
     });
 
@@ -309,11 +310,10 @@ void MainWindow::setupConnections() {
             return;
         }
 
-        const QString gameTitle = ui->gameTitleInput->placeholderText();
         const Selected selected = purgeMenu->selected(true);
 
-        QtConcurrent::run([this, gameTitle, selected] -> auto {
-            return taskWorker->purge(gameTitle, selected);
+        QtConcurrent::run([this, selected] -> auto {
+            return taskWorker->purge(selected);
         }).then(this, [this, task](const PurgeResult& result) -> void {
             taskWorker->finishTask(task);
 
@@ -385,11 +385,10 @@ void MainWindow::setupConnections() {
             return;
         }
 
-        const QString gameTitle = ui->gameTitleInput->placeholderText();
         const Selected selected = writeMenu->selected(true);
 
-        QtConcurrent::run([this, gameTitle, selected] -> auto {
-            return taskWorker->write(gameTitle, selected);
+        QtConcurrent::run([this, selected] -> auto {
+            return taskWorker->write(selected);
         }).then(this, [this, task](const WriteResult& result) -> void {
             taskWorker->finishTask(task);
 

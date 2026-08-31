@@ -1,5 +1,8 @@
 /build*
 /*-build
+/rpgmtranslate.7z
+/rpgmtranslate.tar.xz
+/rpgmtranslate-appimage.tar.xz
 /.clangd
 /.cache
 /.vscode
