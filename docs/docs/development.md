@@ -56,14 +56,15 @@ These are conditionally required based on build flags.
     - swscale
 
   - Required decoders:
-    - Vorbis, Opus, Theora
-    - AAC, H.264, VP9
+    - AAC, Vorbis, Opus, Theora
+    - H.264, VP9
+    - pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le
 
   - Required demuxers:
-    - OGG, MP4
+    - OGG, MP4, WAV
 
   - Required parsers:
-    - AAC, H.264
+    - AAC, H.264, VP9
 
 #### Git Integration (`ENABLE_LIBGIT2`)
 

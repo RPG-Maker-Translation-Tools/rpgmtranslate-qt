@@ -56,9 +56,9 @@
     - swscale
 
   - Нужные декодеры:
-    - Vorbis, Opus, Theora
-    - AAC, H.264, VP9
-    - PCM_S16LE, PCM_S24LE, PCM_S32LE, PCM_F32LE
+    - AAC, Vorbis, Opus, Theora
+    - H.264, VP9
+    - pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le
 
   - Нужные демуксеры:
     - OGG, MOV, WAV
