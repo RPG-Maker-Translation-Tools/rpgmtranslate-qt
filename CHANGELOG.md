@@ -10,6 +10,8 @@ Versions may carry a codename alongside the semver number.
 
 ## [Unreleased]
 
+## [v1.1.0] "Death of RPG Maker forums" - 01.09.2026
+
 Most of the work for this release was done outside the `rpgmtranslate-qt`.
 
 ### Added
@@ -18,6 +20,7 @@ Most of the work for this release was done outside the `rpgmtranslate-qt`.
 - Since RPG Maker 2000/2003/XP/VX do not support Unicode, the following was added:
   - Added a text encoding select when reading.
   - Added a "Write Encoding" option in settings.
+- Simplified Chinese translation [#17](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/pull/17), thanks @grill-glitch
 
 ### Changed
 
@@ -47,6 +50,7 @@ Most of the work for this release was done outside the `rpgmtranslate-qt`.
 - VX's "Areas" file is not counted towards source file check against baseline and now won't trigger a "Source files have been updated" popup.
 - Fixed 301 update error on Windows, check development section.
 - Fixed "add new row" button's "+" icon missing in the translation table.
+- Mimalloc now properly overrides everything in Windows builds.
 
 ### Development
 
