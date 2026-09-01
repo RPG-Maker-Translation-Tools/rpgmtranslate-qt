@@ -855,6 +855,7 @@
     <addaction name="actionRussian"/>
     <addaction name="actionEnglish"/>
    </widget>
+   <addaction name="actionChinese"/>
    <addaction name="menuFile"/>
    <addaction name="menuLanguage"/>
    <addaction name="menuAbout"/>
@@ -1535,6 +1536,11 @@
   <action name="actionEnglish">
    <property name="text">
     <string notr="true">English</string>
+   </property>
+  </action>
+  <action name="actionChinese">
+   <property name="text">
+    <string notr="true">简体中文</string>
    </property>
   </action>
   <action name="actionSettings">

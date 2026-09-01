@@ -48,5 +48,6 @@
         <file>icons/rpgmtranslate-logo.png</file>
         <file alias="ru.qm">build/rpgmtranslate.ru.qm</file>
         <file alias="en.qm">build/rpgmtranslate.en.qm</file>
+        <file alias="zh.qm">build/rpgmtranslate.zh-CN.qm</file>
     </qresource>
 </RCC>
