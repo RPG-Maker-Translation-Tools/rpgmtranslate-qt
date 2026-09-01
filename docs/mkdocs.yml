@@ -40,9 +40,6 @@ theme:
     primary: indigo
     accent: indigo
 
-  locale: en
-  language: en
-
   logo: assets/rpgmtranslate-logo.png
   favicon: assets/rpgmtranslate-logo.png
 
@@ -73,3 +70,22 @@ plugins:
               Development: Разработка
           site_name: "Документация для RPGMTranslate"
           site_description: "Документация для RPGMTranslate"
+
+        - locale: zh-CN
+          name: 简体中文
+          build: true
+          nav_translations:
+              Home: 首页
+              Installation: 安装
+              Search Features: 搜索功能
+              Text Editing: 文本编辑
+              Batch Processing: 批量处理
+              Tasks: 任务
+              Settings: 设置
+              Glossary: 术语表
+              Rvpacker: Rvpacker
+              Git: Git
+              Asset Inspector: 资源检查器
+              Development: 开发
+          site_name: "RPGMTranslate 文档"
+          site_description: "RPGMTranslate 文档"
