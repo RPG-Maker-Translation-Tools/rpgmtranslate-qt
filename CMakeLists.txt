@@ -8,6 +8,17 @@ set(PROJECT_NAME rpgmtranslate)
 set(PROJECT_VERSION "1.1.0")
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY target/bin CACHE PATH "" FORCE)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 option(ENABLE_PIC
@@ -142,16 +153,9 @@ if(NOT MSVC_RUNTIME IN_LIST _valid_runtimes)
         "Got: '${MSVC_RUNTIME}'")
 endif()
 
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(RUST_PROFILE "" CACHE STRING "Rust profile to build the project.")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY target/bin CACHE PATH "" FORCE)
-
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+set(LUA_EXECUTABLE "" CACHE FILEPATH "Lua is used in the project for some pre-build scripts. Lua is shipped by default for Linux and Windows, but override it if you want your own Lua build.")
 
 if (ENABLE_PIC)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -185,101 +189,101 @@ if (LINUX)
 endif()
 
 set(SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetPreviewWidget.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/CodeViewer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/GraphicsAssetViewer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/MediaPlayer.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetPreviewWidget.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/CodeViewer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/GraphicsAssetViewer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/MediaPlayer.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AutoUpdater/AutoUpdater.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AutoUpdater/AutoUpdater.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkList.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkMenu.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkList.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkMenu.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/CBSLIWidget/CBSLIWidget.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/CBSLIWidget/CBSLIWidget.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/FFILogger/FFILogger.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FFILogger/FFILogger.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Allocator.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Allocator.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintTable.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintTable.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintSelectMenu/LintSelectMenu.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/LintSelectMenu/LintSelectMenu.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowCallbacks.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowConnections.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowFunctions.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowSaveLoad.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.ui"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowCallbacks.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowConnections.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowFunctions.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindowSaveLoad.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/PersistentMenu/PersistentMenu.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/PersistentMenu/PersistentMenu.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/PopupInput/PopupInput.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/PopupInput/PopupInput.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchPanelDock.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchResultList.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchPanelDock.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchResultList.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitCommitList.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitFileList.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/SourceControlDock.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitCommitList.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitFileList.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/SourceControlDock.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabList.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListDelegate.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListModel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabPanel.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabList.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListDelegate.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListModel.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabPanel.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskPanel/TaskPanel.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TaskPanel/TaskPanel.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/TaskWorker.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/TaskWorker.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LabelInput.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LintTooltip.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationHighlighter.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationInput.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTable.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableDelegate.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableHeader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableModel.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LabelInput.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LintTooltip.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationHighlighter.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationInput.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTable.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableDelegate.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableHeader.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableModel.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/TranslationsMenu.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/TranslationsMenu.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.ui
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.ui"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Notice.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/miniaudio.cpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Notice.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Utils.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/miniaudio.cpp"
 )
 
 # Not compiled or added to the target - headers need no source-list entry of their own, since the
@@ -288,106 +292,106 @@ set(SOURCES
 # without it, strings living only in a header (see e.g. MainWindow.hpp) would silently drop out of
 # the translation catalog.
 set(HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/fast_float.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/jeaiii_to_text.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/magic_enum.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/miniaudio.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/zmij.h
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/fast_float.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/jeaiii_to_text.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/magic_enum.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/miniaudio.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/zmij.h"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AboutWindow/AboutWindow.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetMenu.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetPreviewWidget.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/CodeViewer.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/GraphicsAssetViewer.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/MediaPlayer.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetMenu.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/AssetPreviewWidget.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/CodeViewer.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/GraphicsAssetViewer.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AssetMenu/MediaPlayer.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/AutoUpdater/AutoUpdater.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/AutoUpdater/AutoUpdater.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BackupSelectDialog/BackupSelectDialog.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/BackupSelectDialog/BackupSelectDialog.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/BatchMenu/BatchMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkList.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkList.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/BookmarkMenu/BookmarkMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/CBSLIWidget/CBSLIWidget.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/CBSLIWidget/CBSLIWidget.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/FFILogger/FFILogger.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FFILogger/FFILogger.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/GlossaryMenu/GlossaryMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintMenu.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintTable.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintMenu.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/LintMenu/LintTable.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/LintSelectMenu/LintSelectMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/LintSelectMenu/LintSelectMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Lints/PluginSequences.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Lints/PluginSequences.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow/MainWindow.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/PersistentMenu/PersistentMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/PersistentMenu/PersistentMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/PopupInput/PopupInput.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/PopupInput/PopupInput.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/PurgeMenu/PurgeMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ReadMenu/ReadMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SearchMenu/SearchMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchPanelDock.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchResultList.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchPanelDock.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SearchPanelDock/SearchResultList.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SerdeMenu/SerdeMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Settings/ProjectSettings.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Settings/Settings.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Settings/ProjectSettings.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Settings/Settings.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/PasswordLineEdit.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/UnfocusLineEdit.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/PasswordLineEdit.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/SettingsWindow.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/UnfocusLineEdit.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitCommitList.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitFileList.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/SourceControlDock.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitCommitList.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/GitFileList.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/SourceControlDock/SourceControlDock.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabList.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListDelegate.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListModel.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabPanel.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabList.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListDelegate.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabListModel.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TabPanel/TabPanel.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskPanel/TaskPanel.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TaskPanel/TaskPanel.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/Task.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/TaskWorker.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/Task.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TaskWorker/TaskWorker.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LabelInput.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LintTooltip.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationHighlighter.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationInput.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTable.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableDelegate.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableHeader.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableModel.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LabelInput.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/LintTooltip.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationHighlighter.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationInput.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTable.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableDelegate.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableHeader.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationTable/TranslationTableModel.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/ClickableLabel.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/TranslationsMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/ClickableLabel.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/TranslationsMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/WriteMenu/WriteMenu.hpp"
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Aliases.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Constants.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Enums.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/FWD.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Hasher.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Notice.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Types.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Utils.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/ezgit2.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/glazemeta.hpp
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Aliases.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Constants.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Enums.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/FWD.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Hasher.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Notice.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Types.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Utils.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/ezgit2.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/glazemeta.hpp"
 )
 
 qt_add_executable(${PROJECT_NAME}
@@ -397,7 +401,7 @@ qt_add_executable(${PROJECT_NAME}
 set(WINDOWS_APPLICATION_ICON "resources/${PROJECT_NAME}-logo.rc")
 
 target_sources(${PROJECT_NAME} PRIVATE
-    ${SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/ClickableLabel.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/UnfocusLineEdit.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/BackupSelectDialog/BackupSelectDialog.hpp ${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/PasswordLineEdit.hpp
+    ${SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/TranslationsMenu/ClickableLabel.hpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/UnfocusLineEdit.hpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/BackupSelectDialog/BackupSelectDialog.hpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/SettingsWindow/PasswordLineEdit.hpp"
     ${WINDOWS_APPLICATION_ICON}
     rpgmtranslate.manifest
 )
@@ -572,6 +576,7 @@ endif()
 corrosion_import_crate(
     MANIFEST_PATH "${RUST_CRATE_DIR}/Cargo.toml"
     FEATURES ${RUST_FEATURES}
+    PROFILE ${RUST_PROFILE}
 )
 
 file(GLOB_RECURSE RUST_SOURCES
@@ -598,46 +603,50 @@ add_custom_target(rust_header
 
 add_dependencies(${PROJECT_NAME} rust_header)
 
-if (WIN32)
-    set(_lua_executable ${CMAKE_CURRENT_SOURCE_DIR}/lua.exe)
-else()
-    set(_lua_executable ${CMAKE_CURRENT_SOURCE_DIR}/lua)
+if (NOT LUA_EXECUTABLE)
+    if (WIN32)
+        set(LUA_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/lua.exe")
+    elseif (LINUX)
+        set(LUA_EXECUTABLE "${CMAKE_CURRENT_SOURCE_DIR}/lua")
+    else()
+        message(FATAL_ERROR "Lua executable is not provided for your platform. It is required for a configure step. Supply the path to your system's executable using -DLUA_EXECUTABLE=...")
+    endif()
 endif()
 
 add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/headers/scripts.h
-    COMMAND ${_lua_executable} ${CMAKE_CURRENT_SOURCE_DIR}/prepare-headers.lua
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS ${_lua_executable} ${CMAKE_CURRENT_SOURCE_DIR}/prepare-headers.lua
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/headers/scripts.h"
+    COMMAND "${LUA_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/prepare-headers.lua"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    DEPENDS "${LUA_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/prepare-headers.lua"
     COMMENT "Generating scripts.h"
 )
 
 add_custom_target(scripts_header
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/headers/scripts.h
+    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/headers/scripts.h"
 )
 
 add_dependencies(${PROJECT_NAME} scripts_header)
 
 configure_file(
     src/version/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/headers/version.h
+    "${CMAKE_CURRENT_BINARY_DIR}/headers/version.h"
 )
 
 configure_file(
     src/version/nuspell-version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/headers/nuspell-version.h
+    "${CMAKE_CURRENT_BINARY_DIR}/headers/nuspell-version.h"
 )
 
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}/headers
+    "${CMAKE_CURRENT_BINARY_DIR}/headers"
 )
 
 file(GLOB SUBDIRS LIST_DIRECTORIES true src/*)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${SUBDIRS}
-    ${FFMPEG_INCLUDE_DIR}
+    "${FFMPEG_INCLUDE_DIR}"
     "${GENERATED_DIR}"
 )
 
