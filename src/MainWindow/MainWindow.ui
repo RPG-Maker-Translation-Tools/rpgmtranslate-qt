@@ -788,6 +788,7 @@
         </widget>
        </item>
       </layout>
+      <zorder>taskButton</zorder>
       <zorder>saveButton</zorder>
       <zorder>writeButton</zorder>
       <zorder>openFolderButton</zorder>
@@ -802,7 +803,6 @@
       <zorder>gameTitleInput</zorder>
       <zorder>searchPanelButton</zorder>
       <zorder>lintMenuButton</zorder>
-      <zorder>taskWidget</zorder>
       <zorder>assetsButton</zorder>
       <zorder>sourceControlButton</zorder>
       <zorder>locateProjectDirButton</zorder>
@@ -854,8 +854,8 @@
     </property>
     <addaction name="actionRussian"/>
     <addaction name="actionEnglish"/>
+    <addaction name="actionChinese"/>
    </widget>
-   <addaction name="actionChinese"/>
    <addaction name="menuFile"/>
    <addaction name="menuLanguage"/>
    <addaction name="menuAbout"/>
