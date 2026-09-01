@@ -284,6 +284,7 @@ set(SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Notice.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Utils.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/miniaudio.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/mimalloc.cpp"
 )
 
 # Not compiled or added to the target - headers need no source-list entry of their own, since the
@@ -451,6 +452,7 @@ target_compile_definitions(${PROJECT_NAME}
         $<$<BOOL:${ENABLE_RUBY_HIGHLIGHTING}>:ENABLE_RUBY_HIGHLIGHTING>
         $<$<BOOL:${ENABLE_JS_FORMATTING}>:ENABLE_JS_FORMATTING>
         $<$<BOOL:${ENABLE_RUBY_FORMATTING}>:ENABLE_RUBY_FORMATTING>
+        $<$<BOOL:${ENABLE_MIMALLOC}>:ENABLE_MIMALLOC>
 )
 
 add_definitions(
@@ -686,6 +688,7 @@ endif()
 
 if (ENABLE_MIMALLOC)
     target_link_libraries(${PROJECT_NAME} PRIVATE mimalloc)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${MIMALLOC_INCLUDE_DIR})
 endif()
 
 if (LINUX)
