@@ -37,6 +37,7 @@ Most of the work for this release was done outside the `rpgmtranslate-qt`.
   - Game title is now written to `terms` files for RM2K if supplied.
   - Improved performance by copying less in the code.
 - Changed default glossary hotkey to `Alt+L`.
+- Removed language selector from settings, it's already available from the menu bar.
 
 ### Fixes
 
@@ -53,6 +54,11 @@ Most of the work for this release was done outside the `rpgmtranslate-qt`.
 - Changed CI to automatically add artifacts to the published releases.
 - Fixed Russian docs.
 - Qt is now compiled with proper `-ssl -schannel` configure settings and does not fail trying to access `https` links, which would lead to 301 update error.
+- Qt is updated to 6.11.2.
+- Quoted all path expansions in the CMake script, which will fix the problems with the paths that contain spaces.
+- Added `LUA_EXECUTABLE` CMake option to override the default vendored Lua with user one.
+- Added `RUST_PROFILE` CMake option to specify a Rust profile to build Rust part.
+- Windows builds are now compiled using LLVM 23.
 
 ### Planned for 1.2
 
