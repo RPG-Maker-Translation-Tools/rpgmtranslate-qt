@@ -141,8 +141,9 @@ local LIBRARY_LIST = {
         vendored = true,
         notes = { "LICENSE file also includes MIT-0 text, but the project relies on Unlicense terms." }
     },
-    { name = "nuspell", spdx = "LGPL-3.0-only" },
-    { name = "pcre2",   spdx = "BSD-3-Clause WITH PCRE2-exception" },
+    { name = "mimalloc", spdx = "MIT" },
+    { name = "nuspell",  spdx = "LGPL-3.0-only" },
+    { name = "pcre2",    spdx = "BSD-3-Clause WITH PCRE2-exception" },
     {
         name = "qt6",
         spdx = "GPL-3.0-only OR LGPL-3.0-only",
