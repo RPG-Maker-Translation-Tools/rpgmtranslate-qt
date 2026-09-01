@@ -73,7 +73,7 @@
           <widget class="QComboBox" name="translationEndpointSelect">
            <item>
             <property name="text">
-             <string>- Translation Endpoint -</string>
+             <string>- 翻译服务 -</string>
             </property>
            </item>
           </widget>
