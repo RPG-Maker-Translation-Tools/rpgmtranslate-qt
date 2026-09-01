@@ -366,7 +366,7 @@
     <message>
         <location filename="../src/BatchMenu/BatchMenu.ui" line="76"/>
         <source>- Translation Endpoint -</source>
-        <translation>- 翻译端点 -</translation>
+        <translation>- 翻译服务 -</translation>
     </message>
     <message>
         <location filename="../src/BatchMenu/BatchMenu.ui" line="170"/>
@@ -428,7 +428,7 @@
     <message>
         <location filename="../src/BatchMenu/BatchMenu.cpp" line="70"/>
         <source>Select the translation endpoint you want to use.</source>
-        <translation>请选择要使用的翻译端点。</translation>
+        <translation>请选择要使用的翻译服务。</translation>
     </message>
     <message>
         <location filename="../src/BatchMenu/BatchMenu.ui" line="424"/>
@@ -1967,7 +1967,7 @@ Current version is %2.</source>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1151"/>
         <source>Add Endpoint</source>
-        <translation>添加端点</translation>
+        <translation>添加翻译服务</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="501"/>
@@ -2091,7 +2091,7 @@ Current version is %2.</source>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1511"/>
         <source>Warning: %1 support was not compiled into this build. Selecting this endpoint will fail when used.</source>
-        <translation>警告：此版本未编译入 %1 支持。选择此端点将在使用时失败。</translation>
+        <translation>警告：此版本未编译入 %1 支持。选择此翻译服务将在使用时失败。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2220"/>
@@ -2115,7 +2115,7 @@ Current version is %2.</source>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1459"/>
         <source>DeepL. Requires API key and folder ID. Configured options don&apos;t work with this endpoint, except glossary usage.</source>
-        <translation>DeepL。需要 API 密钥和文件夹 ID。除术语表使用外，配置的选项对此端点不生效。</translation>
+        <translation>DeepL。需要 API 密钥和文件夹 ID。除术语表使用外，配置的选项对此翻译服务不生效。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="601"/>
@@ -2182,12 +2182,12 @@ Current version is %2.</source>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="517"/>
         <source>Endpoint %1</source>
-        <translation>端点 %1</translation>
+        <translation>翻译服务 %1</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1076"/>
         <source>Endpoint List</source>
-        <translation>端点列表</translation>
+        <translation>翻译服务列表</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2361"/>
@@ -2242,7 +2242,7 @@ Current version is %2.</source>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1450"/>
         <source>Google Translate. Free and unlimited. Configured options don&apos;t work with this endpoint.</source>
-        <translation>Google Translate。免费且无限制。配置的选项对此端点不生效。</translation>
+        <translation>Google Translate。免费且无限制。配置的选项对此翻译服务不生效。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1605"/>
@@ -2288,7 +2288,7 @@ Current version is %2.</source>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1467"/>
         <source>LLM endpoint with pre-defined base URL. Don&apos;t change the base URL, unless you know what you&apos;re doing. Configured options will affect this endpoint.</source>
-        <translation>具有预定义基础 URL 的 LLM 端点。除非您知道自己在做什么，否则请勿更改基础 URL。配置的选项将影响此端点。</translation>
+        <translation>具有预定义基础 URL 的 LLM 翻译服务。除非您知道自己在做什么，否则请勿更改基础 URL。配置的选项将影响此翻译服务。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1753"/>
@@ -2335,7 +2335,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1476"/>
         <source>Local endpoint. You need to set correct base url, that should probably end with &apos;/v1&apos;. Configured options will affect this endpoint.</source>
-        <translation>本地端点。您需要设置正确的基础 URL，可能需要以 &apos;/v1&apos; 结尾。配置的选项将影响此端点。</translation>
+        <translation>本地翻译服务。您需要设置正确的基础 URL，可能需要以 &apos;/v1&apos; 结尾。配置的选项将影响此翻译服务。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1595"/>
@@ -2375,7 +2375,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="621"/>
         <source>Model that was previously selected for translation: %1 is not longer in the list of models provided by the endpoint.</source>
-        <translation>先前选择的翻译模型：%1 已不在端点提供的模型列表中。</translation>
+        <translation>先前选择的翻译模型：%1 已不在翻译服务提供的模型列表中。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1850"/>
@@ -2395,7 +2395,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1472"/>
         <source>OpenAI-compatible endpoint. This category fits many providers, including OpenAI itself, DeepSeek, Mistral, OpenRouter and local providers, such as llama.cpp and koboldcpp. Requires valid base URL, that should probably end with &apos;/v1&apos;. Configured options will affect this endpoint.</source>
-        <translation>OpenAI 兼容端点。此类别适用于许多提供商，包括 OpenAI 本身、DeepSeek、Mistral、OpenRouter 以及本地提供商，如 llama.cpp 和 koboldcpp。需要有效的基础 URL，可能需要以 &apos;/v1&apos; 结尾。配置的选项将影响此端点。</translation>
+        <translation>OpenAI 兼容翻译服务。此类别适用于许多提供商，包括 OpenAI 本身、DeepSeek、Mistral、OpenRouter 以及本地提供商，如 llama.cpp 和 koboldcpp。需要有效的基础 URL，可能需要以 &apos;/v1&apos; 结尾。配置的选项将影响此翻译服务。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="448"/>
@@ -2474,7 +2474,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1189"/>
         <source>Remove Selected Endpoint</source>
-        <translation>移除所选端点</translation>
+        <translation>移除所选翻译服务</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2452"/>
@@ -2489,7 +2489,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1126"/>
         <source>Select endpoints by clicking on them. You can change the name by double-clicking an endpoint.</source>
-        <translation>点击端点进行选择。双击端点可以更改名称。</translation>
+        <translation>点击翻译服务进行选择。双击翻译服务可以更改名称。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="2447"/>
@@ -2651,7 +2651,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1365"/>
         <source>Use for single translation (will display text translation through the endpoint in translations menu)</source>
-        <translation>用于单独翻译（将在翻译菜单中通过端点显示文本翻译）</translation>
+        <translation>用于单独翻译（将在翻译菜单中通过翻译服务显示文本翻译）</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1623"/>
@@ -2681,7 +2681,7 @@ If the server doesn&apos;t actually support HTTPS (e.g. local server, started wi
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.cpp" line="1454"/>
         <source>Yandex Translate. Requires API key and folder ID. Configured options don&apos;t work with this endpoint.</source>
-        <translation>Yandex Translate。需要 API 密钥和文件夹 ID。配置的选项对此端点不生效。</translation>
+        <translation>Yandex Translate。需要 API 密钥和文件夹 ID。配置的选项对此翻译服务不生效。</translation>
     </message>
     <message>
         <location filename="../src/SettingsWindow/SettingsWindow.ui" line="1425"/>
