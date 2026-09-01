@@ -601,7 +601,7 @@ add_dependencies(${PROJECT_NAME} rust_header)
 if (WIN32)
     set(_lua_executable ${CMAKE_CURRENT_SOURCE_DIR}/lua.exe)
 else()
-    set(_lua_executable ${CMAKE_CURRENT_SOURCE_DIR}/lua)
+    set(_lua_executable /usr/bin/lua)
 endif()
 
 add_custom_command(
