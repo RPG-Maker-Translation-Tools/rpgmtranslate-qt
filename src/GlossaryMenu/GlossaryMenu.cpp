@@ -73,7 +73,7 @@ GlossaryMenu::GlossaryMenu(QWidget* const parent) :
             startIndex = 0;
         }
 
-        for (const auto idx : range(0, itemCount)) {
+        for (i32 idx = 0; idx < itemCount; idx++) {
             const i32 currentIndex = (startIndex + idx) % itemCount;
             auto* const item = glossaryTable->topLevelItem(currentIndex);
 
@@ -257,7 +257,7 @@ auto GlossaryMenu::glossary() const -> Glossary {
     const i32 entryCount = glossaryTable->topLevelItemCount();
     out.reserve(entryCount);
 
-    for (const auto idx : range(0, entryCount)) {
+    for (i32 idx = 0; idx < entryCount; idx++) {
         auto* const item = glossaryTable->topLevelItem(idx);
 
         const auto* const sourceCell = scast<TermInfoCell*>(glossaryTable->itemWidget(item, SOURCE_IDX));

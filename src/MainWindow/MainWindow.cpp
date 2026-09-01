@@ -26,7 +26,7 @@ constexpr i32 STATUS_BAR_MARGIN = 8;
 constexpr i32 STATUS_BAR_SPACING = 8;
 }  // namespace
 
-// TODO(v1.x): Display entry in search panel/bookmark menu, but make it optional
+// TODO(v1.2): Display entry in search panel/bookmark menu, but make it optional
 // through settings.
 
 MainWindow::MainWindow(QWidget* const parent) :
@@ -154,7 +154,11 @@ void MainWindow::retranslate(const QLocale::Language language) {
     if (!success) {
         present(
             this,
-            NOTICE("Failed to retranslate the interface. This is most like an internal application issue.", Warning, Modal)
+            NOTICE(
+                "Failed to retranslate the interface. This is most like an internal application issue.",
+                Warning,
+                Modal
+            )
         );
     } else {
         qApp->installTranslator(translator);

@@ -57,26 +57,21 @@ class TaskWorker final : public QObject {
         BaseFlags flags,
         bool mapEvents,
         const HashMap<FilenameArray, u64>& hashes,
-        const QString& title
+        const QString& title,
+        const QString& readEncoding
     ) -> ReadResult;
 
-    [[nodiscard]] auto write(const QString& gameTitle, Selected selected) -> WriteResult;
+    [[nodiscard]] auto write(Selected selected) -> WriteResult;
 
-    [[nodiscard]] auto purge(const QString& gameTitle, Selected selected) -> PurgeResult;
+    [[nodiscard]] auto purge(Selected selected) -> PurgeResult;
 
-    [[nodiscard]] auto serdeExport(
-        const TaskToken& task,
-        vector<FilenameArray>& filenames,
-        const QString& outputDir,
-        SerdeFormat format
-    ) -> SerdeResult;
+    [[nodiscard]] auto
+    serdeExport(const TaskToken& task, vector<FilenameArray>& filenames, const QString& outputDir, SerdeFormat format)
+        -> SerdeResult;
 
-    [[nodiscard]] auto serdeImport(
-        const TaskToken& task,
-        vector<FilenameArray>& filenames,
-        const QString& inputDir,
-        SerdeFormat format
-    ) -> SerdeResult;
+    [[nodiscard]] auto
+    serdeImport(const TaskToken& task, vector<FilenameArray>& filenames, const QString& inputDir, SerdeFormat format)
+        -> SerdeResult;
 
     [[nodiscard]] auto search(
         const TaskToken& task,

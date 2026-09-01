@@ -170,13 +170,34 @@ struct Selected {
     FileFlags flags = FileFlags(0);
 
     [[nodiscard]] auto empty() const -> bool {
-        for (const auto idx : range(0, mapCount)) {
+        for (i32 idx = 0; idx < mapCount; idx++) {
             if (mapIndices[idx]) {
                 return false;
             }
         }
 
         return flags == 0;
+    }
+
+    // RPG Maker 2000/2003 has no `Actors`/`Skills`/.../`System` file kinds of
+    // its own - `RPG_RT.ldb` bundles all of it into one `Database` flag - but
+    // its `.txt` outputs share the same names (`actors.txt`, `skills.txt`,
+    // ...), so `FileSelectMenu`'s checkboxes still set the MV/VX-shaped bits.
+    // Call this once, right before handing `flags` to the library, to fold
+    // any of those bits into `Database` for an RM2K project.
+    [[nodiscard]] auto forEngine(const EngineType engineType) const -> Selected {
+        static constexpr FileFlags otherFamily = FileFlags_Actors | FileFlags_Armors | FileFlags_Classes |
+                                                 FileFlags_CommonEvents | FileFlags_Enemies | FileFlags_Items |
+                                                 FileFlags_Skills | FileFlags_States | FileFlags_Troops |
+                                                 FileFlags_Weapons | FileFlags_System;
+
+        Selected result = *this;
+
+        if (engineType == EngineType::RM2K && (result.flags & otherFamily) != 0) {
+            result.flags |= FileFlags_Database;
+        }
+
+        return result;
     }
 
     [[nodiscard]] auto filenames(const EngineType engineType) const -> vector<FilenameArray> {
@@ -202,7 +223,7 @@ struct Selected {
 
         u16 flagFileCount = 0;
 
-        for (const auto flagIdx : range(1, 13)) {
+        for (i32 flagIdx = 1; flagIdx < 14; flagIdx++) {
             const auto flag = FileFlags(1 << flagIdx);
 
             if ((flags & flag) != 0) {
@@ -231,7 +252,7 @@ struct Selected {
             dense++;
         }
 
-        for (const auto flagIdx : range(1, 13)) {
+        for (i32 flagIdx = 1; flagIdx < 14; flagIdx++) {
             const auto flag = FileFlags(1 << flagIdx);
 
             if ((flags & flag) == 0) {
@@ -280,6 +301,9 @@ struct Selected {
                     } else {
                         name = { "scripts" };
                     }
+                    break;
+                case FileFlags_Database:
+                    name = { "database" };
                     break;
                 case FileFlags_Map:
                 default:

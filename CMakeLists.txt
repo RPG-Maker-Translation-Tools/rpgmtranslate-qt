@@ -5,7 +5,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 set(PROJECT_NAME rpgmtranslate)
-set(PROJECT_VERSION "1.0.0")
+set(PROJECT_VERSION "1.1.0")
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -205,6 +205,8 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/CBSLIWidget/CBSLIWidget.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/FFILogger/FFILogger.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Allocator.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/FileSelectMenu/FileSelectMenu.ui
@@ -539,10 +541,6 @@ if (ENABLE_RUBY_FORMATTING)
     list(APPEND RUST_FEATURES "ruby-formatting")
 endif()
 
-if (ENABLE_MIMALLOC)
-    list(APPEND RUST_FEATURES "mimalloc")
-endif()
-
 if (ENABLE_TOKENIZER_CHINESE_ICU)
     list(APPEND RUST_FEATURES "chinese-icu")
 endif()
@@ -603,7 +601,7 @@ add_dependencies(${PROJECT_NAME} rust_header)
 if (WIN32)
     set(_lua_executable ${CMAKE_CURRENT_SOURCE_DIR}/lua.exe)
 else()
-    set(_lua_executable ${CMAKE_CURRENT_SOURCE_DIR}/lua)
+    set(_lua_executable /usr/bin/lua)
 endif()
 
 add_custom_command(

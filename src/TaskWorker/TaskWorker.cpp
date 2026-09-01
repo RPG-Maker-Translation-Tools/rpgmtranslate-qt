@@ -380,7 +380,8 @@ auto TaskWorker::read(
     const BaseFlags flags,
     const bool mapEvents,
     const HashMap<FilenameArray, u64>& hashes,
-    const QString& title
+    const QString& title,
+    const QString& readEncoding
 ) -> ReadResult {
     ByteBuffer outHashes;
 
@@ -403,29 +404,34 @@ auto TaskWorker::read(
                                              .len = scast<u32>(hashesArray.size()),
                                              .cap = scast<u32>(hashes.size()) };
 
+    const QByteArray readEncodingUtf8 = readEncoding.toUtf8();
+
     const bool success = rpgm_read(
         strtoffi(sourcePathUtf8),
         strtoffi(translationPathUtf8),
         readMode,
         engineType,
         duplicateMode,
-        selected,
+        selected.forEngine(engineType),
         flags,
         mapEvents,
         hashesBuf,
         strtoffi(titleUtf8),
+        strtoffi(readEncodingUtf8),
         &outHashes
     );
 
     return success ? ReadResult{ outHashes } : ReadResult{ Err(rpgm_error()) };
 }
 
-auto TaskWorker::write(const QString& gameTitle, const Selected selected) -> WriteResult {
+auto TaskWorker::write(const Selected selected) -> WriteResult {
     const QByteArray sourcePathUtf8 = projectSettings->actualSourcePath().toUtf8();
     const QByteArray translationPathUtf8 = projectSettings->translationPath().toUtf8();
     const QByteArray outputPathUtf8 = projectSettings->outputPath().toUtf8();
 
     f32 elapsed;
+    const QByteArray readEncodingUtf8 = projectSettings->readEncoding.toUtf8();
+    const QByteArray writeEncodingUtf8 = projectSettings->writeEncoding.toUtf8();
 
     const bool success = rpgm_write(
         strtoffi(sourcePathUtf8),
@@ -434,7 +440,9 @@ auto TaskWorker::write(const QString& gameTitle, const Selected selected) -> Wri
         projectSettings->engineType,
         projectSettings->duplicateMode,
         projectSettings->flags,
-        selected,
+        selected.forEngine(projectSettings->engineType),
+        strtoffi(readEncodingUtf8),
+        strtoffi(writeEncodingUtf8),
         &elapsed
     );
 
@@ -450,9 +458,12 @@ auto TaskWorker::extractArchive(const QString& archivePath, const QString& folde
     return success ? ExtractResult{} : ExtractResult{ Err(rpgm_error()) };
 }
 
-auto TaskWorker::purge(const QString& gameTitle, const Selected selected) -> PurgeResult {
+auto TaskWorker::purge(const Selected selected) -> PurgeResult {
     const QByteArray sourcePathUtf8 = projectSettings->actualSourcePath().toUtf8();
     const QByteArray translationPathUtf8 = projectSettings->translationPath().toUtf8();
+
+    const QByteArray readEncodingUtf8 = projectSettings->readEncoding.toUtf8();
+    const QByteArray writeEncodingUtf8 = projectSettings->writeEncoding.toUtf8();
 
     const bool success = rpgm_purge(
         strtoffi(sourcePathUtf8),
@@ -460,7 +471,9 @@ auto TaskWorker::purge(const QString& gameTitle, const Selected selected) -> Pur
         projectSettings->engineType,
         projectSettings->duplicateMode,
         projectSettings->flags,
-        selected
+        selected.forEngine(projectSettings->engineType),
+        strtoffi(readEncodingUtf8),
+        strtoffi(writeEncodingUtf8)
     );
 
     return success ? PurgeResult{} : PurgeResult{ Err(rpgm_error()) };
@@ -569,7 +582,7 @@ auto TaskWorker::search(
                     break;
                 }
             } else {
-                for (const auto idx : range(0, match.lastCapturedIndex() + 1)) {
+                for (i32 idx = 0; idx < match.lastCapturedIndex() + 1; idx++) {
                     cellMatches.matches[matchesPos++] =
                         TextMatch(match.capturedStart(idx), match.capturedLength(idx), idx > 0);
                 }
@@ -849,7 +862,7 @@ auto TaskWorker::lint(
 
         for (const QRegularExpression* regexp : regexps) {
             for (const auto& match : regexp->globalMatchView(source)) {
-                for (const auto idx : range(1, match.lastCapturedIndex() + 1)) {
+                for (i32 idx = 1; idx < match.lastCapturedIndex() + 1; idx++) {
                     if (match.capturedLength(idx) > 0) {
                         const i32 start = scast<i32>(match.capturedStart(idx));
                         const i32 len = scast<i32>(match.capturedLength(idx));
@@ -863,7 +876,7 @@ auto TaskWorker::lint(
             };
 
             for (const auto& match : regexp->globalMatchView(translation)) {
-                for (const auto idx : range(1, match.lastCapturedIndex() + 1)) {
+                for (i32 idx = 1; idx < match.lastCapturedIndex() + 1; idx++) {
                     if (match.capturedLength(idx) > 0) {
                         const i32 start = scast<i32>(match.capturedStart(idx));
                         const i32 len = scast<i32>(match.capturedLength(idx));
@@ -1121,7 +1134,7 @@ auto TaskWorker::lint(
             return nullopt;
         };
 
-        for (const auto idx : range(0, size)) {
+        for (i32 idx = 0; idx < size; idx++) {
             const QChar chr = translation.at(idx);
             const optional<Punctuation> punctuation = findPunctuation(chr);
 
@@ -1179,7 +1192,7 @@ auto TaskWorker::lint(
                                 const span<const SequenceSettings> sequenceSettings,
                                 auto&& onMatch) -> auto {
         for (const auto& match : regexp.globalMatchView(translation)) {
-            for (const auto idx : range(1, match.lastCapturedIndex() + 1)) {
+            for (i32 idx = 1; idx < match.lastCapturedIndex() + 1; idx++) {
                 if (match.capturedLength(idx) > 0) {
                     const auto& sequence = sequenceSettings[idx - 1];
 
@@ -1354,7 +1367,7 @@ auto TaskWorker::lint(
             const auto mergedRegex = QRegularExpression(pattern);
 
             for (const auto& match : mergedRegex.globalMatchView(translation)) {
-                for (const auto idx : range(1, match.lastCapturedIndex() + 1)) {
+                for (i32 idx = 1; idx < match.lastCapturedIndex() + 1; idx++) {
                     if (match.capturedLength(idx) == 0) {
                         continue;
                     }
@@ -1598,7 +1611,7 @@ auto TaskWorker::runBatchScript(
 
             for (const auto [lineIdx, line] : views::enumerate(lines)) {
                 if (task->interrupted()) {
-                    for (const auto idx : range(lineIdx, lines.size())) {
+                    for (i32 idx = lineIdx; idx < lines.size(); idx++) {
                         joined += lines[idx];
                         joined += u'\n';
                     }
@@ -1645,7 +1658,7 @@ auto TaskWorker::runBatchScript(
                                                .filename = filenameArray,
                                                .lineNumber = scast<u32>(lineIdx) + 1 };
 
-                    for (const auto idx : range(lineIdx, lines.size())) {
+                    for (i32 idx = lineIdx; idx < lines.size(); idx++) {
                         joined += lines[idx];
                         joined += u'\n';
                     }
@@ -1765,7 +1778,9 @@ auto TaskWorker::serdeImport(
         }
 
         const QByteArray raw = inFile.readAll();
-        const ByteBuffer rawBuffer = { .ptr = rcast<const u8*>(raw.constData()), .len = scast<u32>(raw.size()), .cap = 0 };
+        const ByteBuffer rawBuffer = { .ptr = rcast<const u8*>(raw.constData()),
+                                       .len = scast<u32>(raw.size()),
+                                       .cap = 0 };
 
         FFIString imported;
 
@@ -1810,7 +1825,7 @@ auto TaskWorker::replace(
             u32 rowStart = 0;
 
             for (const auto& cellMatch : matches) {
-                for (const auto idx : range(rowStart, cellMatch.rowIndex())) {
+                for (i32 idx = rowStart; idx < cellMatch.rowIndex(); idx++) {
                     newLines.push_back(lines[idx]);
                 }
 
@@ -1842,9 +1857,12 @@ auto TaskWorker::replace(
                         QString result;
                         result.reserve(replaceText.size());
 
-                        for (auto cidx : range(0, replaceText.size())) {
+                        i32 cidx = 0;
+
+                        while (cidx < replaceText.size()) {
                             if (replaceText[cidx] != u'\\' || cidx + 1 >= replaceText.size()) {
                                 result.append(replaceText[cidx]);
+                                cidx++;
                                 continue;
                             }
 
@@ -1852,16 +1870,16 @@ auto TaskWorker::replace(
 
                             if (next == u'`') {
                                 result.append(beforeFull);
-                                ++cidx;
+                                cidx++;
                             } else if (next == u'\'') {
                                 result.append(afterFull);
-                                ++cidx;
+                                cidx++;
                             } else if (next == u'+') {
                                 result.append(lastCapture);
-                                ++cidx;
+                                cidx++;
                             } else if (next == u'\\') {
                                 result.append(u'\\');
-                                ++cidx;
+                                cidx++;
                             } else if (next.isDigit() && next != u'0') {
                                 bool handled = false;
 
@@ -1891,6 +1909,8 @@ auto TaskWorker::replace(
                             } else {
                                 result.append(u'\\');
                             }
+
+                            cidx++;
                         }
 
                         return result;
@@ -1928,7 +1948,7 @@ auto TaskWorker::replace(
                 rowStart = cellMatch.rowIndex() + 1;
             }
 
-            for (const auto idx : range(rowStart, lines.size())) {
+            for (i32 idx = rowStart; idx < lines.size(); idx++) {
                 newLines.push_back(lines[idx]);
             }
 

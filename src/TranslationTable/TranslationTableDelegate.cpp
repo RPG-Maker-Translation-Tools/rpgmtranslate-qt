@@ -233,7 +233,7 @@ auto TranslationTableDelegate::eventFilter(QObject* const editor, QEvent* const 
         QModelIndex target;
 
         if (key == Qt::Key_Up) {
-            for (const auto row : range(0, rowCount)) {
+            for (i32 row = 0; row < rowCount; row++) {
                 const QModelIndex candidate = model->index(row, col, current.parent());
 
                 if (isEditable(candidate)) {
@@ -242,7 +242,7 @@ auto TranslationTableDelegate::eventFilter(QObject* const editor, QEvent* const 
                 }
             }
         } else {
-            for (const auto row : range<-1>(rowCount - 1, -1)) {
+            for (i32 row = rowCount - 1; row >= 0; row--) {
                 const QModelIndex candidate = model->index(row, col, current.parent());
 
                 if (isEditable(candidate)) {

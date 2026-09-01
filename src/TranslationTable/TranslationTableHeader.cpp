@@ -32,6 +32,7 @@ void TranslationTableHeader::paintEvent(QPaintEvent* const event) {
         QStyleOptionButton buttonOpt;
         buttonOpt.rect = buttonRect;
         buttonOpt.icon = QIcon(u":/icons/add.svg"_s);
+        buttonOpt.iconSize = QSize(16, 16);
 
         buttonOpt.state = QStyle::State_Enabled;
 

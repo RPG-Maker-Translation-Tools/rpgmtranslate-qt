@@ -331,7 +331,7 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
             break;
         }
         case 84:
-            // TODO(v1.x)
+            // TODO(v1.2)
             break;
         case 109: {
             const QStringView num = QStringView(lint.captured).sliced(4).chopped(1);
@@ -344,7 +344,7 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
             markdownSource += tr("The following color will take effect: %1").arg(colorSwatch(stoa<u32>(rgbHex, 16)));
             break;
         }
-        // TODO(v1.x)
+        // TODO(v1.2)
         case 121:
         case 124:
         case 127:
@@ -602,7 +602,8 @@ void LintTooltip::showAt(
                 const QStringList suggestions = lint.suggestions.toStringList();
 
                 if (!suggestions.isEmpty()) {
-                    markdownSource += tr("Suggestions: %1").arg(suggestionLinksMarkdown(suggestions, lint.type, lint.index));
+                    markdownSource +=
+                        tr("Suggestions: %1").arg(suggestionLinksMarkdown(suggestions, lint.type, lint.index));
                     markdownSource += u"\n\n";
                 }
 

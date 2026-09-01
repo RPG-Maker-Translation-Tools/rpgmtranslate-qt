@@ -116,16 +116,14 @@ void MainWindow::handleWrite() {
         return;
     }
 
-    const QString gameTitle = ui->gameTitleInput->placeholderText();
-
     const TaskToken task = startTask(TaskKind::Write);
 
     if (task == nullptr) {
         return;
     }
 
-    QtConcurrent::run([this, gameTitle] -> auto {
-        return taskWorker->write(gameTitle, Selected());
+    QtConcurrent::run([this] -> auto {
+        return taskWorker->write(Selected());
     }).then(this, [this, task](const WriteResult& result) -> void {
         taskWorker->finishTask(task);
 

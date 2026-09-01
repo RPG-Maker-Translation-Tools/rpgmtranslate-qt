@@ -14,7 +14,7 @@ A complete rewrite of the [original RPGMTranslate application](https://github.co
 
 - [x] Cross-platform, portable, fast and powerful.
 - [x] Exceptional performance, powered by low-level Rust/C++ code.
-- [x] Support for RPG Maker XP/VX/VXAce/MV/MZ, with automated archive decryption and file parsing.
+- [x] Support for RPG Maker 2000/2003/XP/VX/VXAce/MV/MZ, with automated archive decryption and file parsing.
 - [x] Easy plain text format that's manually editable.
 - [x] Translations can be exported into other formats - XLSX, CSV, XML, YAML and JSON.
 - [x] Built-in [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation) features for more than 40 languages.
@@ -83,8 +83,8 @@ The repository contains third-party software, that is licensed under other condi
 
 - `icons` - contains [Google Material Symbols](https://fonts.google.com/icons) - licensed under `Apache License Version 2.0`.
 - `src/3rdparty` - contains 3rd-party libraries:
-    - [fast_float](https://github.com/fastfloat/fast_float), [MIT](licenses/fast_float)
-    - [jeaiii/itoa](https://github.com/jeaiii/itoa), [MIT](licenses/jeaiii-itoa)
-    - [magic_enum](https://github.com/Neargye/magic_enum), [MIT](licenses/magic_enum)
-    - [zmij](https://github.com/vitaut/zmij), [MIT](licenses/zmij)
-    - [miniaudio](https://github.com/mackron/miniaudio), [Unlicense](licenses/miniaudio)
+  - [fast_float](https://github.com/fastfloat/fast_float), [MIT](licenses/fast_float)
+  - [jeaiii/itoa](https://github.com/jeaiii/itoa), [MIT](licenses/jeaiii-itoa)
+  - [magic_enum](https://github.com/Neargye/magic_enum), [MIT](licenses/magic_enum)
+  - [zmij](https://github.com/vitaut/zmij), [MIT](licenses/zmij)
+  - [miniaudio](https://github.com/mackron/miniaudio), [Unlicense](licenses/miniaudio)

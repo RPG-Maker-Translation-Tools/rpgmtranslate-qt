@@ -1,42 +1,44 @@
-# CAT Features and Glossary
+# CAT фичи и глоссарий
 
-RPGMTranslate introduces some [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation) features.
+RPGMTranslate имеет некоторые фичи [CAT](https://ru.wikipedia.org/wiki/%D0%90%D0%B2%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D0%B8%D0%B7%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D1%8B%D0%B9_%D0%BF%D0%B5%D1%80%D0%B5%D0%B2%D0%BE%D0%B4).
 
-## Glossary
+## Глоссарий
 
-Open the glossary menu with the ![](./assets/book_3.svg) button. It contains all the present terms in your translation, allows you to add new, and check the consistensy of those terms.
+Откройте глоссарий с помощью кнопки ![](./assets/book_3.svg). Он содержит все представленные термины в вашем переводе, позволяя добавить новые и проверить их консист.
 
-You can create new terms with the "+" button. Term and translation text are essential.
+Вы можете создавать новые термины с помощью кнопки "+". Термин и перевод термина - ключевые части.
 
-Glossary allows to search specific terms. Consistency checking itself now runs from the [lint menu](./text-editing.md#linting)'s "Global Check" button, alongside the other lints, rather than from a dedicated button here.
+Глоссарий позволяет искать определённые термины. Сама проверка консиста происходит через [меню линтов](./text-editing.md#линтинг), через кнопку "Глобальная проверка", или для выбранных строк автоматически.
 
-Individual terms can be disabled without deleting them from the "Lints" menu (same place plugin/tag lints are toggled) - a disabled term is kept in the glossary but excluded from linting.
+Отключить проверку отдельных терминов, не удаляя их можно через то же самое меню линтов - выключенный термин исключается из линтинга.
 
-Inflections are not supported.
+Флексии (или же [словоизменение](https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D0%BE%D0%B2%D0%BE%D0%B8%D0%B7%D0%BC%D0%B5%D0%BD%D0%B5%D0%BD%D0%B8%D0%B5)) не поддерживаются.
 
-### Term/translation settings
+### Настройки термина и перевода
 
-#### Mode
+#### Режим
 
-Mode defines, how to match the text:
+Режим определяет, как проверять совпадения:
 
-- Exact - only matches the text exactly.
-- Fuzzy - only matches the text fuzzily, using a supplied threshold.
-- Both - matches the text both exactly and fuzzily, in order.
+- Точный - ищет полное совпадение с текстом.
+- Нечёткий - ищет нечёткие совпадение, используя определённый порог.
+- Оба - ищет сначала точное, потом нечёткое совпадение.
 
-#### Case sensitivity
+#### Учитывать регистр
 
-If enabled, matches text case-sensitively. Else, case-insensitively.
+Если включено, учитывает регистр текста.
 
-#### Permissive
+#### Пермиссивность
 
-If enabled, also matches the text, that's more uppercased than the term, but not more lowercased.
+Если включена, совпадения удаются если текст имеет регистр выше чем у самого термина, но не ниже.
 
-### Note
+Например, для термина "Абоба" - текст "АБОБА" будет совпадать, в то время как "абоба" - нет.
 
-All the info related to the term and its translation.
+### Заметка
 
-### Actions
+Вся информация относящаяся к термину и переводу.
 
-- Edit: Glossary entries are uneditable by default.
-- Remove: Remove the glossary entry.
+### Действия
+
+- Редактировать: по умолчанию записи в глоссарии нередактируемые.
+- Удалить: удалить запись из глоссария.

@@ -357,7 +357,7 @@ struct ControlSettings {
     QString batchMenu = u"Ctrl+B"_s;
     QString bookmarkMenu = u"Alt+B"_s;
     QString lintMenu = u"Ctrl+M"_s;
-    QString glossaryMenu = u"Alt+B"_s;
+    QString glossaryMenu = u"Alt+L"_s;
     QString translationsMenu = u"Ctrl+S"_s;
 };
 

@@ -210,7 +210,7 @@ void TranslationTableModel::appendColumn(QStringList cells) {
     const u8 col = colCount;
     beginInsertColumns(QModelIndex(), col, col);
 
-    for (const auto row : range(0, rows.size())) {
+    for (i32 row = 0; row < rows.size(); row++) {
         rows[row][col] = row < cells.size() ? std::move(cells[row]) : QString();
         editableFlags[row][col] = true;
     }
@@ -225,7 +225,7 @@ void TranslationTableModel::insertRow(const u32 row, QStringList cells) {
     array<QString, MAX_COLUMNS> newRow;
     bitset<MAX_COLUMNS> flags;
 
-    for (const auto col : range(0, cells.size())) {
+    for (i32 col = 0; col < cells.size(); col++) {
         newRow[col] = std::move(cells[col]);
     }
 

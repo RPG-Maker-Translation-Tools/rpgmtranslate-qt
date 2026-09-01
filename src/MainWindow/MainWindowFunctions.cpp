@@ -37,6 +37,43 @@
 namespace {
 constexpr QStringView ID_COMMENT = u"<!>ID";
 constexpr i32 MAX_RECENT_PROJECTS = 10;
+
+auto copyLcfFiles(const QString& sourceDir, const QString& destDir, bool overwrite = true) -> bool {
+    auto srcDir = QDir(sourceDir);
+
+    if (!srcDir.exists()) {
+        return false;
+    }
+
+    auto dstDir = QDir(destDir);
+
+    if (!dstDir.exists()) {
+        if (!dstDir.mkpath(u"."_s)) {
+            return false;
+        }
+    }
+
+    const QStringList filters = { u"*.lmu"_s, u"*.lmt"_s, u"*.ldb"_s };
+    const QFileInfoList files = srcDir.entryInfoList(filters, QDir::Files, QDir::Name);
+
+    for (const QFileInfo& fileInfo : files) {
+        QString destPath = dstDir.filePath(fileInfo.fileName());
+
+        if (QFile::exists(destPath)) {
+            if (!overwrite) {
+                continue;
+            }
+
+            QFile::remove(destPath);  // QFile::copy fails if destination exists
+        }
+
+        if (!QFile::copy(fileInfo.absoluteFilePath(), destPath)) {
+            // TODO
+        }
+    }
+
+    return true;
+}
 }  // namespace
 
 void MainWindow::checkForUpdates(const bool manual) {
@@ -498,15 +535,17 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
 
             tabs.emplace_back(basename, fileTotal, fileTranslated, projectSettings->completedFiles.contains(basename));
 
-            if (isSystem && contentView.lastIndexOf(u"<!>ID<#>8") != -1) {
-                const QStringView titleLine = contentView.sliced(contentView.lastIndexOf(u'\n') + 1);
+            if ((isSystem || basename.startsWith(u"terms")) && contentView.lastIndexOf(u"<!>NAME<#>Game Title") != -1) {
+                const QStringView titleLine = contentView.sliced(
+                    contentView.lastIndexOf(u"<!>NAME<#>Game Title") + sizeof("<!>NAME<#>Game Title")
+                );
                 const QSVList parts = lineParts(titleLine, 0, basename);
                 const QStringView translation = getTranslation(parts).translation;
                 const QStringView source = getSource(parts);
 
                 ui->gameTitleInput->setPlaceholderText(source.toString());
 
-                if (translation.isEmpty()) {
+                if (translation.trimmed().isEmpty()) {
                     ui->gameTitleInput->setText(source.toString());
                 } else {
                     ui->gameTitleInput->setText(translation.toString());
@@ -652,15 +691,19 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                 // If there's no baseline, make the current source the baseline.
                 present(
                     this,
-                    NOTICE("Copying the data directory to .rpgmtranslate/baseline-data as a baseline.", Info, Status)
+                    NOTICE("Copying the game data to .rpgmtranslate/baseline-data as a baseline.", Info, Status)
                 );
 
                 try {
-                    fs::copy(
-                        sourcePath.toStdString(),
-                        baselineSourcePath.toStdString(),
-                        fs::copy_options::recursive | fs::copy_options::overwrite_existing
-                    );
+                    if (projectSettings->engineType == EngineType::RM2K) {
+                        copyLcfFiles(sourcePath, baselineSourcePath);
+                    } else {
+                        fs::copy(
+                            sourcePath.toStdString(),
+                            baselineSourcePath.toStdString(),
+                            fs::copy_options::recursive | fs::copy_options::overwrite_existing
+                        );
+                    }
                 } catch (const fs::filesystem_error& error) {
                     present(
                         this,
@@ -691,6 +734,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
          postRead](const QString& sourcePath, const QString& translationPath, const QString& title) -> void {
         tempProjectSettings->flags = readMenu->flags();
         tempProjectSettings->duplicateMode = readMenu->duplicateMode();
+        tempProjectSettings->readEncoding = readMenu->readEncoding();
 
         const TaskToken task = startTask(TaskKind::Read);
 
@@ -711,7 +755,8 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                 tempProjectSettings->flags,
                 mapEvents,
                 tempProjectSettings->hashes,
-                title
+                title,
+                tempProjectSettings->readEncoding
             );
         }).then(this, [this, postRead, task](const ReadResult& result) -> void {
             taskWorker->finishTask(task);
@@ -726,12 +771,19 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
 
     const auto startOpening =
         [this, folder, rootTranslationPath, tempProjectSettings, postRead, postArchive] -> result<void, Notice> {
-        if (QFile::exists(folder + u"/Data")) {
-            tempProjectSettings->sourceDirectory = SourceDirectory::UppercaseData;
-        }
+        // RPG Maker 2000/2003 has no `data`/`Data` subdirectory at all - every data file lives at the root
+        const bool isRm2k = QFile::exists(folder + u"/RPG_RT.ldb");
 
-        if (QFile::exists(folder + u"/data")) {
-            tempProjectSettings->sourceDirectory = SourceDirectory::LowercaseData;
+        if (isRm2k) {
+            tempProjectSettings->sourceDirectory = SourceDirectory::Root;
+        } else {
+            if (QFile::exists(folder + u"/Data")) {
+                tempProjectSettings->sourceDirectory = SourceDirectory::UppercaseData;
+            }
+
+            if (QFile::exists(folder + u"/data")) {
+                tempProjectSettings->sourceDirectory = SourceDirectory::LowercaseData;
+            }
         }
 
         if (!QFile::exists(folder + PROGRAM_DATA_DIRECTORY + TRANSLATION_DIRECTORY)) {
@@ -769,7 +821,10 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                 QString archivePath;
                 bool systemExists = false;
 
-                if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.json")) {
+                if (isRm2k) {
+                    tempProjectSettings->engineType = EngineType::RM2K;
+                    systemExists = true;
+                } else if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.json")) {
                     tempProjectSettings->engineType = EngineType::MVMZ;
                     systemExists = true;
                 } else if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.rvdata2")) {
@@ -924,7 +979,7 @@ void MainWindow::changeTab(const QString& tabName, const QString& previousTabNam
         );
         tabNameStatusLabel->setText(tabName);
 
-        // TODO(v1.x): Display total source words/characters in the status bar
+        // TODO(v1.2): Display total source words/characters in the status bar
     }
 }
 
@@ -1040,11 +1095,19 @@ void MainWindow::checkHashes() {
         return;
     }
 
-    const auto sourceFiles = QDirListing(
-        sourcePath,
-        { u"*.%1"_qsv.arg(projectSettings->engineExtension()) },
-        QDirListing::IteratorFlag::FilesOnly
-    );
+    QStringList filters;
+
+    if (projectSettings->engineType == EngineType::RM2K) {
+        filters = {
+            u"*.lmu"_s,
+            u"*.lmt"_s,
+            u"*.ldb"_s,
+        };
+    } else {
+        filters = { u"*.%1"_qsv.arg(projectSettings->engineExtension()) };
+    }
+
+    const auto sourceFiles = QDirListing(sourcePath, filters, QDirListing::IteratorFlag::FilesOnly);
 
     vector<FilenameArray> mismatchedFiles;
     mismatchedFiles.reserve(projectSettings->hashes.size());
@@ -1062,7 +1125,7 @@ void MainWindow::checkHashes() {
         const QString filename = sourceFile.fileName();
 
         if (filename.startsWith(u"Animations") || filename.startsWith(u"Tilesets") ||
-            filename.startsWith(u"MapInfos")) {
+            filename.startsWith(u"MapInfos") || filename.startsWith(u"Areas") || filename == u"RPG_RT.lmt"_qsv) {
             // Not important
             continue;
         }
@@ -1197,7 +1260,8 @@ void MainWindow::checkHashes() {
                 Selected(),
                 projectSettings->flags,
                 false,
-                ui->gameTitleInput->placeholderText()
+                ui->gameTitleInput->placeholderText(),
+                projectSettings->readEncoding
             );
         }
     } else {
@@ -1211,7 +1275,8 @@ void MainWindow::read(
     const Selected selected,
     const BaseFlags flags,
     const bool mapEvents,
-    const QString& title
+    const QString& title,
+    const QString& readEncoding
 ) {
     const QString sourcePath = projectSettings->actualSourcePath();
     const QString translationPath = projectSettings->translationPath();
@@ -1233,7 +1298,8 @@ void MainWindow::read(
             flags,
             mapEvents,
             projectSettings->hashes,
-            title
+            title,
+            readEncoding
         );
     }).then(this, [this, task](const ReadResult& result) -> void {
         taskWorker->finishTask(task);

@@ -19,13 +19,13 @@ BookmarkMenu::BookmarkMenu(QWidget* const parent) :
 
     connect(fileSelect, &QComboBox::currentIndexChanged, this, [this](const u32 index) -> void {
         if (index == 0) {
-            for (const auto row : range(0, bookmarkList->rowCount())) {
+            for (i32 row = 0; row < bookmarkList->rowCount(); row++) {
                 bookmarkList->setRowHidden(row, false);
             }
         } else {
             const QString filename = fileSelect->currentText();
 
-            for (const auto row : range(0, bookmarkList->rowCount())) {
+            for (i32 row = 0; row < bookmarkList->rowCount(); row++) {
                 const Bookmark& bookmark = bookmarkList->bookmark(row);
                 bookmarkList->setRowHidden(row, QL1SV(bookmark.filename.data()) != filename);
             }
@@ -50,7 +50,7 @@ void BookmarkMenu::addBookmark(const QStringView description, const QStringView 
 }
 
 void BookmarkMenu::updateBookmark(const u32 targetRow, const QString& text) {
-    for (const auto row : range(0, bookmarkList->rowCount())) {
+    for (i32 row = 0; row < bookmarkList->rowCount(); row++) {
         Bookmark& bookmark = bookmarkList->bookmark(row);
 
         if (bookmark.row == targetRow) {
@@ -60,7 +60,7 @@ void BookmarkMenu::updateBookmark(const u32 targetRow, const QString& text) {
 };
 
 void BookmarkMenu::removeBookmark(const u32 targetRow) {
-    for (const auto row : range(0, bookmarkList->rowCount())) {
+    for (i32 row = 0; row < bookmarkList->rowCount(); row++) {
         const Bookmark& bookmark = bookmarkList->bookmark(row);
 
         if (bookmark.row == targetRow) {
@@ -71,7 +71,7 @@ void BookmarkMenu::removeBookmark(const u32 targetRow) {
 
 void BookmarkMenu::shiftIndices(const QStringView file, const u32 row, const bool rowAdded) {
     if (rowAdded) {
-        for (const auto idx : range(0, bookmarkList->rowCount())) {
+        for (i32 idx = 0; idx < bookmarkList->rowCount(); idx++) {
             Bookmark& bookmark = bookmarkList->bookmark(idx);
 
             if (QL1SV(bookmark.filename.data()) == file && bookmark.row >= row) {
@@ -79,7 +79,7 @@ void BookmarkMenu::shiftIndices(const QStringView file, const u32 row, const boo
             }
         }
     } else {
-        for (const auto idx : range(0, bookmarkList->rowCount())) {
+        for (i32 idx = 0; idx < bookmarkList->rowCount(); idx++) {
             Bookmark& bookmark = bookmarkList->bookmark(idx);
 
             if (QL1SV(bookmark.filename.data()) == file && bookmark.row > row) {

@@ -32,7 +32,7 @@ void TabListDelegate::paint(
     const auto* const model = rcast<const TabListModel*>(index.model());
 
     if (maxCachedNameWidth == 0 || maxCachedProgressWidth == 0) {
-        for (const auto idx : range(0, model->rowCount())) {
+        for (i32 idx = 0; idx < model->rowCount(); idx++) {
             const TabListItem& tab = model->tab(idx);
 
             const i32 spaceAdvance = fontMetrics.horizontalAdvance(u' ');

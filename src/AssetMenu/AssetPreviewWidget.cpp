@@ -4,9 +4,8 @@
 #include "GraphicsAssetViewer.hpp"
 #include "Notice.hpp"
 #include "Utils.hpp"
-#include "rpgmtranslate_rs.h"
-
 #include "glazemeta.hpp"
+#include "rpgmtranslate_rs.h"
 
 #include <QDesktopServices>
 #include <QDir>
@@ -52,10 +51,8 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
     locateButton(new QPushButton(tr("Locate file"), toolbar)),
     openButton(new QPushButton(tr("Open in default app"), toolbar)),
 
-    // JSON
-    beautifyButton(new QPushButton(tr("Beautify"), toolbar)),
-
     // Code
+    beautifyButton(new QPushButton(tr("Beautify"), toolbar)),
     searchContainer(new QWidget(toolbar)),
     searchContainerLayout(new QHBoxLayout(searchContainer)),
     searchInput(new QLineEdit(searchContainer)),
@@ -252,8 +249,7 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
         FFIString highlightedHtml;
 
         if (rpgm_highlight_code(strtoffi(formatted), formatLanguage, &highlightedHtml)) {
-            codeViewer->setHighlightedHtml(QString::fromUtf8(highlightedHtml.ptr, scast<isize>(highlightedHtml.len))
-            );
+            codeViewer->setHighlightedHtml(QString::fromUtf8(highlightedHtml.ptr, scast<isize>(highlightedHtml.len)));
             rpgm_string_free(highlightedHtml);
         } else {
             codeViewer->setPlainText(QString::fromUtf8(formatted));
@@ -314,7 +310,8 @@ void AssetPreviewWidget::showAsset(const QString& path) {
         loadVideoAsset(path);
     } else if (
         extension == u"js"_qsv || extension == u"json"_qsv || extension == u"rxdata"_qsv ||
-        extension == u"rvdata"_qsv || extension == u"rvdata2"_qsv
+        extension == u"rvdata"_qsv || extension == u"rvdata2"_qsv || extension == u"lmu"_qsv ||
+        extension == u"lmt"_qsv || extension == u"ldb"_qsv
     ) {
         searchContainer->show();
         loadTextAsset(path, extension);
@@ -628,7 +625,8 @@ void AssetPreviewWidget::loadTextAsset(const QString& path, const QString& exten
     FFIString highlightedHtml;
 #endif
 
-    if (extension == u"rxdata"_qsv || extension == u"rvdata"_qsv || extension == u"rvdata2"_qsv) {
+    if (extension == u"rxdata"_qsv || extension == u"rvdata"_qsv || extension == u"rvdata2"_qsv ||
+        extension == u"lmu"_qsv || extension == u"lmt"_qsv || extension == u"ldb"_qsv) {
         FFIString json;
         const QByteArray filename = lastPathComponent(path).toUtf8();
 
@@ -796,7 +794,7 @@ void AssetPreviewWidget::navigateSearch(const i32 delta) {
     QList<QTextEdit::ExtraSelection> highlights;
     highlights.reserve(searchResults.size());
 
-    for (const auto idx : range(0, searchResults.size())) {
+    for (i32 idx = 0; idx < searchResults.size(); idx++) {
         QTextEdit::ExtraSelection selection;
         selection.cursor = searchResults[idx];
         selection.format.setBackground(idx == currentSearchIndex ? currentMatchColor : allMatchColor);

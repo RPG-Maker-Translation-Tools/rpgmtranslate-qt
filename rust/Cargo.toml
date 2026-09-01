@@ -1,6 +1,6 @@
 [package]
 name = "rpgmtranslate_rs"
-version = "1.0.1"
+version = "1.1.0"
 edition = "2024"
 publish = false
 
@@ -15,7 +15,6 @@ js-highlighting = ["lumis/lang-javascript"]
 ruby-highlighting = ["lumis/lang-ruby"]
 js-formatting = ["dep:dprint-plugin-typescript", "dep:anyhow"]
 ruby-formatting = ["dep:rubyfmt"]
-mimalloc = ["dep:mimalloc"]
 
 google-translate = ["dep:translators"]
 yandex-translate = ["dep:yandex-translate-v2"]
@@ -39,10 +38,11 @@ serde-yaml = ["rvpacker-txt-rs-lib/serde-yaml"]
 anyhow = { optional = true, version = "1.0.104" }
 deepl = { version = "0.8.1", optional = true }
 dprint-plugin-typescript = { version = "0.96.1", optional = true }
+encoding_rs = "0.8.35"
 gxhash = { version = "3.5.0", features = [
     "deterministic",
 ], default-features = false }
-keyring = "4.1.6"
+keyring = "4.2.0"
 language-tokenizer = { version = "0.4.0", default-features = false }
 languagetool-rust = { version = "3.0.1", default-features = false, optional = true, features = [
     "native-tls",
@@ -50,15 +50,13 @@ languagetool-rust = { version = "3.0.1", default-features = false, optional = tr
 llm-connector = { version = "1.4.0", optional = true }
 log = "0.4.34"
 lumis = { version = "0.13.0", default-features = false, optional = true }
-marshal-rs = "2.0.2"
-mimalloc = { version = "0.1.52", optional = true }
-reqwest = { version = "0.12.28", default-features = false, optional = true, features = [
+reqwest = { version = "=0.12.28", default-features = false, optional = true, features = [
     "native-tls",
 ] }
-rpgm-asset-decrypter-lib = "3.2.2"
-rpgmad-lib = "5.0.0"
+rpgm-asset-decrypter-lib = "3.2.3"
+rpgmad-lib = "5.0.1"
 rubyfmt = { version = "0.14.1", optional = true, path = "./librubyfmt" }
-rvpacker-txt-rs-lib = { version = "15.0.0" }
+rvpacker-txt-rs-lib = { version = "16.2.0" }
 serde = "1.0.229"
 serde_json = "1.0.151"
 thiserror = "2.0.20"

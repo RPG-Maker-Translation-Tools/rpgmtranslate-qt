@@ -73,7 +73,7 @@ void FileSelectMenu::clear() {
 auto FileSelectMenu::selected(const bool skipped) -> Selected {
     Selected selected;
 
-    for (const auto idx : range(0, ui->gridLayout->count())) {
+    for (i32 idx = 0; idx < ui->gridLayout->count(); idx++) {
         const auto* const checkbox = scast<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
 
         if (checkbox->isChecked() ^ skipped) {
@@ -103,6 +103,8 @@ auto FileSelectMenu::selected(const bool skipped) -> Selected {
                 selected.flags |= FileFlags_System;
             } else if (file == u"scripts"_qsv) {
                 selected.flags |= FileFlags_Scripts;
+            } else if (file == u"terms"_qsv) {
+                selected.flags |= FileFlags_Database;
             } else if (file.startsWith(u"map"_qsv)) {
                 const u16 index = stoa<u16>(QStringView(file).sliced(3));
                 selected.validIndices[index] = true;
@@ -117,7 +119,7 @@ auto FileSelectMenu::selected(const bool skipped) -> Selected {
 auto FileSelectMenu::selectedCount() const -> u16 {
     u16 count = 0;
 
-    for (const auto idx : range(0, ui->gridLayout->count())) {
+    for (i32 idx = 0; idx < ui->gridLayout->count(); idx++) {
         const auto* const checkbox = scast<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
 
         if (checkbox->isChecked()) {

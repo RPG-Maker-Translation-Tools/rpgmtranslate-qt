@@ -23,9 +23,15 @@ You can write your own script instead, using JavaScript (powered by [quickjs-ng]
 A script must define a function:
 
 ```js
-function rpgmLineCallback(sourceText, translations, filename, lineNumber, options) {
-    // ...
-    return translations;
+function rpgmLineCallback(
+  sourceText,
+  translations,
+  filename,
+  lineNumber,
+  options,
+) {
+  // ...
+  return translations;
 }
 ```
 

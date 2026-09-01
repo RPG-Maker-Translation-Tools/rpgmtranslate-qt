@@ -81,7 +81,7 @@ void TabPanel::clear() {
 }
 
 [[nodiscard]] auto TabPanel::tabIndex(const QString& tabName) const -> i32 {
-    for (const auto tab : range(0, tabCount())) {
+    for (i32 tab = 0; tab < tabCount(); tab++) {
         if (tabList->tab(tab).name == tabName) {
             return tab;
         }
@@ -154,7 +154,7 @@ void TabPanel::changeTab(const QString& filename) {
         return;
     }
 
-    for (const auto tab : range(0, tabCount())) {
+    for (i32 tab = 0; tab < tabCount(); tab++) {
         if (tabList->tab(tab).name == filename) {
             tabList->setCurrentIndex(tabList->model()->index(tab, 0));
             return;
@@ -168,7 +168,7 @@ auto TabPanel::tabs() const -> QStringList {
     QStringList tabs;
     tabs.reserve(rowCount);
 
-    for (const auto idx : range(0, rowCount)) {
+    for (i32 idx = 0; idx < rowCount; idx++) {
         tabs.append(tabList->tab(idx).name);
     }
 

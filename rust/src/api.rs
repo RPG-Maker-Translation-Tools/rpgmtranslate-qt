@@ -12,7 +12,6 @@ use llm_connector::{
     types::{ChatRequest, Message, ReasoningEffort, Role},
 };
 use log::{debug, info};
-use marshal_rs::Get;
 use rpgmad_lib::{Decrypter, ExtractError};
 use rvpacker_txt_rs_lib::{
     BaseFlags, DuplicateMode, EngineType, FileFlags, Mode, Processor, constants::DEFAULT_LINE_BREAK,
@@ -223,6 +222,8 @@ pub(crate) fn write(
     duplicate_mode: DuplicateMode,
     flags: BaseFlags,
     skip_files: FileFlags,
+    read_encoding: Option<&'static encoding_rs::Encoding>,
+    write_encoding: Option<&'static encoding_rs::Encoding>,
 ) -> Result<f32, Error> {
     let start_time = Instant::now();
 
@@ -231,6 +232,8 @@ pub(crate) fn write(
         file_flags: FileFlags::all() & !skip_files,
         flags,
         duplicate_mode,
+        read_encoding,
+        write_encoding,
         ..Default::default()
     };
 
@@ -250,6 +253,7 @@ pub(crate) fn read(
     map_events: bool,
     hashes: HashMap<String, u64>,
     ini_title: &str,
+    read_encoding: Option<&'static encoding_rs::Encoding>,
 ) -> Result<HashMap<String, u64>, Error> {
     let mut processor = Processor {
         mode: read_mode,
@@ -259,6 +263,7 @@ pub(crate) fn read(
         game_title: ini_title.to_owned(),
         hashes,
         map_events,
+        read_encoding,
         ..Default::default()
     };
 
@@ -274,12 +279,16 @@ pub(crate) fn purge(
     duplicate_mode: DuplicateMode,
     flags: BaseFlags,
     skip_files: FileFlags,
+    read_encoding: Option<&'static encoding_rs::Encoding>,
+    write_encoding: Option<&'static encoding_rs::Encoding>,
 ) -> Result<(), Error> {
     let mut processor = Processor {
         mode: Mode::Purge,
         file_flags: FileFlags::all() & !skip_files,
         flags,
         duplicate_mode,
+        read_encoding,
+        write_encoding,
         ..Default::default()
     };
 
@@ -795,7 +804,20 @@ pub(crate) fn decrypt_asset(path: &Path) -> Result<Vec<u8>, Error> {
 }
 
 pub(crate) fn generate_json(content: &[u8], filename: &str) -> Result<String, Error> {
-    let json = rvpacker_txt_rs_lib::json::generate_file(content, filename)?;
+    use rvpacker_txt_rs_lib::json::*;
+
+    let json: String;
+
+    if filename.ends_with(".lmu") {
+        json = generate_rm2k_map_file(content)?;
+    } else if filename.ends_with(".ldb") {
+        json = generate_rm2k_database_file(content)?;
+    } else if filename.ends_with(".lmt") {
+        json = generate_rm2k_tree_map_file(content)?;
+    } else {
+        json = generate_file(content, filename)?;
+    }
+
     Ok(json)
 }
 
@@ -954,12 +976,20 @@ pub(crate) fn highlight_code(input: &str, lang: HighlightLanguage) -> Result<Str
     Ok(String::from_utf8(out).unwrap_or_default())
 }
 
-pub(crate) fn get_ini_title(project_path: &str) -> Result<Vec<u8>, Error> {
+/// Returns the extracted title alongside whether it was parsed from `RPG_RT.ini` (RM2K/2003)
+/// rather than `Game.ini` (XP/VX/VXAce).
+pub(crate) fn get_ini_title(project_path: &str) -> Result<(Vec<u8>, bool), Error> {
     let ini_path = Path::new(project_path).join("Game.ini");
 
-    Ok(rvpacker_txt_rs_lib::get_ini_title(
-        &fs::read(&ini_path).map_err(|err| Error::Io(ini_path, err))?,
-    )?)
+    match fs::read(&ini_path) {
+        Ok(content) => Ok((rvpacker_txt_rs_lib::get_ini_title(&content)?, false)),
+        Err(err) if err.kind() == io::ErrorKind::NotFound => {
+            let rm2k_ini_path = Path::new(project_path).join("RPG_RT.ini");
+            let content = fs::read(&rm2k_ini_path).map_err(|err| Error::Io(rm2k_ini_path, err))?;
+            Ok((rvpacker_txt_rs_lib::get_ini_title_rm2k(&content)?, true))
+        }
+        Err(err) => Err(Error::Io(ini_path, err)),
+    }
 }
 
 #[cfg(any(feature = "js-formatting", feature = "ruby-formatting"))]

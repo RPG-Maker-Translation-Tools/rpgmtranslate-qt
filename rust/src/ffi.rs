@@ -6,14 +6,15 @@ use language_tokenizer::{Algorithm, MatchResult};
 #[cfg(feature = "languagetool")]
 use languagetool_rust::api::check::{Data, DataAnnotation};
 use log::{Log, Metadata, Record};
-use marshal_rs::Get;
-use rvpacker_txt_rs_lib::{BaseFlags, DuplicateMode, EngineType, FileFlags, RPGMFileType, core::parse_rpgm_file};
+use rvpacker_txt_rs_lib::{
+    BaseFlags, DuplicateMode, EngineType, FileFlags, RPGMFileType,
+    core::{PathSegment, get_entity_values},
+};
 use std::{
     ffi::{CStr, c_char, c_void},
     fs::{self, read_to_string},
     io::{Cursor, Read},
     mem,
-    ops::Deref,
     path::{Path, PathBuf},
     ptr, slice,
     sync::{LazyLock, OnceLock},
@@ -186,6 +187,19 @@ unsafe fn ffi_opt_list(string: FFIString) -> Option<Vec<String>> {
     }
 }
 
+/// Resolves a codepage's WHATWG label (`""` for "no override") to an
+/// [`encoding_rs::Encoding`], for [`rvpacker_txt_rs_lib::Processor::read_encoding`]/
+/// [`rvpacker_txt_rs_lib::Processor::write_encoding`]. `""` means "guess it"
+/// for the read side, "always write UTF-8" for the write side.
+#[inline]
+unsafe fn ffi_encoding(string: FFIString) -> Option<&'static encoding_rs::Encoding> {
+    if string.len == 0 {
+        None
+    } else {
+        encoding_rs::Encoding::for_label(ffi_to_str(string).as_bytes())
+    }
+}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rpgm_string_free(ffi_string: FFIString) {
     if ffi_string.cap == 0 {
@@ -261,12 +275,14 @@ pub unsafe extern "C" fn rpgm_read(
     map_events: bool,
     hashes: ByteBuffer,
     ini_title: FFIString,
+    read_encoding: FFIString,
     out_hashes: *mut ByteBuffer,
 ) -> bool {
     let result = (|| -> Result<_, Error> {
         let source_path = ffi_to_str(source_path);
         let translation_path = ffi_to_str(translation_path);
         let ini_title = ffi_to_str(ini_title);
+        let read_encoding = ffi_encoding(read_encoding);
         let read_mode = match read_mode {
             ReadMode::Default => rvpacker_txt_rs_lib::Mode::Read {
                 append: false,
@@ -319,6 +335,7 @@ pub unsafe extern "C" fn rpgm_read(
             map_events,
             hashes_map,
             ini_title,
+            read_encoding,
         )?;
 
         Ok(out)
@@ -368,6 +385,8 @@ pub unsafe extern "C" fn rpgm_write(
     duplicate_mode: DuplicateMode,
     flags: BaseFlags,
     selected: Selected,
+    read_encoding: FFIString,
+    write_encoding: FFIString,
     elapsed_out: *mut f32,
 ) -> bool {
     let result = (|| -> Result<f32, Error> {
@@ -383,6 +402,8 @@ pub unsafe extern "C" fn rpgm_write(
             duplicate_mode,
             flags,
             selected.file_flags,
+            ffi_encoding(read_encoding),
+            ffi_encoding(write_encoding),
         )?;
 
         Ok(elapsed)
@@ -409,6 +430,8 @@ pub unsafe extern "C" fn rpgm_purge(
     duplicate_mode: DuplicateMode,
     flags: BaseFlags,
     selected: Selected,
+    read_encoding: FFIString,
+    write_encoding: FFIString,
 ) -> bool {
     let result = (|| -> Result<(), Error> {
         let source_path = ffi_to_str(source_path);
@@ -421,6 +444,8 @@ pub unsafe extern "C" fn rpgm_purge(
             duplicate_mode,
             flags,
             selected.file_flags,
+            ffi_encoding(read_encoding),
+            ffi_encoding(write_encoding),
         )?;
 
         Ok(())
@@ -1203,7 +1228,11 @@ pub unsafe extern "C" fn rpgm_delete_credential(account: FFIString) {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn rpgm_get_ini_title(project_path: FFIString, out: *mut ByteBuffer) -> bool {
+pub unsafe extern "C" fn rpgm_get_ini_title(
+    project_path: FFIString,
+    out: *mut ByteBuffer,
+    out_is_rm2k: *mut bool,
+) -> bool {
     let project_path = ffi_to_str(project_path);
 
     let result = (|| -> Result<_, Error> {
@@ -1212,12 +1241,13 @@ pub unsafe extern "C" fn rpgm_get_ini_title(project_path: FFIString, out: *mut B
     })();
 
     match result {
-        Ok(title) => {
+        Ok((title, is_rm2k)) => {
             *out = ByteBuffer {
                 ptr: title.as_ptr(),
                 len: title.len() as u32,
                 cap: title.capacity() as u32,
             };
+            *out_is_rm2k = is_rm2k;
 
             mem::forget(title);
 
@@ -1240,39 +1270,6 @@ enum DataPath<'a> {
     Keys(std::str::Split<'a, char>),
     Key(&'a str),
     Index(usize),
-}
-
-enum DataPathItem<'a> {
-    Key(&'a str),
-    Index(usize),
-}
-
-enum DataPathIter<'a> {
-    Keys(std::str::Split<'a, char>),
-    Key(std::option::IntoIter<&'a str>),
-    Index(std::option::IntoIter<usize>),
-}
-
-impl<'a> Iterator for DataPathIter<'a> {
-    type Item = DataPathItem<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            DataPathIter::Keys(iter) => iter.next().map(DataPathItem::Key),
-            DataPathIter::Key(iter) => iter.next().map(DataPathItem::Key),
-            DataPathIter::Index(iter) => iter.next().map(DataPathItem::Index),
-        }
-    }
-}
-
-impl<'a> DataPath<'a> {
-    fn iter(&'a self) -> DataPathIter<'a> {
-        match self {
-            DataPath::Keys(v) => DataPathIter::Keys(v.clone()),
-            DataPath::Key(s) => DataPathIter::Key(Some(*s).into_iter()),
-            DataPath::Index(n) => DataPathIter::Index(Some(*n).into_iter()),
-        }
-    }
 }
 
 fn parse_next_path(paths: &str) -> Option<DataPath<'_>> {
@@ -1302,7 +1299,7 @@ fn parse_next_path(paths: &str) -> Option<DataPath<'_>> {
 pub unsafe extern "C" fn rpgm_get_entity_data(
     path: FFIString,
     engine_type: EngineType,
-    file_type: RPGMFileType,
+    _file_type: RPGMFileType,
     paths: FFIString,
     out: *mut FFIString,
 ) -> bool {
@@ -1312,72 +1309,49 @@ pub unsafe extern "C" fn rpgm_get_entity_data(
     let result = (|| -> Result<_, Error> {
         let content = fs::read(path).map_err(|err| Error::Io(Path::new(path).to_path_buf(), err))?;
 
-        let value = parse_rpgm_file(&content, engine_type, file_type)?;
-
+        // Every entry but the last steps one level deeper (`Key`/`Index`
+        // only - `Keys` is only meaningful as the final entry); the last
+        // entry names the (possibly several sibling) leaves to read out of
+        // whatever `steps` bottomed out at.
         let mut entries = paths.split('\x04').peekable();
-        let mut cur = &value;
+        let mut steps: Vec<PathSegment<'_>> = Vec::new();
+        let mut leaves: Vec<PathSegment<'_>> = Vec::new();
 
         while let Some(entry) = entries.next() {
-            if entries.peek().is_none() {
-                let mut out_idx = 0usize;
-
-                if let Some(segment) = parse_next_path(entry) {
-                    for segment in segment.iter() {
-                        let resolved = match segment {
-                            DataPathItem::Key(key) => cur
-                                .get(key)
-                                .ok_or_else(|| Error::InvalidKey(key.to_string(), path.to_string()))?,
-                            DataPathItem::Index(idx) => cur
-                                .get_index(idx)
-                                .ok_or_else(|| Error::InvalidKey(idx.to_string(), path.to_string()))?,
-                        };
-
-                        let string;
-
-                        match resolved.deref() {
-                            marshal_rs::ValueType::Bool(bool) => {
-                                if *bool {
-                                    string = String::from("true")
-                                } else {
-                                    string = String::from("false")
-                                }
-                            }
-                            marshal_rs::ValueType::Integer(int) => string = int.to_string(),
-                            marshal_rs::ValueType::String(str) => string = str.clone(),
-                            _ => {
-                                unreachable!();
-                            }
-                        }
-
-                        *out.add(out_idx) = FFIString {
-                            ptr: string.as_ptr().cast::<i8>(),
-                            len: string.len() as u32,
-                            cap: string.capacity() as u32,
-                        };
-
-                        mem::forget(string);
-                        out_idx += 1;
-                    }
-                }
-
-                break;
-            }
-
             let Some(segment) = parse_next_path(entry) else {
                 return Err(Error::InvalidKey(String::from("0"), path.to_string()));
             };
 
-            let next = match segment {
+            if entries.peek().is_none() {
+                // Matched directly (rather than through `DataPath::iter`,
+                // which borrows `&'a self` - `segment` is a local here, too
+                // short-lived to satisfy that) so this consumes `segment` by
+                // value instead of borrowing it.
+                leaves = match segment {
+                    DataPath::Keys(iter) => iter.map(PathSegment::Key).collect(),
+                    DataPath::Key(key) => vec![PathSegment::Key(key)],
+                    DataPath::Index(idx) => vec![PathSegment::Index(idx)],
+                };
+                break;
+            }
+
+            match segment {
                 DataPath::Keys(_) => unreachable!(),
-                DataPath::Key(key) => cur
-                    .get(key)
-                    .ok_or_else(|| Error::InvalidKey(key.to_string(), path.to_string()))?,
-                DataPath::Index(idx) => cur
-                    .get_index(idx)
-                    .ok_or_else(|| Error::InvalidKey(idx.to_string(), path.to_string()))?,
+                DataPath::Key(key) => steps.push(PathSegment::Key(key)),
+                DataPath::Index(idx) => steps.push(PathSegment::Index(idx)),
+            }
+        }
+
+        let values = get_entity_values(&content, engine_type, &steps, &leaves)?;
+
+        for (out_idx, string) in values.into_iter().enumerate() {
+            *out.add(out_idx) = FFIString {
+                ptr: string.as_ptr().cast::<i8>(),
+                len: string.len() as u32,
+                cap: string.capacity() as u32,
             };
 
-            cur = next;
+            mem::forget(string);
         }
 
         Ok(())

@@ -11,6 +11,8 @@
 #include <QPushButton>
 #include <QTreeWidget>
 
+// TODO(v1.2): Add saves to the asset menu
+
 AssetMenu::AssetMenu(QWidget* const parent) :
     PersistentMenu(parent),
     assetPreviewWidget(new AssetPreviewWidget()),
@@ -76,7 +78,7 @@ auto AssetMenu::applyFilter(QTreeWidgetItem* const item, const QString& lowerFil
     }
 
     bool anyVisible = false;
-    for (const auto idx : range(0, childCount)) {
+    for (i32 idx = 0; idx < childCount; idx++) {
         if (applyFilter(item->child(idx), lowerFilter)) {
             anyVisible = true;
         }
@@ -93,7 +95,7 @@ auto AssetMenu::applyFilter(QTreeWidgetItem* const item, const QString& lowerFil
 void AssetMenu::filterTree(const QString& text) {
     const QString lower = text.toLower();
     const i32 categoryCount = tree->topLevelItemCount();
-    for (const auto idx : range(0, categoryCount)) {
+    for (i32 idx = 0; idx < categoryCount; idx++) {
         applyFilter(tree->topLevelItem(idx), lower);
     }
 }
@@ -154,6 +156,10 @@ void AssetMenu::refresh() {
         populate(moviesItem, base + (wwwExists ? u"/www/movies" : u"/movies"), { u"*.webm"_s, u"*.mp4"_s });
         populate(fontsItem, base + (wwwExists ? u"/www/fonts" : u"/fonts"), { u"*.ttf"_s, u"*.otf"_s });
         populate(jsItem, base + (wwwExists ? u"/www/js" : u"/js"), { u"*.js"_s });
+    } else if (projectSettings->engineType == EngineType::RM2K) {
+        populate(dataItem, base, { u"*.lmu"_s, u"*.lmt"_s, u"*.ldb"_s });
+        populate(audioItem, base, { u"*.wav"_s });
+        populate(imagesItem, base, { u"*.png"_s });
     } else {
         populate(audioItem, base + u"/Audio", { u"*.ogg"_s, u"*.m4a"_s });
         populate(dataItem, base + u"/Data", { u"*.rxdata"_s, u"*.rvdata"_s, u"*.rvdata2"_s });

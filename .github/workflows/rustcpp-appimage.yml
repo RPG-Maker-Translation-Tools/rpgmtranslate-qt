@@ -75,7 +75,7 @@ jobs:
         -Wl,-z,now
         -Wl,-z,norelro
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install base dependencies
         run: |
@@ -126,7 +126,6 @@ jobs:
         with:
             version: "6.8.2"
             modules: "qtwaylandcompositor"
-            aqtinstall: true
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -197,3 +196,9 @@ jobs:
           path: ./rpgmtranslate-appimage.tar.xz
           archive: false
           retention-days: 30
+
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        if: github.ref_type == 'tag'
+        with:
+          files: ./rpgmtranslate-appimage.tar.xz

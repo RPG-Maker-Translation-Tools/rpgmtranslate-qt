@@ -7,7 +7,10 @@
 #include "rpgmtranslate_rs.h"
 #include "ui_ReadMenu.h"
 
-ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::FramelessWindowHint), ui(setupUi()), fileSelectMenu(new FileSelectMenu(parent)) {
+ReadMenu::ReadMenu(QWidget* const parent) :
+    QWidget(parent, Qt::Tool | Qt::FramelessWindowHint),
+    ui(setupUi()),
+    fileSelectMenu(new FileSelectMenu(parent)) {
     ui->iniTitleDisplayWidget->hide();
 
     hide();
@@ -32,6 +35,12 @@ ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::Frame
 
                 ui->duplicateModeSelect->setCurrentIndex(false);
                 ui->duplicateModeSelect->setEnabled(true);
+                // Unlike the append cases below, this can run before `init()`
+                // ever assigns `projectSettings` (a brand-new project opened
+                // through the standalone `exec()` overload), so it resets to
+                // "guess" rather than reading `projectSettings->readEncoding`.
+                ui->encodingSelect->setCurrentIndex(0);
+                ui->encodingSelect->setEnabled(true);
                 break;
             case ReadMode::AppendDefault:
                 ui->readModeLabel->setText(tr(
@@ -40,6 +49,8 @@ ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::Frame
 
                 ui->duplicateModeSelect->setCurrentIndex(scast<i32>(projectSettings->duplicateMode));
                 ui->duplicateModeSelect->setEnabled(false);
+                ui->encodingSelect->setCurrentText(projectSettings->readEncoding);
+                ui->encodingSelect->setEnabled(false);
                 break;
             case ReadMode::AppendForce:
                 ui->readModeLabel->setText(tr(
@@ -48,6 +59,8 @@ ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::Frame
 
                 ui->duplicateModeSelect->setCurrentIndex(scast<i32>(projectSettings->duplicateMode));
                 ui->duplicateModeSelect->setEnabled(false);
+                ui->encodingSelect->setCurrentText(projectSettings->readEncoding);
+                ui->encodingSelect->setEnabled(false);
                 break;
         }
 
@@ -69,27 +82,54 @@ ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::Frame
         }
     });
 
-    connect(ui->useIniTitleCheckbox, &QCheckBox::checkStateChanged, this, [this](const Qt::CheckState state) -> void {
+    // Shared by the checkbox handler below and by `encodingSelect`'s own handler further down -
+    // the ini title always decodes with whatever encoding "Text Encoding" currently specifies,
+    // there is no separate encoding control for it.
+    const auto updateIniTitleLabel = [this] -> void {
+        const QString encoding = ui->encodingSelect->currentText();
+
+        ui->iniTitleLabel->setText(u"[%1] %2"_qsv.arg(
+            svtostr(iniFileName),
+            QStringDecoder(encoding.isEmpty() ? u"UTF-8"_s : encoding).decode(QByteArrayView(title_.ptr, title_.len))
+        ));
+    };
+
+    connect(
+        ui->useIniTitleCheckbox,
+        &QCheckBox::checkStateChanged,
+        this,
+        [this, updateIniTitleLabel](const Qt::CheckState state) -> void {
         if (state == Qt::CheckState::Checked) {
             rpgm_buffer_free(title_);
             title_ = ByteBuffer{};
 
+            bool isRm2k = false;
+
             const bool success = rpgm_get_ini_title(
                 FFIString{ .ptr = projectPath.data(), .len = scast<u32>(projectPath.size()) },
-                &title_
+                &title_,
+                &isRm2k
             );
+
+            iniFileName = isRm2k ? u"RPG_RT.ini"_qsv : u"Game.ini"_qsv;
 
             if (!success) {
                 const QUtf8SV error = ffitostr(rpgm_error());
                 present(
                     this,
-                    NOTICE("Failed to extract title from the Game.ini file: %1", Critical, Modal, svtostr(error))
+                    NOTICE(
+                        "Failed to extract title from the Game.ini/RPG_RT.ini file: %1",
+                        Critical,
+                        Modal,
+                        svtostr(error)
+                    )
                 );
+                ui->useIniTitleCheckbox->setChecked(false);
                 return;
             }
 
             if (title_.len == 0) {
-                present(this, NOTICE("Title is empty in Game.ini file.", Warning, Modal));
+                present(this, NOTICE("Title is empty in %1 file.", Warning, Modal, svtostr(iniFileName)));
                 ui->useIniTitleCheckbox->setChecked(false);
                 rpgm_buffer_free(title_);
                 title_ = ByteBuffer{};
@@ -97,20 +137,23 @@ ReadMenu::ReadMenu(QWidget* const parent) : QWidget(parent, Qt::Tool | Qt::Frame
             }
 
             ui->iniTitleDisplayWidget->show();
-
-            ui->titleEncodingSelect->setCurrentText(u"UTF-8"_s);
-
-            ui->iniTitleLabel->setText(
-                QStringDecoder(QStringDecoder::Utf8).decode(QByteArrayView(title_.ptr, title_.len))
-            );
+            updateIniTitleLabel();
         } else {
             ui->iniTitleDisplayWidget->hide();
         }
-    });
+    }
+    );
 
-    connect(ui->titleEncodingSelect, &QComboBox::currentTextChanged, this, [this](const QString& encoding) -> void {
-        ui->iniTitleLabel->setText(QStringDecoder(encoding).decode(QByteArrayView(title_.ptr, title_.len)));
-    });
+    connect(
+        ui->encodingSelect,
+        &QComboBox::currentTextChanged,
+        this,
+        [this, updateIniTitleLabel](const QString& /* encoding */) -> void {
+        if (title_.ptr != nullptr) {
+            updateIniTitleLabel();
+        }
+    }
+    );
 
     connect(ui->applyButton, &QPushButton::pressed, this, [this] -> void {
         emit accepted();
@@ -159,9 +202,11 @@ void ReadMenu::clear() {
 
     ui->readModeSelect->setCurrentIndex(0);
     ui->duplicateModeSelect->setCurrentIndex(1);
+    ui->encodingSelect->setCurrentIndex(0);
 
     ui->readModeSelect->setDisabled(true);
     ui->duplicateModeSelect->setDisabled(false);
+    ui->encodingSelect->setDisabled(false);
 
     ui->ignoreCheckbox->setChecked(false);
     ui->skipObsoleteCheckbox->setChecked(false);
@@ -181,6 +226,8 @@ void ReadMenu::init(const shared_ptr<ProjectSettings>& settings) {
     }
 
     ui->readModeSelect->setEnabled(true);
+    // Triggers the AppendForce case above, which pre-fills `encodingSelect`
+    // (and `duplicateModeSelect`) from `projectSettings` and locks them.
     ui->readModeSelect->setCurrentIndex(2);
 
     ui->ignoreCheckbox->setEnabled(true);
@@ -214,12 +261,11 @@ auto ReadMenu::exec(const QString& projectPath, const EngineType engineType) -> 
 
     this->projectPath = QByteArray();
 
-    if (!ui->titleEncodingSelect->currentText().isEmpty()) {
-        decodedTitle =
-            QStringDecoder(ui->titleEncodingSelect->currentText()).decode(QByteArrayView(title_.ptr, title_.len));
-    }
-
     if (title_.ptr != nullptr) {
+        const QString encoding = ui->encodingSelect->currentText();
+        decodedTitle =
+            QStringDecoder(encoding.isEmpty() ? u"UTF-8"_s : encoding).decode(QByteArrayView(title_.ptr, title_.len));
+
         rpgm_buffer_free(title_);
         title_ = ByteBuffer{};
     }
@@ -237,6 +283,10 @@ auto ReadMenu::readMode() const -> ReadMode {
 
 auto ReadMenu::duplicateMode() const -> DuplicateMode {
     return DuplicateMode(ui->duplicateModeSelect->currentIndex());
+};
+
+auto ReadMenu::readEncoding() const -> QString {
+    return ui->encodingSelect->currentText();
 };
 
 auto ReadMenu::flags() const -> BaseFlags {

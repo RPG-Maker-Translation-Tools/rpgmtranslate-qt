@@ -4,7 +4,7 @@
 
 - Git
 - Rust (>= 1.91)
-    - cbindgen
+  - cbindgen
 - CMake (>= 3.25)
 - C++23-совместимый компилятор (`clang 18+`, `gcc 14+`, `MSVC 2022+`)
 - C++23-готовый STL (`>libstdc++14`, `>libc++23`, `>MSVC 2022`).
@@ -15,7 +15,7 @@
 
 - Qt6
 - libarchive
-    - liblzma
+  - liblzma
 - quickjs-ng
 - glaze
 
@@ -43,27 +43,28 @@
 #### Проверка правописания (`ENABLE_NUSPELL`)
 
 - Nuspell
-    - ICU (только компоненты `uc`, `data`)
+  - ICU (только компоненты `uc`, `data`)
 
 #### Проигрывание ассетов (`ENABLE_ASSET_PLAYBACK`)
 
 - FFmpeg (≥ 7.1.1)
-    - Библиотеки:
-        - avutil
-        - avcodec
-        - avformat
-        - swresample
-        - swscale
+  - Библиотеки:
+    - avutil
+    - avcodec
+    - avformat
+    - swresample
+    - swscale
 
-    - Нужные декодеры:
-        - Vorbis, Opus, Theora
-        - AAC, H.264, VP9
+  - Нужные декодеры:
+    - AAC, Vorbis, Opus, Theora
+    - H.264, VP9
+    - pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le
 
-    - Нужные демуксеры:
-        - OGG, MP4
+  - Нужные демуксеры:
+    - OGG, MOV, WAV
 
-    - Нужные парсеры:
-        - AAC, H.264
+  - Нужные парсеры:
+    - AAC, H.264, VP9
 
 #### Git интеграция (`ENABLE_LIBGIT2`)
 
