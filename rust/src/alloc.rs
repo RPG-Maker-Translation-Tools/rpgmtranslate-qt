@@ -22,5 +22,5 @@ unsafe impl GlobalAlloc for CppAllocator {
     }
 }
 
-// #[global_allocator]
-// static GLOBAL: CppAllocator = CppAllocator;
+#[global_allocator]
+static GLOBAL: CppAllocator = CppAllocator;
