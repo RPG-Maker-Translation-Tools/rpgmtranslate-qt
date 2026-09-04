@@ -26,6 +26,8 @@
         
           <link rel="alternate" href="../ru/rvpacker/" hreflang="ru">
         
+          <link rel="alternate" href="../zh/rvpacker/" hreflang="zh">
+        
       
       
       <link rel="icon" href="../assets/rpgmtranslate-logo.png">
@@ -146,6 +148,12 @@
           <li class="md-select__item">
             <a href="../ru/rvpacker/" hreflang="ru" class="md-select__link">
               Русский
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../zh/rvpacker/" hreflang="zh" class="md-select__link">
+              简体中文
             </a>
           </li>
         
@@ -983,10 +991,10 @@
 
 
 <h1 id="rvpacker-features">Rvpacker features</h1>
-<p><code>rvpacker-txt-rs</code> is responsible for reading the text from RPG Maker games and writing it back. It has four parts.</p>
+<p><code>rvpacker-txt-rs-lib</code> is responsible for reading the text from RPG Maker games and writing it back. It has four parts.</p>
 <h2 id="read">Read</h2>
 <p>Reading decrypts the source archive if needed, parses the game's data files, and produces the plain-text files you edit.</p>
-<p>The first time you open a new project, a Read options dialog pops up automatically before anything is parsed - you have to configure it and click Apply to proceed. Later on, you can trigger another read manually from the <code>rv</code> button (choose "Read" from its menu) to re-parse the project, for example after the source files changed. This opens the same dialog:</p>
+<p>The first time you open a new project, a Read options dialog pops up automatically before anything is parsed - you have to configure it and click Apply to proceed. Later on, you can trigger another read manually from the <code>rv</code> button (choose "Read" from its menu) to re-parse the project, for example after the game was updated and the source files changed. This opens the same dialog:</p>
 <table>
 <thead>
 <tr>
@@ -1004,6 +1012,10 @@
 <td><strong>Remove Duplicates</strong> (recommended) collapses repeated lines across maps and events. <strong>Allow Duplicates</strong> keeps every occurrence separately. System, scripts, and plugin files always behave as if Allow is set, regardless of this option.</td>
 </tr>
 <tr>
+<td>Text Encoding</td>
+<td>Forces text decoding to the given codepage, instead of guessing it. Needed for RPG Maker 2000/2003, XP and VX - these are legacy engines having no encoding of their own, defaulting to the system's codepage (unlike VX Ace, MV and MZ). Leave blank to guess. If the game's title below has native, non-ASCII characters, it can help pinpoint the right encoding.</td>
+</tr>
+<tr>
 <td>Ignore</td>
 <td>Skips entries listed in a <code>.rvpacker-ignore</code> file (see <a href="#purge">Purge</a>).</td>
 </tr>
@@ -1016,19 +1028,21 @@
 <td>Also extracts map event metadata - event ID, name, and X/Y position - alongside the dialogue text.</td>
 </tr>
 <tr>
-<td>Use title from Game.ini</td>
-<td>For RPG Maker XP/VX/VX Ace, the game title isn't always in the system file. Enable this to pull it from <code>Game.ini</code> instead, and pick the right text encoding for it.</td>
+<td>Use title from ini file</td>
+<td>For RPG Maker 2000/2003/XP/VX/VX Ace, the game title isn't always in the system file. Enable this to pull it from <code>Game.ini</code> (XP/VX/VX Ace) or <code>RPG_RT.ini</code> (2000/2003), whichever is present. The title is decoded with the Text Encoding field above - if it comes out garbled, that's a hint the encoding is wrong, and if it has native, non-ASCII characters, that can help you pin down the right one.</td>
 </tr>
 </tbody>
 </table>
 <p>A file-select button in the dialog lets you scope a manual re-read to specific files instead of the whole project.</p>
 <h2 id="write">Write</h2>
-<p>Write is accessible through the <img alt="" src="../assets/manufacturing.svg" /> button. It writes your current translation back into game files, ready to run.</p>
+<p>Write is accessible through the <img alt="" src="../assets/manufacturing.svg" /> button. It writes your current translation back into game files, ready to run. Write output goes into <code>PROJECT_FOLDER/.rpgmtranslate/output</code>, everything you need to apply the translation to the game - copy the contents of <code>.rpgmtranslate/output</code> into the game directory.</p>
+<p>Write can be triggered by <code>Ctrl+W</code> shortcut.</p>
+<p>For 2000/2003/XP/VX engines, there's a very important write setting - text encoding. Read <a href="../settings/#project">settings</a> for more info.</p>
 <h2 id="purge">Purge</h2>
-<p>Purge is accessible through the <code>rv</code> button (choose "Purge" from its menu). It gets rid of untranslated lines, and can optionally create a <code>.rvpacker-ignore</code> file so those lines don't reappear the next time the project is read.</p>
+<p>Purge gets rid of untranslated lines, and can optionally create a <code>.rvpacker-ignore</code> file so those lines don't reappear the next time the project is read.</p>
 <h2 id="exportimport">Export/Import</h2>
-<p>Accessible through the <code>rv</code> button (choose "Export/Import" from its menu). This converts your translation files to and from CSV, XLSX, XML, JSON, or YAML - useful for editing in a spreadsheet, sending to someone who doesn't want to run the application, or archiving a snapshot outside the app's own format.</p>
-<p>Pick a format, pick a folder (destination for Export, source for Import), select which files to include with the file-select button, then Export or Import. Each translation file becomes one file of the chosen format in that folder, named the same way with a different extension (e.g. <code>actors.txt</code> &rarr; <code>actors.csv</code>) - Import expects the same naming back.</p>
+<p>This converts your translation files to and from CSV, XLSX, XML, JSON, or YAML - useful for editing in a spreadsheet, sending to someone who doesn't want to run the application, or archiving a snapshot outside the app's own format.</p>
+<p>Pick a format, pick a folder (destination for Export, source for Import), select which files to include with the file-select button, then Export or Import. Each translation file becomes one file of the chosen format in that folder, named the same way with a different extension (e.g. <code>actors.txt</code> -&gt; <code>actors.csv</code>) - Import expects the same naming back.</p>
 <p><strong>Import overwrites the corresponding translation file's content</strong>, so make sure the folder you're importing from actually has what you want before running it.</p>
 
 

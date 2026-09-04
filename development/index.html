@@ -24,6 +24,8 @@
         
           <link rel="alternate" href="../ru/development/" hreflang="ru">
         
+          <link rel="alternate" href="../zh/development/" hreflang="zh">
+        
       
       
       <link rel="icon" href="../assets/rpgmtranslate-logo.png">
@@ -144,6 +146,12 @@
           <li class="md-select__item">
             <a href="../ru/development/" hreflang="ru" class="md-select__link">
               Русский
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../zh/development/" hreflang="zh" class="md-select__link">
+              简体中文
             </a>
           </li>
         
@@ -1440,10 +1448,8 @@
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li>Git</li>
-<li>Rust (&gt;= 1.91)<ul>
+<li>Rust (&gt;= 1.91)</li>
 <li>cbindgen</li>
-</ul>
-</li>
 <li>CMake (&gt;= 3.25)</li>
 <li>C++23-compatible compiler (<code>clang 18+</code>, <code>gcc 14+</code>, <code>MSVC 2022+</code>)</li>
 <li>C++23-complete STL (<code>&gt;libstdc++14</code>, <code>&gt;libc++23</code>, <code>&gt;MSVC 2022</code>).</li>
@@ -1452,10 +1458,8 @@
 <h3 id="required">Required</h3>
 <ul>
 <li>Qt6</li>
-<li>libarchive<ul>
+<li>libarchive</li>
 <li>liblzma</li>
-</ul>
-</li>
 <li>quickjs-ng</li>
 <li>glaze</li>
 </ul>
@@ -1478,16 +1482,12 @@
 <p>These are conditionally required based on build flags.</p>
 <h4 id="spellchecking-enable_nuspell">Spellchecking (<code>ENABLE_NUSPELL</code>)</h4>
 <ul>
-<li>Nuspell<ul>
+<li>Nuspell</li>
 <li>ICU (<code>uc</code>, <code>data</code> components only)</li>
-</ul>
-</li>
 </ul>
 <h4 id="media-asset-playback-enable_asset_playback">Media / Asset Playback (<code>ENABLE_ASSET_PLAYBACK</code>)</h4>
 <ul>
-<li>
-<p>FFmpeg (≥ 7.1.1)</p>
-<ul>
+<li>FFmpeg (≥ 7.1.1)</li>
 <li>
 <p>Libraries:</p>
 <ul>
@@ -1501,22 +1501,21 @@
 <li>
 <p>Required decoders:</p>
 <ul>
-<li>Vorbis, Opus, Theora</li>
-<li>AAC, H.264, VP9</li>
+<li>AAC, Vorbis, Opus, Theora</li>
+<li>H.264, VP9</li>
+<li>pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le</li>
 </ul>
 </li>
 <li>
 <p>Required demuxers:</p>
 <ul>
-<li>OGG, MP4</li>
+<li>OGG, MP4, WAV</li>
 </ul>
 </li>
 <li>
 <p>Required parsers:</p>
 <ul>
-<li>AAC, H.264</li>
-</ul>
-</li>
+<li>AAC, H.264, VP9</li>
 </ul>
 </li>
 </ul>

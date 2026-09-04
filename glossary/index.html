@@ -26,6 +26,8 @@
         
           <link rel="alternate" href="../ru/glossary/" hreflang="ru">
         
+          <link rel="alternate" href="../zh/glossary/" hreflang="zh">
+        
       
       
       <link rel="icon" href="../assets/rpgmtranslate-logo.png">
@@ -146,6 +148,12 @@
           <li class="md-select__item">
             <a href="../ru/glossary/" hreflang="ru" class="md-select__link">
               Русский
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../zh/glossary/" hreflang="zh" class="md-select__link">
+              简体中文
             </a>
           </li>
         
@@ -1079,7 +1087,7 @@
 <p>You can create new terms with the "+" button. Term and translation text are essential.</p>
 <p>Glossary allows to search specific terms. Consistency checking itself now runs from the <a href="../text-editing/#linting">lint menu</a>'s "Global Check" button, alongside the other lints, rather than from a dedicated button here.</p>
 <p>Individual terms can be disabled without deleting them from the "Lints" menu (same place plugin/tag lints are toggled) - a disabled term is kept in the glossary but excluded from linting.</p>
-<p>Inflections are not supported.</p>
+<p><a href="https://en.wikipedia.org/wiki/Inflection">Inflections</a> are not supported.</p>
 <h3 id="termtranslation-settings">Term/translation settings</h3>
 <h4 id="mode">Mode</h4>
 <p>Mode defines, how to match the text:</p>
@@ -1092,6 +1100,7 @@
 <p>If enabled, matches text case-sensitively. Else, case-insensitively.</p>
 <h4 id="permissive">Permissive</h4>
 <p>If enabled, also matches the text, that's more uppercased than the term, but not more lowercased.</p>
+<p>For example, for a term "Aboba" - text "ABOBA" will match, but "aboba" won't.</p>
 <h3 id="note">Note</h3>
 <p>All the info related to the term and its translation.</p>
 <h3 id="actions">Actions</h3>
