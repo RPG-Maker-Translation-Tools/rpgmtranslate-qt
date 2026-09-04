@@ -399,7 +399,15 @@ void MainWindow::setupConnections() {
                 return;
             }
 
-            present(this, NOTICE("Written successfully. Elapsed: %1s.", Info, Status, ftos(result.value(), 2).qsv()));
+            present(
+                this,
+                NOTICE(
+                    "Written successfully. Elapsed: %1s. Check `.rpgmtranslate/output` for output files.",
+                    Info,
+                    Status,
+                    ftos(result.value(), 2).qsv()
+                )
+            );
         });
     });
 

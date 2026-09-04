@@ -16,7 +16,7 @@
 QT_BEGIN_NAMESPACE
 
 namespace Ui {
-    class MainWindow;
+class MainWindow;
 }  // namespace Ui
 
 QT_END_NAMESPACE
@@ -118,6 +118,8 @@ class MainWindow final : public QMainWindow {
 
     void loadSettings();
     void loadBackup(const QString& backupPath);
+
+    void copyToBaseline(const QString& sourcePath, const QString& baselinePath);
 
     // ...
     HashMap<u16, QString> mapSections;

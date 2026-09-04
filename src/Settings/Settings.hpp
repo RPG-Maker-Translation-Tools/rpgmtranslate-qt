@@ -310,8 +310,8 @@ struct TranslationSettings {
     vector<EndpointSettings> endpoints;
 
     vector<Replacement> replacements = {
-        Replacement(u"<<"_s, u"«"_s, false),      Replacement(u">>"_s, u"»"_s, false),
-        Replacement(u"--"_s, u"—"_s, false),      Replacement(u",,"_s, u"„"_s, false),
+        Replacement(u"<<"_s, u"\u00AB"_s, false), Replacement(u">>"_s, u"\u00BB"_s, false),
+        Replacement(u"--"_s, u"\u2014"_s, false), Replacement(u",,"_s, u"\u201E"_s, false),
         Replacement(u"''"_s, u"\u201C"_s, false),
     };
     vector<u32> whitespaceCharacters;

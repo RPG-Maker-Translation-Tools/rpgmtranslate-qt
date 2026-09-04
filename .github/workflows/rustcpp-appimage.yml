@@ -9,6 +9,8 @@ on:
 jobs:
   build-appimage:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     env:
       CC: clang-20
       CXX: clang++-20
@@ -202,3 +204,5 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           files: ./rpgmtranslate-appimage.tar.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

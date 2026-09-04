@@ -35,6 +35,7 @@ Under the hood, this application uses:
 - [marshal-rs](https://github.com/RPG-Maker-Translation-Tools/marshal-rs) to parse RPG Maker XP/VX/VX Ace files to JSON.
 - [rpgm-archive-decrypter-lib](https://github.com/RPG-Maker-Translation-Tools/rpgm-archive-decrypter-lib) to decrypt `.rgss` RPG Maker XP/VX/VX Ace archives.
 - [rpgm-asset-decrypter-lib](https://github.com/RPG-Maker-Translation-Tools/rpgm-asset-decrypter-lib) to decrypt MV/MZ assets.
+- [rm2k-lib](https://github.com/RPG-Maker-Translation-Tools/rm2k-lib) to decrypt/encrypt RPG Maker 2000/2003 files.
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
 

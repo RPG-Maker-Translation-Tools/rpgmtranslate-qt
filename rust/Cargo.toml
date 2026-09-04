@@ -1,6 +1,6 @@
 [package]
 name = "rpgmtranslate_rs"
-version = "1.1.0"
+version = "1.1.1"
 edition = "2024"
 publish = false
 
@@ -49,7 +49,7 @@ languagetool-rust = { version = "3.0.1", default-features = false, optional = tr
 ] }
 llm-connector = { version = "1.4.0", optional = true }
 log = "0.4.34"
-lumis = { version = "0.13.0", default-features = false, optional = true }
+lumis = { version = "0.13.1", default-features = false, optional = true }
 reqwest = { version = "=0.12.28", default-features = false, optional = true, features = [
     "native-tls",
 ] }

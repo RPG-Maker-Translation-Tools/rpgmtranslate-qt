@@ -1,8 +1,8 @@
 // This is a default RPGMTranslate JavaScript script. You're free to change it, add new functions, as long as rpgmLineCallback function exists and is not malformed.
 
-// TODO(v1): Add some kind of safety mechanism to avoid wrapping more than 4
+// TODO(v1.x): Add some kind of safety mechanism to avoid wrapping more than 4
 // lines of text
-// TODO(v1): Wrapping also malforms the tags, like from Yanfly Message Core.
+// TODO(v1.x): Wrapping also malforms the tags, like from Yanfly Message Core.
 // That needs to be addressed.
 
 /**

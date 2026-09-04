@@ -93,6 +93,7 @@ pub struct MatchModeInfo {
     pub permissive: bool,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub(crate) enum Error {
     #[error("{0}: IO error occurred: {1}")]

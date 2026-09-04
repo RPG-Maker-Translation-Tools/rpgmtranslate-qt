@@ -22,9 +22,11 @@ A file-select button in the dialog lets you scope a manual re-read to specific f
 
 ## Write
 
-Write is accessible through the ![](./assets/manufacturing.svg) button. It writes your current translation back into game files, ready to run.
+Write is accessible through the ![](./assets/manufacturing.svg) button. It writes your current translation back into game files, ready to run. Write output goes into `PROJECT_FOLDER/.rpgmtranslate/output`, everything you need to apply the translation to the game - copy the contents of `.rpgmtranslate/output` into the game directory.
 
-For 2000/20003/XP/VX engines, there's a very important write setting - text encoding. Read [settings](./settings.md#project) for more info.
+Write can be triggered by `Ctrl+W` shortcut.
+
+For 2000/2003/XP/VX engines, there's a very important write setting - text encoding. Read [settings](./settings.md#project) for more info.
 
 ## Purge
 

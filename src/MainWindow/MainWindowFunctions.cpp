@@ -68,13 +68,53 @@ auto copyLcfFiles(const QString& sourceDir, const QString& destDir, bool overwri
         }
 
         if (!QFile::copy(fileInfo.absoluteFilePath(), destPath)) {
-            // TODO
+            // TODO(v1.1.1): Display error
         }
     }
 
     return true;
 }
 }  // namespace
+
+void MainWindow::copyToBaseline(const QString& sourcePath, const QString& baselinePath) {
+    try {
+        if (projectSettings->engineType == EngineType::RM2K) {
+            copyLcfFiles(sourcePath, baselinePath + u"/data"_qsv);
+        } else {
+            const string baselineDataPath = (baselinePath + u"/data"_qsv).toStdString();
+            fs::create_directory(baselineDataPath);
+
+            fs::copy(
+                sourcePath.toStdString(),
+                baselineDataPath,
+                fs::copy_options::recursive | fs::copy_options::overwrite_existing
+            );
+
+            if (projectSettings->engineType == EngineType::MVMZ) {
+                const string baselineJsDir = (baselinePath + u"/js"_qsv).toStdString();
+                fs::create_directory(baselineJsDir);
+
+                fs::copy(
+                    (projectSettings->projectPath + u"/js/plugins.js"_qsv).toStdString(),
+                    (baselinePath + u"/js/plugins.js"_qsv).toStdString(),
+                    fs::copy_options::overwrite_existing
+                );
+            }
+        }
+    } catch (const fs::filesystem_error& error) {
+        present(
+            this,
+            NOTICE(
+                "Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead.",
+                Warning,
+                Modal,
+                sourcePath,
+                baselinePath,
+                QUtf8SV(error.what())
+            )
+        );
+    }
+}
 
 void MainWindow::checkForUpdates(const bool manual) {
     if (!settings->core.checkForAppUpdates && !manual) {
@@ -537,7 +577,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
 
             if ((isSystem || basename.startsWith(u"terms")) && contentView.lastIndexOf(u"<!>NAME<#>Game Title") != -1) {
                 const QStringView titleLine = contentView.sliced(
-                    contentView.lastIndexOf(u"<!>NAME<#>Game Title") + sizeof("<!>NAME<#>Game Title")
+                    scast<isize>(contentView.lastIndexOf(u"<!>NAME<#>Game Title") + sizeof("<!>NAME<#>Game Title"))
                 );
                 const QSVList parts = lineParts(titleLine, 0, basename);
                 const QStringView translation = getTranslation(parts).translation;
@@ -683,40 +723,32 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
         }
 #endif
 
-        const QString baselineSourcePath = projectSettings->baselineSourcePath();
+        const QString baselinePath = projectSettings->baselinePath();
         const QString sourcePath = projectSettings->sourcePath();
 
+        const QString baselineDataPath = baselinePath + u"/data"_qsv;
+
+        // TODO(v2): remove
+        if (QFile::exists(baselinePath) && !QFile::exists(baselineDataPath)) {
+            const string baselineDataStd = baselineDataPath.toStdString();
+            fs::create_directory(baselineDataStd);
+
+            for (const auto& entry : fs::directory_iterator(baselinePath.toStdString())) {
+                if (entry.is_regular_file()) {
+                    fs::rename(entry.path(), baselineDataStd / entry.path().filename());
+                }
+            }
+        }
+
         if (QFile::exists(sourcePath)) {
-            if (!QFile::exists(baselineSourcePath)) {
+            if (!QFile::exists(baselinePath)) {
                 // If there's no baseline, make the current source the baseline.
                 present(
                     this,
                     NOTICE("Copying the game data to .rpgmtranslate/baseline-data as a baseline.", Info, Status)
                 );
 
-                try {
-                    if (projectSettings->engineType == EngineType::RM2K) {
-                        copyLcfFiles(sourcePath, baselineSourcePath);
-                    } else {
-                        fs::copy(
-                            sourcePath.toStdString(),
-                            baselineSourcePath.toStdString(),
-                            fs::copy_options::recursive | fs::copy_options::overwrite_existing
-                        );
-                    }
-                } catch (const fs::filesystem_error& error) {
-                    present(
-                        this,
-                        NOTICE(
-                            "Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead.",
-                            Warning,
-                            Modal,
-                            sourcePath,
-                            baselineSourcePath,
-                            QUtf8SV(error.what())
-                        )
-                    );
-                }
+                copyToBaseline(sourcePath, baselinePath);
             } else {
                 if (settings->core.checkForSourceUpdates) {
                     checkHashes();
@@ -1107,7 +1139,8 @@ void MainWindow::checkHashes() {
         filters = { u"*.%1"_qsv.arg(projectSettings->engineExtension()) };
     }
 
-    const auto sourceFiles = QDirListing(sourcePath, filters, QDirListing::IteratorFlag::FilesOnly);
+    const auto sourceFiles =
+        QDirListing(sourcePath, filters, QDirListing::IteratorFlag::FilesOnly | QDirListing::IteratorFlag::Recursive);
 
     vector<FilenameArray> mismatchedFiles;
     mismatchedFiles.reserve(projectSettings->hashes.size());
@@ -1232,27 +1265,9 @@ void MainWindow::checkHashes() {
         if (button == QMessageBox::Yes) {
             qInfo().noquote() << u"Appending new text from updated source files was confirmed by user."_qsv;
 
-            const QString baselineSourcePath = projectSettings->baselineSourcePath();
+            const QString baselinePath = projectSettings->baselinePath();
 
-            try {
-                fs::copy(
-                    sourcePath.toStdString(),
-                    baselineSourcePath.toStdString(),
-                    fs::copy_options::recursive | fs::copy_options::overwrite_existing
-                );
-            } catch (const fs::filesystem_error& error) {
-                present(
-                    this,
-                    NOTICE(
-                        "Failed to copy %1 to %2 as a baseline data: %3. The original source data from the root will be used instead.",
-                        Warning,
-                        Modal,
-                        sourcePath,
-                        baselineSourcePath,
-                        QUtf8SV(error.what())
-                    )
-                );
-            }
+            copyToBaseline(sourcePath, baselinePath);
 
             read(
                 ReadMode::AppendDefault,
@@ -1278,7 +1293,7 @@ void MainWindow::read(
     const QString& title,
     const QString& readEncoding
 ) {
-    const QString sourcePath = projectSettings->actualSourcePath();
+    const QString sourcePath = projectSettings->sourcePath();
     const QString translationPath = projectSettings->translationPath();
 
     const TaskToken task = startTask(TaskKind::Read);

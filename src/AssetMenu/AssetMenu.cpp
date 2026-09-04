@@ -4,6 +4,7 @@
 #include "ProjectSettings.hpp"
 #include "rpgmtranslate_rs.h"
 
+#include <QDir>
 #include <QDirListing>
 #include <QGraphicsPixmapItem>
 #include <QHBoxLayout>
@@ -12,6 +13,7 @@
 #include <QTreeWidget>
 
 // TODO(v1.2): Add saves to the asset menu
+// TODO(maybe): Each subdirectory is a tree sub-branch
 
 AssetMenu::AssetMenu(QWidget* const parent) :
     PersistentMenu(parent),
@@ -114,7 +116,7 @@ void AssetMenu::refresh() {
     auto* const iconsItem = new QTreeWidgetItem(tree, { tr("Icons") });
     auto* const fontsItem = new QTreeWidgetItem(tree, { tr("Fonts") });
     auto* const moviesItem = new QTreeWidgetItem(tree, { tr("Movies") });
-    auto* const jsItem = new QTreeWidgetItem(tree, { tr("JS") });
+    auto* const jsItem = new QTreeWidgetItem(tree, { u"JS"_s });
 
     const auto populate =
         [](QTreeWidgetItem* const parent, const QString& dirPath, const QStringList& filters) -> void {
@@ -123,12 +125,45 @@ void AssetMenu::refresh() {
             return;
         }
 
-        const auto listing =
+        auto listing =
             QDirListing(dirPath, filters, QDirListing::IteratorFlag::Recursive | QDirListing::IteratorFlag::FilesOnly);
 
-        for (const auto& entry : listing) {
-            auto* const item = new QTreeWidgetItem(parent, { entry.fileName() });
-            item->setData(0, Qt::UserRole, entry.filePath());
+        QList<std::pair<QString, QString>> list;
+        list.reserve(2048);
+
+        for (const auto entry : listing) {
+            list.append({ entry.filePath(), entry.fileName() });
+        }
+
+        const auto extractMapNumber = [](const QStringView name) -> u16 {
+            if (!name.startsWith(u"Map"_qsv)) {
+                return UINT16_MAX;
+            }
+
+            const isize start = 3;
+            isize end = start;
+
+            while (end < name.size() && name.at(end).isDigit()) {
+                end++;
+            }
+
+            return stoa<u16>(name.sliced(start, end - start));
+        };
+
+        ranges::sort(list, [&extractMapNumber](const auto& lhs, const auto& rhs) -> bool {
+            const auto lhsNum = extractMapNumber(lhs.second);
+            const auto rhsNum = extractMapNumber(rhs.second);
+
+            if (lhsNum != UINT16_MAX && rhsNum != UINT16_MAX) {
+                return lhsNum < rhsNum;
+            }
+
+            return lhs.second < rhs.second;
+        });
+
+        for (const auto& entry : list) {
+            auto* const item = new QTreeWidgetItem(parent, { entry.second });
+            item->setData(0, Qt::UserRole, entry.first);
         }
     };
 

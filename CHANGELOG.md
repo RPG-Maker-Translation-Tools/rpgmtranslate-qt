@@ -10,6 +10,47 @@ Versions may carry a codename alongside the semver number.
 
 ## [Unreleased]
 
+## [v1.1.1] "Death of RPG Maker forums" - 04.09.2026
+
+### Added
+
+- `mimalloc` library version is now displayed in about window.
+- Added a database button. It is disabled now and does nothing. It will be implemented when the database system is implemented.
+
+### Changed
+
+- Published an updated documentation.
+- `js/plugins.js` file is now copied as a baseline alongside plain data files.
+- Status bar now explicitly says after write that the write output can be found at `.rpgmtranslate/output`.
+- Entries in the assets menu are now sorted by filename.
+- `baseline-data` is now NOT a plain storage of RPG Maker data files. It now contains `data` subdirectory (for data files) and `js` directory (MV/MZ-only, stores `plugins.js`). Backward compatibility is preserved.
+
+### Fixes
+
+- For MV/MZ games, fixed the error about `js/plugins.js` file on write.
+- Fixed path for copying updated sources as a new baseline that would not account for RPG Maker 2000/2003 files.
+- Fixed using the baseline data files for re-reads from the rvpacker menu, which would effectively result in no effect.
+
+### Development
+
+- Fixed CI not adding release artifacts to the GitHub releases automatically.
+- Added `.gitattributes` file to keep everything LF.
+
+### Planned for 1.2
+
+- Total source/translation words/characters information.
+- Display name of the entries where text is located when, for example, searching.
+- Check which plugins need to be finished/improved in linting, check whether everything is compatible with VisuStella plugins.
+- Built-in database like in RPG Maker to search for specific entries and quickly find anything by searching.
+- WAV playback for RM2K.
+- Save file asset inspection.
+
+### Planned for 1.3
+
+- Remote support for built-in git client.
+- Wolf RPG support.
+- VisuStella support (if needed).
+
 ## [v1.1.0] "Death of RPG Maker forums" - 01.09.2026
 
 Most of the work for this release was done outside the `rpgmtranslate-qt`.
@@ -57,12 +98,12 @@ Most of the work for this release was done outside the `rpgmtranslate-qt`.
 - Rust side now calls into C++-provided allocator, so the allocation logic is unified and if there's an allocator overriding the default allocator, Rust can use it without changes.
 - Changed CI to automatically add artifacts to the published releases.
 - Fixed Russian docs.
-- Qt is now compiled with proper `-ssl -schannel` configure settings and does not fail trying to access `https` links, which would lead to 301 update error.
-- Qt is updated to 6.11.2.
 - Quoted all path expansions in the CMake script, which will fix the problems with the paths that contain spaces.
 - Added `LUA_EXECUTABLE` CMake option to override the default vendored Lua with user one.
 - Added `RUST_PROFILE` CMake option to specify a Rust profile to build Rust part.
-- Windows builds are now compiled using LLVM 23.
+- [Windows] Qt is now compiled with proper `-ssl -schannel` configure settings and does not fail trying to access `https` links, which would lead to 301 update error.
+- [Windows] Qt is updated to 6.11.2.
+- [Windows] Builds are now compiled using LLVM 23.
 
 ### Planned for 1.2
 

@@ -112,7 +112,7 @@ struct MatchIndex {
         setColIndex(colIndex);
     };
 
-    static constexpr i32 ROW_MASK = 0xFF00'0000U;
+    static constexpr u32 ROW_MASK = 0xFF00'0000U;
     static constexpr i32 COL_SHIFT = 24;
     static constexpr i32 COL_MASK = 0x00FF'FFFFU;
 
@@ -130,14 +130,15 @@ struct CellMatch {
     u32 matchesCount;
     MatchIndex matchIndex;
 
-    [[nodiscard]] constexpr auto rowIndex() const -> u32 { return matchIndex.rowIndex(); }
+    [[nodiscard]] constexpr auto rowIndex() const -> i32 { return matchIndex.rowIndex(); }
 
-    [[nodiscard]] constexpr auto colIndex() const -> u8 { return matchIndex.colIndex(); }
+    [[nodiscard]] constexpr auto colIndex() const -> i32 { return matchIndex.colIndex(); }
 };
 
 inline auto u16ToAscii(u16 number) -> array<char, 4> {
     array<char, 4> out;
 
+    // NOLINTBEGIN(readability-magic-numbers)
     if (number >= 1000) {
         out[0] = scast<char>('0' + (number / 1000));
         number %= 1000;
@@ -159,6 +160,7 @@ inline auto u16ToAscii(u16 number) -> array<char, 4> {
         out[0] = scast<char>('0' + number);
         out[1] = '\0';
     }
+    // NOLINTEND(readability-magic-numbers)
 
     return out;
 }
@@ -252,7 +254,13 @@ struct Selected {
             dense++;
         }
 
-        for (i32 flagIdx = 1; flagIdx < 14; flagIdx++) {
+        // This recovers the number by which FileFlags_Database was shifted
+        // and since FileFlags_Database is the last flag it effectively
+        // gives us flag count after adding 1 to the result of countr_zero.
+        //! Update if last FileFlags member changes.
+        const i32 totalFlags = std::countr_zero(FileFlags_Database) + 1;
+
+        for (i32 flagIdx = 1; flagIdx < totalFlags; flagIdx++) {
             const auto flag = FileFlags(1 << flagIdx);
 
             if ((flags & flag) == 0) {

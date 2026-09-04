@@ -984,7 +984,7 @@ auto TaskWorker::lint(
                 dictionary->suggest(string_view(utf8Word.data(), utf8Word.size()), suggestions);
 
                 QStringList qsuggestions;
-                qsuggestions.reserve(scast<usize>(suggestions.size()));
+                qsuggestions.reserve(scast<isize>(suggestions.size()));
                 for (const auto& suggestion : suggestions) {
                     qsuggestions.emplace_back(QString::fromUtf8(suggestion));
                 }
@@ -1658,7 +1658,7 @@ auto TaskWorker::runBatchScript(
                                                .filename = filenameArray,
                                                .lineNumber = scast<u32>(lineIdx) + 1 };
 
-                    for (i32 idx = lineIdx; idx < lines.size(); idx++) {
+                    for (i32 idx = scast<i32>(lineIdx); idx < lines.size(); idx++) {
                         joined += lines[idx];
                         joined += u'\n';
                     }
@@ -1748,15 +1748,15 @@ auto TaskWorker::serdeExport(
         const QString outPath = outputDir % u'/' % filename % serdeFormatExtension(format);
         auto outFile = QFile(outPath);
 
-        bool ok = false;
+        bool valid = false;
 
         if (outFile.open(QFile::WriteOnly | QFile::Truncate)) {
-            ok = outFile.write(rcast<const char*>(exported.ptr), exported.len) != -1;
+            valid = outFile.write(rcast<const char*>(exported.ptr), exported.len) != -1;
         }
 
         rpgm_buffer_free(exported);
 
-        return ok;
+        return valid;
     });
 
     return SerdeSuccess{ .filenames = std::move(filenames), .skippedCount = skippedCount };
@@ -1788,7 +1788,7 @@ auto TaskWorker::serdeImport(
             return false;
         }
 
-        const QString importedContent = QString::fromUtf8(imported.ptr, scast<isize>(imported.len));
+        QString importedContent = QString::fromUtf8(imported.ptr, scast<isize>(imported.len));
         rpgm_string_free(imported);
 
         return runLockedModify(filename, [&](const QString&, const QSVList&) -> QString { return importedContent; });
@@ -1822,7 +1822,7 @@ auto TaskWorker::replace(
             QSVList newLines;
             newLines.reserve(lines.size());
 
-            u32 rowStart = 0;
+            i32 rowStart = 0;
 
             for (const auto& cellMatch : matches) {
                 for (i32 idx = rowStart; idx < cellMatch.rowIndex(); idx++) {

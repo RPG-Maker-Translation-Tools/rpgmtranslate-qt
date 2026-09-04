@@ -11,6 +11,7 @@
 
 #include <glaze/version.hpp>
 
+#include <archive.h>
 #include <quickjs.h>
 
 #ifdef ENABLE_ASSET_PLAYBACK
@@ -23,7 +24,9 @@ extern "C" {
 #include <git2/common.h>
 #endif
 
-#include <archive.h>
+#ifdef ENABLE_MIMALLOC
+#include <mimalloc.h>
+#endif
 
 #ifdef _WIN32
 #include <ntverp.h>  // VER_PRODUCTBUILD
@@ -36,7 +39,7 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 // std::format has no hex specifier we can use here without pulling QString through an
 // intermediate wstring, so this is a small local formatter instead.
 [[nodiscard]] auto toHex(const u32 value) -> QString {
-    static constexpr char16_t DIGITS[] = u"0123456789abcdef";
+    static constexpr array<char16_t, 17> DIGITS = { u"0123456789abcdef" };
 
     QString out;
     bool started = false;
@@ -97,7 +100,7 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 }
 
 constexpr const char* ABOUT_TEMPLATE = QT_TR_NOOP(
-    "RPGMTranslate v%1 'Death of RPG Maker forums'**\u{2028}\u{2028}Direct dependencies:\u{2028}\u{2028}**fast_float %2\u{2028}jeaii-itoa\u{2028}magic_enum %3\u{2028}miniaudio %4\u{2028}zmij\u{2028}glaze %5\u{2028}Qt %6\u{2028}%7\u{2028}FFmpeg %8\u{2028}libgit2 %9\u{2028}quickjs-ng %10\u{2028}Nuspell %11**\u{2028}\u{2028}Legal info:\u{2028}\u{2028}**RPGMTranslate is licensed under [WTPFL](https://www.wtfpl.net/).\u{2028}RPGMTranslate bundles assets and statically links to the libraries licensed by other terms. See \"Third Party Notice\" tab for more information.\u{2028}See [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt) GitHub repository for more information.**\u{2028}\u{2028}Build info:\u{2028}\u{2028}**%12"
+    "RPGMTranslate v%1 'Death of RPG Maker forums'**\u{2028}\u{2028}Direct dependencies:\u{2028}\u{2028}**fast_float %2\u{2028}jeaii-itoa\u{2028}magic_enum %3\u{2028}miniaudio %4\u{2028}zmij\u{2028}glaze %5\u{2028}Qt %6\u{2028}%7\u{2028}FFmpeg %8\u{2028}libgit2 %9\u{2028}quickjs-ng %10\u{2028}Nuspell %11\u{2028}mimalloc %12**\u{2028}\u{2028}Legal info:\u{2028}\u{2028}**RPGMTranslate is licensed under [WTPFL](https://www.wtfpl.net/).\u{2028}RPGMTranslate bundles assets and statically links to the libraries licensed by other terms. See \"Third Party Notice\" tab for more information.\u{2028}See [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt) GitHub repository for more information.**\u{2028}\u{2028}Build info:\u{2028}\u{2028}**%13"
 );
 
 constexpr i32 SEMVER_STRING_MAX_LEN = 8;
@@ -142,6 +145,28 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
     git_libgit2_version(&maj, &min, &pth);
 #endif
 
+#ifdef ENABLE_MIMALLOC
+    array<QChar, 8> mimallocVerBuf;
+
+    const i32 mimallocVersion = mi_version();
+    const auto mimallocVersionStr = itos(mimallocVersion);
+
+    mimallocVerBuf[0] = u'v';
+    mimallocVerBuf[1] = mimallocVersionStr.qsv()[0];
+    mimallocVerBuf[2] = u'.';
+    mimallocVerBuf[3] = mimallocVersionStr.qsv()[1];
+    mimallocVerBuf[4] = u'.';
+
+    if (mimallocVersionStr.qsv()[2] != u'0') {
+        mimallocVerBuf[5] = mimallocVersionStr.qsv()[2];
+        mimallocVerBuf[6] = mimallocVersionStr.qsv()[3];
+        mimallocVerBuf[7] = u'\0';
+    } else {
+        mimallocVerBuf[5] = mimallocVersionStr.qsv()[3];
+        mimallocVerBuf[6] = u'\0';
+    }
+#endif
+
     ui->aboutLabel->setText(
         tr(ABOUT_TEMPLATE)
             .arg(
@@ -171,6 +196,13 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
                 ),
                 svtostr(QL1SV(JS_GetVersion())),
                 svtostr(QL1SV(NUSPELL_VERSION)),
+                svtostr(
+#ifdef ENABLE_MIMALLOC
+                    QStringView(mimallocVerBuf.data())
+#else
+                    u"DISABLED"
+#endif
+                ),
                 produceBuildInfo()
             )
     );

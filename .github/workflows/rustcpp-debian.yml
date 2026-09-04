@@ -9,6 +9,8 @@ on:
 jobs:
   build-debian:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       CC: clang-19
       CXX: clang++-19
@@ -142,3 +144,5 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           files: ./rpgmtranslate.tar.xz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
