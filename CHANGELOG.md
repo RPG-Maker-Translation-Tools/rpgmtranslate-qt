@@ -10,6 +10,10 @@ Versions may carry a codename alongside the semver number.
 
 ## [Unreleased]
 
+### Fixes
+
+- Fixed auto-update failing with "Failed to extract archive" on Windows.
+
 ## [v1.1.1] "Death of RPG Maker forums" - 04.09.2026
 
 ### Added

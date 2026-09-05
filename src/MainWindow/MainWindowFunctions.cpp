@@ -167,7 +167,7 @@ void MainWindow::checkForUpdates(const bool manual) {
         }
 
 #ifdef Q_OS_WINDOWS
-        static constexpr string_view targetEntry = "rpgmtranslate/rpgmtranslate.exe";
+        static constexpr string_view targetEntry = "rpgmtranslate.exe";
         const QByteArray outputPath = (appDir + u"/rpgmtranslate.exe").toUtf8();
 #else
         static constexpr string_view targetEntry = "rpgmtranslate";
