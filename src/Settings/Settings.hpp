@@ -317,7 +317,8 @@ struct TranslationSettings {
     vector<u32> whitespaceCharacters;
 
     LintFlags lintFlags =
-        scast<LintFlags>(ranges::fold_left(magic_enum::enum_values<LintFlags>(), LintFlags{}, std::bit_or<>{}));
+        scast<LintFlags>(ranges::fold_left(magic_enum::enum_values<LintFlags>(), 0, std::bit_or<>{})) &
+        ~LintFlags::LintingDisabled;
 
     bool displayWordsAndCharacters = false;
 };
