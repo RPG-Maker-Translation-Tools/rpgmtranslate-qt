@@ -37,53 +37,31 @@
 namespace {
 constexpr QStringView ID_COMMENT = u"<!>ID";
 constexpr i32 MAX_RECENT_PROJECTS = 10;
-
-auto copyLcfFiles(const QString& sourceDir, const QString& destDir, bool overwrite = true) -> bool {
-    auto srcDir = QDir(sourceDir);
-
-    if (!srcDir.exists()) {
-        return false;
-    }
-
-    auto dstDir = QDir(destDir);
-
-    if (!dstDir.exists()) {
-        if (!dstDir.mkpath(u"."_s)) {
-            return false;
-        }
-    }
-
-    const QStringList filters = { u"*.lmu"_s, u"*.lmt"_s, u"*.ldb"_s };
-    const QFileInfoList files = srcDir.entryInfoList(filters, QDir::Files, QDir::Name);
-
-    for (const QFileInfo& fileInfo : files) {
-        QString destPath = dstDir.filePath(fileInfo.fileName());
-
-        if (QFile::exists(destPath)) {
-            if (!overwrite) {
-                continue;
-            }
-
-            QFile::remove(destPath);  // QFile::copy fails if destination exists
-        }
-
-        if (!QFile::copy(fileInfo.absoluteFilePath(), destPath)) {
-            // TODO(v1.1.1): Display error
-        }
-    }
-
-    return true;
-}
 }  // namespace
 
 void MainWindow::copyToBaseline(const QString& sourcePath, const QString& baselinePath) {
+    const string baselineDataPath = (baselinePath + u"/data"_qsv).toStdString();
+    fs::create_directories(baselineDataPath);
+
+    const auto copyLcfFiles = [&](const QString& sourceDir, const QString& destDir) -> void {
+        const QStringList filters = { u"*.lmu"_s, u"*.lmt"_s, u"*.ldb"_s };
+        const auto files = QDirListing(sourceDir, filters, QDirListing::IteratorFlag::FilesOnly);
+
+        for (const auto fileInfo : files) {
+            const QString destPath = QDir(destDir).filePath(fileInfo.fileName());
+
+            fs::copy(
+                fileInfo.absoluteFilePath().toStdString(),
+                destPath.toStdString(),
+                fs::copy_options::overwrite_existing
+            );
+        }
+    };
+
     try {
         if (projectSettings->engineType == EngineType::RM2K) {
             copyLcfFiles(sourcePath, baselinePath + u"/data"_qsv);
         } else {
-            const string baselineDataPath = (baselinePath + u"/data"_qsv).toStdString();
-            fs::create_directory(baselineDataPath);
-
             fs::copy(
                 sourcePath.toStdString(),
                 baselineDataPath,
@@ -233,7 +211,7 @@ void MainWindow::checkForUpdates(const bool manual) {
             return;
         }
 
-#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
+#ifndef _WIN32
         QFile::setPermissions(
             appDir + u"/rpgmtranslate",
             QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner | QFileDevice::ReadGroup |
