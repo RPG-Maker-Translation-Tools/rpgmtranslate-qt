@@ -8,6 +8,7 @@
 #include <QApplication>
 #include <QModelIndex>
 #include <QPainter>
+#include <QScrollBar>
 #include <QSyntaxHighlighter>
 #include <QTimer>
 
@@ -44,6 +45,8 @@ auto TranslationTableDelegate::createEditor(
     });
 
     connect(editor, &QObject::destroyed, this, [this] -> void { activeInput = nullptr; });
+
+    QTimer::singleShot(0, [editor] -> void { editor->verticalScrollBar()->setValue(0); });
 
     return editor;
 }
