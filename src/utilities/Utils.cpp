@@ -328,7 +328,7 @@ auto intLen(const i32 num) -> i32 {
 }
 
 auto lastPathComponent(const QString& path) -> QStringView {
-    for (i32 idx = path.size() - 1; idx >= 0; idx--) {
+    for (i32 idx = scast<i32>(path.size() - 1); idx >= 0; idx--) {
         const QChar chr = path[idx];
 
         if (chr == u'/' || chr == u'\\') {
@@ -381,8 +381,10 @@ auto getWindowColors(const QString& projectPath, const EngineType engineType)
 
     array<QRgb, WINDOW_COLOR_COUNT> colors;
 
-    const i32 windowOffsetX = engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_OFFSET_X : OLDER_WINDOW_COLOR_OFFSET_X;
-    const i32 windowOffsetY = engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_OFFSET_Y : OLDER_WINDOW_COLOR_OFFSET_Y;
+    const i32 windowOffsetX =
+        engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_OFFSET_X : OLDER_WINDOW_COLOR_OFFSET_X;
+    const i32 windowOffsetY =
+        engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_OFFSET_Y : OLDER_WINDOW_COLOR_OFFSET_Y;
     const i32 windowSquareSize =
         engineType == EngineType::MVMZ ? NEWER_WINDOW_COLOR_SQUARE_SIZE : OLDER_WINDOW_COLOR_SQUARE_SIZE;
 
@@ -409,7 +411,28 @@ auto getIcon(const i32 iconIndex, const QString& projectPath, const EngineType e
         iconSize = ICONSET_OLDER_ICON_SIZE;
     }
 
-    const QString iconsetPath = projectPath % u"/Graphics/System/IconSet.png";
+    static constexpr array<QStringView, 3> ICONSET_EXTENSIONS = { u"png"_qsv, u"rpgmvp"_qsv, u"png_"_qsv };
+
+    const QString basePath = projectPath % u"/Graphics/System/IconSet."_qsv;
+
+    QString iconsetPath;
+    for (const auto& ext : ICONSET_EXTENSIONS) {
+        const QString candidate = basePath % ext;
+        if (QFile::exists(candidate)) {
+            iconsetPath = candidate;
+            break;
+        }
+    }
+
+    if (iconsetPath.isEmpty()) {
+        return Err(Notice(
+            NOTICE_IN("Utils", "Failed to find icon set in %1"),
+            Severity::Warning,
+            Delivery::Inline,
+            { basePath }
+        ));
+    }
+
     auto file = QFile(iconsetPath);
 
     if (!file.open(QFile::ReadOnly)) {
@@ -459,5 +482,17 @@ auto getIcon(const i32 iconIndex, const QString& projectPath, const EngineType e
         row++;
     }
 
-    return pixmap.copy(QRect(boundedOffset, row, iconSize, iconSize));
+    const auto iconRect = QRect(boundedOffset, row, iconSize, iconSize);
+    const auto pixmapRect = QRect(0, 0, pixmap.width(), pixmap.height());
+
+    if (!pixmapRect.contains(iconRect)) {
+        return Err(Notice(
+            NOTICE_IN("Utils", "Icon index %1 out of bounds for icon set %2"),
+            Severity::Warning,
+            Delivery::Inline,
+            { QString::number(iconIndex), iconsetPath }
+        ));
+    }
+
+    return pixmap.copy(iconRect);
 }
