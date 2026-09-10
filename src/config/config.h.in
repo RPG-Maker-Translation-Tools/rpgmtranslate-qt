@@ -1,0 +1,5 @@
+#pragma once
+
+#define RPGMT_VERSION u"@PROJECT_VERSION@"
+#define NUSPELL_VERSION u"@Nuspell_VERSION@"
+#define RUST_VERSION u"@Rust_VERSION@"

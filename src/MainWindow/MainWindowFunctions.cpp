@@ -19,10 +19,10 @@
 #include "Types.hpp"
 #include "Utils.hpp"
 #include "WriteMenu.hpp"
+#include "config.h"
 #include "glazemeta.hpp"
 #include "rpgmtranslate_rs.h"
 #include "ui_MainWindow.h"
-#include "version.h"
 
 #include <QDir>
 #include <QMessageBox>

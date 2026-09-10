@@ -3,11 +3,10 @@
 #include "MediaPlayer.hpp"
 #include "ProjectSettings.hpp"
 #include "Utils.hpp"
+#include "config.h"
 #include "magic_enum.hpp"
 #include "miniaudio.h"
-#include "nuspell-version.h"
 #include "ui_AboutWindow.h"
-#include "version.h"
 
 #include <glaze/version.hpp>
 
@@ -73,14 +72,14 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 #elifdef __GNUC__
     out += u"Compiler: GCC "_qsv % QL1SV(__VERSION__) % LINE_SEPARATOR;
 #elifdef _MSC_VER
-    out += u"Compiler: MSVC "_qsv % itos(_MSC_FULL_VER).qsv() % u" (toolset "_qsv % itos(_MSC_VER).qsv() % u")"_qsv %
+    out += u"Compiler: MSVC "_qsv % itos(_MSC_FULL_VER).qsv() % u" (toolset "_qsv % itos(_MSC_VER).qsv() % u')' %
            LINE_SEPARATOR;
 #endif
 
 #ifdef _LIBCPP_VERSION
     out += u"STL: libc++ "_qsv % itos(_LIBCPP_VERSION).qsv() % LINE_SEPARATOR;
 #elifdef __GLIBCXX__
-    out += u"STL: libstdc++ (date "_qsv % itos(__GLIBCXX__).qsv() % u")"_qsv % LINE_SEPARATOR;
+    out += u"STL: libstdc++ (date "_qsv % itos(__GLIBCXX__).qsv() % u')' % LINE_SEPARATOR;
 #elifdef _MSVC_STL_VERSION
     out += u"STL: MSVC STL "_qsv % itos(_MSVC_STL_VERSION).qsv() % u" update "_qsv % itos(_MSVC_STL_UPDATE).qsv() %
            LINE_SEPARATOR;
@@ -94,6 +93,7 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 #endif
 #endif
 
+    out += u"Rust version: "_qsv % RUST_VERSION % LINE_SEPARATOR;
     out += u"Built: "_qsv % QL1SV(__DATE__) % u' ' % QL1SV(__TIME__) % LINE_SEPARATOR;
 
     return out;
@@ -195,7 +195,7 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
 #endif
                 ),
                 svtostr(QL1SV(JS_GetVersion())),
-                svtostr(QL1SV(NUSPELL_VERSION)),
+                svtostr(NUSPELL_VERSION),
                 svtostr(
 #ifdef ENABLE_MIMALLOC
                     QStringView(mimallocVerBuf.data())

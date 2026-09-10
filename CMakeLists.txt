@@ -630,15 +630,9 @@ add_custom_target(scripts_header
 add_dependencies(${PROJECT_NAME} scripts_header)
 
 configure_file(
-    src/version/version.h.in
-    "${CMAKE_CURRENT_BINARY_DIR}/headers/version.h"
+    src/config/config.h.in
+    "${CMAKE_CURRENT_BINARY_DIR}/headers/config.h"
 )
-
-configure_file(
-    src/version/nuspell-version.h.in
-    "${CMAKE_CURRENT_BINARY_DIR}/headers/nuspell-version.h"
-)
-
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_BINARY_DIR}/headers"
