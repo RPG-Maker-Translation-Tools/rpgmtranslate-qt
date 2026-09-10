@@ -782,16 +782,22 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
     const auto startOpening =
         [this, folder, rootTranslationPath, tempProjectSettings, postRead, postArchive] -> result<void, Notice> {
         // RPG Maker 2000/2003 has no `data`/`Data` subdirectory at all - every data file lives at the root
-        const bool isRm2k = QFile::exists(folder + u"/RPG_RT.ldb");
+        auto path = folder + u"/RPG_RT.ldb";
+        const bool isRm2k = QFile::exists(path);
 
         if (isRm2k) {
             tempProjectSettings->sourceDirectory = SourceDirectory::Root;
         } else {
-            if (QFile::exists(folder + u"/Data")) {
+            if (QFile::exists(path.replace(
+                    path.size() - "RPG_RT.ldb"sv.size(),
+                    "RPG_RT.ldb"sv.size(),
+                    rcast<const QChar*>(u"Data"),
+                    "Data"sv.size()
+                ))) {
                 tempProjectSettings->sourceDirectory = SourceDirectory::UppercaseData;
             }
 
-            if (QFile::exists(folder + u"/data")) {
+            if (QFile::exists(path.replace(path.size() - 1 - 3, 1, u'd'))) {
                 tempProjectSettings->sourceDirectory = SourceDirectory::LowercaseData;
             }
         }
@@ -817,6 +823,31 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                             QString(folder % PROGRAM_DATA_DIRECTORY % TRANSLATION_DIRECTORY).toStdString(),
                             fs::copy_options::recursive | fs::copy_options::overwrite_existing
                         );
+
+                        auto metadataFile = QFile(rootTranslationPath + u".rvpacker-metadata"_qsv);
+
+                        if (metadataFile.open(QFile::ReadOnly)) {
+                            const auto content = metadataFile.readAll();
+                            auto metadata =
+                                glz::read_json<Metadata>(string_view(content.data(), content.size())).value();
+
+                            tempProjectSettings->hashes.reserve(metadata.hashes.size());
+
+                            for (const auto& hash : metadata.hashes) {
+                                tempProjectSettings->hashes.emplace(hash);
+                            }
+
+                            tempProjectSettings->readEncoding = QString::fromLatin1(metadata.readEncoding.value_or(""));
+                            tempProjectSettings->duplicateMode = metadata.duplicateMode;
+                        } else {
+                            NOTICE(
+                                "Failed to open .rvpacker-metadata file: %1",
+                                Warning,
+                                Inline,
+                                metadataFile.errorString()
+                            );
+                        }
+
                         copied = true;
                     } catch (const fs::filesystem_error& err) {
                         qWarning().noquote() << u"Failed to copy directory %1: %2"_qsv.arg(
@@ -828,39 +859,77 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
             }
 
             if (!copied) {
-                QString archivePath;
                 bool systemExists = false;
 
                 if (isRm2k) {
                     tempProjectSettings->engineType = EngineType::RM2K;
                     systemExists = true;
-                } else if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.json")) {
-                    tempProjectSettings->engineType = EngineType::MVMZ;
-                    systemExists = true;
-                } else if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.rvdata2")) {
-                    tempProjectSettings->engineType = EngineType::VXAce;
-                    systemExists = true;
-                } else if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.rvdata")) {
-                    tempProjectSettings->engineType = EngineType::VX;
-                    systemExists = true;
-                } else if (QFile::exists(tempProjectSettings->sourcePath() + u"/System.rxdata")) {
-                    tempProjectSettings->engineType = EngineType::XP;
-                    systemExists = true;
+                } else {
+                    QString path = tempProjectSettings->sourcePath() + u"/System.rvdata2";
+
+                    if (QFile::exists(path)) {
+                        tempProjectSettings->engineType = EngineType::VXAce;
+                        systemExists = true;
+                    } else if (
+                        QFile::exists(path.replace(
+                            path.size() - "rvdata2"sv.size(),
+                            "rvdata2"sv.size(),
+                            rcast<const QChar*>(u"rvdata"),
+                            "rvdata"sv.size()
+                        ))
+                    ) {
+                        tempProjectSettings->engineType = EngineType::VX;
+                        systemExists = true;
+                    } else if (
+                        QFile::exists(path.replace(
+                            path.size() - "rvdata"sv.size(),
+                            "rvdata"sv.size(),
+                            rcast<const QChar*>(u"rxdata"),
+                            "rxdata"sv.size()
+                        ))
+                    ) {
+                        tempProjectSettings->engineType = EngineType::XP;
+                        systemExists = true;
+                    } else if (
+                        QFile::exists(path.replace(
+                            path.size() - "rxdata"sv.size(),
+                            "rxdata"sv.size(),
+                            rcast<const QChar*>(u"json"),
+                            "json"sv.size()
+                        ))
+                    ) {
+                        tempProjectSettings->engineType = EngineType::MVMZ;
+                        systemExists = true;
+                    }
                 }
+
+                QString archivePath;
 
                 if (!systemExists) {
                     bool archiveExists = false;
 
-                    if (archivePath = tempProjectSettings->projectPath + u"/Game.rgssad"; QFile::exists(archivePath)) {
+                    archivePath = tempProjectSettings->projectPath + u"/Game.rgssad";
+
+                    if (QFile::exists(archivePath)) {
                         tempProjectSettings->engineType = EngineType::XP;
                         archiveExists = true;
                     } else if (
-                        archivePath = tempProjectSettings->projectPath + u"/Game.rgss2a"; QFile::exists(archivePath)
+                        QFile::exists(archivePath.replace(
+                            archivePath.size() - "ad"sv.size(),
+                            "ad"sv.size(),
+                            rcast<const QChar*>(u"2a"),
+                            "2a"sv.size()
+                        ))
                     ) {
                         tempProjectSettings->engineType = EngineType::VX;
                         archiveExists = true;
                     } else if (
-                        archivePath = tempProjectSettings->projectPath + u"/Game.rgss3a"; QFile::exists(archivePath)
+                        QFile::exists(archivePath.replace(
+                            archivePath.size() - "2a"sv.size(),
+                            "2a"sv.size(),
+                            rcast<const QChar*>(u"3a"),
+                            "3a"sv.size()
+                        ))
                     ) {
                         tempProjectSettings->engineType = EngineType::VXAce;
                         archiveExists = true;
