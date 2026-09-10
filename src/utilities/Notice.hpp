@@ -5,10 +5,15 @@
 
 #include <QAnyStringView>
 #include <QStringList>
-#include <source_location>
 #include <initializer_list>
+#include <source_location>
 
-enum class Severity : u8 { Debug, Info, Warning, Critical };
+enum class Severity : u8 {
+    Debug,
+    Info,
+    Warning,
+    Critical
+};
 
 enum class Delivery : u8 {
     // Transient status bar message.

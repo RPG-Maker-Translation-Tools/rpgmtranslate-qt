@@ -206,8 +206,14 @@ struct Selected {
 
         u16 flagFileCount = 0;
 
-        for (i32 flagIdx = 1; flagIdx < 14; flagIdx++) {
-            const auto flag = FileFlags(1 << flagIdx);
+        // This recovers the number by which FileFlags_Database was shifted
+        // and since FileFlags_Database is the last flag it effectively
+        // gives us flag count after adding 1 to the result of countr_zero.
+        //! Update if last FileFlags member changes.
+        static constexpr i32 totalFlags = std::countr_zero(FileFlags_Database) + 1;
+
+        for (i32 flagIdx = 1; flagIdx < totalFlags; flagIdx++) {
+            const auto flag = scast<FileFlags>(1 << flagIdx);
 
             if ((flags & flag) != 0) {
                 flagFileCount++;
@@ -235,14 +241,8 @@ struct Selected {
             dense++;
         }
 
-        // This recovers the number by which FileFlags_Database was shifted
-        // and since FileFlags_Database is the last flag it effectively
-        // gives us flag count after adding 1 to the result of countr_zero.
-        //! Update if last FileFlags member changes.
-        const i32 totalFlags = std::countr_zero(FileFlags_Database) + 1;
-
         for (i32 flagIdx = 1; flagIdx < totalFlags; flagIdx++) {
-            const auto flag = FileFlags(1 << flagIdx);
+            const auto flag = scast<FileFlags>(1 << flagIdx);
 
             if ((flags & flag) == 0) {
                 continue;

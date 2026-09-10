@@ -45,7 +45,7 @@ struct ProjectSettings {
     u16 lineLengthHint = 0;
 
     DuplicateMode duplicateMode = DuplicateMode::Allow;
-    BaseFlags flags = BaseFlags(0);
+    BaseFlags flags = scast<BaseFlags>(0);
 
     SourceDirectory sourceDirectory = SourceDirectory::None;
     EngineType engineType = EngineType::MVMZ;

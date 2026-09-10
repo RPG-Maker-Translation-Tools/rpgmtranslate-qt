@@ -14,7 +14,7 @@
 namespace {
 constexpr i32 TRANSLATE_ACTION_INDEX = 1;
 
-constexpr array BUILTIN_SCRIPTS = { BatchAction::Trim, BatchAction::Wrap, BatchAction::Latinize };
+constexpr array<BatchAction, 3> BUILTIN_SCRIPTS = { BatchAction::Trim, BatchAction::Wrap, BatchAction::Latinize };
 
 [[nodiscard]] constexpr auto scriptAction(const i32 index) -> BatchAction {
     return scast<usize>(index) < BUILTIN_SCRIPTS.size() ? BUILTIN_SCRIPTS[index] : BatchAction::Custom;
@@ -86,9 +86,10 @@ BatchMenu::BatchMenu(QWidget* const parent) :
 
         switch (script.action) {
             case BatchAction::Translate:
-                variant =
-                    EndpointContext{ .endpointIndex = scast<u8>(ui->translationEndpointSelect->currentIndex() - 1),
-                                     .context = ui->contextInput->toPlainText() };
+                variant = EndpointContext{
+                    .endpointIndex = scast<u8>(ui->translationEndpointSelect->currentIndex() - 1),
+                    .context = ui->contextInput->toPlainText(),
+                };
                 break;
 
             case BatchAction::Trim:
