@@ -38,7 +38,7 @@ serde-yaml = ["rvpacker-txt-rs-lib/serde-yaml"]
 anyhow = { optional = true, version = "1.0.104" }
 deepl = { version = "0.8.1", optional = true }
 dprint-plugin-typescript = { version = "0.96.1", optional = true }
-encoding_rs = "0.8.35"
+encoding_rs = "0.8.41"
 gxhash = { version = "3.5.0", features = [
     "deterministic",
 ], default-features = false }
