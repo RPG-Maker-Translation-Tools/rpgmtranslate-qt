@@ -22,28 +22,10 @@ struct Backup {
     bool enabled = true;
 };
 
-template <>
-struct glz::meta<Backup> {
-    static constexpr auto value =
-        glz::object("enabled", &Backup::enabled, "period", &Backup::period, "max", &Backup::max);
-};
-
 struct GitSettings {
     QString username;
     QString useremail;
     bool preferGitConfig = true;
-};
-
-template <>
-struct glz::meta<GitSettings> {
-    static constexpr auto value = glz::object(
-        "username",
-        &GitSettings::username,
-        "useremail",
-        &GitSettings::useremail,
-        "preferGitConfig",
-        &GitSettings::preferGitConfig
-    );
 };
 
 struct CoreSettings {
@@ -55,24 +37,6 @@ struct CoreSettings {
     GitSettings git;
 };
 
-template <>
-struct glz::meta<CoreSettings> {
-    static constexpr auto value = glz::object(
-        "recentProjects",
-        &CoreSettings::recentProjects,
-        "projectPath",
-        &CoreSettings::projectPath,
-        "backup",
-        &CoreSettings::backup,
-        "checkForAppUpdates",
-        &CoreSettings::checkForAppUpdates,
-        "checkForSourceUpdates",
-        &CoreSettings::checkForSourceUpdates,
-        "git",
-        &CoreSettings::git
-    );
-};
-
 struct AppearanceSettings {
     QString translationTableFont;
     QString style;
@@ -80,24 +44,6 @@ struct AppearanceSettings {
     QLocale::Language language = QLocale().language();
     u8 translationTableFontSize = 0;
     bool displayPercents = false;
-};
-
-template <>
-struct glz::meta<AppearanceSettings> {
-    static constexpr auto value = glz::object(
-        "translationTableFont",
-        &AppearanceSettings::translationTableFont,
-        "style",
-        &AppearanceSettings::style,
-        "theme",
-        &AppearanceSettings::theme,
-        "language",
-        &AppearanceSettings::language,
-        "translationTableFontSize",
-        &AppearanceSettings::translationTableFontSize,
-        "displayPercents",
-        &AppearanceSettings::displayPercents
-    );
 };
 
 struct EndpointSettings {
@@ -133,52 +79,6 @@ struct EndpointSettings {
     TranslationEndpoint type;
 };
 
-template <>
-struct glz::meta<EndpointSettings> {
-    static constexpr auto value = glz::object(
-        "id",
-        &EndpointSettings::id,
-        "name",
-        &EndpointSettings::name,
-        "apiKey",
-        &EndpointSettings::apiKey,
-        "yandexFolderID",
-        &EndpointSettings::yandexFolderID,
-        "baseUrl",
-        &EndpointSettings::baseUrl,
-        "model",
-        &EndpointSettings::model,
-        "systemPrompt",
-        &EndpointSettings::systemPrompt,
-        "singleTranslateSystemPrompt",
-        &EndpointSettings::singleTranslateSystemPrompt,
-        "temperature",
-        &EndpointSettings::temperature,
-        "frequencyPenalty",
-        &EndpointSettings::frequencyPenalty,
-        "precensePenalty",
-        &EndpointSettings::precensePenalty,
-        "topP",
-        &EndpointSettings::topP,
-        "tokenLimit",
-        &EndpointSettings::tokenLimit,
-        "outputTokenLimit",
-        &EndpointSettings::outputTokenLimit,
-        "thinkingBudget",
-        &EndpointSettings::thinkingBudget,
-        "reasoningEffort",
-        &EndpointSettings::reasoningEffort,
-        "useGlossary",
-        &EndpointSettings::useGlossary,
-        "thinking",
-        &EndpointSettings::thinking,
-        "singleTranslation",
-        &EndpointSettings::singleTranslation,
-        "type",
-        &EndpointSettings::type
-    );
-};
-
 struct LanguageToolSettings {
     QString baseURL;
     QString apiKey;
@@ -192,36 +92,6 @@ struct LanguageToolSettings {
     QString disabledCategories;
     bool picky = false;
     bool enabledOnly = false;
-};
-
-template <>
-struct glz::meta<LanguageToolSettings> {
-    static constexpr auto value = glz::object(
-        "baseURL",
-        &LanguageToolSettings::baseURL,
-        "apiKey",
-        &LanguageToolSettings::apiKey,
-        "username",
-        &LanguageToolSettings::username,
-        "motherTongue",
-        &LanguageToolSettings::motherTongue,
-        "preferredVariants",
-        &LanguageToolSettings::preferredVariants,
-        "dicts",
-        &LanguageToolSettings::dicts,
-        "enabledRules",
-        &LanguageToolSettings::enabledRules,
-        "disabledRules",
-        &LanguageToolSettings::disabledRules,
-        "enabledCategories",
-        &LanguageToolSettings::enabledCategories,
-        "disabledCategories",
-        &LanguageToolSettings::disabledCategories,
-        "picky",
-        &LanguageToolSettings::picky,
-        "enabledOnly",
-        &LanguageToolSettings::enabledOnly
-    );
 };
 
 enum LintFlags : u16 {
@@ -249,24 +119,10 @@ struct Replacement {
     bool enabled = false;
 };
 
-template <>
-struct glz::meta<Replacement> {
-    using T = Replacement;
-    static constexpr auto value =
-        glz::object("source", &T::source, "replacement", &T::replacement, "enabled", &T::enabled);
-};
-
 struct SequenceSettings {
     QRgb customColor = 0;
     bool useCustomColor = false;
     bool disabled = false;
-};
-
-template <>
-struct glz::meta<SequenceSettings> {
-    using T = SequenceSettings;
-    static constexpr auto value =
-        glz::object("customColor", &T::customColor, "useCustomColor", &T::useCustomColor, "disabled", &T::disabled);
 };
 
 struct CustomLint {
@@ -276,25 +132,6 @@ struct CustomLint {
     bool caseInsensitive = false;
     bool useCustomColor = false;
     bool disabled = false;
-};
-
-template <>
-struct glz::meta<CustomLint> {
-    using T = CustomLint;
-    static constexpr auto value = glz::object(
-        "sequence",
-        &T::sequence,
-        "tooltip",
-        &T::tooltip,
-        "customColor",
-        &T::customColor,
-        "caseInsensitive",
-        &T::caseInsensitive,
-        "useCustomColor",
-        &T::useCustomColor,
-        "disabled",
-        &T::disabled
-    );
 };
 
 struct TranslationSettings {
@@ -323,34 +160,6 @@ struct TranslationSettings {
     bool displayWordsAndCharacters = false;
 };
 
-template <>
-struct glz::meta<TranslationSettings> {
-    static constexpr auto value = glz::object(
-        "languageTool",
-        &TranslationSettings::languageTool,
-        "textCodes",
-        &TranslationSettings::textCodes,
-        "notetags",
-        &TranslationSettings::notetags,
-        "pluginCommands",
-        &TranslationSettings::pluginCommands,
-        "commentTags",
-        &TranslationSettings::commentTags,
-        "customLints",
-        &TranslationSettings::customLints,
-        "endpoints",
-        &TranslationSettings::endpoints,
-        "lintFlags",
-        &TranslationSettings::lintFlags,
-        "replacements",
-        &TranslationSettings::replacements,
-        "whitespaceCharacters",
-        &TranslationSettings::whitespaceCharacters,
-        "displayWordsAndCharacters",
-        &TranslationSettings::displayWordsAndCharacters
-    );
-};
-
 struct ControlSettings {
     QString searchPanel = u"Ctrl+R"_s;
     QString tabPanel = u"Tab"_s;
@@ -362,45 +171,9 @@ struct ControlSettings {
     QString translationsMenu = u"Ctrl+S"_s;
 };
 
-template <>
-struct glz::meta<ControlSettings> {
-    static constexpr auto value = glz::object(
-        "searchPanel",
-        &ControlSettings::searchPanel,
-        "tabPanel",
-        &ControlSettings::tabPanel,
-        "goToRow",
-        &ControlSettings::goToRow,
-        "batchMenu",
-        &ControlSettings::batchMenu,
-        "bookmarkMenu",
-        &ControlSettings::bookmarkMenu,
-        "lintMenu",
-        &ControlSettings::lintMenu,
-        "glossaryMenu",
-        &ControlSettings::glossaryMenu,
-        "translationsMenu",
-        &ControlSettings::translationsMenu
-    );
-};
-
 struct Settings {
     TranslationSettings translation;
     ControlSettings controls;
     CoreSettings core;
     AppearanceSettings appearance;
-};
-
-template <>
-struct glz::meta<Settings> {
-    static constexpr auto value = glz::object(
-        "core",
-        &Settings::core,
-        "appearance",
-        &Settings::appearance,
-        "controls",
-        &Settings::controls,
-        "translation",
-        &Settings::translation
-    );
 };

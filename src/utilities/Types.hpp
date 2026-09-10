@@ -44,25 +44,6 @@ struct Term {
     bool enabled = true;
 };
 
-template <>
-struct glz::meta<Term> {
-    using T = Term;
-    static constexpr auto value = glz::object(
-        "term",
-        &T::term,
-        "translation",
-        &T::translation,
-        "note",
-        &T::note,
-        "sourceMatchMode",
-        &T::sourceMatchMode,
-        "translationMatchMode",
-        &T::translationMatchMode,
-        "enabled",
-        &T::enabled
-    );
-};
-
 using Glossary = std::vector<Term>;
 
 struct Span {
@@ -442,3 +423,9 @@ using BatchResult = std::variant<ScriptResult, TranslateResult>;
 using ReplaceResult = vector<FilenameArray>;
 using TranslateSingleResult = vector<QString>;
 using ReplaceSingleResult = expected<ReplacedCell, QString>;
+
+struct Metadata {
+    std::map<FilenameArray, u64> hashes;
+    optional<string> readEncoding;
+    DuplicateMode duplicateMode;
+};
