@@ -39,7 +39,8 @@ void TabListDelegate::paint(
             maxCachedNameWidth =
                 max(maxCachedNameWidth, fontMetrics.horizontalAdvance(tab.name) + (spaceAdvance * 2) + 2);
 
-            const QString progressSample = itos(tab.translated).qsv() % u'/' % itos(tab.total).qsv();
+            const QString progressSample =
+                itos(tab.properties.get<"translated">()).qsv() % u'/' % itos(tab.properties.get<"total">()).qsv();
 
             maxCachedProgressWidth =
                 max(maxCachedProgressWidth, fontMetrics.horizontalAdvance(progressSample) + (spaceAdvance * 2) + 2);
@@ -47,7 +48,7 @@ void TabListDelegate::paint(
     }
 
     const TabListItem& tab = model->tab(index.row());
-    if (tab.completed) {
+    if (tab.properties.get<"completed">()) {
         opt.backgroundBrush = QBrush(QColor(Qt::green));
 
         opt.palette.setColor(QPalette::Text, opt.palette.color(QPalette::Text));
@@ -60,8 +61,8 @@ void TabListDelegate::paint(
     style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, opt.widget);
 
     const QString& name = tab.name;
-    const i32 total = tab.total;
-    const i32 translated = tab.translated;
+    const i32 total = tab.properties.get<"total">();
+    const i32 translated = tab.properties.get<"translated">();
 
     const QRect rect = opt.rect;
     static constexpr i32 MARGIN = 8;

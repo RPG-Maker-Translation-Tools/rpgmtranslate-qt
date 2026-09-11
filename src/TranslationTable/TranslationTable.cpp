@@ -103,7 +103,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             return;
         }
 
-        if (!model_->item(index.row(), 1).editable()) {
+        if (!model_->item(index.row(), 1).getEditable()) {
             return;
         }
 
@@ -163,7 +163,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             const i32 first,
             const i32 /* last */
         ) -> void {
-        const QString* const sourceText = model_->item(first, 0).text();
+        const QString* const sourceText = model_->item(first, 0).getText();
         auto flags = RowFlags(0);
 
         if (sourceText->startsWith(COMMENT_PREFIX)) {
@@ -174,7 +174,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             }
         } else {
             for (i32 column = 1; column < model_->columnCount(); column++) {
-                if (model_->item(first, column).text()->isEmpty()) {
+                if (model_->item(first, column).getText()->isEmpty()) {
                     flags |= RowFlags::TranslatedFlag;
                     break;
                 }
@@ -199,7 +199,7 @@ void TranslationTable::insertTranslation(const QString& translation) {
 
     auto item = model_->itemFromIndex(index);
 
-    if (!item.text()->isEmpty()) {
+    if (!item.getText()->isEmpty()) {
         const auto selected = QMessageBox::question(
             this,
             tr("Cell is not empty"),
@@ -217,7 +217,7 @@ void TranslationTable::insertTranslation(const QString& translation) {
         return;
     }
 
-    *item.text() = translation;
+    *item.getText() = translation;
 };
 
 void TranslationTable::init(const Settings* const settings, const ProjectSettings* const projectSettings) const {

@@ -8,6 +8,7 @@
 #include "ProjectSettings.hpp"
 #include "Settings.hpp"
 #include "TaskWorker.hpp"
+#include "TranslationTable.hpp"
 
 #include <QLocale>
 #include <QMainWindow>

@@ -33,7 +33,7 @@ auto TranslationTableModel::data(const QModelIndex& index, const i32 role) const
     switch (role) {
         case Qt::DisplayRole:
         case Qt::EditRole:
-            return rows[index.row()][index.column()];
+            return rows[index.row()].first[index.column()];
         case Qt::TextAlignmentRole:
             return scast<i32>(Qt::AlignLeft | Qt::AlignTop);
         default:
@@ -79,7 +79,7 @@ auto TranslationTableModel::flags(const QModelIndex& index) const -> Qt::ItemFla
     flags.setFlag(Qt::ItemIsEnabled);
     flags.setFlag(Qt::ItemIsSelectable);
 
-    if (index.column() != 0 && editableFlags[index.row()][index.column()]) {
+    if (index.column() != 0 && rows[index.row()].second[index.column()]) {
         flags.setFlag(Qt::ItemIsEditable);
     }
 
@@ -95,9 +95,9 @@ auto TranslationTableModel::setData(const QModelIndex& index, const QVariant& va
         return false;
     }
 
-    QString& text = rows[index.row()][index.column()];
+    QString& text = rows[index.row()].first[index.column()];
 
-    if (rows[index.row()][0] == BOOKMARK_COMMENT) {
+    if (rows[index.row()].first[0] == BOOKMARK_COMMENT) {
         text = value.toString();
         emit dataChanged(index, index, { role });
         emit bookmarkChanged(index.row());
@@ -122,10 +122,8 @@ void TranslationTableModel::fill(std::span<QStringView> lines, const QString& fi
     beginResetModel();
 
     rows = {};
-    editableFlags = {};
     colCount = 0;
     rows.reserve(scast<isize>(lines.size()));
-    editableFlags.reserve(scast<isize>(lines.size()));
 
     for (const auto [row, line] : views::enumerate(lines)) {
         if (line.trimmed().isEmpty()) {
@@ -163,8 +161,7 @@ void TranslationTableModel::fill(std::span<QStringView> lines, const QString& fi
             newRow[1] = std::move(counterpartText);
 
             colCount = std::max<u8>(colCount, 2);
-            rows.append(std::move(newRow));
-            editableFlags.append(std::move(flags));
+            rows.append({ std::move(newRow), flags });
             continue;
         }
 
@@ -182,8 +179,7 @@ void TranslationTableModel::fill(std::span<QStringView> lines, const QString& fi
         }
 
         colCount = std::max<u8>(colCount, cols);
-        rows.append(std::move(newRow));
-        editableFlags.append(std::move(flags));
+        rows.append({ std::move(newRow), flags });
     }
 
     endResetModel();
@@ -193,7 +189,6 @@ void TranslationTableModel::clear() {
     beginResetModel();
 
     rows = {};
-    editableFlags = {};
     headers = {};
     colCount = 0;
 
@@ -211,8 +206,8 @@ void TranslationTableModel::appendColumn(QStringList cells) {
     beginInsertColumns(QModelIndex(), col, col);
 
     for (i32 row = 0; row < rows.size(); row++) {
-        rows[row][col] = row < cells.size() ? std::move(cells[row]) : QString();
-        editableFlags[row][col] = true;
+        rows[row].first[col] = row < cells.size() ? std::move(cells[row]) : QString();
+        rows[row].second[col] = true;
     }
 
     colCount++;
@@ -229,15 +224,14 @@ void TranslationTableModel::insertRow(const u32 row, QStringList cells) {
         newRow[col] = std::move(cells[col]);
     }
 
-    rows.insert(row, std::move(newRow));
-    editableFlags.insert(row, std::move(flags));
+    rows.insert(row, { std::move(newRow), flags });
     endInsertRows();
 }
 
 auto TranslationTableModel::item(const u32 row, const u8 column) -> Cell {
-    return { &rows[row][column], editableFlags[row][column] };
+    return Cell{ rcast<QString*>(&rows[row].first[column]), rows[row].second[column] };
 };
 
 auto TranslationTableModel::itemFromIndex(const QModelIndex& index) -> Cell {
-    return { &rows[index.row()][index.column()], editableFlags[index.row()][index.column()] };
+    return Cell{ &rows[index.row()].first[index.column()], rows[index.row()].second[index.column()] };
 };

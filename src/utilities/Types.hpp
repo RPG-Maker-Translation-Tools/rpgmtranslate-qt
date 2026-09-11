@@ -2,6 +2,7 @@
 
 #include "Aliases.hpp"
 #include "Enums.hpp"
+#include "PackedBits.hpp"
 #include "glazemeta.hpp"
 #include "rpgmtranslate_rs.h"
 
@@ -51,69 +52,18 @@ struct Span {
     u32 len;
 };
 
-struct TextMatch {
-    u64 bits;
+using TextMatch = PackedBits<Field<"start", u32, 32>, Field<"len", u32, 31>, Field<"capture", bool, 1>>;
 
-    static constexpr i32 LEN_SHIFT = 32;
-    static constexpr i32 CAP_SHIFT = 63;
-
-    static constexpr u64 START_MASK = 0xFFFFFFFFULL;
-    static constexpr u64 LEN_MASK = 0x7FFFFFFFULL;
-
-    constexpr explicit TextMatch() = default;
-
-    constexpr explicit TextMatch(const u32 start, const u32 len, const bool captured) {
-        setStart(start);
-        setLen(len);
-        setCaptured(captured);
-    };
-
-    [[nodiscard]] auto start() const -> u32 { return bits & START_MASK; }
-
-    [[nodiscard]] auto len() const -> u32 { return (bits >> LEN_SHIFT) & LEN_MASK; }
-
-    [[nodiscard]] auto capture() const -> bool { return (bits >> CAP_SHIFT) != 0; }
-
-    void setStart(const u32 start) { bits = (bits & ~START_MASK) | scast<u64>(start); }
-
-    void setLen(const u32 len) { bits = (bits & ~(LEN_MASK << LEN_SHIFT)) | (scast<u64>(len) << LEN_SHIFT); }
-
-    void setCaptured(const bool captured) {
-        bits = (bits & ~(1ULL << CAP_SHIFT)) | (scast<u64>(captured) << CAP_SHIFT);
-    }
-};
-
-struct MatchIndex {
-    u32 bits;
-
-    constexpr explicit MatchIndex() = default;
-
-    constexpr explicit MatchIndex(const u32 rowIndex, const u8 colIndex) {
-        setRowIndex(rowIndex);
-        setColIndex(colIndex);
-    };
-
-    static constexpr u32 ROW_MASK = 0xFF00'0000U;
-    static constexpr i32 COL_SHIFT = 24;
-    static constexpr i32 COL_MASK = 0x00FF'FFFFU;
-
-    [[nodiscard]] constexpr auto rowIndex() const -> u32 { return bits & COL_MASK; }
-
-    [[nodiscard]] constexpr auto colIndex() const -> u8 { return scast<u8>(bits >> COL_SHIFT); }
-
-    constexpr void setRowIndex(const u32 rowIndex) { bits = (bits & ROW_MASK) | (rowIndex & COL_MASK); }
-
-    constexpr void setColIndex(const u32 colIndex) { bits = (bits & COL_MASK) | (colIndex << COL_SHIFT); }
-};
+using MatchIndex = PackedBits<Field<"row", u32, 24>, Field<"col", u8, 8>>;
 
 struct CellMatch {
     TextMatch* matches;
     u32 matchesCount;
     MatchIndex matchIndex;
 
-    [[nodiscard]] constexpr auto rowIndex() const -> i32 { return matchIndex.rowIndex(); }
+    [[nodiscard]] constexpr auto rowIndex() const -> i32 { return matchIndex.get<"row">(); }
 
-    [[nodiscard]] constexpr auto colIndex() const -> i32 { return matchIndex.colIndex(); }
+    [[nodiscard]] constexpr auto colIndex() const -> i32 { return matchIndex.get<"col">(); }
 };
 
 inline auto u16ToAscii(u16 number) -> array<char, 4> {
@@ -150,7 +100,7 @@ struct Selected {
     bitset<2048> mapIndices = 0;
     bitset<2048> validIndices = 0;
     u16 mapCount = 0;
-    FileFlags flags = FileFlags(0);
+    FileFlags flags = scast<FileFlags>(0);
 
     [[nodiscard]] auto empty() const -> bool {
         for (i32 idx = 0; idx < mapCount; idx++) {

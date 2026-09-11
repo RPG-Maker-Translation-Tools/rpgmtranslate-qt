@@ -42,14 +42,6 @@ struct ProjectSettings {
     QString sourceLang;
     QString translationLang;
 
-    u16 lineLengthHint = 0;
-
-    DuplicateMode duplicateMode = DuplicateMode::Allow;
-    BaseFlags flags = scast<BaseFlags>(0);
-
-    SourceDirectory sourceDirectory = SourceDirectory::None;
-    EngineType engineType = EngineType::MVMZ;
-
     // A codepage's WHATWG label (`"Shift_JIS"`, `"windows-1252"`, ...), or
     // empty for "guess it"
     QString readEncoding;
@@ -57,6 +49,14 @@ struct ProjectSettings {
     // A codepage's WHATWG label, or empty (the default) to always write
     // translated text as UTF-8
     QString writeEncoding;
+
+    u16 lineLengthHint = 0;
+
+    DuplicateMode duplicateMode = DuplicateMode::Allow;
+    BaseFlags flags = scast<BaseFlags>(0);
+
+    SourceDirectory sourceDirectory = SourceDirectory::None;
+    EngineType engineType = EngineType::MVMZ;
 
     [[nodiscard]] constexpr auto engineExtension() const -> QStringView {
         switch (engineType) {
@@ -86,8 +86,6 @@ struct ProjectSettings {
             default:
                 std::unreachable();
         }
-
-        std::unreachable();
     }
 
     [[nodiscard]] auto programDataPath() const -> QString { return projectPath + PROGRAM_DATA_DIRECTORY; }

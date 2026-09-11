@@ -29,12 +29,12 @@ struct GitSettings {
 };
 
 struct CoreSettings {
+    GitSettings git;
     QStringList recentProjects;
     QString projectPath;
     Backup backup;
     bool checkForAppUpdates = true;
     bool checkForSourceUpdates = true;
-    GitSettings git;
 };
 
 struct AppearanceSettings {

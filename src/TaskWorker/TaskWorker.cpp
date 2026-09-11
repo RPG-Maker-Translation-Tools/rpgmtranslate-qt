@@ -646,7 +646,7 @@ auto TaskWorker::search(
                 } else if (searchColumnIndex == 0) {
                     const auto translation = getTranslation(parts);
 
-                    toProcess.emplace_back(translation.translation, translation.index);
+                    toProcess.emplace_back(translation.getTranslation(), translation.getIndex());
                 } else {
                     toProcess.emplace_back(parts[searchColumnIndex], searchColumnIndex);
                 }
@@ -693,8 +693,14 @@ auto TaskWorker::lintFiles(const TaskToken& task, const Selected selected, const
                 continue;
             }
 
-            auto outcome =
-                lint(fname, scast<u32>(idx) + 1, getSource(parts), getTranslation(parts).translation, glossary, false);
+            auto outcome = lint(
+                fname,
+                scast<u32>(idx) + 1,
+                getSource(parts),
+                getTranslation(parts).getTranslation(),
+                glossary,
+                false
+            );
 
             rows.insert(
                 rows.end(),
@@ -1232,7 +1238,7 @@ auto TaskWorker::lint(
 
     u16 closedColor = 0;
     u16 unclosedColor = 0;
-    vector<std::pair<i32, i32>> unclosedColorTags;
+    vector<pair<i32, i32>> unclosedColorTags;
 
     applyLints(
         TextCodes::REGEXP,
@@ -1842,14 +1848,14 @@ auto TaskWorker::replace(
 
                     const auto applySubstitutions =
                         [&](const TextMatch& fullMatch, const u32 capturedBegin, const u32 capturedEnd) -> QString {
-                        const QStringView beforeFull = part.sliced(0, fullMatch.start());
-                        const QStringView afterFull = part.sliced(fullMatch.start() + fullMatch.len());
+                        const QStringView beforeFull = part.sliced(0, fullMatch.get<"start">());
+                        const QStringView afterFull = part.sliced(fullMatch.get<"start">() + fullMatch.get<"len">());
 
                         QStringView lastCapture;
                         for (u32 k = capturedEnd; k > capturedBegin;) {
                             --k;
-                            if (matchSpan[k].capture()) {
-                                lastCapture = part.sliced(matchSpan[k].start(), matchSpan[k].len());
+                            if (matchSpan[k].get<"capture">()) {
+                                lastCapture = part.sliced(matchSpan[k].get<"start">(), matchSpan[k].get<"len">());
                                 break;
                             }
                         }
@@ -1886,8 +1892,10 @@ auto TaskWorker::replace(
                                 if (cidx + 2 < replaceText.size() && replaceText[cidx + 2].isDigit()) {
                                     const i32 twoDigit = (next.digitValue() * 10) + replaceText[cidx + 2].digitValue();
                                     const u32 idx = capturedBegin + scast<u32>(twoDigit - 1);
-                                    if (idx < capturedEnd && matchSpan[idx].capture()) {
-                                        result.append(part.sliced(matchSpan[idx].start(), matchSpan[idx].len()));
+                                    if (idx < capturedEnd && matchSpan[idx].get<"capture">()) {
+                                        result.append(
+                                            part.sliced(matchSpan[idx].get<"start">(), matchSpan[idx].get<"len">())
+                                        );
                                         cidx += 2;
                                         handled = true;
                                     }
@@ -1896,8 +1904,10 @@ auto TaskWorker::replace(
                                 if (!handled) {
                                     const i32 oneDigit = next.digitValue();
                                     const u32 idx = capturedBegin + scast<u32>(oneDigit - 1);
-                                    if (idx < capturedEnd && matchSpan[idx].capture()) {
-                                        result.append(part.sliced(matchSpan[idx].start(), matchSpan[idx].len()));
+                                    if (idx < capturedEnd && matchSpan[idx].get<"capture">()) {
+                                        result.append(
+                                            part.sliced(matchSpan[idx].get<"start">(), matchSpan[idx].get<"len">())
+                                        );
                                         cidx += 1;
                                         handled = true;
                                     }
@@ -1919,19 +1929,19 @@ auto TaskWorker::replace(
                     for (u32 idx = 0; idx < scast<u32>(matchSpan.size());) {
                         const auto& match = matchSpan[idx];
 
-                        if (match.capture()) {
+                        if (match.get<"capture">()) {
                             ++idx;
                             continue;
                         }
 
                         u32 jIdx = idx + 1;
-                        while (jIdx < scast<u32>(matchSpan.size()) && matchSpan[jIdx].capture()) {
+                        while (jIdx < scast<u32>(matchSpan.size()) && matchSpan[jIdx].get<"capture">()) {
                             ++jIdx;
                         }
 
-                        replaced.append(part.sliced(start, match.start() - start));
+                        replaced.append(part.sliced(start, match.get<"start">() - start));
                         replaced.append(applySubstitutions(match, idx + 1, jIdx));
-                        start = match.start() + match.len();
+                        start = match.get<"start">() + match.get<"len">();
                         idx = jIdx;
                     }
 
@@ -2061,16 +2071,16 @@ auto TaskWorker::replaceSingle(
             u32 delta = 0;
 
             for (const auto match : matches) {
-                replaced.append(text.sliced(pos, match.start() - pos));
+                replaced.append(text.sliced(pos, match.get<"start">() - pos));
 
-                const u32 newStart = match.start() + delta;
+                const u32 newStart = match.get<"start">() + delta;
                 const u32 newLen = scast<u32>(replaceText.size());
 
                 newMatches[matchesIndex++] = TextMatch(newStart, newLen, false);
                 replaced.append(replaceText);
 
-                pos = match.start() + match.len();
-                delta += newLen - match.len();
+                pos = match.get<"start">() + match.get<"len">();
+                delta += newLen - match.get<"len">();
             }
 
             replaced.append(text.sliced(pos));

@@ -23,11 +23,11 @@ class TaskPanel final : public QWidget {
 
    private:
     struct Row {
-        u32 taskId;
         QString name;
         QWidget* widget;
         QLabel* label;
         QProgressBar* progressBar;
+        u32 taskId;
     };
 
     [[nodiscard]] auto findRow(u32 taskId) -> Row*;

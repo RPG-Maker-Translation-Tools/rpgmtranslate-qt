@@ -25,6 +25,7 @@ static constexpr QStringView PROJECT_SETTINGS_FILE = u"/project-settings.json";
 static constexpr QStringView BACKUP_DIRECTORY = u"/backups";
 static constexpr QStringView GLOSSARY_FILE = u"/glossary.json";
 static constexpr QStringView OUTPUT_DIRECTORY = u"/output";
+static constexpr QStringView RVPACKER_METADATA_FILE = u"/.rvpacker-metadata";
 
 static constexpr i32 MIN_BACKUP_PERIOD = 60;
 static constexpr i32 MAX_BACKUP_PERIOD = 3600;

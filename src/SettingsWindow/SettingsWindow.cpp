@@ -241,26 +241,25 @@ void syncColorCells(
     return dictionaries;
 }
 
-[[nodiscard]] auto listLanguageTags() -> QList<std::pair<QString, QString>> {
+[[nodiscard]] auto listLanguageTags() -> QList<pair<QString, QString>> {
     static constexpr array<QLocale::Language, 6> TERRITORY_SENSITIVE_LANGUAGES = {
         QLocale::English, QLocale::Chinese, QLocale::Portuguese, QLocale::German, QLocale::French, QLocale::Spanish,
     };
 
-    static constexpr array<std::pair<QLocale::Language, array<QLocale::Territory, 4>>, 6>
-        LANGUAGE_RELEVANT_TERRITORIES = {
-            std::pair{ QLocale::English,
-                       array{ QLocale::UnitedStates, QLocale::UnitedKingdom, QLocale::Australia, QLocale::Canada } },
-            { QLocale::Chinese, { QLocale::China, QLocale::Taiwan, QLocale::HongKong } },
-            { QLocale::Portuguese, { QLocale::Portugal, QLocale::Brazil } },
-            { QLocale::German, { QLocale::Germany, QLocale::Austria, QLocale::Switzerland } },
-            { QLocale::French, { QLocale::France, QLocale::Canada } },
-            { QLocale::Spanish, { QLocale::Spain, QLocale::Mexico } },
-        };
+    static constexpr array<pair<QLocale::Language, array<QLocale::Territory, 4>>, 6> LANGUAGE_RELEVANT_TERRITORIES = {
+        pair{ QLocale::English,
+              array{ QLocale::UnitedStates, QLocale::UnitedKingdom, QLocale::Australia, QLocale::Canada } },
+        { QLocale::Chinese, { QLocale::China, QLocale::Taiwan, QLocale::HongKong } },
+        { QLocale::Portuguese, { QLocale::Portugal, QLocale::Brazil } },
+        { QLocale::German, { QLocale::Germany, QLocale::Austria, QLocale::Switzerland } },
+        { QLocale::French, { QLocale::France, QLocale::Canada } },
+        { QLocale::Spanish, { QLocale::Spain, QLocale::Mexico } },
+    };
 
     const QList<QLocale> all =
         QLocale::matchingLocales(QLocale::AnyLanguage, QLocale::AnyScript, QLocale::AnyTerritory);
 
-    QList<std::pair<QString, QString>> result = { {} };
+    QList<pair<QString, QString>> result = { {} };
     result.reserve(magic_enum::enum_values<QLocale::Language>().size() + 16);
 
     for (const QLocale& loc : all) {
@@ -276,19 +275,19 @@ void syncColorCells(
             })->second;
 
             if (ranges::contains(relevant, loc.territory())) {
-                std::pair<QString, QString> val = { QString(
-                                                        QLocale::languageToString(loc.language()) % u", "_qsv %
-                                                        QLocale::territoryToString(loc.territory()) % u" ("_qsv %
-                                                        loc.nativeLanguageName() % u')'
-                                                    ),
-                                                    loc.bcp47Name() };
+                pair<QString, QString> val = { QString(
+                                                   QLocale::languageToString(loc.language()) % u", "_qsv %
+                                                   QLocale::territoryToString(loc.territory()) % u" ("_qsv %
+                                                   loc.nativeLanguageName() % u')'
+                                               ),
+                                               loc.bcp47Name() };
 
                 if (!ranges::any_of(result, [&](const auto& pair) -> bool { return pair.second == val.second; })) {
                     result.push_back(std::move(val));
                 }
 
             } else {
-                std::pair<QString, QString> val = {
+                pair<QString, QString> val = {
                     QString(QLocale::languageToString(lang) % u" ("_qsv % QLocale(lang).nativeLanguageName() % u')'),
                     QLocale::languageToCode(lang)
                 };
@@ -298,7 +297,7 @@ void syncColorCells(
                 }
             }
         } else {
-            std::pair<QString, QString> val = {
+            pair<QString, QString> val = {
                 QString(QLocale::languageToString(lang) % u" ("_qsv % QLocale(lang).nativeLanguageName() % u')'),
                 QLocale::languageToCode(lang)
             };
@@ -472,8 +471,7 @@ SettingsWindow::SettingsWindow(
         ui->styleSelect->addItem(style);
     }
 
-
-    const QList<std::pair<QString, QString>> languageTags = listLanguageTags();
+    const QList<pair<QString, QString>> languageTags = listLanguageTags();
 
     for (const auto& [idx, pair] : views::enumerate(languageTags)) {
         ui->sourceLanguageSelect->addItem(pair.first);
@@ -855,15 +853,15 @@ auto SettingsWindow::validate() -> bool {
         return false;
     }
 
-    const array<std::pair<QStringView, QKeySequenceEdit*>, 8> hotkeyInputs{
+    const array<pair<QStringView, QKeySequenceEdit*>, 8> hotkeyInputs{
         { { u"Search Panel"_qsv, ui->searchPanelInput },
-         { u"Tab Panel"_qsv, ui->tabPanelInput },
-         { u"Go To Row"_qsv, ui->goToRowInput },
-         { u"Batch Menu"_qsv, ui->batchMenuInput },
-         { u"Bookmark Menu"_qsv, ui->bookmarkMenuInput },
-         { u"Lint Menu"_qsv, ui->lintMenuInput },
-         { u"Glossary Menu"_qsv, ui->glossaryMenuInput },
-         { u"Translations Menu"_qsv, ui->translationsMenuInput } }
+          { u"Tab Panel"_qsv, ui->tabPanelInput },
+          { u"Go To Row"_qsv, ui->goToRowInput },
+          { u"Batch Menu"_qsv, ui->batchMenuInput },
+          { u"Bookmark Menu"_qsv, ui->bookmarkMenuInput },
+          { u"Lint Menu"_qsv, ui->lintMenuInput },
+          { u"Glossary Menu"_qsv, ui->glossaryMenuInput },
+          { u"Translations Menu"_qsv, ui->translationsMenuInput } }
     };
 
     for (const auto [i, first] : views::enumerate(hotkeyInputs)) {
@@ -1032,8 +1030,8 @@ void SettingsWindow::syncEndpoint(const Direction direction, EndpointSettings& e
 }
 
 void SettingsWindow::buildSequenceTables() {
-    const array<std::pair<span<const QStringView>, QTableWidget*>, 4> tables = {
-        std::pair<span<const QStringView>, QTableWidget*>{ TextCodes::PATTERN_PARTS, ui->textCodesTable },
+    const array<pair<span<const QStringView>, QTableWidget*>, 4> tables = {
+        pair<span<const QStringView>, QTableWidget*>{ TextCodes::PATTERN_PARTS, ui->textCodesTable },
         { Notetags::PATTERN_PARTS, ui->noteTagsTable },
         { PluginCommands::PATTERN_PARTS, ui->pluginCommandsTable },
         { CommentTags::PATTERN_PARTS, ui->commentTagsTable },

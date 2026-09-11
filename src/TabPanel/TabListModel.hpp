@@ -2,14 +2,15 @@
 
 #include "Aliases.hpp"
 #include "FWD.hpp"
+#include "PackedBits.hpp"
 
 #include <QAbstractListModel>
 
+using TabListItemProps = PackedBits<Field<"total", i32, 32>, Field<"translated", i32, 31>, Field<"completed", bool, 1>>;
+
 struct TabListItem {
     QString name;
-    i32 total;
-    i32 translated;
-    bool completed;
+    TabListItemProps properties;
 };
 
 class TabListModel final : public QAbstractListModel {

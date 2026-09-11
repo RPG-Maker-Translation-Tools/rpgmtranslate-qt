@@ -103,7 +103,7 @@ constexpr i32 ICONSET_OLDER_ICON_SIZE = 24;
 constexpr i32 ICONSET_NEWER_ICON_SIZE = 32;
 constexpr i32 ICONSET_ROW_ICON_COUNT = 16;
 
-std::pair<QString, array<QRgb, WINDOW_COLOR_COUNT>> cachedWindowPath;
+pair<QString, array<QRgb, WINDOW_COLOR_COUNT>> cachedWindowPath;
 mutex cachedWindowPathMutex;
 }  // namespace
 
@@ -124,11 +124,11 @@ auto lineParts(const QStringView line, const u32 lineNumber, const QAnyStringVie
 auto getTranslation(const QSVList& parts) -> struct Translation {
     for (const auto [idx, part] : views::enumerate(views::reverse(views::drop(parts, 1)))) {
         if (!part.isEmpty()) {
-            return { .translation = part, .index = scast<u8>(idx + 1) };
+            return { part, scast<u8>(idx + 1) };
         }
     }
 
-    return { .translation = QStringView(), .index = 0 };
+    return { QStringView(), 0 };
 
 }
 

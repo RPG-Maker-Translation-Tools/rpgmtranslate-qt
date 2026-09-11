@@ -128,7 +128,7 @@ void AssetMenu::refresh() {
         auto listing =
             QDirListing(dirPath, filters, QDirListing::IteratorFlag::Recursive | QDirListing::IteratorFlag::FilesOnly);
 
-        QList<std::pair<QString, QString>> list;
+        QList<pair<QString, QString>> list;
         list.reserve(2048);
 
         for (const auto entry : listing) {

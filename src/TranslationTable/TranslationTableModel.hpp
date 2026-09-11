@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aliases.hpp"
+#include "Utils.hpp"
 
 #include <QAbstractItemModel>
 
@@ -11,23 +12,24 @@ class TranslationTableModel final : public QAbstractItemModel {
     static constexpr i32 MAX_COLUMNS = 16;
 
     struct Cell {
-        static constexpr usize EDITABLE_BIT = 1;
-        static constexpr usize PTR_MASK = ~EDITABLE_BIT;
+       private:
+        QString* text;
 
-        usize bits;
-
-        Cell(QString* const ptr, const bool editable) { set(ptr, editable); }
-
-        void set(QString* const ptr, const bool editable) {
-            const auto val = rcast<usize>(ptr);
-            bits = val | (editable ? EDITABLE_BIT : 0);
+       public:
+        Cell(const QString* const text, const bool editable) {
+            setText(text);
+            setEditable(editable);
         }
 
-        [[nodiscard]] auto text() const -> QString* { return rcast<QString*>(bits & PTR_MASK); }
+        void setEditable(const bool editable) { text = rcast<QString*>(set_tag(text, scast<u8>(editable))); }
 
-        [[nodiscard]] auto editable() const -> bool { return (bits & EDITABLE_BIT) != 0; }
+        [[nodiscard]] auto getEditable() const -> bool { get_tag(rcast<u64>(text)); }
 
-        void setEditable(const bool editable) { bits = (bits & PTR_MASK) | (editable ? EDITABLE_BIT : 0); }
+        void setText(const QString* text) {
+            this->text = rcast<QString*>(replace_addr(rcast<u64>(this->text), ccast<QString*>(text)));
+        }
+
+        [[nodiscard]] auto getText() const -> QString* { return rcast<QString*>(strip_tag(rcast<u64>(text))); }
     };
 
     explicit TranslationTableModel(QObject* parent = nullptr);
@@ -59,8 +61,7 @@ class TranslationTableModel final : public QAbstractItemModel {
     void translatedChanged(i8 count);
 
    private:
-    QList<array<QString, MAX_COLUMNS>> rows;
-    QList<bitset<MAX_COLUMNS>> editableFlags;
+    QList<pair<array<QString, MAX_COLUMNS>, bitset<MAX_COLUMNS>>> rows;
     QStringList headers;
     u8 colCount = 0;
 };

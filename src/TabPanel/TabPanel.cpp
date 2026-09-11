@@ -33,7 +33,7 @@ TabPanel::TabPanel(QWidget* const parent) :
 
         menu->addSeparator();
 
-        const bool completed = !index.isValid() || tabList->tab(index.row()).completed;
+        const bool completed = !index.isValid() || tabList->tab(index.row()).properties.get<"completed">();
 
         auto* const markCompletedAction = menu->addAction(completed ? tr("Unmark Completed") : tr("Mark as Completed"));
 
@@ -97,7 +97,7 @@ void TabPanel::clear() {
         return 0;
     }
 
-    return tabList->tab(currentIndex.row()).translated;
+    return tabList->tab(currentIndex.row()).properties.get<"translated">();
 };
 
 [[nodiscard]] auto TabPanel::currentTotal() const -> i32 {
@@ -107,19 +107,19 @@ void TabPanel::clear() {
         return 0;
     }
 
-    return tabList->tab(currentIndex.row()).total;
+    return tabList->tab(currentIndex.row()).properties.get<"total">();
 };
 
 [[nodiscard]] auto TabPanel::tabTotal(const i32 tabIndex) const -> i32 {
-    return tabList->tab(tabIndex).total;
+    return tabList->tab(tabIndex).properties.get<"total">();
 };
 
 [[nodiscard]] auto TabPanel::tabTranslated(const i32 tabIndex) const -> i32 {
-    return tabList->tab(tabIndex).translated;
+    return tabList->tab(tabIndex).properties.get<"translated">();
 };
 
 void TabPanel::setTabTranslated(const i32 tabIndex, const i32 translated) const {
-    tabList->tab(tabIndex).translated = translated;
+    tabList->tab(tabIndex).properties.set<"translated">(translated);
 };
 
 void TabPanel::setCurrentTranslated(const i32 translated) const {
@@ -129,8 +129,8 @@ void TabPanel::setCurrentTranslated(const i32 translated) const {
         return;
     }
 
-    const i32 currentTranslated = tabList->tab(currentIndex.row()).translated;
-    tabList->tab(currentIndex.row()).translated = currentTranslated + translated;
+    const i32 currentTranslated = tabList->tab(currentIndex.row()).properties.get<"translated">();
+    tabList->tab(currentIndex.row()).properties.set<"translated">(currentTranslated + translated);
 }
 
 void TabPanel::setCurrentTotal(const i32 total) const {
@@ -140,8 +140,8 @@ void TabPanel::setCurrentTotal(const i32 total) const {
         return;
     }
 
-    const i32 currentTotal = tabList->tab(currentIndex.row()).total;
-    tabList->tab(currentIndex.row()).total = currentTotal + total;
+    const i32 currentTotal = tabList->tab(currentIndex.row()).properties.get<"total">();
+    tabList->tab(currentIndex.row()).properties.set<"total">(currentTotal + total);
 }
 
 void TabPanel::setProgressDisplay(const bool percents) const {

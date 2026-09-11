@@ -404,7 +404,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
         u8 columnCount = max<u8>(2, projectSettings->columns.size());
 
         const auto translationFiles =
-            QDir(projectSettings->translationPath()).entryInfoList({ u"*.txt"_s }, QDir::Files);
+            QDirListing(projectSettings->translationPath(), { u"*.txt"_s }, QDirListing::IteratorFlag::FilesOnly);
 
         vector<TabListItem> tabs;
 
@@ -490,9 +490,9 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
 
                             tabs.emplace_back(
                                 tempMapName,
-                                fileTotal,
-                                fileTranslated,
-                                projectSettings->completedFiles.contains(basename)
+                                TabListItemProps{ fileTotal,
+                                                  fileTranslated,
+                                                  projectSettings->completedFiles.contains(basename) }
                             );
 
                             totalLines += fileTotal;
@@ -529,7 +529,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                         break;
                     }
 
-                    const QStringView translation = getTranslation(parts).translation;
+                    const QStringView translation = getTranslation(parts).getTranslation();
 
                     if (!translation.isEmpty()) {
                         fileTranslated++;
@@ -551,14 +551,17 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                 basename = u"map"_s + mapID;
             }
 
-            tabs.emplace_back(basename, fileTotal, fileTranslated, projectSettings->completedFiles.contains(basename));
+            tabs.emplace_back(
+                basename,
+                TabListItemProps{ fileTotal, fileTranslated, projectSettings->completedFiles.contains(basename) }
+            );
 
             if ((isSystem || basename.startsWith(u"terms")) && contentView.lastIndexOf(u"<!>NAME<#>Game Title") != -1) {
                 const QStringView titleLine = contentView.sliced(
                     scast<isize>(contentView.lastIndexOf(u"<!>NAME<#>Game Title") + sizeof("<!>NAME<#>Game Title"))
                 );
                 const QSVList parts = lineParts(titleLine, 0, basename);
-                const QStringView translation = getTranslation(parts).translation;
+                const QStringView translation = getTranslation(parts).getTranslation();
                 const QStringView source = getSource(parts);
 
                 ui->gameTitleInput->setPlaceholderText(source.toString());
@@ -782,7 +785,7 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
     const auto startOpening =
         [this, folder, rootTranslationPath, tempProjectSettings, postRead, postArchive] -> result<void, Notice> {
         // RPG Maker 2000/2003 has no `data`/`Data` subdirectory at all - every data file lives at the root
-        auto path = folder + u"/RPG_RT.ldb";
+        QString path = folder + u"/RPG_RT.ldb";
         const bool isRm2k = QFile::exists(path);
 
         if (isRm2k) {
@@ -824,12 +827,16 @@ void MainWindow::openProject(const QString& folder, const bool newProject) {
                             fs::copy_options::recursive | fs::copy_options::overwrite_existing
                         );
 
-                        auto metadataFile = QFile(rootTranslationPath + u".rvpacker-metadata"_qsv);
+                        auto metadataFile = QFile(rootTranslationPath + RVPACKER_METADATA_FILE);
 
                         if (metadataFile.open(QFile::ReadOnly)) {
-                            const auto content = metadataFile.readAll();
-                            auto metadata =
-                                glz::read_json<Metadata>(string_view(content.data(), content.size())).value();
+                            const QByteArray content = metadataFile.readAll();
+                            Metadata metadata;
+
+                            glz::read<glz::opts{ .error_on_unknown_keys = false }>(
+                                metadata,
+                                string_view(content.data(), content.size())
+                            );
 
                             tempProjectSettings->hashes.reserve(metadata.hashes.size());
 

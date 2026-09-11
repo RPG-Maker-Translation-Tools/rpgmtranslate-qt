@@ -215,7 +215,7 @@ void MainWindow::setupConnections() {
     });
 
     connect(ui->translationTable, &TranslationTable::bookmarkChanged, this, [this](const u32 row) -> void {
-        bookmarkMenu->updateBookmark(row, *ui->translationTable->model()->item(scast<i32>(row), 1).text());
+        bookmarkMenu->updateBookmark(row, *ui->translationTable->model()->item(scast<i32>(row), 1).getText());
     });
 
     connect(ui->translationTable, &TranslationTable::columnAdded, this, [this] -> void {

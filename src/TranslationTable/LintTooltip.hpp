@@ -67,7 +67,7 @@ class LintTooltip final : public QWidget {
         requires(std::same_as<Segments, Segment> && ...)
     [[nodiscard]] constexpr auto buildPath(Segments&&... segments) -> FFIString;
 
-    array<std::pair<QUrl, QPixmap>, 2> resources;
+    array<pair<QUrl, QPixmap>, 2> resources;
     array<char, 32> buf;
     // Owned by Rust, refilled per processTextCode call and freed at its end -
     // value-initialized so the first free is a no-op.

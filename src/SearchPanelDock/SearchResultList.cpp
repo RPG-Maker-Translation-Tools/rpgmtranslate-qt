@@ -85,7 +85,7 @@ void SearchResultListDelegate::paint(
     QList<QTextLayout::FormatRange> formatRanges;
     formatRanges.reserve(scast<isize>(spans.size()));
     for (const TextMatch span : spans) {
-        formatRanges.emplace_back(span.start(), span.len(), highlightedFormat);
+        formatRanges.emplace_back(span.get<"start">(), span.get<"len">(), highlightedFormat);
     }
     textLayout.setFormats(formatRanges);
 

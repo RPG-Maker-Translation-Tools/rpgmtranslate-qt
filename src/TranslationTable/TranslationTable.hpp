@@ -13,28 +13,7 @@ enum RowFlags : u8 {
     TranslatedFlag = 1 << 2,
 };
 
-struct RemovedRowInfo {
-    u32 bits;
-
-    constexpr explicit RemovedRowInfo() = default;
-
-    constexpr explicit RemovedRowInfo(const u32 row, const RowFlags flags) {
-        setRow(row);
-        setFlags(flags);
-    };
-
-    static constexpr u32 ROW_MASK = 0xFF00'0000U;
-    static constexpr u32 FLAGS_SHIFT = 24;
-    static constexpr u32 FLAGS_MASK = 0x00FF'FFFFU;
-
-    [[nodiscard]] constexpr auto row() const -> u32 { return bits & FLAGS_MASK; }
-
-    [[nodiscard]] constexpr auto flags() const -> RowFlags { return RowFlags(bits >> FLAGS_SHIFT); }
-
-    constexpr void setRow(const u32 row) { bits = (bits & ROW_MASK) | (row & FLAGS_MASK); }
-
-    constexpr void setFlags(const RowFlags flags) { bits = (bits & FLAGS_MASK) | (scast<u32>(flags) << FLAGS_SHIFT); }
-};
+using RemovedRowInfo = PackedBits<Field<"row", u32, 24>, Field<"flags", RowFlags, 8>>;
 
 class TranslationTable final : public QTableView {
     Q_OBJECT

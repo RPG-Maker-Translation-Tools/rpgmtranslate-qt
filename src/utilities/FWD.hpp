@@ -151,5 +151,3 @@ class LintTableModel;
 class MatchTableDelegate;
 
 class WriteMenu;
-
-struct RemovedRowInfo;

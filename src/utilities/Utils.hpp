@@ -12,11 +12,54 @@
 #include <concepts>
 #include <system_error>
 
-struct Abort;
+constexpr static usize TAG_SHIFT = 56;
+constexpr static usize TAG_MASK = 0xFFULL << TAG_SHIFT;  // 0xFF00000000000000
+constexpr static usize ADDR_MASK = ~TAG_MASK;
+
+static inline auto set_tag(void* const ptr, const u8 tag) -> u64 {
+    return (rcast<u64>(ptr) & ADDR_MASK) | (scast<u64>(tag) << TAG_SHIFT);
+}
+
+static inline auto get_tag(const u64 tagged) -> u8 {
+    return scast<u8>(tagged >> TAG_SHIFT);
+}
+
+static inline auto strip_tag(const u64 tagged) -> void* {
+    return rcast<void*>(tagged & ADDR_MASK);
+}
+
+static inline auto replace_addr(const u64 tagged, void* const new_addr) -> u64 {
+    const u64 preserved_tag = tagged & TAG_MASK;
+    const u64 new_addr_bits = rcast<u64>(new_addr) & ADDR_MASK;
+    return preserved_tag | new_addr_bits;
+}
 
 struct Translation {
+   private:
     QStringView translation;
-    u8 index;
+
+   public:
+    Translation(QStringView view, u8 idx) {
+        setTranslation(view);
+        setIndex(idx);
+    }
+
+    void setIndex(const u8 idx) {
+        translation = QStringView(rcast<QChar*>(set_tag(ccast<QChar*>(translation.data()), idx)), translation.size());
+    }
+
+    [[nodiscard]] auto getIndex() const -> u8 { get_tag(rcast<u64>(translation.data())); }
+
+    void setTranslation(const QStringView translation) {
+        this->translation = QStringView(
+            rcast<QChar*>(replace_addr(rcast<u64>(this->translation.data()), ccast<QChar*>(translation.data()))),
+            translation.size()
+        );
+    }
+
+    [[nodiscard]] auto getTranslation() const -> QStringView {
+        return { rcast<QChar*>(strip_tag(rcast<u64>(translation.data()))), translation.size() };
+    }
 };
 
 [[nodiscard]] auto lineParts(QStringView line, u32 lineNumber, QAnyStringView filename) -> QSVList;
@@ -40,6 +83,8 @@ struct Translation {
 
 [[nodiscard]] auto lastPathComponent(const QString& path) -> QStringView;
 
+struct Abort;
+
 [[nodiscard]] auto openForWriting(QWidget* parent, QString& path, QStringView suffix)
     -> result<unique_ptr<QFile>, Abort>;
 
@@ -57,17 +102,17 @@ static inline void copyFilenameArray(const char* const src, const usize size, ch
     if (size >= sizeof(u64)) {
         u64 tmpA;
         u64 tmpB;
-        memcpy(&tmpA, src, 8);
-        memcpy(&tmpB, src + size - 8, 8);
-        memcpy(dst, &tmpA, 8);
-        memcpy(dst + size - 8, &tmpB, 8);
+        memcpy(&tmpA, src, sizeof(u64));
+        memcpy(&tmpB, src + size - sizeof(u64), sizeof(u64));
+        memcpy(dst, &tmpA, sizeof(u64));
+        memcpy(dst + size - sizeof(u64), &tmpB, sizeof(u64));
     } else if (size >= sizeof(u32)) {
         u32 tmpA;
         u32 tmpB;
-        memcpy(&tmpA, src, 4);
-        memcpy(&tmpB, src + size - 4, 4);
-        memcpy(dst, &tmpA, 4);
-        memcpy(dst + size - 4, &tmpB, 4);
+        memcpy(&tmpA, src, sizeof(u32));
+        memcpy(&tmpB, src + size - sizeof(u32), sizeof(u32));
+        memcpy(dst, &tmpA, sizeof(u32));
+        memcpy(dst + size - sizeof(u32), &tmpB, sizeof(u32));
     } else {
         std::unreachable();
     }

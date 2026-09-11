@@ -66,7 +66,7 @@ void TaskPanel::addTask(const TaskToken& task) {
     }
 
     layout->addWidget(widget);
-    rows.emplace_back(task->id(), name, widget, label, progressBar);
+    rows.emplace_back(name, widget, label, progressBar, task->id());
 
     emit taskCountChanged(rows.size());
 }

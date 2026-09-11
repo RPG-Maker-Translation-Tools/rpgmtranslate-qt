@@ -22,7 +22,6 @@
 namespace {
 constexpr i32 ARCHIVE_ENTRY_PERM = 0644;
 constexpr QStringView SETTINGS_PATH = u"/settings.json";
-constexpr QStringView RVPACKER_METADATA_FILE = u"/.rvpacker-metadata";
 
 // LanguageTool has one shared API key (not per-endpoint), so it gets a fixed keyring account.
 constexpr QByteArrayView LANGUAGETOOL_CREDENTIAL_ACCOUNT = "languagetool";
@@ -79,14 +78,14 @@ auto MainWindow::saveCurrentTab(QString tabName) -> bool {
 
     for (i32 row = 0; row < model->rowCount(); row++) {
         if ((model->flags(model->index(row, 1)) & Qt::ItemIsEditable) == 0) {
-            *stream << *model->item(row, 0).text();
+            *stream << *model->item(row, 0).getText();
         } else {
             auto fields = QStringList(model->columnCount());
 
             for (i32 column = 0; column < model->columnCount(); column++) {
                 const auto item = model->item(row, column);
 
-                if (item.text()->isNull()) {
+                if (item.getText()->isNull()) {
                     qWarning().noquote() << u"Item at row %1 and column %2 is nullptr."_qsv.arg(
                         itos(row).qsv(),
                         itos(column).qsv()
@@ -94,7 +93,7 @@ auto MainWindow::saveCurrentTab(QString tabName) -> bool {
                     continue;
                 }
 
-                const QString* const text = item.text();
+                const QString* const text = item.getText();
                 fields[column] = qsvReplace(QStringView(text->data(), text->size()), LINE_FEED, NEW_LINE);
             }
 
@@ -341,8 +340,8 @@ auto MainWindow::saveProjectSettings() -> bool {
     metadata[u"lineBreak"_s] = QVariant();
     metadata[u"commentPrefix"_s] = QVariant();
 
-    metadata[u"readEncoding"_s] = projectSettings->readEncoding.isEmpty() ? QVariant()
-                                                                           : QVariant(projectSettings->readEncoding);
+    metadata[u"readEncoding"_s] =
+        projectSettings->readEncoding.isEmpty() ? QVariant() : QVariant(projectSettings->readEncoding);
 
     metadataFile->write(QJsonDocument(QJsonObject::fromVariantHash(metadata)).toJson(QJsonDocument::Compact));
 

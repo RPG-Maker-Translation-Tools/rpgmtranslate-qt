@@ -32,8 +32,8 @@ void TabList::setProgressDisplay(const bool percents) {
 
 void TabList::toggleCompleted(const QModelIndex& index) {
     auto& tab = model_->tab(index.row());
-    const bool current = tab.completed;
-    tab.completed = !current;
+    const bool current = tab.properties.get<"completed">();
+    tab.properties.set<"completed">(!current);
 }
 
 void TabList::mousePressEvent(QMouseEvent* const event) {

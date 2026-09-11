@@ -215,19 +215,19 @@ void MainWindow::handleSearchMenuAction(
 }
 
 void MainWindow::handleRowRemoved(const RemovedRowInfo info) {
-    if ((info.flags() & CommentFlag) == 0) {
+    if ((info.get<"flags">() & CommentFlag) == 0) {
         ui->globalProgressBar->setMaximum(ui->globalProgressBar->maximum() - 1);
         ui->tabPanel->setCurrentTotal(ui->tabPanel->currentTotal() - 1);
 
-        if ((info.flags() & TranslatedFlag) != 0) {
+        if ((info.get<"flags">() & TranslatedFlag) != 0) {
             ui->tabPanel->setCurrentTotal(ui->tabPanel->currentTotal() - 1);
             ui->globalProgressBar->setValue(ui->globalProgressBar->value() - 1);
         }
-    } else if ((info.flags() & BookmarkFlag) != 0) {
-        bookmarkMenu->removeBookmark(info.row());
+    } else if ((info.get<"flags">() & BookmarkFlag) != 0) {
+        bookmarkMenu->removeBookmark(info.get<"row">());
     }
 
-    bookmarkMenu->shiftIndices(ui->tabPanel->currentTabName(), info.row());
+    bookmarkMenu->shiftIndices(ui->tabPanel->currentTabName(), info.get<"row">());
 
     linesStatusLabel->setText(
         tr("%1 Lines / %2 Comments")
@@ -511,7 +511,7 @@ void MainWindow::handleSingleLint() {
 
     const QModelIndex index = ui->translationTable->currentIndex();
     const auto& sourceItem = ui->translationTable->model()->item(index.row(), 0);
-    const QString* const source = sourceItem.text();
+    const QString* const source = sourceItem.getText();
     const QString currentTab = ui->tabPanel->currentTabName();
 
     if (!index.isValid()) {
@@ -636,7 +636,7 @@ void MainWindow::handleInputFocused() {
 
     if (!projectSettings->sourceLang.isEmpty() && !projectSettings->translationLang.isEmpty()) {
         const auto& sourceItem = ui->translationTable->model()->item(ui->translationTable->currentIndex().row(), 0);
-        const QString* const text = sourceItem.text();
+        const QString* const text = sourceItem.getText();
         const Glossary glossary = glossaryMenu->glossary();
 
         const QString currentTabName = ui->tabPanel->currentTabName();
