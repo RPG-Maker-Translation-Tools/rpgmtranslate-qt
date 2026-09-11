@@ -1368,7 +1368,7 @@
 <td><code>Ctrl+G</code></td>
 </tr>
 <tr>
-<td>Пакетное меню</td>
+<td>Меню массовой обработки</td>
 <td><code>Ctrl+B</code></td>
 </tr>
 <tr>
@@ -1381,7 +1381,7 @@
 </tr>
 <tr>
 <td>Меню глоссария</td>
-<td><code>Alt+B</code></td>
+<td><code>Alt+L</code></td>
 </tr>
 <tr>
 <td>Меню переводов</td>
@@ -1390,6 +1390,29 @@
 </tbody>
 </table>
 <p>Если одна горячая клавиша назначена на два действия сразу, попытка закрыть окно провалится и вам будет выведена ошибка.</p>
+<p>Для горячих клавих есть особые случаи, которые не могут быть изменены:</p>
+<table>
+<thead>
+<tr>
+<th>Действие</th>
+<th>По умолчанию</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Сохранение</td>
+<td><a href="https://doc.qt.io/qt-6/qkeysequence.html#standard-shortcuts">QKeySequence::Save</a> (Ctrl+S)</td>
+</tr>
+<tr>
+<td>Запись</td>
+<td>Ctrl+W</td>
+</tr>
+<tr>
+<td>Поиск</td>
+<td><a href="https://doc.qt.io/qt-6/qkeysequence.html#standard-shortcuts">QKeySequence::Find</a> (Ctrl+F)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="_7">Перевод</h2>
 <p>Это самый большой раздел. Здесь настраиваются точки машинного перевода, LanguageTool и система линтинга.</p>
 <p>API ключи никогда не записываются в <code>settings.json</code> - они хранятся в собственном хранилище учетных данных ОС (Windows Credential Manager или Secret Service keyring на Linux), и считываются только при необходимости.</p>

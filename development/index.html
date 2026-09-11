@@ -1452,16 +1452,16 @@
 <li>cbindgen</li>
 <li>CMake (&gt;= 3.25)</li>
 <li>C++23-compatible compiler (<code>clang 18+</code>, <code>gcc 14+</code>, <code>MSVC 2022+</code>)</li>
-<li>C++23-complete STL (<code>&gt;libstdc++14</code>, <code>&gt;libc++23</code>, <code>&gt;MSVC 2022</code>).</li>
+<li>C++23-complete STL (<code>&gt;=libstdc++14</code>, <code>&gt;=libc++23</code>, <code>&gt;=MSVC 2022</code>).</li>
 </ul>
 <h2 id="required-libraries">Required libraries</h2>
 <h3 id="required">Required</h3>
 <ul>
-<li>Qt6</li>
+<li>Qt6 (&gt;= 6.8.2)</li>
 <li>libarchive</li>
 <li>liblzma</li>
 <li>quickjs-ng</li>
-<li>glaze</li>
+<li>glaze (&gt;= 7.5.0)</li>
 </ul>
 <h4 id="qt6-682">Qt6 (≥ 6.8.2)</h4>
 <p>Required modules:</p>
@@ -1503,13 +1503,13 @@
 <ul>
 <li>AAC, Vorbis, Opus, Theora</li>
 <li>H.264, VP9</li>
-<li>pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le</li>
+<li>pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le (All RM2K)</li>
 </ul>
 </li>
 <li>
 <p>Required demuxers:</p>
 <ul>
-<li>OGG, MP4, WAV</li>
+<li>OGG, MP4, WAV (RM2K)</li>
 </ul>
 </li>
 <li>
@@ -1615,7 +1615,7 @@ rm -rf /tmp/quickjs-ng
 <p><code>configure.lua</code> wraps CMake for better UX:</p>
 <pre><code class="language-bash">./lua configure.lua --fresh -G=Ninja CMAKE_BUILD_TYPE=Release
 </code></pre>
-<p>Available CMake options can be fetched through ./lua configure.lua --help.</p>
+<p>Available CMake options can be fetched through <code>./lua configure.lua --help</code>.</p>
 <p>Plain CMake works just as well if you prefer it.</p>
 <h2 id="building">Building</h2>
 <pre><code class="language-bash">cmake --build build

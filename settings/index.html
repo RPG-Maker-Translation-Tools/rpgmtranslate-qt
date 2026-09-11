@@ -1390,6 +1390,29 @@
 </tbody>
 </table>
 <p>The same shortcut can't be assigned to two actions at once - trying to close the window with a duplicate in place is rejected until you change one of them.</p>
+<p>There are special cases for shortcuts, which cannot be changed:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Save</td>
+<td><a href="https://doc.qt.io/qt-6/qkeysequence.html#standard-shortcuts">QKeySequence::Save</a> (Ctrl+S)</td>
+</tr>
+<tr>
+<td>Write</td>
+<td>Ctrl+W</td>
+</tr>
+<tr>
+<td>Search</td>
+<td><a href="https://doc.qt.io/qt-6/qkeysequence.html#standard-shortcuts">QKeySequence::Find</a> (Ctrl+F)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="translation">Translation</h2>
 <p>This is the largest section. It configures machine-translation endpoints, LanguageTool, and the lint system.</p>
 <p>API keys never get written to <code>settings.json</code> - they're kept in your OS's own credential store (Windows Credential Manager, or the Secret Service keyring on Linux) instead, and only read back in when needed.</p>
