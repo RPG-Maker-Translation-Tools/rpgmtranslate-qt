@@ -154,17 +154,28 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
     mimallocVerBuf[0] = u'v';
     mimallocVerBuf[1] = mimallocVersionStr.qsv()[0];
     mimallocVerBuf[2] = u'.';
-    mimallocVerBuf[3] = mimallocVersionStr.qsv()[1];
-    mimallocVerBuf[4] = u'.';
 
-    if (mimallocVersionStr.qsv()[2] != u'0') {
-        mimallocVerBuf[5] = mimallocVersionStr.qsv()[2];
-        mimallocVerBuf[6] = mimallocVersionStr.qsv()[3];
-        mimallocVerBuf[7] = u'\0';
+    u8 bufIdx;
+
+    if (mimallocVersionStr.qsv()[1] != u'0') {
+        mimallocVerBuf[3] = mimallocVersionStr.qsv()[1];
+        mimallocVerBuf[4] = mimallocVersionStr.qsv()[2];
+        bufIdx = 5;
     } else {
-        mimallocVerBuf[5] = mimallocVersionStr.qsv()[3];
-        mimallocVerBuf[6] = u'\0';
+        mimallocVerBuf[3] = mimallocVersionStr.qsv()[2];
+        bufIdx = 4;
     }
+
+    mimallocVerBuf[bufIdx++] = u'.';
+
+    if (mimallocVersionStr.qsv()[3] != u'0') {
+        mimallocVerBuf[bufIdx++] = mimallocVersionStr.qsv()[3];
+        mimallocVerBuf[bufIdx++] = mimallocVersionStr.qsv()[4];
+    } else {
+        mimallocVerBuf[bufIdx++] = mimallocVersionStr.qsv()[4];
+    }
+
+    mimallocVerBuf[bufIdx] = u'\0';
 #endif
 
     ui->aboutLabel->setText(
