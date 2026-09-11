@@ -7,17 +7,17 @@
   - cbindgen
 - CMake (>= 3.25)
 - C++23-совместимый компилятор (`clang 18+`, `gcc 14+`, `MSVC 2022+`)
-- C++23-готовый STL (`>libstdc++14`, `>libc++23`, `>MSVC 2022`).
+- C++23-готовый STL (`>=libstdc++14`, `>=libc++23`, `>=MSVC 2022`).
 
 ## Необходимые библиотеки
 
 ### Необходимые
 
-- Qt6
+- Qt6 (>= 6.8.2)
 - libarchive
   - liblzma
 - quickjs-ng
-- glaze
+- glaze (>= 7.5.0)
 
 #### Qt6 (≥ 6.8.2)
 
@@ -58,10 +58,10 @@
   - Нужные декодеры:
     - AAC, Vorbis, Opus, Theora
     - H.264, VP9
-    - pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le
+    - pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le (Все RM2K)
 
   - Нужные демуксеры:
-    - OGG, MOV, WAV
+    - OGG, MOV, WAV (RM2K)
 
   - Нужные парсеры:
     - AAC, H.264, VP9

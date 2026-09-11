@@ -61,6 +61,14 @@ Keyboard shortcuts for opening panels and menus. Click a shortcut field and pres
 
 The same shortcut can't be assigned to two actions at once - trying to close the window with a duplicate in place is rejected until you change one of them.
 
+There are special cases for shortcuts, which cannot be changed:
+
+| Action | Default                                                                                    |
+| ------ | ------------------------------------------------------------------------------------------ |
+| Save   | [QKeySequence::Save](https://doc.qt.io/qt-6/qkeysequence.html#standard-shortcuts) (Ctrl+S) |
+| Write  | Ctrl+W                                                                                     |
+| Search | [QKeySequence::Find](https://doc.qt.io/qt-6/qkeysequence.html#standard-shortcuts) (Ctrl+F) |
+
 ## Translation
 
 This is the largest section. It configures machine-translation endpoints, LanguageTool, and the lint system.

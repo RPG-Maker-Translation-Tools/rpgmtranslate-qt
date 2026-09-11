@@ -7,17 +7,17 @@
   - cbindgen
 - CMake (>= 3.25)
 - C++23-compatible compiler (`clang 18+`, `gcc 14+`, `MSVC 2022+`)
-- C++23-complete STL (`>libstdc++14`, `>libc++23`, `>MSVC 2022`).
+- C++23-complete STL (`>=libstdc++14`, `>=libc++23`, `>=MSVC 2022`).
 
 ## Required libraries
 
 ### Required
 
-- Qt6
+- Qt6 (>= 6.8.2)
 - libarchive
   - liblzma
 - quickjs-ng
-- glaze
+- glaze (>= 7.5.0)
 
 #### Qt6 (≥ 6.8.2)
 
@@ -58,10 +58,10 @@ These are conditionally required based on build flags.
   - Required decoders:
     - AAC, Vorbis, Opus, Theora
     - H.264, VP9
-    - pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le
+    - pcm_s16le, pcm_s24le, pcm_s32le, pcm_f32le (All RM2K)
 
   - Required demuxers:
-    - OGG, MP4, WAV
+    - OGG, MP4, WAV (RM2K)
 
   - Required parsers:
     - AAC, H.264, VP9
@@ -198,7 +198,7 @@ You can find a Dockerfile in the root of repository that includes builds on afor
 ./lua configure.lua --fresh -G=Ninja CMAKE_BUILD_TYPE=Release
 ```
 
-Available CMake options can be fetched through ./lua configure.lua --help.
+Available CMake options can be fetched through `./lua configure.lua --help`.
 
 Plain CMake works just as well if you prefer it.
 

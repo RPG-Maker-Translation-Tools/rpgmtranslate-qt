@@ -10,9 +10,38 @@ Versions may carry a codename alongside the semver number.
 
 ## [Unreleased]
 
+## [v1.1.2] "Death of RPG Maker forums" - 11.09.2026
+
 ### Fixes
 
 - Fixed auto-update failing with "Failed to extract archive" on Windows.
+- Fixed wrong parsing of icon sets which would result in fails to display icons corresponding to `\i[x]` tags.
+- Fixed linting being entirely disabled by default.
+- Translation inputs (cells) are now not scrolled to the very bottom when opened, which previously led to the first line in the cell being not visible when the input is focused.
+- Fixed possible fail of copying data as a baseline in some cases.
+- Project metadata (`.rvpacker-metadata`) will now be automatically deduced when using existing translation in the root of the project.
+- Small micro-optimizations.
+
+### Development
+
+- Rust version that was used during compilation is now displayed in about window.
+- Fixed incorrect mimalloc version in about window.
+
+### Planned for 1.2
+
+- Total source/translation words/characters information.
+- Display name of the entries where text is located when, for example, searching.
+- Check which plugins need to be finished/improved in linting, check whether everything is compatible with VisuStella plugins.
+- WAV playback for RM2K.
+- Save file asset inspection.
+- RPG Maker 2000/2003 also seems to have its own text tags, which are currently not supported.
+
+### Planned for 1.3
+
+- Remote support for built-in git client.
+- Built-in database like in RPG Maker to search for specific entries and quickly find anything by searching.
+- Wolf RPG support.
+- VisuStella support (if needed).
 
 ## [v1.1.1] "Death of RPG Maker forums" - 04.09.2026
 
