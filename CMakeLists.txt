@@ -5,7 +5,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 set(PROJECT_NAME rpgmtranslate)
-set(PROJECT_VERSION "1.1.1")
+set(PROJECT_VERSION "1.1.2")
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 
 set(CMAKE_C_STANDARD 17)
@@ -393,6 +393,7 @@ set(HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/Utils.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/ezgit2.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/glazemeta.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/utilities/PackedBits.hpp"
 )
 
 qt_add_executable(${PROJECT_NAME}
