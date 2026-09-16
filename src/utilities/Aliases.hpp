@@ -1,6 +1,6 @@
 #pragma once
 
-#include "magic_enum.hpp"
+#include "enchantum_single_header.hpp"
 
 #include <QString>
 #include <atomic>
@@ -20,7 +20,7 @@
 using namespace Qt::Literals::StringLiterals;
 using namespace std::literals::string_view_literals;
 
-using namespace magic_enum::bitwise_operators;
+using namespace enchantum::bitwise_operators;
 
 namespace fs = std::filesystem;
 namespace views = std::views;

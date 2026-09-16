@@ -1,10 +1,8 @@
 #include "AboutWindow.hpp"
 
-#include "MediaPlayer.hpp"
 #include "ProjectSettings.hpp"
 #include "Utils.hpp"
 #include "config.h"
-#include "magic_enum.hpp"
 #include "miniaudio.h"
 #include "ui_AboutWindow.h"
 
@@ -100,7 +98,7 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 }
 
 constexpr const char* ABOUT_TEMPLATE = QT_TR_NOOP(
-    "RPGMTranslate v%1 'Death of RPG Maker forums'**\u{2028}\u{2028}Direct dependencies:\u{2028}\u{2028}**fast_float %2\u{2028}jeaii-itoa\u{2028}magic_enum %3\u{2028}miniaudio %4\u{2028}zmij\u{2028}glaze %5\u{2028}Qt %6\u{2028}%7\u{2028}FFmpeg %8\u{2028}libgit2 %9\u{2028}quickjs-ng %10\u{2028}Nuspell %11\u{2028}mimalloc %12**\u{2028}\u{2028}Legal info:\u{2028}\u{2028}**RPGMTranslate is licensed under [WTPFL](https://www.wtfpl.net/).\u{2028}RPGMTranslate bundles assets and statically links to the libraries licensed by other terms. See \"Third Party Notice\" tab for more information.\u{2028}See [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt) GitHub repository for more information.**\u{2028}\u{2028}Build info:\u{2028}\u{2028}**%13"
+    "RPGMTranslate v%1 'Death of RPG Maker forums'**\u{2028}\u{2028}Direct dependencies:\u{2028}\u{2028}**fast_float %2\u{2028}jeaii-itoa\u{2028}enchantum\u{2028}miniaudio %3\u{2028}zmij\u{2028}glaze %4\u{2028}Qt %5\u{2028}%6\u{2028}FFmpeg %7\u{2028}libgit2 %8\u{2028}quickjs-ng %9\u{2028}Nuspell %10\u{2028}mimalloc %11**\u{2028}\u{2028}Legal info:\u{2028}\u{2028}**RPGMTranslate is licensed under [WTPFL](https://www.wtfpl.net/).\u{2028}RPGMTranslate bundles assets and statically links to the libraries licensed by other terms. See \"Third Party Notice\" tab for more information.\u{2028}See [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt) GitHub repository for more information.**\u{2028}\u{2028}Build info:\u{2028}\u{2028}**%12"
 );
 
 constexpr i32 SEMVER_STRING_MAX_LEN = 8;
@@ -183,10 +181,6 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
             .arg(
                 QStringView(RPGMT_VERSION),
                 svtostr(QL1SV(FASTFLOAT_VERSION_STR)),
-                QStringView(
-                    constructSemverString(MAGIC_ENUM_VERSION_MAJOR, MAGIC_ENUM_VERSION_MINOR, MAGIC_ENUM_VERSION_PATCH)
-                        .data()
-                ),
                 svtostr(QL1SV(MA_VERSION_STRING)),
                 QStringView(constructSemverString(glz::version.major, glz::version.minor, glz::version.patch).data()),
                 svtostr(QL1SV(qVersion())),
@@ -218,7 +212,7 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
             )
     );
 
-    auto thirdPartyNoticeFile = QFile(qApp->applicationDirPath() % u"/THIRD-PARTY-NOTICE.md"_qsv);
+    auto thirdPartyNoticeFile = QFile(dataLocation() % u"/THIRD-PARTY-NOTICE.md"_qsv);
 
     if (!thirdPartyNoticeFile.open(QFile::ReadOnly)) {
         ui->thirdPartyLabel->setText(

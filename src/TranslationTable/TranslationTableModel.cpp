@@ -77,10 +77,10 @@ auto TranslationTableModel::flags(const QModelIndex& index) const -> Qt::ItemFla
     Qt::ItemFlags flags;
 
     flags.setFlag(Qt::ItemIsEnabled);
-    flags.setFlag(Qt::ItemIsSelectable);
 
     if (index.column() != 0 && rows[index.row()].second[index.column()]) {
         flags.setFlag(Qt::ItemIsEditable);
+        flags.setFlag(Qt::ItemIsSelectable);
     }
 
     return flags;
@@ -160,7 +160,7 @@ void TranslationTableModel::fill(std::span<QStringView> lines, const QString& fi
             newRow[0] = std::move(commentText);
             newRow[1] = std::move(counterpartText);
 
-            colCount = std::max<u8>(colCount, 2);
+            colCount = max<u8>(colCount, 2);
             rows.append({ std::move(newRow), flags });
             continue;
         }
@@ -178,7 +178,7 @@ void TranslationTableModel::fill(std::span<QStringView> lines, const QString& fi
             flags[col] = true;
         }
 
-        colCount = std::max<u8>(colCount, cols);
+        colCount = max<u8>(colCount, cols);
         rows.append({ std::move(newRow), flags });
     }
 
@@ -218,20 +218,19 @@ void TranslationTableModel::insertRow(const u32 row, QStringList cells) {
     beginInsertRows({}, scast<i32>(row), scast<i32>(row));
 
     array<QString, MAX_COLUMNS> newRow;
-    bitset<MAX_COLUMNS> flags;
 
     for (i32 col = 0; col < cells.size(); col++) {
         newRow[col] = std::move(cells[col]);
     }
 
-    rows.insert(row, { std::move(newRow), flags });
+    rows.insert(row, { std::move(newRow), bitset<MAX_COLUMNS>() });
     endInsertRows();
 }
 
-auto TranslationTableModel::item(const u32 row, const u8 column) -> Cell {
-    return Cell{ rcast<QString*>(&rows[row].first[column]), rows[row].second[column] };
+auto TranslationTableModel::item(const u32 row, const u8 column) -> QString* {
+    return &rows[row].first[column];
 };
 
-auto TranslationTableModel::itemFromIndex(const QModelIndex& index) -> Cell {
-    return Cell{ &rows[index.row()].first[index.column()], rows[index.row()].second[index.column()] };
+auto TranslationTableModel::itemFromIndex(const QModelIndex& index) -> QString* {
+    return &rows[index.row()].first[index.column()];
 };

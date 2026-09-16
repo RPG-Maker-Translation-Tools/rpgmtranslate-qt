@@ -139,9 +139,9 @@ void MatchTableDelegate::paint(
     auto textLayout = QTextLayout(text, opt.font);
     const f32 height = layoutWrappedText(textLayout, columnWidth > 0 ? columnWidth : MAX_WRAPPED_COLUMN_WIDTH);
 
-    const i32 naturalWidth = scast<i32>(std::ceil(textLayout.maximumWidth()));
+    const i32 naturalWidth = scast<i32>(ceil(textLayout.maximumWidth()));
 
-    return { std::min(naturalWidth, MAX_WRAPPED_COLUMN_WIDTH) + (PAD_X * 2), scast<i32>(height) + (PAD_Y * 2) };
+    return { min(naturalWidth, MAX_WRAPPED_COLUMN_WIDTH) + (PAD_X * 2), scast<i32>(height) + (PAD_Y * 2) };
 }
 
 [[nodiscard]] auto LintTableModel::columnCount(const QModelIndex& /* parent */) const -> i32 {

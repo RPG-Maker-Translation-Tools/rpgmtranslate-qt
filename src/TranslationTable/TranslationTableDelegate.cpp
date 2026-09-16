@@ -44,6 +44,78 @@ auto TranslationTableDelegate::createEditor(
         tableView->resizeRowToContents(index.row());
     });
 
+    connect(editor, &TranslationInput::focusNextInput, this, [this, editor] -> void {
+        auto* const that = ccast<TranslationTableDelegate*>(this);
+
+        static constexpr i8 rowStep = 1;
+        static constexpr i8 colStep = 0;
+
+        auto* const tableView = scast<TranslationTable*>(ccast<TranslationTableDelegate*>(this)->parent());
+        if (tableView == nullptr) {
+            return;
+        }
+
+        const TranslationTableModel* const model = tableView->model();
+        if (model == nullptr) {
+            return;
+        }
+
+        const QModelIndex current = tableView->currentIndex();
+        if (!current.isValid()) {
+            return;
+        }
+
+        const i32 rowCount = model->rowCount();
+        const i32 colCount = model->columnCount();
+
+        const auto isEditable = [model](const QModelIndex& idx) -> bool {
+            if (!idx.isValid()) {
+                return false;
+            }
+
+            return (idx.flags() & Qt::ItemIsEditable);
+        };
+
+        const auto commitAndClose = [editor, that] -> void {
+            emit that->commitData(scast<QWidget*>(editor));
+            emit that->closeEditor(scast<QWidget*>(editor), QStyledItemDelegate::SubmitModelCache);
+        };
+
+        const auto editIndexAsync = [tableView](const QModelIndex& idx) -> void {
+            if (!idx.isValid()) {
+                return;
+            }
+
+            QTimer::singleShot(0, tableView, [tableView, idx] -> void {
+                tableView->setCurrentIndex(idx);
+                tableView->scrollTo(idx);
+                tableView->edit(idx);
+            });
+        };
+
+        i32 row = current.row() + rowStep;
+        i32 column = current.column() + colStep;
+
+        QModelIndex next;
+        while (row >= 0 && row < rowCount && column >= 0 && column < colCount) {
+            const QModelIndex candidate = model->index(row, column, current.parent());
+
+            if (isEditable(candidate)) {
+                next = candidate;
+                break;
+            }
+
+            row += rowStep;
+            column += colStep;
+        }
+
+        commitAndClose();
+
+        if (next.isValid()) {
+            editIndexAsync(next);
+        }
+    });
+
     connect(editor, &QObject::destroyed, this, [this] -> void { activeInput = nullptr; });
 
     QTimer::singleShot(0, [editor] -> void { editor->verticalScrollBar()->setValue(0); });
@@ -98,17 +170,21 @@ void TranslationTableDelegate::paint(
     QStyleOptionViewItem opt = option;
     initStyleOption(&opt, index);
 
+    painter->save();
+
     const QStyle* const style = (opt.widget != nullptr) ? opt.widget->style() : qApp->style();
 
-    style->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget);
+    if ((opt.state & QStyle::State_Selected) != 0) {
+        painter->fillRect(opt.rect, opt.palette.highlight());
+    } else {
+        style->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget);
+    }
 
     if (!opt.text.isEmpty()) {
         const QRect paddedRect = opt.rect.adjusted(PAD_X, PAD_Y, -PAD_X, -PAD_Y);
-
         const QPalette::ColorRole textRole =
             ((opt.state & QStyle::State_Selected) != 0) ? QPalette::HighlightedText : QPalette::Text;
 
-        painter->save();
         painter->setFont(opt.font);
         style->drawItemText(
             painter,
@@ -119,8 +195,9 @@ void TranslationTableDelegate::paint(
             opt.text,
             textRole
         );
-        painter->restore();
     }
+
+    painter->restore();
 }
 
 auto TranslationTableDelegate::eventFilter(QObject* const editor, QEvent* const event) -> bool {
@@ -151,16 +228,16 @@ auto TranslationTableDelegate::eventFilter(QObject* const editor, QEvent* const 
         return QStyledItemDelegate::eventFilter(editor, event);
     }
 
+    const i32 rowCount = model->rowCount();
+    const i32 colCount = model->columnCount();
+
     const auto isEditable = [model](const QModelIndex& idx) -> bool {
         if (!idx.isValid()) {
             return false;
         }
 
-        return (model->flags(idx) & Qt::ItemIsEditable);
+        return (idx.flags() & Qt::ItemIsEditable);
     };
-
-    const i32 rowCount = model->rowCount(current.parent());
-    const i32 colCount = model->columnCount(current.parent());
 
     const auto commitAndClose = [this, editor] -> void {
         emit commitData(scast<QWidget*>(editor));

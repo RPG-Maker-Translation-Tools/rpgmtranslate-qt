@@ -8,6 +8,7 @@
 #include <QDesktopServices>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QScrollBar>
 #include <QSignalBlocker>
 #include <QTextBlock>
 #include <QTextCursor>
@@ -67,10 +68,18 @@ void TranslationInput::applyLintFormats(vector<LintCharState> charStates, const 
 }
 
 void TranslationInput::keyPressEvent(QKeyEvent* const event) {
-    if (event->key() == Qt::Key_Escape) {
-        emit editingFinished();
-        event->accept();
-        return;
+    if (event->key() == Qt::Key_Escape || event->key() == Qt::Key_Return) {
+        if (event->key() == Qt::Key_Return && (event->modifiers() & Qt::ShiftModifier) != 0) {
+            QTimer::singleShot(0, [this] -> void { verticalScrollBar()->setValue(0); });
+        } else {
+            if (event->key() == Qt::Key_Return && (event->modifiers() & Qt::ControlModifier) != 0) {
+                emit focusNextInput();
+            }
+
+            clearFocus();
+            event->accept();
+            return;
+        }
     }
 
     if (event->key() == Qt::Key_Backspace) {

@@ -2,6 +2,7 @@
 
 #include "Aliases.hpp"
 #include "Constants.hpp"
+#include "Notice.hpp"
 #include "TranslationTableDelegate.hpp"
 #include "TranslationTableHeader.hpp"
 #include "TranslationTableModel.hpp"
@@ -30,7 +31,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
     setSortingEnabled(false);
 
     setSelectionBehavior(QTableView::SelectItems);
-    setSelectionMode(QTableView::ContiguousSelection);
+    setSelectionMode(QTableView::ExtendedSelection);
 
     verticalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignTop);
     verticalHeader()->setSectionsClickable(false);
@@ -45,8 +46,12 @@ TranslationTable::TranslationTable(QWidget* const parent) :
         selectionModel(),
         &QItemSelectionModel::currentChanged,
         this,
-        [this](const QModelIndex& current, const QModelIndex&) -> void {
-        selectedColumn = scast<i8>(current.isValid() ? current.column() : -1);
+        [this](const QModelIndex& current, const QModelIndex& /* prev */) -> void {
+        if (!current.isValid()) {
+            return;
+        }
+
+        selectedColumnPerRow.try_emplace(current.row(), scast<i8>(current.column()));
     }
     );
 
@@ -55,30 +60,29 @@ TranslationTable::TranslationTable(QWidget* const parent) :
         &QItemSelectionModel::selectionChanged,
         this,
         [this](
-            const QItemSelection& /* selected */,
+            const QItemSelection& selected,
             const QItemSelection& /* prev */
         ) -> void {
-        if (selectedColumn < 0) {
-            const QModelIndex current = currentIndex();
-
-            if (current.isValid()) {
-                selectedColumn = scast<i8>(current.column());
-            } else {
-                const auto indexes = selectionModel()->selectedIndexes();
-
-                if (indexes.isEmpty()) {
-                    return;
-                }
-
-                selectedColumn = scast<i8>(indexes.first().column());
+        // Seed an anchor column for any row newly touched that doesn't
+        // have one yet.
+        for (const auto& range : selected) {
+            for (i32 row = range.top(); row <= range.bottom(); row++) {
+                selectedColumnPerRow.try_emplace(row, scast<i8>(range.left()));
             }
         }
 
         QItemSelection toDeselect;
 
         for (const auto& range : selectionModel()->selection()) {
-            if (range.left() != selectedColumn || range.right() != selectedColumn) {
-                toDeselect.append(range);
+            for (i32 row = range.top(); row <= range.bottom(); row++) {
+                const i8 keepColumn = selectedColumnPerRow.try_emplace(row, scast<i8>(range.left())).first->second;
+
+                for (i32 col = range.left(); col <= range.right(); col++) {
+                    if (col != keepColumn) {
+                        const QModelIndex idx = model()->index(row, col);
+                        toDeselect.select(idx, idx);
+                    }
+                }
             }
         }
 
@@ -88,14 +92,25 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             selectionModel()->blockSignals(false);
         }
 
-        if (selectionModel()->selectedIndexes().isEmpty()) {
-            selectedColumn = -1;
+        for (auto iter = selectedColumnPerRow.begin(); iter != selectedColumnPerRow.end();) {
+            if (selectionModel()->rowIntersectsSelection(iter->first, rootIndex())) {
+                iter++;
+            } else {
+                iter = selectedColumnPerRow.erase(iter);
+            }
         }
     }
     );
 
     connect(this, &TranslationTable::pressed, this, [this](const QModelIndex& index) -> void {
         if (qApp->mouseButtons() != Qt::RightButton) {
+            if (index.column() == 0 && (model_->index(index.row(), 1).flags() & Qt::ItemIsEditable) != 0) {
+                qApp->clipboard()->setText(index.data(Qt::EditRole).toString());
+                present(
+                    this,
+                    NOTICE("Source text from row %1 is copied to clipboard.", Info, Status, itos(index.row() + 1).qsv())
+                );
+            }
             return;
         }
 
@@ -103,17 +118,16 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             return;
         }
 
-        if (!model_->item(index.row(), 1).getEditable()) {
+        if ((model_->index(index.row(), 1).flags() & Qt::ItemIsEditable) == 0) {
             return;
         }
 
-        auto* const menu = new QMenu(this);
+        auto menu = QMenu(this);
 
-        const QAction* const removeRowAction = menu->addAction(tr("Remove Row"));
-        const QAction* const bookmarkRowAction = menu->addAction(tr("Bookmark Row"));
+        const QAction* const removeRowAction = menu.addAction(tr("Remove Row"));
+        const QAction* const bookmarkRowAction = menu.addAction(tr("Bookmark Row"));
 
-        const QAction* const selectedAction = menu->exec(QCursor::pos());
-        delete menu;
+        const QAction* const selectedAction = menu.exec(QCursor::pos());
 
         if (selectedAction == removeRowAction) {
             model_->removeRow(index.row());
@@ -163,7 +177,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             const i32 first,
             const i32 /* last */
         ) -> void {
-        const QString* const sourceText = model_->item(first, 0).getText();
+        const QString* const sourceText = model_->item(first, 0);
         auto flags = RowFlags(0);
 
         if (sourceText->startsWith(COMMENT_PREFIX)) {
@@ -174,7 +188,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             }
         } else {
             for (i32 column = 1; column < model_->columnCount(); column++) {
-                if (model_->item(first, column).getText()->isEmpty()) {
+                if (model_->item(first, column)->isEmpty()) {
                     flags |= RowFlags::TranslatedFlag;
                     break;
                 }
@@ -197,9 +211,9 @@ void TranslationTable::insertTranslation(const QString& translation) {
         return;
     }
 
-    auto item = model_->itemFromIndex(index);
+    QString* const item = model_->itemFromIndex(index);
 
-    if (!item.getText()->isEmpty()) {
+    if (!item->isEmpty()) {
         const auto selected = QMessageBox::question(
             this,
             tr("Cell is not empty"),
@@ -217,7 +231,7 @@ void TranslationTable::insertTranslation(const QString& translation) {
         return;
     }
 
-    *item.getText() = translation;
+    *item = translation;
 };
 
 void TranslationTable::init(const Settings* const settings, const ProjectSettings* const projectSettings) const {
@@ -282,9 +296,13 @@ auto TranslationTable::copy() -> u32 {
     QStringList rowData;
 
     for (const QModelIndex& index : indexes) {
-        QString cellData = model()->data(index, Qt::EditRole).toString();
-        cellData.replace("\\"_L1, "\\\\"_L1);
-        cellData.replace("\n"_L1, "\\n"_L1);
+        QString cellData = index.data(Qt::EditRole).toString();
+
+        if (cellData.isEmpty() || (index.flags() & Qt::ItemIsEditable) == 0) {
+            continue;
+        }
+
+        cellData.replace(u'\n', u'\1');
 
         rowData.append(cellData);
     }
@@ -308,11 +326,11 @@ auto TranslationTable::cut() -> u32 {
     u32 cut = 0;
 
     for (const QModelIndex& index : indexes) {
-        if (!model_->data(index, Qt::EditRole).toString().isEmpty()) {
+        if (index.data(Qt::EditRole).toString().isEmpty() || (index.flags() & Qt::ItemIsEditable) != 0) {
             cut++;
+            model_->setData(index, QString(), Qt::EditRole);
+            resizeRowToContents(index.row());
         }
-
-        model_->setData(index, QString(), Qt::EditRole);
     }
 
     return cut;
@@ -332,30 +350,54 @@ auto TranslationTable::paste() -> u32 {
     QStringList rows = clipboardText.split(u'\n');
 
     for (QString& row : rows) {
-        row.replace("\\n"_L1, "\n"_L1);
-        row.replace("\\\\"_L1, "\\"_L1);
+        row.replace(u'\1', u'\n');
     }
 
     const i32 column = indexes.front().column();
 
-    i32 firstRow = indexes.front().row();
+    vector<i32> selectedRows;
+    selectedRows.reserve(scast<usize>(indexes.size()));
+
     for (const QModelIndex& idx : indexes) {
-        firstRow = std::min(firstRow, idx.row());
+        selectedRows.push_back(idx.row());
     }
 
-    const u32 maxRow = model_->rowCount() - 1;
-    const u32 available = maxRow - firstRow + 1;
-    const u32 count = std::min(scast<u32>(rows.size()), available);
+    ranges::sort(selectedRows);
+    selectedRows.erase(ranges::unique(selectedRows).begin(), selectedRows.end());
 
     u32 pasted = 0;
 
-    for (i32 idx = 0; idx < count; idx++) {
-        const i32 row = firstRow + idx;
-        const QModelIndex dst = model_->index(row, column);
+    if (selectedRows.size() <= 1) {
+        const i32 firstRow = selectedRows.front();
+        const i32 maxRow = model_->rowCount() - 1;
 
-        if (dst.isValid() && ((model_->flags(dst) & Qt::ItemIsEditable) != 0)) {
-            if (model_->setData(dst, rows[idx], Qt::EditRole)) {
-                pasted++;
+        i32 row = firstRow;
+        i32 idx = 0;
+
+        while (idx < rows.size() && row <= maxRow) {
+            const QModelIndex dst = model_->index(row, column);
+
+            if (dst.isValid() && ((dst.flags() & Qt::ItemIsEditable) != 0)) {
+                if (model_->setData(dst, rows[idx], Qt::EditRole)) {
+                    pasted++;
+                    resizeRowToContents(row);
+                }
+                idx++;
+            }
+
+            row++;
+        }
+    } else {
+        const i32 count = min(scast<i32>(rows.size()), scast<i32>(selectedRows.size()));
+
+        for (i32 idx = 0; idx < count; idx++) {
+            const i32 row = selectedRows[scast<usize>(idx)];
+            const QModelIndex dst = model_->index(row, column);
+
+            if (dst.isValid() && ((dst.flags() & Qt::ItemIsEditable) != 0)) {
+                if (model_->setData(dst, rows[idx], Qt::EditRole)) {
+                    pasted++;
+                }
             }
         }
     }

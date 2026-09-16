@@ -215,7 +215,7 @@ void syncColorCells(
 }
 
 [[nodiscard]] auto listSpellcheckDictionaries() -> QStringList {
-    const auto dictionariesPath = qApp->property("data-location").toString() + u"/dictionaries";
+    const auto dictionariesPath = dataLocation() + u"/dictionaries";
 
     if (!QFile::exists(dictionariesPath)) {
         return {};
@@ -260,7 +260,7 @@ void syncColorCells(
         QLocale::matchingLocales(QLocale::AnyLanguage, QLocale::AnyScript, QLocale::AnyTerritory);
 
     QList<pair<QString, QString>> result = { {} };
-    result.reserve(magic_enum::enum_values<QLocale::Language>().size() + 16);
+    result.reserve(enchantum::values<QLocale::Language>.size() + 16);
 
     for (const QLocale& loc : all) {
         const QLocale::Language lang = loc.language();
@@ -662,7 +662,7 @@ SettingsWindow::SettingsWindow(
             return;
         }
 
-        QString dicPath = qApp->property("data-location").toString() % u"/dictionaries"_qsv % text;
+        QString dicPath = dataLocation() % u"/dictionaries"_qsv % text;
         dicPath.slice(0, dicPath.size() - 3);
         dicPath += u"dic";
 
@@ -864,14 +864,14 @@ auto SettingsWindow::validate() -> bool {
           { u"Translations Menu"_qsv, ui->translationsMenuInput } }
     };
 
-    for (const auto [i, first] : views::enumerate(hotkeyInputs)) {
+    for (const auto [idx, first] : views::enumerate(hotkeyInputs)) {
         const QKeySequence sequence = first.second->keySequence();
 
         if (sequence.isEmpty()) {
             continue;
         }
 
-        for (const auto& second : views::drop(hotkeyInputs, i + 1)) {
+        for (const auto& second : views::drop(hotkeyInputs, idx + 1)) {
             if (second.second->keySequence() == sequence) {
                 present(
                     this,

@@ -34,12 +34,14 @@ static inline auto replace_addr(const u64 tagged, void* const new_addr) -> u64 {
     return preserved_tag | new_addr_bits;
 }
 
+[[nodiscard]] auto dataLocation() -> QString;
+
 struct Translation {
    private:
     QStringView translation;
 
    public:
-    Translation(QStringView view, u8 idx) {
+    Translation(const QStringView view, const u8 idx) {
         setTranslation(view);
         setIndex(idx);
     }
@@ -48,7 +50,7 @@ struct Translation {
         translation = QStringView(rcast<QChar*>(set_tag(ccast<QChar*>(translation.data()), idx)), translation.size());
     }
 
-    [[nodiscard]] auto getIndex() const -> u8 { get_tag(rcast<u64>(translation.data())); }
+    [[nodiscard]] auto getIndex() const -> u8 { return get_tag(rcast<u64>(translation.data())); }
 
     void setTranslation(const QStringView translation) {
         this->translation = QStringView(

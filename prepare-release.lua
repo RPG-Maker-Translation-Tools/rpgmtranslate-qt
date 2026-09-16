@@ -133,7 +133,7 @@ local LIBRARY_LIST = {
         spdx = "MIT",
         notes = { "Build-time only: lua.exe drives configure.lua, prepare-headers.lua and this script. Not linked, not shipped." }
     },
-    { name = "magic_enum",            spdx = "MIT",       vendored = true },
+    { name = "enchantum",             spdx = "MIT",       vendored = true },
     { name = "material-design-icons", spdx = "Apache-2.0" },
     {
         name = "miniaudio",

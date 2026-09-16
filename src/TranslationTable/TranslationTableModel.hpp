@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Aliases.hpp"
-#include "Utils.hpp"
 
 #include <QAbstractItemModel>
 
@@ -10,27 +9,6 @@ class TranslationTableModel final : public QAbstractItemModel {
 
    public:
     static constexpr i32 MAX_COLUMNS = 16;
-
-    struct Cell {
-       private:
-        QString* text;
-
-       public:
-        Cell(const QString* const text, const bool editable) {
-            setText(text);
-            setEditable(editable);
-        }
-
-        void setEditable(const bool editable) { text = rcast<QString*>(set_tag(text, scast<u8>(editable))); }
-
-        [[nodiscard]] auto getEditable() const -> bool { get_tag(rcast<u64>(text)); }
-
-        void setText(const QString* text) {
-            this->text = rcast<QString*>(replace_addr(rcast<u64>(this->text), ccast<QString*>(text)));
-        }
-
-        [[nodiscard]] auto getText() const -> QString* { return rcast<QString*>(strip_tag(rcast<u64>(text))); }
-    };
 
     explicit TranslationTableModel(QObject* parent = nullptr);
 
@@ -53,8 +31,8 @@ class TranslationTableModel final : public QAbstractItemModel {
     void appendColumn(QStringList cells);
     void insertRow(u32 row, QStringList cells);
 
-    [[nodiscard]] auto item(u32 row, u8 column) -> Cell;
-    [[nodiscard]] auto itemFromIndex(const QModelIndex& index) -> Cell;
+    [[nodiscard]] auto item(u32 row, u8 column) -> QString*;
+    [[nodiscard]] auto itemFromIndex(const QModelIndex& index) -> QString*;
 
    signals:
     void bookmarkChanged(u32 row);

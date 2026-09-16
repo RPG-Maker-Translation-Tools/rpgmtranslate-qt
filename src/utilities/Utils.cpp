@@ -4,6 +4,7 @@
 #include "Constants.hpp"
 #include "Types.hpp"
 
+#include <QApplication>
 #include <QFile>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -496,3 +497,7 @@ auto getIcon(const i32 iconIndex, const QString& projectPath, const EngineType e
 
     return pixmap.copy(iconRect);
 }
+
+[[nodiscard]] auto dataLocation() -> QString {
+    return qApp->property("data-location").toString();
+};

@@ -181,17 +181,18 @@ BatchMenu::BatchMenu(QWidget* const parent) :
     });
 
     const auto entries =
-        QDir(QApplication::applicationDirPath() % u"/scripts"_qsv).entryList(QDir::NoDotAndDotDot | QDir::Files);
+        QDirListing(dataLocation() % u"/scripts"_qsv, { u"*.js"_s }, QDirListing::IteratorFlag::FilesOnly);
 
     for (const auto& entry : entries) {
-        auto file = QFile(entry);
+        auto path = entry.absoluteFilePath();
+        auto file = QFile(path);
 
         if (!file.open(QFile::ReadOnly)) {
-            qWarning().noquote() << u"Failed to open script %1: %2"_qsv.arg(entry, file.errorString());
+            qWarning().noquote() << u"Failed to open script %1: %2"_qsv.arg(path, file.errorString());
             continue;
         }
 
-        const QString name = lastPathComponent(entry).toString();
+        const QString name = lastPathComponent(path).toString();
 
         ui->scriptSelect->addItem(name);
 
@@ -206,7 +207,7 @@ BatchMenu::~BatchMenu() {
 }
 
 auto BatchMenu::save() -> bool {
-    const auto dest = QApplication::applicationDirPath() % u"/scripts"_qsv;
+    const auto dest = dataLocation() % u"/scripts"_qsv;
     QDir().mkdir(dest);
 
     QStringList errs;

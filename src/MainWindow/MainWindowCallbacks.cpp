@@ -511,7 +511,7 @@ void MainWindow::handleSingleLint() {
 
     const QModelIndex index = ui->translationTable->currentIndex();
     const auto& sourceItem = ui->translationTable->model()->item(index.row(), 0);
-    const QString* const source = sourceItem.getText();
+    const QString* const source = sourceItem;
     const QString currentTab = ui->tabPanel->currentTabName();
 
     if (!index.isValid()) {
@@ -636,7 +636,7 @@ void MainWindow::handleInputFocused() {
 
     if (!projectSettings->sourceLang.isEmpty() && !projectSettings->translationLang.isEmpty()) {
         const auto& sourceItem = ui->translationTable->model()->item(ui->translationTable->currentIndex().row(), 0);
-        const QString* const text = sourceItem.getText();
+        const QString* const text = sourceItem;
         const Glossary glossary = glossaryMenu->glossary();
 
         const QString currentTabName = ui->tabPanel->currentTabName();

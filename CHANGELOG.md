@@ -10,6 +10,55 @@ Versions may carry a codename alongside the semver number.
 
 ## [Unreleased]
 
+## [v1.1.3] "Death of RPG Maker forums" - 16.09.2026
+
+### Added
+
+- When LMB is pressed on a source cell, its text is now copied.
+
+### Changes
+
+- Several changes to translation input (cells) behavior:
+  - Enter now does not insert a new line. Shift+Enter does, and Enter closes the input.
+  - Shift+Enter now inserts a new line.
+  - Ctrl+Enter jumps to the next row.
+  - When a new line is inserted to the translation input, it is not scrolled to the bottom, which would lead to the first line in the cell being not visible.
+- Batch copy/cut/paste behavior changes:
+  - Non-contiguous cells now can be selected. Text can be copied from non-adjacent cells, and inserted in non-adjacent cells in the same pattern. Read more in the [documentation](https://rpg-maker-translation-tools.github.io/rpgmtranslate-qt/text-editing/#batch-select).
+  - Comment cells are now ignored when copying/cutting/pasting.
+  - Cells from different columns now can be selected simultaneously, but not from the same rows.
+- Slightly optimized copying text from translation cells and translation table performance overall.
+- Improved visibility for selected cells in the translation table.
+
+### Fixes
+
+- Fixed crash introduced in v1.1.2 that would result in crash when right-clicking a translation table's row (and possibly in other parts of the application).
+- Rows are now properly resized when something is cut/pasted from/into them.
+- Fixed inconsistent usage of incorrect application data directory throughout the code.
+- Really fixed auto-updater, I guess.
+- Translation table header is now properly updated when the header of the column is changed.
+
+### Development
+
+- Application now uses `enchantum` instead of `magic_enum`.
+
+### Planned for 1.2
+
+- Total source/translation words/characters information.
+- Display name of the entries where text is located when, for example, searching.
+- Check which plugins need to be finished/improved in linting, check whether everything is compatible with VisuStella plugins.
+- WAV playback for RM2K.
+- Save file asset inspection.
+- RPG Maker 2000/2003 also seems to have its own text tags, which are currently not supported.
+
+### Planned for 1.3
+
+- Remote support for built-in git client.
+- Built-in database like in RPG Maker to search for specific entries and quickly find anything by searching.
+- Wolf RPG support.
+- VisuStella support (if needed).
+- Translator++ project porting.
+
 ## [v1.1.2] "Death of RPG Maker forums" - 11.09.2026
 
 ### Fixes

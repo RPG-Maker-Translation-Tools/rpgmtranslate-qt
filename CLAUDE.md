@@ -12,14 +12,14 @@ Core stance: write code for its actual call site, not for a hypothetical future 
 
 - **No OOP for OOP's sake.** Free functions and `final` classes beat class hierarchies, singletons, and Factory/Strategy/Observer boilerplate whenever they do the job as clearly and faster. Runtime polymorphism is justified only by a genuine runtime-variant requirement (Qt's own `QObject` hierarchy) - never as a design nicety to "decouple" code. Don't build a strategy pattern where a `switch` or `std::variant` + `std::visit` will do.
 - **No indirection or lifetime machinery without a reason.** Don't reach for `unique_ptr`/`shared_ptr` when a value's lifetime is trivially scoped to one function with no early-return complications - plain `new`/`delete`, stack allocation, a scoped buffer, or Qt parent-ownership wins there. Reserve smart pointers/RAII wrappers for genuinely ambiguous ownership, shared lifetime, or multiple exit paths where manual management would be error-prone.
-- **Provably-safe unsafe/unchecked operations are preferred, not just tolerated.** Manual bit-packing, `ras<>`/`reinterpret_cast`, raw pointer ownership with manual `new[]`/`delete[]`, unions, placement tricks, and unchecked accessors are expected wherever the precondition is provably (or very confidently, from calling context) upheld or the FFI ABI requires it. Don't "clean them up" into safer-looking but slower or more indirect code. This is the one place comments are mandatory rather than banned: state *why* it's safe.
+- **Provably-safe unsafe/unchecked operations are preferred, not just tolerated.** Manual bit-packing, `ras<>`/`reinterpret_cast`, raw pointer ownership with manual `new[]`/`delete[]`, unions, placement tricks, and unchecked accessors are expected wherever the precondition is provably (or very confidently, from calling context) upheld or the FFI ABI requires it. Don't "clean them up" into safer-looking but slower or more indirect code. This is the one place comments are mandatory rather than banned: state _why_ it's safe.
 - **Actively look for micro-optimizations.** On every piece of code touched, consider whether it does unnecessary allocations, copies, or repeated passes over data:
-    - Pre-size/reserve a buffer and write into it once rather than concatenating or reallocating repeatedly.
-    - Building a string/list from a collection: size it in one pass, reserve once, fill in a second pass - never grow incrementally.
-    - Avoid redundant copies - pass by reference/move where correctness allows; don't copy unless ownership is genuinely required.
-    - Prefer stack allocation and value types over heap allocation when size and lifetime are known and bounded.
-    - Combine passes over data, drop redundant traversals, eliminate avoidable heap churn.
-    - Don't stop at the obvious cases above - scan for analogous patterns throughout the code.
+  - Pre-size/reserve a buffer and write into it once rather than concatenating or reallocating repeatedly.
+  - Building a string/list from a collection: size it in one pass, reserve once, fill in a second pass - never grow incrementally.
+  - Avoid redundant copies - pass by reference/move where correctness allows; don't copy unless ownership is genuinely required.
+  - Prefer stack allocation and value types over heap allocation when size and lifetime are known and bounded.
+  - Combine passes over data, drop redundant traversals, eliminate avoidable heap churn.
+  - Don't stop at the obvious cases above - scan for analogous patterns throughout the code.
 - **Terseness over ceremony.** A tight, well-named loop beats a dozen tiny helper functions that exist only to make call sites read like prose. Don't split a function purely for length or "single responsibility" - split only when a piece is independently reusable or independently testable.
 - **Balance performance against readability, situationally.** Changes that improve performance without adding meaningful complexity or code volume should basically always be applied. For larger or more convoluted hacks (unsafe tricks, manual memory tricks, bit manipulation, cache-friendliness rewrites), judge by how hot the path actually is: on a hot path they're justified even at real complexity cost - explain the tradeoff briefly; off a hot path, plain obviously-correct code wins. When unsure which bucket applies, ask or state the assumption explicitly.
 - **Restraint on unsolicited rewrites.** Flag code that's both slower and more convoluted than necessary, but don't rewrite working, non-bottleneck code into "cleaner" form unless asked.
@@ -46,7 +46,7 @@ Which spelling to use depends on how the variable is initialized:
 
 ## No zero-initialization
 
-Do not zero-initialize (or otherwise default-fill) a variable or field whose value is written before any read. Leave it uninitialized - `Type var;` for scalars, `array<u8, N> buf;` for buffers - and let the first real write be the initialization. The only case for initializing at declaration is when something genuinely depends on the pre-write value: a flag/sentinel that gets *checked* before it is set, a member read on a path that may not have written it yet, or a type whose constructor must run. Never add a `= 0` / `{}` "for safety" - if a read can reach an unwritten value, that's a control-flow bug to fix, not to paper over with a zero.
+Do not zero-initialize (or otherwise default-fill) a variable or field whose value is written before any read. Leave it uninitialized - `Type var;` for scalars, `array<u8, N> buf;` for buffers - and let the first real write be the initialization. The only case for initializing at declaration is when something genuinely depends on the pre-write value: a flag/sentinel that gets _checked_ before it is set, a member read on a path that may not have written it yet, or a type whose constructor must run. Never add a `= 0` / `{}` "for safety" - if a read can reach an unwritten value, that's a control-flow bug to fix, not to paper over with a zero.
 
 ## Const and compile-time correctness
 
@@ -73,7 +73,7 @@ Do not zero-initialize (or otherwise default-fill) a variable or field whose val
 - **Number parsing/formatting**: `Utils.hpp`'s `stoa<T>`/`itos`/`ftos` (fast_float/jeaiii-backed, ~1.5x faster than Qt) - never `QString::number`, `.toInt()`/`.toUInt()`/`.toDouble()`/`.toFloat()`, `std::to_string`, `snprintf`, or `std::ostringstream`. `stoa<T>(view, base = 10, bool* ok = nullptr)` mirrors `QString::toInt(bool*)`'s success signaling; `itos`/`ftos` return a stack `Digits` buffer - call `.qsv()` for a `QStringView` to display or pass to `.arg()`. Hex formatting (e.g. `U+XXXX` codepoints) has no existing helper - write a small local one rather than falling back to `QString::number(x, 16)`.
 - **JSON (de)serialization**: Glaze - add a `glz::meta<T>` specialization next to the type it describes (see `Types.hpp`, `Settings.hpp`) rather than hand-writing parsing or using Qt's `QJson*` classes.
 - **`HashMap<K,V>`/`hashset<E>`** (`Hasher.hpp`, built on gxhash) are the default associative containers - never `std::unordered_map`/`QHash` directly.
-- **`magic_enum`** for enum reflection/(de)serialization and its bitwise operators (`using namespace magic_enum::bitwise_operators` in `Aliases.hpp`) - flag enums stay plain `enum` (not `enum class`) so the bitwise ops apply directly; scoped `enum class` is for closed, non-flag sets.
+- **`enchantum`** for enum reflection/(de)serialization and its bitwise operators (`using namespace enchantum::bitwise_operators` in `Aliases.hpp`) - flag enums stay plain `enum` (not `enum class`) so the bitwise ops apply directly; scoped `enum class` is for closed, non-flag sets.
 - **`[[nodiscard]]`** on any function whose dropped return value would be a silent bug (fallible operations, computed values with no side effect). The build warns on dropping these - never silence it with a `(void)` cast; handle the result.
 - **`final`** on every concrete class that isn't designed as a base.
 
@@ -99,7 +99,7 @@ Anything the user sees goes through `Notice` (`src/utilities/Notice.hpp`): it lo
 - Inside a `Q_OBJECT` class: `NOTICE("text %1", Severity, Delivery, args...)` - the message literal must come first.
 - Elsewhere: `Notice(NOTICE_IN("Context", "text %1"), Severity::X, Delivery::Y, { args })` - `NOTICE_IN` takes exactly two arguments.
 - Show with `present(parent, notice)`, propagate as `result<T, Notice>`. `present()` derives icon and title from severity - don't reintroduce per-site dialog titles.
-- Constructing a `Notice` *is* logging it. Never build one on a path that might not fail, and never log one yourself.
+- Constructing a `Notice` _is_ logging it. Never build one on a path that might not fail, and never log one yourself.
 - Purely diagnostic logging the user never sees stays on `qWarning()`/`qCritical()` with `.noquote()` - a `Notice` there would put a never-displayed string in front of translators.
 - Interactive dialogs (`QMessageBox::question`, custom button boxes) stay as they are; a `Notice` has no buttons. Record the outcome of destructive choices with a plain English `qInfo()`.
 

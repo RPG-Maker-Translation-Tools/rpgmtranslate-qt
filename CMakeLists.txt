@@ -5,7 +5,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 set(PROJECT_NAME rpgmtranslate)
-set(PROJECT_VERSION "1.1.2")
+set(PROJECT_VERSION "1.1.3")
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 
 set(CMAKE_C_STANDARD 17)
@@ -295,7 +295,7 @@ set(SOURCES
 set(HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/fast_float.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/jeaiii_to_text.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/magic_enum.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/enchantum_single_header.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/miniaudio.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/3rdparty/zmij.h"
 

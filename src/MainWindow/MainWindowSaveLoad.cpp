@@ -78,14 +78,14 @@ auto MainWindow::saveCurrentTab(QString tabName) -> bool {
 
     for (i32 row = 0; row < model->rowCount(); row++) {
         if ((model->flags(model->index(row, 1)) & Qt::ItemIsEditable) == 0) {
-            *stream << *model->item(row, 0).getText();
+            *stream << *model->item(row, 0);
         } else {
             auto fields = QStringList(model->columnCount());
 
             for (i32 column = 0; column < model->columnCount(); column++) {
-                const auto item = model->item(row, column);
+                const QString* item = model->item(row, column);
 
-                if (item.getText()->isNull()) {
+                if (item->isNull()) {
                     qWarning().noquote() << u"Item at row %1 and column %2 is nullptr."_qsv.arg(
                         itos(row).qsv(),
                         itos(column).qsv()
@@ -93,7 +93,7 @@ auto MainWindow::saveCurrentTab(QString tabName) -> bool {
                     continue;
                 }
 
-                const QString* const text = item.getText();
+                const QString* const text = item;
                 fields[column] = qsvReplace(QStringView(text->data(), text->size()), LINE_FEED, NEW_LINE);
             }
 
@@ -233,7 +233,7 @@ void MainWindow::saveBackup() {
 }
 
 auto MainWindow::saveSettings() -> bool {
-    QString path = qApp->property("data-location").toString() + SETTINGS_PATH;
+    QString path = dataLocation() + SETTINGS_PATH;
 
     auto opened = openForWriting(this, path, SETTINGS_PATH);
 
@@ -470,7 +470,7 @@ void MainWindow::loadSettings() {
 }
 
 void MainWindow::initializeSettings() {
-    auto settingsFile = QFile(qApp->property("data-location").toString() + SETTINGS_PATH);
+    auto settingsFile = QFile(dataLocation() + SETTINGS_PATH);
 
     if (settingsFile.open(QFile::ReadOnly)) {
         const QByteArray json = settingsFile.readAll();

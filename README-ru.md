@@ -86,6 +86,6 @@
 - `src/3rdparty` - содержит библиотеки третьей стороны:
   - [fast_float](https://github.com/fastfloat/fast_float), [MIT](licenses/fast_float)
   - [jeaiii/itoa](https://github.com/jeaiii/itoa), [MIT](licenses/jeaiii-itoa)
-  - [magic_enum](https://github.com/Neargye/magic_enum), [MIT](licenses/magic_enum)
+  - [enchantum](https://github.com/ZXShady/enchantum), [MIT](licenses/enchantum)
   - [zmij](https://github.com/vitaut/zmij), [MIT](licenses/zmij)
   - [miniaudio](https://github.com/mackron/miniaudio), [Unlicense](licenses/miniaudio)

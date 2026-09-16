@@ -3,7 +3,6 @@
 #include "Constants.hpp"
 #include "PluginSequences.hpp"
 #include "glazemeta.hpp"
-#include "magic_enum.hpp"
 #include "rpgmtranslate_rs.h"
 
 #include <QLocale>
@@ -153,9 +152,8 @@ struct TranslationSettings {
     };
     vector<u32> whitespaceCharacters;
 
-    LintFlags lintFlags =
-        scast<LintFlags>(ranges::fold_left(magic_enum::enum_values<LintFlags>(), 0, std::bit_or<>{})) &
-        ~LintFlags::LintingDisabled;
+    LintFlags lintFlags = scast<LintFlags>(ranges::fold_left(enchantum::values<LintFlags>, 0, std::bit_or<>{})) &
+                          ~LintFlags::LintingDisabled;
 
     bool displayWordsAndCharacters = false;
 };

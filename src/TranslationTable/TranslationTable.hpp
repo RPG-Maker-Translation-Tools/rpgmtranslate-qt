@@ -62,11 +62,11 @@ class TranslationTable final : public QTableView {
     void keyPressEvent(QKeyEvent* event) override;
 
    private:
+    HashMap<i32, i8> selectedColumnPerRow;
+
     TranslationTableModel* model_;
     TranslationTableHeader* header_;
     TranslationTableDelegate* delegate;
 
     const ProjectSettings* projectSettings;
-
-    i8 selectedColumn = -1;
 };

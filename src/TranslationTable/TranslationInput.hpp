@@ -30,7 +30,7 @@ class TranslationInput final : public QPlainTextEdit {
 
    signals:
     void contentHeightChanged(u32 height);
-    void editingFinished();
+    void focusNextInput();
 
    private:
     struct Replacement {

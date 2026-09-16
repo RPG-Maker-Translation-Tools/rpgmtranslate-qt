@@ -83,8 +83,8 @@ Windows 版本需要 Windows 10 或 11。程序为静态链接，无需额外安
 
 - `icons` - 包含 [Google Material Symbols](https://fonts.google.com/icons)，采用 `Apache License Version 2.0` 许可证。
 - `src/3rdparty` - 包含第三方库：
-    - [fast_float](https://github.com/fastfloat/fast_float)，[MIT](licenses/fast_float)
-    - [jeaiii/itoa](https://github.com/jeaiii/itoa)，[MIT](licenses/jeaiii-itoa)
-    - [magic_enum](https://github.com/Neargye/magic_enum)，[MIT](licenses/magic_enum)
-    - [zmij](https://github.com/vitaut/zmij)，[MIT](licenses/zmij)
-    - [miniaudio](https://github.com/mackron/miniaudio)，[Unlicense](licenses/miniaudio)
+  - [fast_float](https://github.com/fastfloat/fast_float)，[MIT](licenses/fast_float)
+  - [jeaiii/itoa](https://github.com/jeaiii/itoa)，[MIT](licenses/jeaiii-itoa)
+  - [enchantum](https://github.com/ZXShady/enchantum)，[MIT](licenses/enchantum)
+  - [zmij](https://github.com/vitaut/zmij)，[MIT](licenses/zmij)
+  - [miniaudio](https://github.com/mackron/miniaudio)，[Unlicense](licenses/miniaudio)

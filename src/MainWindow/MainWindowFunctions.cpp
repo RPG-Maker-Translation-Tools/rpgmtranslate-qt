@@ -102,7 +102,7 @@ void MainWindow::checkForUpdates(const bool manual) {
     auto* const updater = new AutoUpdater(this);
 
     connect(updater, &AutoUpdater::updateDownloaded, this, [this](const QByteArray& archiveData) -> void {
-        const QString appDir = qApp->property("data-location").toString();
+        const QString appDir = qApp->applicationDirPath();
 
 #ifdef Q_OS_WINDOWS
         const QString exePath = qApp->applicationFilePath();
@@ -1409,8 +1409,7 @@ void MainWindow::read(
 
 #ifdef ENABLE_NUSPELL
 auto MainWindow::initDictionary() -> result<void, QString> {
-    const QString path =
-        qApp->property("data-location").toString() % u"/dictionaries"_qsv % projectSettings->spellcheckDictionary;
+    const QString path = dataLocation() % u"/dictionaries"_qsv % projectSettings->spellcheckDictionary;
 
     if (projectSettings->spellcheckDictionary.isEmpty() || !QFile::exists(path)) {
         taskWorker->setDictionary(nullopt);

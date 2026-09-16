@@ -77,9 +77,11 @@ As for misc lints, there's the list of those:
 
 ## Batch Select
 
-You can select multiple translation cells by clicking one of them and extending the selection by holding Shift and clicking the other one.
+You can copy, cut and paste multiple translation cells simultaneously. This is especially relevant when you need to move all the translation from one column to another, synchronize similar translations in different files, or whatever.
 
-Batch copy/cut/paste is supported.
+You can select multiple cells by clicking some of them with Shift (contiguous) or Ctrl (non-contiguous). Selecting cells from different columns is supported, but not from the same row.
+
+Paste works using the following logic: if only one cell is selected, copied cells get pasted indefinitely (until all the cells that were copied are consumed). Otherwise, copied cells get pasted only to the selected cells. Experiment with it.
 
 ## Batch Text Processing
 

@@ -7,7 +7,7 @@
 
 namespace {
 constexpr i32 ADD_BUTTON_EXTRA_WIDTH = 32;
-} // namespace
+}  // namespace
 
 TranslationTableHeader::TranslationTableHeader(QWidget* const parent) : QHeaderView(Qt::Horizontal, parent) {
     setSectionsClickable(true);
@@ -167,5 +167,6 @@ void TranslationTableHeader::commitEdit() {
     editingSection = -1;
 
     model()->setHeaderData(idx, orientation(), newText, Qt::EditRole);
+    model()->setHeaderData(idx, orientation(), newText, Qt::DisplayRole);
     viewport()->update();
 }
