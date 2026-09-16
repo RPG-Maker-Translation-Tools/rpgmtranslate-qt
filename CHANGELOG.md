@@ -10,6 +10,17 @@ Versions may carry a codename alongside the semver number.
 
 ## [Unreleased]
 
+## [v1.1.4] "Death of RPG Maker forums" - 16.09.2026
+
+v1.1.3 was faulty after updating to mimalloc v3.5.2, so this release is identical to v1.1.3, but with changed deps.
+
+### Development
+
+- Downgraded `mimalloc` to v3.5.1.
+- Updated `glaze` to v8.4.0.
+- Updated `fast_float` to v8.3.0.
+- Fixed CI failing with enchantum header.
+
 ## [v1.1.3] "Death of RPG Maker forums" - 16.09.2026
 
 ### Added

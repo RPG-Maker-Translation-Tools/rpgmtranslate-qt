@@ -184,7 +184,7 @@ using ::std::string;
 #endif
 
 #ifndef ENCHANTUM_MAX_RANGE
-  #define ENCHANTUM_MAX_RANGE (INT16_MAX - 1)
+  #define ENCHANTUM_MAX_RANGE (32767 - 1)
 #endif
 #ifndef ENCHANTUM_MIN_RANGE
   #define ENCHANTUM_MIN_RANGE (-ENCHANTUM_MAX_RANGE)
