@@ -150,15 +150,7 @@ jobs:
           sudo wget -q "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage" \
             -O /usr/local/bin/linuxdeploy-plugin-qt
           sudo chmod +x /usr/local/bin/linuxdeploy /usr/local/bin/linuxdeploy-plugin-qt
-          cd /usr/local/bin
-          sudo bash -c 'APPIMAGE_EXTRACT_AND_RUN=1 ./linuxdeploy --appimage-extract'
-          sudo mv squashfs-root linuxdeploy.appdir
-          sudo rm linuxdeploy
-          sudo ln -s linuxdeploy.appdir/AppRun linuxdeploy
-          sudo bash -c 'APPIMAGE_EXTRACT_AND_RUN=1 ./linuxdeploy-plugin-qt --appimage-extract'
-          sudo mv squashfs-root linuxdeploy-plugin-qt.appdir
-          sudo rm linuxdeploy-plugin-qt
-          sudo ln -s linuxdeploy-plugin-qt.appdir/AppRun linuxdeploy-plugin-qt
+          command -v linuxdeploy linuxdeploy-plugin-qt
 
       - name: Cache CMake build
         uses: actions/cache@v6
