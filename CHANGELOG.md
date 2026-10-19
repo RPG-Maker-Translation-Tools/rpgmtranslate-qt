@@ -10,7 +10,7 @@ Versions may carry a codename alongside the semver number.
 
 ## [Unreleased]
 
-## [v1.2.0] "Death of RPG Maker forums" - 18.10.2026
+## [v1.2.0] "Death of RPG Maker forums" - 19.10.2026
 
 ### Added
 
