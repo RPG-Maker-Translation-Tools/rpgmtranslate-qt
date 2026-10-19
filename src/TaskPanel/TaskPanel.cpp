@@ -2,6 +2,7 @@
 
 #include "Utils.hpp"
 
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QProgressBar>
@@ -57,7 +58,7 @@ void TaskPanel::addTask(const TaskToken& task) {
         abortButton->setToolTip(tr("Abort"));
         abortButton->setFixedSize(ABORT_BUTTON_SIZE, ABORT_BUTTON_SIZE);
 
-        connect(abortButton, &QPushButton::pressed, this, [task, abortButton] -> void {
+        connect(abortButton, &QPushButton::clicked, this, [task, abortButton] -> void {
             task->interrupt();
             abortButton->setEnabled(false);
         });
@@ -66,9 +67,30 @@ void TaskPanel::addTask(const TaskToken& task) {
     }
 
     layout->addWidget(widget);
-    rows.emplace_back(name, widget, label, progressBar, task->id());
+    rows.emplace_back(name, QString(), widget, label, progressBar, task->id(), task->kind());
 
-    emit taskCountChanged(rows.size());
+    emit taskCountChanged(scast<i32>(rows.size()));
+}
+
+void TaskPanel::updateLabel(const Row& row) const {
+    row.label->setText(row.filename.isEmpty() ? row.name : u"%1: %2"_qsv.arg(row.name, row.filename));
+}
+
+void TaskPanel::changeEvent(QEvent* const event) {
+    if (event->type() == QEvent::LanguageChange) {
+        placeholder->setText(tr("No tasks are running."));
+
+        for (auto& row : rows) {
+            row.name = taskName(row.kind);
+            updateLabel(row);
+        }
+
+        for (auto* const button : findChildren<QPushButton*>()) {
+            button->setToolTip(tr("Abort"));
+        }
+    }
+
+    QWidget::changeEvent(event);
 }
 
 void TaskPanel::updateTask(const u32 taskId, const QString& filename, const u32 done, const u32 total) {
@@ -78,7 +100,8 @@ void TaskPanel::updateTask(const u32 taskId, const QString& filename, const u32 
         return;
     }
 
-    row->label->setText(u"%1: %2"_qsv.arg(row->name, filename));
+    row->filename = filename;
+    updateLabel(*row);
     row->progressBar->setRange(0, scast<i32>(total));
     row->progressBar->setValue(scast<i32>(done));
 }
@@ -99,5 +122,5 @@ void TaskPanel::removeTask(const u32 taskId) {
     }
 
     adjustSize();
-    emit taskCountChanged(rows.size());
+    emit taskCountChanged(scast<i32>(rows.size()));
 }

@@ -32,7 +32,6 @@ enum class SearchAction : u8 {
 };
 
 enum class BatchAction : u8 {
-    Translate,
     Trim,
     Wrap,
     Latinize,
@@ -41,8 +40,6 @@ enum class BatchAction : u8 {
 
 [[nodiscard]] constexpr auto batchActionId(const BatchAction action) -> QL1SV {
     switch (action) {
-        case BatchAction::Translate:
-            return "translate"_L1;
         case BatchAction::Trim:
             return "trim"_L1;
         case BatchAction::Wrap:
@@ -51,7 +48,7 @@ enum class BatchAction : u8 {
             return "latinize"_L1;
         case BatchAction::Custom:
             return "custom"_L1;
+        default:
+            std::unreachable();
     }
-
-    std::unreachable();
 }

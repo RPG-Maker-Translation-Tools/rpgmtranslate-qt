@@ -22,6 +22,16 @@ find_path(FFMPEG_INCLUDE_DIR
 
 set(_FFMPEG_REQUIRED_VARS FFMPEG_INCLUDE_DIR)
 
+# FFmpeg has no version of its own in the headers; libavutil's is the one reported
+if(FFMPEG_INCLUDE_DIR AND EXISTS "${FFMPEG_INCLUDE_DIR}/libavutil/version.h")
+    foreach(_part MAJOR MINOR MICRO)
+        file(STRINGS "${FFMPEG_INCLUDE_DIR}/libavutil/version.h" _line
+            REGEX "^#define[ \t]+LIBAVUTIL_VERSION_${_part}[ \t]+[0-9]+")
+        string(REGEX REPLACE ".*LIBAVUTIL_VERSION_${_part}[ \t]+([0-9]+).*" "\\1" _FFMPEG_VERSION_${_part} "${_line}")
+    endforeach()
+    set(FFmpeg_VERSION "${_FFMPEG_VERSION_MAJOR}.${_FFMPEG_VERSION_MINOR}.${_FFMPEG_VERSION_MICRO}")
+endif()
+
 foreach(_lib ${_FFMPEG_COMPONENTS})
     string(TOUPPER ${_lib} _LIB_UPPER)
 
@@ -46,6 +56,7 @@ endforeach()
 
 find_package_handle_standard_args(FFmpeg
     REQUIRED_VARS ${_FFMPEG_REQUIRED_VARS}
+    VERSION_VAR FFmpeg_VERSION
     FAIL_MESSAGE "FFmpeg not found. Install it or set -DFFMPEG_ROOT=<path>"
 )
 

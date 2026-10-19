@@ -1,5 +1,5 @@
 local SCRIPTS_DIR = "./scripts"
-local BUILD_DIR = "./build/headers"
+local BUILD_DIR = arg[1] or error("usage: prepare-headers.lua <headers output dir>")
 local SCRIPTS_OUTPUT = BUILD_DIR .. "/scripts.h"
 
 local IS_WINDOWS = os.execute("cmd /c exit 0") == true
@@ -7,8 +7,6 @@ local IS_WINDOWS = os.execute("cmd /c exit 0") == true
 local function run(cmd, mode)
     mode = mode or "r"
 
-    -- POSIX popen takes "r" or "w" and nothing else, so a trailing "b" (meaningless there anyway,
-    -- since there's no text mode to opt out of) is rejected outright.
     if not IS_WINDOWS then
         mode = mode:sub(1, 1)
     end
@@ -84,7 +82,7 @@ local function gen_scripts()
     local prefix = SCRIPTS_DIR:gsub("^%./", "") .. "/"
 
     for _, path in ipairs(files) do
-        if path:find(".prettierrc", 1, true) then goto continue end
+        if not path:match("%.js$") then goto continue end
 
         local norm = path:gsub("\\", "/")
         local relpath = norm

@@ -23,12 +23,7 @@ class SettingsWindow final : public QDialog {
         Save
     };
 
-    explicit SettingsWindow(
-        const shared_ptr<Settings>& settings,
-        const shared_ptr<ProjectSettings>& projectSettings,
-        const QStringList& tabs,
-        QWidget* parent
-    );
+    explicit SettingsWindow(Settings* settings, ProjectSettings* projectSettings, QWidget* parent);
     ~SettingsWindow() override;
 
    protected:
@@ -39,29 +34,39 @@ class SettingsWindow final : public QDialog {
    private:
     [[nodiscard]] inline auto setupUi() -> Ui::SettingsWindow*;
 
+    void retranslateDynamic();
+
     void syncAll(Direction direction);
     void syncEndpoint(Direction direction, EndpointSettings& endpoint);
     void syncSequenceTable(Direction direction, QTableWidget* table, span<SequenceSettings> sequences);
     void syncCustomLints(Direction direction);
     void syncReplacements(Direction direction);
-    void syncFileContext(Direction direction, const QModelIndex& index);
 
     [[nodiscard]] auto validate() -> bool;
 
+    void setEndpointFormEnabled(bool enabled);
     void buildSequenceTables();
     void addCustomLintRow(const CustomLint& lint);
     void exportCustomLints();
     void importCustomLints();
 
     inline void refreshSpellcheckDictionarySelect();
-    inline void setDefaultBaseURL(TranslationEndpoint endpoint);
     inline void checkKey();
     inline void checkLanguageToolConnection();
 
     inline void onTypeChange(TranslationEndpoint endpoint);
 
-    shared_ptr<Settings> settings;
-    shared_ptr<ProjectSettings> projectSettings;
+    Settings* settings;
+    ProjectSettings* projectSettings;
+
+    // What Cancel restores: the dialog edits `settings` directly (endpoints are added and removed in place).
+    Settings initialSettings;
+    // Their credentials are deleted only when the changes are saved.
+    vector<QString> removedEndpointIds;
+
+    // The family the hint font select showed when it was loaded with no hint font set: while it stays selected, the
+    // setting stays empty ("the editor font") instead of becoming that family.
+    QString defaultHintFont;
 
     Ui::SettingsWindow* const ui;
     QNetworkAccessManager languageToolNetworkManager;

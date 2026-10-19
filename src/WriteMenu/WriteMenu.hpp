@@ -6,13 +6,9 @@
 
 #include <QDialog>
 
-QT_BEGIN_NAMESPACE
-
 namespace Ui {
-    class WriteMenu;
+class WriteMenu;
 }  // namespace Ui
-
-QT_END_NAMESPACE
 
 class WriteMenu final : public QDialog {
     Q_OBJECT

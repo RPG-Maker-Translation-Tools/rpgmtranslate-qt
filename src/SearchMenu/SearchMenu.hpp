@@ -5,13 +5,9 @@
 #include "FWD.hpp"
 #include "PersistentMenu.hpp"
 
-QT_BEGIN_NAMESPACE
-
 namespace Ui {
-    class SearchMenu;
+class SearchMenu;
 }  // namespace Ui
-
-QT_END_NAMESPACE
 
 class SearchMenu final : public PersistentMenu {
     Q_OBJECT

@@ -12,20 +12,20 @@
 #include <QFileSystemWatcher>
 
 namespace Ui {
-    class MainWindow;
+class MainWindow;
 }  // namespace Ui
 
 class SourceControlDock final : public QDockWidget {
     Q_OBJECT
 
    public:
-    explicit SourceControlDock(QWidget* const parent = nullptr) { git_libgit2_init(); }
+    explicit SourceControlDock(QWidget* const parent = nullptr) : QDockWidget(parent) { git_libgit2_init(); }
 
     ~SourceControlDock() override { git_libgit2_shutdown(); }
 
     void init(const Ui::MainWindow& ui_);
 
-    [[nodiscard]] auto openRepository(const QString& dataPath, const GitSettings& gitSettings) -> result<void, QString>;
+    [[nodiscard]] auto openRepository(const QString& dataPath, const GitSettings& gitSettings) -> Result<void, QString>;
     void clear();
 
    private:

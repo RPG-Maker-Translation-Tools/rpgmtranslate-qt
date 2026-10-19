@@ -3,14 +3,11 @@
 #include "Aliases.hpp"
 #include "FWD.hpp"
 #include "Notice.hpp"
-#include "fast_float.h"
-#include "jeaiii_to_text.h"
+#include "QtNumbers.hpp"
+#include "QtStrings.hpp"
 #include "rpgmtranslate_rs.h"
-#include "zmij.h"
 
-#include <QDebug>
 #include <concepts>
-#include <system_error>
 
 constexpr static usize TAG_SHIFT = 56;
 constexpr static usize TAG_MASK = 0xFFULL << TAG_SHIFT;  // 0xFF00000000000000
@@ -65,30 +62,44 @@ struct Translation {
 };
 
 [[nodiscard]] auto lineParts(QStringView line, u32 lineNumber, QAnyStringView filename) -> QSVList;
+
+// The part of a row's source column that is text to translate: the text itself, the map display name without its
+// prefix, or nothing for the other comments (`<!>...`) and bookmarks.
+[[nodiscard]] auto translatableSource(QStringView source) -> optional<QStringView>;
+
+// Words and characters of `text` as a player reads them: RPG Maker codes are not counted. Thread-safe.
+// `text` is one entry per line, so the `lines` line feeds that join them are not characters of the text.
+[[nodiscard]] auto countText(const QString& text, u32 lines) -> TextCounts;
+
+// If `line` is a `<!>NAME<#>x` row, `x`: the name of the entry (actor, item, map...) that the rows after it belong to.
+[[nodiscard]] auto entryNameOfLine(QStringView line) -> optional<QStringView>;
+
+// The name of the entry the row at `rowIndex` belongs to: that of the nearest `<!>NAME` row at or before it, not
+// looking past the `<!>ID` row that starts the entry. Empty if there is none.
+[[nodiscard]] auto entryNameFor(const QSVList& lines, usize rowIndex) -> QStringView;
 [[nodiscard]] auto getTranslation(const QSVList& parts) -> struct Translation;
 [[nodiscard]] auto getSource(const QSVList& parts) -> QStringView;
-[[nodiscard]] auto getSource(QStringView line) -> QStringView;
 [[nodiscard]] auto getTranslations(const QSVList& parts) -> QSVList;
-
-[[nodiscard]] auto qsvReplace(QStringView input, QL1SV needle, QL1SV replacement) -> QString;
-[[nodiscard]] auto qsvReplace(QStringView input, QStringView needle, QL1SV replacement) -> QString;
-[[nodiscard]] auto qsvReplace(QStringView input, QL1SV needle, QStringView replacement) -> QString;
-[[nodiscard]] auto qsvReplace(QStringView input, QStringView needle, QStringView replacement) -> QString;
-[[nodiscard]] auto qsvReplace(QStringView input, QChar needle, QChar replacement) -> QString;
-
-[[nodiscard]] auto joinQSVList(const QSVList& list, QL1SV separator) -> QString;
-[[nodiscard]] auto joinQSVList(const QSVList& list, QStringView separator) -> QString;
-[[nodiscard]] auto joinQSVList(const QSVList& list, QChar separator) -> QString;
-
-[[nodiscard]] auto intLen(u32 num) -> i32;
-[[nodiscard]] auto intLen(i32 num) -> i32;
-
-[[nodiscard]] auto lastPathComponent(const QString& path) -> QStringView;
+// Whether a row has a translation: one of its translation columns is not empty, as `openProject` counts them.
+[[nodiscard]] auto hasTranslation(const QSVList& parts) -> bool;
+// Whether a non-blank line of a translation file is a row to translate: a comment is not, but a map's display name is.
+[[nodiscard]] auto isRowLine(QStringView line) -> bool;
 
 struct Abort;
 
+// Atomic: the target is only replaced by `commitFile`; dropping the file without committing leaves it untouched.
 [[nodiscard]] auto openForWriting(QWidget* parent, QString& path, QStringView suffix)
-    -> result<unique_ptr<QFile>, Abort>;
+    -> Result<unique_ptr<QSaveFile>, Abort>;
+
+// Flush any `QTextStream` on `file` first. Shows a notice and returns false on failure.
+[[nodiscard]] auto commitFile(QWidget* parent, QSaveFile& file) -> bool;
+
+static constexpr QStringView BACKUP_SUFFIX = u".bak";
+static constexpr QStringView CORRUPT_SUFFIX = u".corrupt";
+
+// Copies the existing, non-empty `path` to `path.bak`. Call before replacing a file whose loss would hurt (settings,
+// glossary), so that `readJsonFile` has an older version to fall back to.
+void keepBackup(const QString& path);
 
 [[nodiscard]] static constexpr auto strtoffi(const QByteArrayView utf8) -> FFIString {
     return { .ptr = utf8.data(), .len = scast<u32>(utf8.size()) };
@@ -98,8 +109,12 @@ struct Abort;
     return { str.ptr, scast<isize>(str.len) };
 }
 
-[[nodiscard]] auto codePointAt(QStringView string, isize idx) -> u32;
+// Names a `FilenameArray` holds whole: the 4 to 15 character ones that `copyFilenameArray` copies correctly
+[[nodiscard]] constexpr auto fitsFilenameArray(const usize size) -> bool {
+    return size >= 4 && size < sizeof(FilenameArray);
+}
 
+// Callers check `fitsFilenameArray` first: below 4 bytes the last branch is unreachable
 static inline void copyFilenameArray(const char* const src, const usize size, char* const dst) {
     if (size >= sizeof(u64)) {
         u64 tmpA;
@@ -120,34 +135,26 @@ static inline void copyFilenameArray(const char* const src, const usize size, ch
     }
 }
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-static inline QString operator+(QString lhs, const QStringView rhs) {
-    lhs.append(rhs);
-    return lhs;
-}
-#endif
-
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-static inline auto svtostr(const QAnyStringView view) -> QString {
-    return view.toString();
-}
-#else
-template <typename T>
-static constexpr auto svtostr(const T view) -> T {
-    return view;
-}
-#endif
-
-[[nodiscard]] static constexpr auto operator""_qsv(const char16_t* const ptr, const usize len) -> QStringView {
-    return { ptr, scast<isize>(len) };
-}
-
 static constexpr i32 WINDOW_COLOR_COUNT = 32;
 
-auto getWindowColors(const QString& projectPath, EngineType engineType)
-    -> result<array<QRgb, WINDOW_COLOR_COUNT>, Notice>;
+// `sets` decides where the project keeps its system graphics, and for RPG Maker 2000/2003 which one the database
+// selects.
+auto getWindowColors(const ProjectSettings* sets) -> Result<array<QRgb, WINDOW_COLOR_COUNT>, Notice>;
 
-auto getIcon(i32 iconIndex, const QString& projectPath, EngineType engineType) -> result<QPixmap, Notice>;
+auto getIcon(i32 iconIndex, const ProjectSettings* sets) -> Result<QPixmap, Notice>;
+
+// Where a project keeps its saves: MV/MZ in a `save` directory, the other engines next to the executable.
+struct SaveLocation {
+    QString directory;
+    QStringList filter;
+    bool recursive;
+};
+
+[[nodiscard]] auto saveLocation(const ProjectSettings* sets) -> SaveLocation;
+
+// The summary of `sets->activeSave`, which must not be empty. Parsed once per modification of the file, so it is cheap
+// to ask for on every tooltip.
+[[nodiscard]] auto getSaveSummary(const ProjectSettings* sets) -> Result<shared_ptr<const SaveSummary>, Notice>;
 
 [[nodiscard]] constexpr auto serdeFormatExtension(const SerdeFormat format) -> QStringView {
     switch (format) {
@@ -165,135 +172,3 @@ auto getIcon(i32 iconIndex, const QString& projectPath, EngineType engineType) -
 
     std::unreachable();
 }
-
-struct Digits {
-    array<char16_t, 11> buf{};
-    u8 len;
-
-    auto operator[](const isize idx) -> char16_t& { return buf[idx]; }
-
-    auto operator[](const isize idx) const -> char16_t { return buf[idx]; }
-
-    [[nodiscard]] operator QStringView() const { return { buf.data(), len }; }
-
-    [[nodiscard]] auto qsv() const -> QStringView { return QStringView(*this); }
-};
-
-// Integer to string. Currently handles only numbers up to 11 digits.
-// Returned array must be manually sliced to the first null.
-template <std::integral T>
-inline auto itos(const T integer, const u8 pad = 0, const char padChar = ' ') -> Digits {
-    array<char, 16> buf{};
-    const char* end = jeaiii::to_text_from_integer(buf.data(), integer);
-
-    Digits result;
-    result.len = end - buf.data();
-
-    if (result.len < pad) {
-        const u8 padLen = pad - result.len;
-
-        memmove(buf.data() + padLen, buf.data(), result.len);
-        memset(buf.data(), padChar, padLen);
-        result.len = pad;
-    }
-
-    u8 idx = 0;
-
-    for (const auto chr : span(buf.data(), result.len)) {
-        result.buf[idx++] = chr;
-    }
-
-    return result;
-}
-
-// Float to string. Currently handles only floats.
-// Returned array must be manually sliced to the first null.
-template <std::floating_point T>
-inline auto ftos(const T flt, i8 precision = 0) -> Digits {
-    array<char, zmij::float_buffer_size> buf{};
-    zmij::write(buf.data(), buf.size(), flt);
-
-    if (precision >= 0) {
-        bool afterPoint = false;
-        u8 count = 0;
-
-        for (const auto [idx, chr] : views::enumerate(buf)) {
-            if (chr == '\0') {
-                break;
-            }
-
-            if (chr == '.') {
-                if (precision == 0) {
-                    buf[idx] = '\0';
-                    break;
-                }
-
-                afterPoint = true;
-                continue;
-            }
-
-            if (afterPoint) {
-                if (count >= precision) {
-                    buf[idx] = '\0';
-                    break;
-                }
-
-                count++;
-            }
-        }
-    }
-
-    Digits result;
-    u8 idx = 0;
-
-    for (const auto chr : buf) {
-        if (chr == '\0') {
-            result.len = idx + 1;
-            break;
-        }
-
-        result.buf[idx++] = chr;
-    }
-
-    return result;
-}
-
-template <typename T, typename C>
-static constexpr auto stoa(const C* const first, const C* const last, const u8 base, bool* const valid) -> T {
-    T result;
-
-    const auto parsed = [&] -> auto {
-        if constexpr (std::floating_point<T>) {
-            return fast_float::from_chars(first, last, result);
-        } else {
-            return fast_float::from_chars(first, last, result, base);
-        }
-    }();
-
-    if (valid != nullptr) {
-        *valid = parsed.ec == std::errc{} && parsed.ptr == last;
-    }
-
-    return result;
-}
-
-template <typename T>
-static constexpr auto stoa(const QStringView str, const u8 base = 10, bool* const valid = nullptr) -> T {
-    return stoa<T>(str.utf16(), str.utf16() + str.size(), base, valid);
-}
-
-template <typename T>
-static constexpr auto stoa(const QUtf8StringView str, const u8 base = 10, bool* const valid = nullptr) -> T {
-    return stoa<T>(str.data(), str.data() + str.size(), base, valid);
-}
-
-template <typename T>
-static constexpr auto stoa(const QLatin1StringView str, const u8 base = 10, bool* const valid = nullptr) -> T {
-    return stoa<T>(str.data(), str.data() + str.size(), base, valid);
-}
-
-template <typename T, typename U>
-using range_common_t = std::conditional_t<
-    (std::is_signed_v<T> || std::is_signed_v<U>),
-    std::common_type_t<std::make_signed_t<T>, std::make_signed_t<U>>,
-    std::common_type_t<T, U>>;

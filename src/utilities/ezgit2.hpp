@@ -1498,9 +1498,7 @@ class Repository final {
             blame = detail::BlameHandle(raw);
         }
 
-        // git_blame's line numbers describe the file as it exists in the
-        // working directory, so blame content is read from there rather
-        // than from any blob.
+        // git_blame's line numbers match the working-directory file, so content is read from there, not a blob.
         const string fullPath = string(workdir()) + string(path);
         std::ifstream file(fullPath);
         vector<string> lines;
@@ -1622,10 +1620,8 @@ class Repository final {
 
         git_tree* rawTree = nullptr;
 
-        // git_object_peel's out-parameter is declared as git_object** purely
-        // for genericity; when target_type is GIT_OBJECT_TREE the object it
-        // fills in is always a git_tree, and this cast is libgit2's own
-        // documented usage pattern for consuming peel results.
+        // git_object_peel's out-parameter is typed git_object** for genericity; with GIT_OBJECT_TREE it is always a
+        // git_tree, so this cast follows libgit2's documented usage.
         const i32 ret =
             git_object_peel(reinterpret_cast<git_object**>(&rawTree), objResult.value().get(), GIT_OBJECT_TREE);
 

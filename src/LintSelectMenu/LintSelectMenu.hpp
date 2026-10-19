@@ -11,14 +11,14 @@ class LintSelectMenu final : public PersistentMenu {
    public:
     explicit LintSelectMenu(QWidget* parent = nullptr);
 
-    void init(Settings* settings, GlossaryMenu* glossaryMenu);
+    void init(Settings* settings, ProjectSettings* projectSettings, GlossaryMenu* glossaryMenu);
 
     void refresh();
 
-    [[nodiscard]] auto sizeHint() const -> QSize override;
+    // Forgets the project: its settings are freed with it. Hides the menu and empties it.
+    void clear();
 
-   signals:
-    void lintsToggled();
+    [[nodiscard]] auto sizeHint() const -> QSize override;
 
    protected:
     void changeEvent(QEvent* event) override;
@@ -31,6 +31,7 @@ class LintSelectMenu final : public PersistentMenu {
     };
 
     void addCategory(const QString& title, const vector<Toggle>& toggles);
+    void buildSavePicker();
     void buildLints();
     void buildTerms();
 
@@ -47,6 +48,7 @@ class LintSelectMenu final : public PersistentMenu {
     static void bindToggleAll(QCheckBox* toggleAll, QGroupBox* group);
 
     Settings* settings = nullptr;
+    ProjectSettings* projectSettings = nullptr;
     GlossaryMenu* glossaryMenu = nullptr;
 
     QTabWidget* const tabs;

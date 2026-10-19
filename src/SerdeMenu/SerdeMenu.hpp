@@ -7,13 +7,9 @@
 
 #include <QWidget>
 
-QT_BEGIN_NAMESPACE
-
 namespace Ui {
-    class SerdeMenu;
+class SerdeMenu;
 }  // namespace Ui
-
-QT_END_NAMESPACE
 
 class SerdeMenu final : public QWidget {
     Q_OBJECT

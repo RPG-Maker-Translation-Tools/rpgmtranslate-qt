@@ -21,10 +21,13 @@
 
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QtConcurrent>
 
 namespace {
 constexpr i32 LINT_DEBOUNCE_MS = 100;
+constexpr i32 COUNTS_DEBOUNCE_MS = 1000;
+constexpr i32 TRANSLATE_DEBOUNCE_MS = 300;
 }  // namespace
 
 void MainWindow::setupConnections() {
@@ -34,7 +37,7 @@ void MainWindow::setupConnections() {
 
     connect(ui->actionSettings, &QAction::triggered, this, &MainWindow::showSettingsWindow);
 
-    connect(ui->actionCloseProject, &QAction::triggered, this, &MainWindow::closeProject);
+    connect(ui->actionCloseProject, &QAction::triggered, this, [this] -> void { closeProject(); });
 
     connect(ui->actionCloseTab, &QAction::triggered, this, [this] -> void { ui->tabPanel->changeTab(QString()); });
 
@@ -61,6 +64,25 @@ void MainWindow::setupConnections() {
 
     connect(ui->actionCheckForUpdates, &QAction::triggered, this, [this] -> void { checkForUpdates(true); });
 
+    connect(
+        ui->translationTable,
+        &TranslationTable::multilineAction,
+        this,
+        [this](const TranslationTable::MultilineAction action, const u32 count) -> void {
+        switch (action) {
+            case TranslationTable::MultilineAction::Cut:
+                present(this, NOTICE_N("%n row(s) cut.", nullptr, scast<i32>(count), Info, Status));
+                break;
+            case TranslationTable::MultilineAction::Copy:
+                present(this, NOTICE_N("%n row(s) copied.", nullptr, scast<i32>(count), Info, Status));
+                break;
+            case TranslationTable::MultilineAction::Paste:
+                present(this, NOTICE_N("%n row(s) pasted.", nullptr, scast<i32>(count), Info, Status));
+                break;
+        }
+    }
+    );
+
     connect(actionGoToRow, &QAction::triggered, this, &MainWindow::handleGoToRow);
 
     connect(ui->tabPanel, &TabPanel::tabChanged, this, &MainWindow::changeTab);
@@ -70,15 +92,14 @@ void MainWindow::setupConnections() {
     });
 
     connect(actionSave, &QAction::triggered, this, [this] -> void {
-        const auto saveSuccess = saveCurrentTab();
-
-        if (!saveSuccess) {
+        // The action is greyed out, but a menu opened earlier can still reach it. `saveMaps()` would overwrite maps a
+        // task is rewriting, or race with it.
+        if (const TaskToken blocking = taskWorker->blockingTask(TaskAccess::Reads); blocking != nullptr) {
+            present(this, NOTICE("Cannot save while %1 is running.", Warning, Status, taskName(blocking->kind())));
             return;
         }
 
-        const auto saveSuccess2 = saveMaps();
-
-        if (!saveSuccess2) {
+        if (!saveTranslations()) {
             return;
         }
     });
@@ -89,21 +110,29 @@ void MainWindow::setupConnections() {
         searchMenu->setHidden(!searchMenu->isHidden());
 
         if (!searchMenu->mouseMoved()) {
-            searchMenu->move(ui->searchButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+            showBelow(searchMenu, ui->searchButton);
         }
     });
 
     connect(actionBatchMenu, &QAction::triggered, this, [this] -> void {
         batchMenu->setHidden(!batchMenu->isHidden());
-        batchMenu->move(ui->batchButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+        showBelow(batchMenu, ui->batchButton);
     });
 
     connect(actionGlossaryMenu, &QAction::triggered, this, [this] -> void {
         glossaryMenu->setHidden(!glossaryMenu->isHidden());
 
         if (!glossaryMenu->mouseMoved()) {
-            glossaryMenu->move(ui->glossaryButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+            showBelow(glossaryMenu, ui->glossaryButton);
         }
+    });
+
+    connect(actionStatistics, &QAction::triggered, this, [this] -> void { showProjectStatistics(); });
+
+    connect(actionSingleTrim, &QAction::triggered, this, [this] -> void { applyCellAction(BatchAction::Trim); });
+    connect(actionSingleWrap, &QAction::triggered, this, [this] -> void { applyCellAction(BatchAction::Wrap); });
+    connect(actionSingleLatinize, &QAction::triggered, this, [this] -> void {
+        applyCellAction(BatchAction::Latinize);
     });
 
     connect(actionLintMenu, &QAction::triggered, this, [this] -> void {
@@ -114,14 +143,14 @@ void MainWindow::setupConnections() {
         translationsMenu->setHidden(!translationsMenu->isHidden());
 
         if (!translationsMenu->mouseMoved()) {
-            translationsMenu->move(ui->translationsButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+            showBelow(translationsMenu, ui->translationsButton);
         }
     });
 
     connect(actionBookmarkMenu, &QAction::triggered, this, [this] -> void {
         bookmarkMenu->setHidden(!bookmarkMenu->isHidden());
 
-        bookmarkMenu->move(ui->bookmarksButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+        showBelow(bookmarkMenu, ui->bookmarksButton);
     });
 
     connect(actionSourceControl, &QAction::triggered, this, [this] -> void {
@@ -142,7 +171,7 @@ void MainWindow::setupConnections() {
 
     connect(actionAssets, &QAction::triggered, this, [this] -> void {
         if (assetMenu->isHidden()) {
-            assetMenu->move(ui->assetsButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+            showBelow(assetMenu, ui->assetsButton);
             assetMenu->show();
             assetMenu->adjustSize();
         } else {
@@ -150,25 +179,29 @@ void MainWindow::setupConnections() {
         }
     });
 
-    connect(ui->rvpackerButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->rvpackerButton, &QPushButton::clicked, this, [this] -> void {
         auto menu = QMenu(this);
 
-        const QAction* const readAction = menu.addAction(tr("Read"));
-        const QAction* const purgeAction = menu.addAction(tr("Purge"));
-        const QAction* const serdeAction = menu.addAction(tr("Export/Import"));
+        QAction* const readAction = menu.addAction(tr("Read"));
+        QAction* const purgeAction = menu.addAction(tr("Purge"));
+        QAction* const serdeAction = menu.addAction(tr("Export/Import"));
+
+        readAction->setEnabled(!taskWorker->blocks(TaskKind::Read));
+        purgeAction->setEnabled(!taskWorker->blocks(TaskKind::Purge));
+        serdeAction->setEnabled(!taskWorker->blocks(TaskKind::SerdeExport));
 
         const QAction* const selectedAction =
             menu.exec(ui->rvpackerButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
 
         if (selectedAction == readAction) {
             readMenu->show();
-            readMenu->move(ui->rvpackerButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+            showBelow(readMenu, ui->rvpackerButton);
         } else if (selectedAction == purgeAction) {
             purgeMenu->show();
-            purgeMenu->move(ui->rvpackerButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+            showBelow(purgeMenu, ui->rvpackerButton);
         } else if (selectedAction == serdeAction) {
             serdeMenu->show();
-            serdeMenu->move(ui->rvpackerButton->mapToGlobal(QPoint(0, ui->controlContainer->height())));
+            showBelow(serdeMenu, ui->rvpackerButton);
         }
     });
 
@@ -189,12 +222,22 @@ void MainWindow::setupConnections() {
 
         auto* const dialog = new BackupSelectDialog(projectSettings->backupPath(), this);
 
+        // Deleted by itself when it closes
         connect(dialog, &BackupSelectDialog::accepted, this, [this, dialog] -> void {
-            loadBackup(dialog->backupPath());
-            delete dialog;
-        });
+            qInfo().noquote() << u"Loading a backup was confirmed by user."_qsv;
 
-        connect(dialog, &BackupSelectDialog::rejected, this, [dialog] -> void { delete dialog; });
+            // Loading rewrites the translation files, which every running task reads or rewrites as well
+            if (taskWorker->idle()) {
+                // What the editor holds is written first and the tab closed, then the project is reopened from the
+                // restored files: otherwise the next save would put the editor's text and `mapSections` over them
+                if (flushTranslations()) {
+                    loadBackup(dialog->backupPath());
+                    openProject(settings->core.projectPath, false, true);
+                }
+            } else {
+                present(this, NOTICE("Cannot load a backup while a task is running.", Warning, Modal));
+            }
+        });
     });
 
     connect(ui->actionCheckSourceUpdates, &QAction::triggered, this, [this] -> void {
@@ -208,14 +251,15 @@ void MainWindow::setupConnections() {
     connect(ui->translationTable, &TranslationTable::translatedChanged, this, [this](const i8 count) -> void {
         ui->globalProgressBar->setValue(ui->globalProgressBar->value() + count);
         ui->tabPanel->setCurrentTranslated(count);
-        progressStatusLabel->setText(
-            tr("%1 Translated / %2 Total")
-                .arg(itos(ui->tabPanel->currentTranslated()).qsv(), itos(ui->tabPanel->currentTotal()).qsv())
-        );
+        updateStatusLabels();
     });
 
     connect(ui->translationTable, &TranslationTable::bookmarkChanged, this, [this](const u32 row) -> void {
-        bookmarkMenu->updateBookmark(row, *ui->translationTable->model()->item(scast<i32>(row), 1));
+        bookmarkMenu->updateBookmark(
+            ui->tabPanel->currentTabName(),
+            row,
+            *ui->translationTable->model()->item(scast<i32>(row), 1)
+        );
     });
 
     connect(ui->translationTable, &TranslationTable::columnAdded, this, [this] -> void {
@@ -229,6 +273,11 @@ void MainWindow::setupConnections() {
         &TranslationTable::columnRenamed,
         this,
         [this](const i32 index, const QString& name) -> void {
+        // A file edited outside can have more columns than the project knows
+        if (scast<usize>(index) >= projectSettings->columns.size()) {
+            return;
+        }
+
         projectSettings->columns[index].name = name;
         searchMenu->renameColumn(index, name);
         batchMenu->renameColumn(index, name);
@@ -239,7 +288,11 @@ void MainWindow::setupConnections() {
         ui->translationTable,
         &TranslationTable::columnResized,
         this,
-        [this](const i32 index, const u16 width) -> void { projectSettings->columns[index].width = width; }
+        [this](const i32 index, const u16 width) -> void {
+        if (scast<usize>(index) < projectSettings->columns.size()) {
+            projectSettings->columns[index].width = width;
+        }
+    }
     );
 
     connect(ui->translationTable, &TranslationTable::rowRemoved, this, &MainWindow::handleRowRemoved);
@@ -273,10 +326,33 @@ void MainWindow::setupConnections() {
         lintDebounceTimer.start(LINT_DEBOUNCE_MS);
     });
 
-    connect(ui->translationTable, &TranslationTable::inputFocused, this, &MainWindow::handleInputFocused);
+    connect(ui->translationTable, &TranslationTable::inputFocused, this, [this] -> void {
+        // Invalidates the request in flight, as its cell is not the current one anymore
+        translateGeneration++;
+        translateDebounceTimer.start(TRANSLATE_DEBOUNCE_MS);
+    });
+
+    connect(&translateDebounceTimer, &QTimer::timeout, this, &MainWindow::handleInputFocused);
 
     connect(ui->translationTable, &TranslationTable::bookmarked, this, [this](const u32 row) -> void {
-        bookmarkMenu->addBookmark(ui->tabPanel->currentTabName(), QStringView(), row - 1);
+        // The entry is that of the nearest `<!>NAME` row above the bookmark, up to the `<!>ID` row starting the entry.
+        auto* const model = ui->translationTable->model();
+        QString entry;
+
+        for (i32 idx = scast<i32>(row) - 1; idx >= 0; idx--) {
+            const QStringView source = *model->item(idx, 0);
+
+            if (const auto name = entryNameOfLine(source)) {
+                entry = name->toString();
+                break;
+            }
+
+            if (source.startsWith(ID_COMMENT)) {
+                break;
+            }
+        }
+
+        bookmarkMenu->addBookmark(QStringView(), ui->tabPanel->currentTabName(), row, entry);
     });
 
     connect(ui->actionOpenFolder, &QAction::triggered, this, [this] -> void {
@@ -294,6 +370,18 @@ void MainWindow::setupConnections() {
             return;
         }
 
+        if (readMenu->readMode() == ReadMode::DefaultForce) {
+            if (QMessageBox::question(
+                    this,
+                    tr("Force Read"),
+                    tr("Force read rewrites the existing translation files. Continue?")
+                ) != QMessageBox::Yes) {
+                return;
+            }
+
+            qInfo().noquote() << u"Force read was confirmed by user."_qsv;
+        }
+
         read(
             readMenu->readMode(),
             readMenu->duplicateMode(),
@@ -306,26 +394,50 @@ void MainWindow::setupConnections() {
     });
 
     connect(purgeMenu, &PurgeMenu::accepted, this, [this] -> void {
+        // With the ignore file the purged lines are kept in it
+        if (!purgeMenu->createIgnore()) {
+            if (QMessageBox::question(
+                    this,
+                    tr("Purge"),
+                    tr("Purge removes the translation lines that the game no longer uses. Continue?")
+                ) != QMessageBox::Yes) {
+                return;
+            }
+
+            qInfo().noquote() << u"Purge was confirmed by user."_qsv;
+        }
+
         const TaskToken task = startTask(TaskKind::Purge);
 
         if (task == nullptr) {
             return;
         }
 
-        const Selected selected = purgeMenu->selected(true);
-
-        QtConcurrent::run([this, selected] -> auto {
-            return taskWorker->purge(selected);
-        }).then(this, [this, task](const PurgeResult& result) -> void {
+        if (!flushTranslations()) {
             taskWorker->finishTask(task);
+            return;
+        }
+
+        const Selected selected = purgeMenu->selected(true);
+        const bool createIgnore = purgeMenu->createIgnore();
+
+        QtConcurrent::run([this, selected, createIgnore] -> auto { return taskWorker->purge(selected, createIgnore); })
+            .then(this, [this, task](const PurgeResult& result) -> void {
+            taskWorker->finishTask(task);
+
+            // `openProject` below would run inside the `closeProject` that is waiting for the task
+            if (stoppingTasks) {
+                return;
+            }
 
             if (!result) {
                 present(this, NOTICE("Purge failed with error: %1", Warning, Modal, ffitostr(result.error())));
                 return;
             }
 
-            openProject(settings->core.projectPath, false);
-        });
+            // The task rewrote the translation files, and `flushTranslations()` left nothing in the editor to save
+            openProject(settings->core.projectPath, false, true);
+        }).onFailed(this, [this, task] -> void { taskFailed(task); });
     });
 
     connect(serdeMenu, &SerdeMenu::exportRequested, this, [this] -> void {
@@ -335,14 +447,25 @@ void MainWindow::setupConnections() {
             return;
         }
 
-        auto filenames = serdeMenu->selected(true).filenames(projectSettings->engineType);
+        // The export reads the translation files, which must hold what is edited
+        if (!saveTranslations()) {
+            taskWorker->finishTask(task);
+            return;
+        }
+
+        auto filenames = serdeMenu->selected().filenames(projectSettings->engineType);
         const QString directory = serdeMenu->directory();
         const SerdeFormat format = serdeMenu->format();
 
         QtConcurrent::run([this, task, filenames = std::move(filenames), directory, format]() mutable -> auto {
             return taskWorker->serdeExport(task, filenames, directory, format);
-        }).then(this, [this, task](const SerdeResult& result) -> void {
+        })
+            .then(this, [this, task](const SerdeResult& result) -> void {
             taskWorker->finishTask(task);
+
+            if (stoppingTasks) {
+                return;
+            }
 
             if (!result) {
                 present(this, NOTICE("Export failed with error: %1", Warning, Modal, ffitostr(result.error())));
@@ -350,24 +473,48 @@ void MainWindow::setupConnections() {
             }
 
             reportSkippedFiles(result.value().filenames, scast<u16>(result.value().skippedCount));
-        });
+        }).onFailed(this, [this, task] -> void { taskFailed(task); });
     });
 
     connect(serdeMenu, &SerdeMenu::importRequested, this, [this] -> void {
+        auto filenames = serdeMenu->selected().filenames(projectSettings->engineType);
+        const QString directory = serdeMenu->directory();
+        const SerdeFormat format = serdeMenu->format();
+
+        if (QMessageBox::question(
+                this,
+                tr("Import"),
+                tr("Import replaces the translation of %n file(s) with the imported one. Continue?",
+                   nullptr,
+                   scast<i32>(filenames.size()))
+            ) != QMessageBox::Yes) {
+            return;
+        }
+
+        qInfo().noquote() << u"Serde import was confirmed by user."_qsv;
+
         const TaskToken task = startTask(TaskKind::SerdeImport);
 
         if (task == nullptr) {
             return;
         }
 
-        auto filenames = serdeMenu->selected(true).filenames(projectSettings->engineType);
-        const QString directory = serdeMenu->directory();
-        const SerdeFormat format = serdeMenu->format();
+        // The import rewrites these files, so what is edited goes to disk first and the table is emptied: the reload
+        // that follows must not save the tab over what the import wrote
+        if (!flushTranslations()) {
+            taskWorker->finishTask(task);
+            return;
+        }
 
         QtConcurrent::run([this, task, filenames = std::move(filenames), directory, format]() mutable -> auto {
             return taskWorker->serdeImport(task, filenames, directory, format);
-        }).then(this, [this, task](const SerdeResult& result) -> void {
+        })
+            .then(this, [this, task](const SerdeResult& result) -> void {
             taskWorker->finishTask(task);
+
+            if (stoppingTasks) {
+                return;
+            }
 
             if (!result) {
                 present(this, NOTICE("Import failed with error: %1", Warning, Modal, ffitostr(result.error())));
@@ -376,42 +523,20 @@ void MainWindow::setupConnections() {
 
             reportSkippedFiles(result.value().filenames, scast<u16>(result.value().skippedCount));
 
+            // Not `translationsRewritten`: the imported maps exist only in `mapSections`, which the reload has to
+            // save. The other files were written by the task, and the tab is closed.
             openProject(settings->core.projectPath, false);
-        });
+        }).onFailed(this, [this, task] -> void { taskFailed(task); });
     });
 
-    connect(writeMenu, &WriteMenu::accepted, this, [this] -> void {
-        const TaskToken task = startTask(TaskKind::Write);
+    connect(writeMenu, &WriteMenu::accepted, this, [this] -> void { write(writeMenu->selected(true)); });
 
-        if (task == nullptr) {
-            return;
+    // A backup would archive translation files that Read or Purge are in the middle of rewriting
+    connect(&backupTimer, &QTimer::timeout, this, [this] -> void {
+        if (rewritingTask() == nullptr) {
+            saveBackup();
         }
-
-        const Selected selected = writeMenu->selected(true);
-
-        QtConcurrent::run([this, selected] -> auto {
-            return taskWorker->write(selected);
-        }).then(this, [this, task](const WriteResult& result) -> void {
-            taskWorker->finishTask(task);
-
-            if (!result) {
-                present(this, NOTICE("Write failed: %1", Warning, Modal, ffitostr(result.error())));
-                return;
-            }
-
-            present(
-                this,
-                NOTICE(
-                    "Written successfully. Elapsed: %1s. Check `.rpgmtranslate/output` for output files.",
-                    Info,
-                    Status,
-                    ftos(result.value(), 2).qsv()
-                )
-            );
-        });
     });
-
-    connect(&backupTimer, &QTimer::timeout, this, [this] -> void { saveBackup(); });
 
     connect(taskWorker, &TaskWorker::lockFile, this, [this](const QString& lockFile) -> void {
         lockedFile = lockFile;
@@ -419,6 +544,7 @@ void MainWindow::setupConnections() {
 
     connect(taskWorker, &TaskWorker::taskStarted, this, [this](const TaskToken& task) -> void {
         taskPanel->addTask(task);
+        updateTaskControls();
     });
 
     connect(
@@ -432,11 +558,11 @@ void MainWindow::setupConnections() {
 
     connect(taskWorker, &TaskWorker::taskFinished, this, [this](const u32 taskId) -> void {
         taskPanel->removeTask(taskId);
+        updateTaskControls();
     });
 
     connect(taskPanel, &TaskPanel::taskCountChanged, this, [this](const i32 count) -> void {
-        ui->taskButton->setEnabled(count != 0);
-        ui->taskButton->setText(count == 0 ? tr("No tasks") : tr("%n task(s)", nullptr, count));
+        updateTaskButton(count);
 
         if (count == 0) {
             taskPanel->hide();
@@ -461,9 +587,25 @@ void MainWindow::setupConnections() {
 
     connect(&lintDebounceTimer, &QTimer::timeout, this, [this] -> void { handleSingleLint(); });
 
-    for (const auto& recentProject : settings->core.recentProjects) {
-        const QAction* const action = recentProjectsMenu->addAction(recentProject);
+    // Counts follow the committed cell text, so they are refreshed a moment after the table model changes.
+    connect(ui->translationTable->model(), &QAbstractItemModel::dataChanged, this, [this] -> void {
+        if (settings->translation.displayWordsAndCharacters) {
+            countsDebounceTimer.start(COUNTS_DEBOUNCE_MS);
+        }
+    });
+    connect(&countsDebounceTimer, &QTimer::timeout, this, [this] -> void { updateCounts(); });
 
-        connect(action, &QAction::triggered, this, [this, recentProject] -> void { openProject(recentProject, true); });
+    for (const auto& recentProject : settings->core.recentProjects) {
+        addRecentProject(recentProject);
     }
+}
+
+void MainWindow::addRecentProject(const QString& folder) {
+    const QAction* const action = recentProjectsMenu->addAction(folder);
+
+    connect(action, &QAction::triggered, this, [this, folder] -> void { openProject(folder, true); });
+}
+
+void MainWindow::showBelow(QWidget* const panel, const QWidget* const button) const {
+    panel->move(button->mapToGlobal(QPoint(0, ui->controlContainer->height())));
 }

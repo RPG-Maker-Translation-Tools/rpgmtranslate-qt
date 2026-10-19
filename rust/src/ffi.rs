@@ -1,23 +1,24 @@
 #![allow(unsafe_op_in_unsafe_fn)]
-#![allow(static_mut_refs)]
 use crate::api::*;
-use gxhash::{HashMap, HashMapExt, gxhash64};
+use crate::count::{TextCounts, count_text};
 use language_tokenizer::{Algorithm, MatchResult};
 #[cfg(feature = "languagetool")]
 use languagetool_rust::api::check::{Data, DataAnnotation};
 use log::{Log, Metadata, Record};
 use rvpacker_txt_rs_lib::{
-    BaseFlags, DuplicateMode, EngineType, FileFlags, RPGMFileType,
-    core::{PathSegment, get_entity_values},
+    BaseFlags, DuplicateMode, HashMap, HashMapExt, content_hash, EngineType, FileFlags, RPGMFileType,
+    core::{PathSegment, Rm2kEntity, get_entity_values, get_rm2k_entity_name, get_rm2k_system_graphic_name},
+    save::get_save_summary,
 };
 use std::{
-    ffi::{CStr, c_char, c_void},
-    fs::{self, read_to_string},
+    ffi::c_char,
+    fs::{self},
     io::{Cursor, Read},
     mem,
     path::{Path, PathBuf},
     ptr, slice,
-    sync::{LazyLock, OnceLock},
+    sync::{Arc, LazyLock, Mutex, OnceLock, PoisonError},
+    time::SystemTime,
 };
 use tokio::runtime::{Builder, Runtime};
 
@@ -71,16 +72,8 @@ pub struct Bitset2048 {
     data: [u8; 256],
 }
 
-impl Bitset2048 {
-    #[inline]
-    pub fn is_set(&self, bit: usize) -> bool {
-        let byte = unsafe { *self.data.get_unchecked(bit >> 3) };
-        (byte >> (bit & 7)) & 1 == 1
-    }
-}
-
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Selected {
     map_indices: Bitset2048,
     valid_indices: Bitset2048,
@@ -90,12 +83,10 @@ pub struct Selected {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
-/// Byte buffer with FFI-compatible layout.
+#[derive(Clone, Copy, Debug)]
+/// Byte buffer with FFI-compatible layout. Not for UTF-8 strings: use [`FFIString`].
 ///
-/// This struct shouldn't be used for UTF-8 string. Instead, [`FFIString`] should be used.
-///
-/// If `cap == 0`, then this is just a view.
+/// If `cap == 0`, it is just a view.
 pub struct ByteBuffer {
     pub ptr: *const u8,
     pub len: u32,
@@ -115,14 +106,9 @@ impl ByteBuffer {
 static TOKIO_RT: LazyLock<Runtime> = LazyLock::new(|| Builder::new_multi_thread().enable_all().build().unwrap());
 
 #[repr(C)]
-#[derive(Clone, Copy)]
-/// UTF-8 string with FFI-compatible layout.
-///
-/// Use [`str_to_ffi`] and [`ffi_to_str`] for conversions.
-///
-/// Use [`FFIString::null`] to default-initialize to null.
-///
-/// If `cap == 0`, then this is just a view.
+#[derive(Clone, Copy, Debug)]
+/// UTF-8 string with FFI-compatible layout. Convert with [`str_to_ffi`] / [`ffi_to_str`]; [`FFIString::null`] is the
+/// default. If `cap == 0`, it is just a view.
 pub struct FFIString {
     pub ptr: *const c_char,
     pub len: u32,
@@ -139,6 +125,7 @@ impl FFIString {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 #[repr(u8)]
 pub enum ReadMode {
     Default,
@@ -155,6 +142,7 @@ unsafe fn ffi_to_str<'a>(string: FFIString) -> &'a str {
 
     let slice = slice::from_raw_parts(string.ptr.cast::<u8>(), string.len as usize);
 
+    // Invariant: C++ sends `QByteArray::toUtf8()` output, which is always valid UTF-8
     str::from_utf8_unchecked(slice)
 }
 
@@ -187,10 +175,8 @@ unsafe fn ffi_opt_list(string: FFIString) -> Option<Vec<String>> {
     }
 }
 
-/// Resolves a codepage's WHATWG label (`""` for "no override") to an
-/// [`encoding_rs::Encoding`], for [`rvpacker_txt_rs_lib::Processor::read_encoding`]/
-/// [`rvpacker_txt_rs_lib::Processor::write_encoding`]. `""` means "guess it"
-/// for the read side, "always write UTF-8" for the write side.
+/// Resolves a WHATWG label to an [`encoding_rs::Encoding`] for the processor's read/write encodings. `""` means
+/// UTF-8 on both the read and the write side.
 #[inline]
 unsafe fn ffi_encoding(string: FFIString) -> Option<&'static encoding_rs::Encoding> {
     if string.len == 0 {
@@ -222,42 +208,28 @@ pub unsafe extern "C" fn rpgm_buffer_free(buffer: ByteBuffer) {
     let _ = Vec::from_raw_parts(buffer.ptr.cast_mut(), buffer.len as usize, buffer.cap as usize);
 }
 
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn rpgm_free_translated_files(translated_files: ByteBuffer, translated_files_ffi: ByteBuffer) {
-    let rebuilt_files_ffi: Vec<ByteBuffer> = Vec::from_raw_parts(
-        translated_files_ffi.ptr.cast_mut().cast::<ByteBuffer>(),
-        translated_files_ffi.len as usize,
-        translated_files_ffi.cap as usize,
-    );
+// The last error message. `rpgm_error` is read from another thread than the one that failed, so each message is a
+// leaked, immutable allocation: the published pointer stays valid, and the `Mutex` guards only the current one. A
+// repeated message does not leak again.
+static ERROR: Mutex<&'static str> = Mutex::new("");
 
-    for buffer in &rebuilt_files_ffi {
-        if buffer.ptr.is_null() || buffer.len == 0 {
-            continue;
-        }
+fn set_error(message: String) {
+    let mut current = ERROR.lock().unwrap_or_else(PoisonError::into_inner);
 
-        let _: Vec<FFIString> = Vec::from_raw_parts(
-            buffer.ptr.cast_mut().cast::<FFIString>(),
-            buffer.len as usize,
-            buffer.cap as usize,
-        );
+    if *current != message {
+        *current = Box::leak(message.into_boxed_str());
     }
-
-    let _: Vec<Vec<String>> = Vec::from_raw_parts(
-        translated_files.ptr.cast_mut().cast::<Vec<String>>(),
-        translated_files.len as usize,
-        translated_files.cap as usize,
-    );
 }
 
-static mut ERROR: String = String::new();
-
-/// Borrows the static error buffer - `cap` is deliberately 0 so that passing
-/// the result to [`rpgm_string_free`] is a no-op instead of freeing a static.
+/// Borrows the current error message - `cap` is deliberately 0 so that passing
+/// the result to [`rpgm_string_free`] is a no-op instead of freeing a leaked string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn rpgm_error() -> FFIString {
+pub extern "C" fn rpgm_error() -> FFIString {
+    let message = *ERROR.lock().unwrap_or_else(PoisonError::into_inner);
+
     FFIString {
-        ptr: ERROR.as_ptr().cast::<c_char>(),
-        len: ERROR.len() as u32,
+        ptr: message.as_ptr().cast::<c_char>(),
+        len: message.len() as u32,
         cap: 0,
     }
 }
@@ -302,24 +274,26 @@ pub unsafe extern "C" fn rpgm_read(
             },
         };
 
-        let cap = hashes.cap;
-        let mut hashes_map: HashMap<String, u64> = HashMap::with_capacity(cap as usize);
+        // One record is a 16-byte name and an 8-byte hash
+        let mut hashes_map: HashMap<String, u64> = HashMap::with_capacity(hashes.len as usize / 24);
 
-        let hashes = slice::from_raw_parts(hashes.ptr, hashes.len as usize);
+        // An empty buffer may have a null pointer, which `from_raw_parts` does not take even for length 0
+        let hashes: &[u8] = if hashes.len == 0 {
+            &[]
+        } else {
+            slice::from_raw_parts(hashes.ptr, hashes.len as usize)
+        };
         let mut cursor = Cursor::new(hashes);
 
         let mut buf = [0u8; 16];
         let mut hash_buf = [0u8; 8];
 
-        while let Ok(r) = cursor.read(&mut buf)
-            && r != 0
-        {
-            let _ = cursor.read_exact(&mut hash_buf);
+        // Records of a 16-byte name, padded with NULs, and a hash. A name of all 16 bytes has no NUL.
+        while cursor.read_exact(&mut buf).is_ok() && cursor.read_exact(&mut hash_buf).is_ok() {
+            let name_len = buf.iter().position(|&byte| byte == 0).unwrap_or(buf.len());
+
             hashes_map.insert(
-                CStr::from_bytes_until_nul(&buf)
-                    .unwrap_unchecked()
-                    .to_string_lossy()
-                    .into_owned(),
+                String::from_utf8_lossy(&buf[..name_len]).into_owned(),
                 u64::from_le_bytes(hash_buf),
             );
         }
@@ -343,18 +317,18 @@ pub unsafe extern "C" fn rpgm_read(
 
     match result {
         Ok(hashes) => {
-            dbg!(&hashes);
+            // A 16-byte name leaves no NUL in its record, and C++ reads names as C strings. Such a file keeps no
+            // hash, so it is read again next time.
+            let records: Vec<(&String, &u64)> = hashes.iter().filter(|(name, _)| name.len() < 16).collect();
+            let mut buf = Vec::with_capacity(4 + (records.len() * 16) + (records.len() * size_of::<u64>()));
 
-            let mut buf = Vec::with_capacity(4 + (hashes.len() * 16) + (hashes.len() * size_of::<u64>()));
+            buf.extend((records.len() as u32).to_le_bytes());
 
-            buf.extend((hashes.len() as u32).to_le_bytes());
-
-            for (key, value) in hashes {
-                buf.extend(key.as_bytes());
-
-                for _ in 0..16 - key.len() {
-                    buf.push(0);
-                }
+            for (key, value) in records {
+                // The records have a name of 16 bytes, NUL padded
+                let name = key.as_bytes();
+                buf.extend(name);
+                buf.resize(buf.len() + (16 - name.len()), 0);
 
                 buf.extend(value.to_le_bytes());
             }
@@ -369,7 +343,7 @@ pub unsafe extern "C" fn rpgm_read(
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -415,7 +389,7 @@ pub unsafe extern "C" fn rpgm_write(
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -454,7 +428,7 @@ pub unsafe extern "C" fn rpgm_purge(
     match result {
         Ok(_) => true,
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -462,59 +436,26 @@ pub unsafe extern "C" fn rpgm_purge(
 
 #[unsafe(no_mangle)]
 #[must_use]
-pub unsafe extern "C" fn rpgm_extract_archive(input_path: FFIString, output_path: FFIString) -> bool {
+pub unsafe extern "C" fn rpgm_extract_archive(
+    input_path: FFIString,
+    output_path: FFIString,
+    read_encoding: FFIString,
+) -> bool {
     let result = (|| -> Result<(), Error> {
         let input_path = ffi_to_str(input_path);
         let output_path = ffi_to_str(output_path);
-        extract_archive(Path::new(&input_path), Path::new(&output_path))?;
+        extract_archive(
+            Path::new(&input_path),
+            Path::new(&output_path),
+            ffi_encoding(read_encoding),
+        )?;
         Ok(())
     })();
 
     match result {
         Ok(()) => true,
         Err(err) => {
-            ERROR = err.to_string();
-            false
-        }
-    }
-}
-
-#[unsafe(no_mangle)]
-#[must_use]
-pub unsafe extern "C" fn rpgm_get_models(
-    endpoint: TranslationEndpoint,
-    api_key: FFIString,
-    base_url: FFIString,
-    out: *mut ByteBuffer,
-) -> bool {
-    let result = (|| -> Result<_, Error> {
-        let api_key = ffi_to_str(api_key);
-        let base_url = ffi_to_str(base_url);
-        let models = TOKIO_RT.block_on(async move { get_models(endpoint, &api_key, &base_url).await })?;
-        Ok(models)
-    })();
-
-    match result {
-        Ok(models) => {
-            let mut buffer: Vec<u8> = Vec::new();
-            buffer.extend_from_slice(&(models.len() as u32).to_le_bytes());
-
-            for string in models {
-                buffer.extend_from_slice(&(string.len() as u32).to_le_bytes());
-                buffer.extend_from_slice(string.as_bytes());
-            }
-
-            *out = ByteBuffer {
-                ptr: buffer.as_mut_ptr(),
-                len: buffer.len() as u32,
-                cap: buffer.capacity() as u32,
-            };
-
-            mem::forget(buffer);
-            true
-        }
-        Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -524,21 +465,13 @@ pub unsafe extern "C" fn rpgm_get_models(
 #[must_use]
 pub unsafe extern "C" fn rpgm_translate_single(
     endpoint_settings: FFIString,
-    project_context: FFIString,
-    local_context: FFIString,
     source_language: FFIString,
     translation_language: FFIString,
     text: FFIString,
-    glossary: FFIString,
     out_string: *mut FFIString,
 ) -> bool {
-    let project_context = ffi_to_str(project_context);
-    let local_context = ffi_to_str(local_context);
     let text = ffi_to_str(text);
-    let glossary = ffi_to_str(glossary);
     let endpoint_settings = ffi_to_str(endpoint_settings);
-
-    let glossary: Vec<GlossaryEntry> = unsafe { serde_json::from_str(glossary).unwrap_unchecked() };
 
     let result = (|| -> Result<_, Error> {
         let results = TOKIO_RT.block_on(async move {
@@ -546,10 +479,7 @@ pub unsafe extern "C" fn rpgm_translate_single(
                 endpoint_settings,
                 ffi_to_str(source_language),
                 ffi_to_str(translation_language),
-                &project_context,
-                &local_context,
                 &text,
-                glossary,
             )
             .await
         })?;
@@ -565,22 +495,22 @@ pub unsafe extern "C" fn rpgm_translate_single(
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
 }
 
-unsafe fn take<'a>(buf: &'a [u8], pos: &mut usize, n: usize) -> &'a [u8] {
-    let end = pos.checked_add(n).unwrap_unchecked();
+fn take<'a>(buf: &'a [u8], pos: &mut usize, n: usize) -> &'a [u8] {
+    let end = pos.checked_add(n).expect("a length in the buffer cannot overflow");
     let out = &buf[*pos..end];
     *pos = end;
     out
 }
 
-unsafe fn read_u32_le(buf: &[u8], pos: &mut usize) -> u32 {
-    let b = take(buf, pos, 4);
-    u32::from_le_bytes(*b.as_ptr().cast::<[u8; 4]>())
+fn read_u32_le(buf: &[u8], pos: &mut usize) -> u32 {
+    let bytes: [u8; 4] = take(buf, pos, 4).try_into().expect("take returns the bytes asked for");
+    u32::from_le_bytes(bytes)
 }
 
 pub unsafe fn parse_strings<'a>(buf: &'a [u8]) -> Vec<&'a str> {
@@ -592,6 +522,7 @@ pub unsafe fn parse_strings<'a>(buf: &'a [u8]) -> Vec<&'a str> {
     for _ in 0..count {
         let n = read_u32_le(buf, &mut pos) as usize;
         let bytes = take(buf, &mut pos, n);
+        // Invariant: C++ builds these strings from `toUtf8()` output, which is always valid UTF-8
         let s = str::from_utf8_unchecked(bytes);
         out.push(s);
     }
@@ -599,236 +530,22 @@ pub unsafe fn parse_strings<'a>(buf: &'a [u8]) -> Vec<&'a str> {
     out
 }
 
-pub fn split_into_sections(input: &str) -> Vec<&str> {
-    const MARKER: &str = "<#>ID";
+/// Appends a `u32` count, then one 12-byte record per match: offset, length and score (0 for exact matches).
+fn push_matches(out: &mut Vec<u8>, matches: Vec<MatchResult>) {
+    out.extend((matches.len() as u32).to_le_bytes());
 
-    let mut starts: Vec<usize> = Vec::from([0]);
-
-    let bytes = input.as_bytes();
-    let mut i = 0;
-
-    while i < bytes.len() {
-        if bytes[i] == b'\n' {
-            let line_start = i + 1;
-
-            if line_start + MARKER.len() <= bytes.len() && input[line_start..].starts_with(MARKER) {
-                starts.push(line_start);
+    for m in matches {
+        match m {
+            MatchResult::Exact { offset, len } => {
+                out.extend((offset as u32).to_le_bytes());
+                out.extend((len as u32).to_le_bytes());
+                out.extend(0f32.to_le_bytes());
             }
-        }
-
-        i += 1;
-    }
-
-    let mut out = Vec::with_capacity(starts.len());
-    for w in 0..starts.len() {
-        let s = starts[w];
-
-        let e = if w + 1 < starts.len() {
-            starts[w + 1]
-        } else {
-            input.len()
-        };
-
-        out.push(&input[s..e]);
-    }
-
-    out
-}
-
-#[unsafe(no_mangle)]
-#[must_use]
-pub unsafe extern "C" fn rpgm_translate<'a>(
-    endpoint_settings: FFIString,
-    project_context: FFIString,
-    local_context: FFIString,
-    translation_path: FFIString,
-    source_language: FFIString,
-    translation_language: FFIString,
-    filenames: ByteBuffer,
-    glossary: FFIString,
-    out_translated: *mut ByteBuffer,
-    out_translated_ffi: *mut ByteBuffer,
-    is_interrupted: extern "C" fn(*mut c_void) -> bool,
-    is_interrupted_ctx: *mut c_void,
-) -> bool {
-    let project_context = ffi_to_str(project_context);
-    let local_context = ffi_to_str(local_context);
-    let glossary = ffi_to_str(glossary);
-    let glossary: Vec<GlossaryEntry> = unsafe { serde_json::from_str(glossary).unwrap_unchecked() };
-
-    let translation_path = ffi_to_str(translation_path);
-    let endpoint_settings = ffi_to_str(endpoint_settings);
-
-    let map_content = String::new();
-    let mut sections: Vec<&str> = Vec::new();
-
-    let result = (|| -> Result<_, Error> {
-        let filenames = slice::from_raw_parts::<[u8; 16]>(filenames.ptr.cast::<[u8; 16]>(), filenames.len as usize);
-
-        let mut files: HashMap<&str, Vec<String>> = HashMap::with_capacity(filenames.len());
-        let mut ordered_filenames: Vec<&str> = Vec::with_capacity(filenames.len());
-
-        for filename in filenames {
-            let filename = str::from_utf8_unchecked(filename);
-            let filename = &filename[..=filename.rfind(|chr| chr != '\0').unwrap_unchecked()];
-            ordered_filenames.push(filename);
-
-            if filename.starts_with("map") {
-                if map_content.is_empty() {
-                    let path = Path::new(translation_path).join("maps.txt");
-
-                    #[allow(invalid_reference_casting)]
-                    unsafe {
-                        *(&mut *(&map_content as *const String as *mut String)) =
-                            read_to_string(&path).map_err(|err| Error::Io(path, err))?;
-                    }
-
-                    sections = split_into_sections(&map_content);
-                }
-
-                files.insert(filename, Vec::new());
-                let entry = unsafe { files.get_mut(filename).unwrap_unchecked() };
-                let id = &filename[3..];
-
-                for &section in &sections {
-                    let id_line = &section[..section.find('\n').unwrap_or(section.len())];
-                    let id_part = &id_line[id_line.find("<#>").unwrap_or(id_line.len()) + 3..];
-
-                    if id_part != id {
-                        continue;
-                    }
-
-                    for (i, line) in section.split('\n').enumerate() {
-                        if line.is_empty() {
-                            continue;
-                        }
-
-                        if i == 0 {
-                            entry.push(line.to_string());
-                            continue;
-                        }
-
-                        let not_name = !line.starts_with("<!>NAME");
-                        let not_in_game_name = !line.starts_with("<!>IN-GAME");
-                        let not_map_name = !line.starts_with("<!>MAP NAME");
-
-                        if line.starts_with("<!>") && not_name && not_in_game_name && not_map_name {
-                            continue;
-                        }
-
-                        if not_name && not_in_game_name && not_map_name {
-                            if let Some(separator_pos) = line.find("<#>") {
-                                entry.push(line[..separator_pos].to_string());
-                            } else {
-                                log::error!("Failed to split line {i} in file {filename}");
-                            }
-                        } else {
-                            entry.push(line.to_string());
-                        }
-                    }
-                }
-            } else {
-                let path = Path::new(&translation_path).join(filename).with_extension("txt");
-                let content = read_to_string(&path).map_err(|err| Error::Io(path, err))?;
-                let lines = content.split('\n');
-
-                files.insert(filename, Vec::new());
-
-                for (idx, line) in lines.enumerate() {
-                    if line.is_empty()
-                        || line.starts_with("<!>") && !line.starts_with("<!>ID") && !line.starts_with("<!>NAME")
-                    {
-                        continue;
-                    }
-
-                    let entry = files.get_mut(filename).unwrap_unchecked();
-
-                    if !line.starts_with("<!>ID") && !line.starts_with("<!>NAME") {
-                        if let Some(separator_pos) = line.rfind("<#>") {
-                            entry.push(line[0..separator_pos].to_string());
-                        } else {
-                            log::error!("Failed to split line {idx} in file {filename}");
-                        }
-                    } else {
-                        entry.push(line.to_string());
-                    }
-                }
+            MatchResult::Fuzzy { offset, len, score } => {
+                out.extend((offset as u32).to_le_bytes());
+                out.extend((len as u32).to_le_bytes());
+                out.extend((score as f32).to_le_bytes());
             }
-        }
-
-        let mut results = TOKIO_RT.block_on(async move {
-            translate(
-                endpoint_settings,
-                ffi_to_str(source_language),
-                ffi_to_str(translation_language),
-                &project_context,
-                &local_context,
-                files,
-                glossary,
-                is_interrupted,
-                is_interrupted_ctx,
-            )
-            .await
-        })?;
-
-        let mut translations: Vec<Vec<String>> = Vec::with_capacity(ordered_filenames.len());
-
-        for filename in &ordered_filenames {
-            translations.push(results.remove(*filename).unwrap_or_default());
-        }
-
-        Ok(translations)
-    })();
-
-    match result {
-        Ok(translated_files) => {
-            let mut translated_files_ffi = Vec::with_capacity(translated_files.len());
-
-            for translated_strings in translated_files.iter() {
-                let mut strings_ffi: Vec<FFIString> = Vec::with_capacity(translated_strings.len());
-
-                if translated_strings.is_empty() {
-                    translated_files_ffi.push(ByteBuffer {
-                        ptr: ptr::null(),
-                        len: 0,
-                        cap: 0,
-                    });
-                    continue;
-                }
-
-                for string in translated_strings {
-                    strings_ffi.push(str_to_ffi(string));
-                }
-
-                translated_files_ffi.push(ByteBuffer {
-                    ptr: strings_ffi.as_ptr().cast::<u8>(),
-                    len: strings_ffi.len() as u32,
-                    cap: strings_ffi.capacity() as u32,
-                });
-
-                mem::forget(strings_ffi);
-            }
-
-            *out_translated_ffi = ByteBuffer {
-                ptr: translated_files_ffi.as_ptr().cast::<u8>(),
-                len: translated_files_ffi.len() as u32,
-                cap: translated_files_ffi.capacity() as u32,
-            };
-
-            *out_translated = ByteBuffer {
-                ptr: translated_files.as_ptr().cast::<u8>(),
-                len: translated_files.len() as u32,
-                cap: translated_files.capacity() as u32,
-            };
-
-            mem::forget(translated_files);
-            mem::forget(translated_files_ffi);
-
-            true
-        }
-        Err(err) => {
-            ERROR = err.to_string();
-            false
         }
     }
 }
@@ -870,39 +587,8 @@ pub unsafe extern "C" fn rpgm_find_all_matches(
                     4 + (src.len() * (size_of::<MatchResult>() / 2)) + (tr.len() * (size_of::<MatchResult>() / 2)),
                 );
 
-                vec.extend((src.len() as u32).to_le_bytes());
-
-                for m in src {
-                    match m {
-                        MatchResult::Exact { offset, len } => {
-                            vec.extend((offset as u32).to_le_bytes());
-                            vec.extend((len as u32).to_le_bytes());
-                            vec.extend(0f32.to_le_bytes());
-                        }
-                        MatchResult::Fuzzy { offset, len, score } => {
-                            vec.extend((offset as u32).to_le_bytes());
-                            vec.extend((len as u32).to_le_bytes());
-                            vec.extend((score as f32).to_le_bytes());
-                        }
-                    }
-                }
-
-                vec.extend((tr.len() as u32).to_le_bytes());
-
-                for m in tr {
-                    match m {
-                        MatchResult::Exact { offset, len } => {
-                            vec.extend((offset as u32).to_le_bytes());
-                            vec.extend((len as u32).to_le_bytes());
-                            vec.extend(0f32.to_le_bytes());
-                        }
-                        MatchResult::Fuzzy { offset, len, score } => {
-                            vec.extend((offset as u32).to_le_bytes());
-                            vec.extend((len as u32).to_le_bytes());
-                            vec.extend((score as f32).to_le_bytes());
-                        }
-                    }
-                }
+                push_matches(&mut vec, src);
+                push_matches(&mut vec, tr);
 
                 vec
             }
@@ -924,7 +610,7 @@ pub unsafe extern "C" fn rpgm_find_all_matches(
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -946,8 +632,16 @@ impl Log for FFILogger {
 
         let text = format!("[{}] {}", record.target(), record.args());
 
-        cb(record.level() as u8, str_to_ffi(&text));
-        mem::forget(text);
+        // `log::Level` counts from 1 (Error), the C++ side from 0 (Error). The callback copies the message before it
+        // returns, so it is a view (`cap == 0`) and the string is dropped here instead of leaking with every record.
+        cb(
+            record.level() as u8 - 1,
+            FFIString {
+                ptr: text.as_ptr().cast::<c_char>(),
+                len: text.len() as u32,
+                cap: 0,
+            },
+        );
     }
 
     fn flush(&self) {}
@@ -990,24 +684,10 @@ pub unsafe extern "C" fn init_lindera_dictionaries(data_root: FFIString) {
     let _ = existing_dir;
 }
 
+/// Counts the words and characters a player will read in `text`; RPG Maker codes are not counted.
 #[unsafe(no_mangle)]
-#[must_use]
-pub unsafe extern "C" fn rpgm_count_words(text: FFIString, algorithm: FFIString, out: *mut u32) -> bool {
-    let result = (|| -> Result<_, Error> {
-        let count = count_words(&ffi_to_str(text), from_bcp47(ffi_to_str(algorithm)))?;
-        Ok(count)
-    })();
-
-    match result {
-        Ok(count) => {
-            *out = count;
-            true
-        }
-        Err(err) => {
-            ERROR = err.to_string();
-            false
-        }
-    }
+pub unsafe extern "C" fn rpgm_count_text(text: FFIString) -> TextCounts {
+    count_text(ffi_to_str(text))
 }
 
 #[cfg(feature = "languagetool")]
@@ -1029,7 +709,12 @@ pub unsafe extern "C" fn rpgm_language_tool_lint(
     username: FFIString,
     out_json: *mut FFIString,
 ) -> bool {
-    let segments = unsafe { parse_strings(slice::from_raw_parts(segments.ptr, segments.len as usize)) };
+    let segment_bytes: &[u8] = if segments.len == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(segments.ptr, segments.len as usize)
+    };
+    let segments = unsafe { parse_strings(segment_bytes) };
 
     let data: Data = segments
         .into_iter()
@@ -1056,11 +741,7 @@ pub unsafe extern "C" fn rpgm_language_tool_lint(
             ffi_opt_list(enabled_categories),
             ffi_opt_list(enabled_rules),
             picky,
-            if mother_tongue.len == 0 {
-                None
-            } else {
-                Some(ffi_to_str(mother_tongue).to_string())
-            },
+            ffi_opt_string(mother_tongue),
             ffi_opt_list(preferred_variants),
             ffi_opt_string(username),
         )
@@ -1070,7 +751,7 @@ pub unsafe extern "C" fn rpgm_language_tool_lint(
 
     match result {
         Ok(matches) => {
-            let json = unsafe { serde_json::to_string(&matches).unwrap_unchecked() };
+            let json = serde_json::to_string(&matches).expect("LanguageTool matches always serialize");
 
             *out_json = FFIString {
                 ptr: json.as_ptr().cast::<i8>(),
@@ -1082,7 +763,7 @@ pub unsafe extern "C" fn rpgm_language_tool_lint(
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -1109,7 +790,7 @@ pub unsafe extern "C" fn rpgm_decrypt_asset(path: FFIString, out: *mut ByteBuffe
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -1130,7 +811,7 @@ pub unsafe extern "C" fn rpgm_highlight_code(input: FFIString, lang: HighlightLa
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -1140,7 +821,14 @@ pub unsafe extern "C" fn rpgm_highlight_code(input: FFIString, lang: HighlightLa
 #[must_use]
 pub unsafe extern "C" fn rpgm_generate_json(content: FFIString, filename: FFIString, json_out: *mut FFIString) -> bool {
     let result = (|| -> Result<_, Error> {
-        let json = generate_json(ffi_to_str(content).as_bytes(), ffi_to_str(filename))?;
+        // The content is a game file, which is binary for RPG Maker 2000/2003 and Ruby's Marshal: not a `&str`
+        let bytes = if content.len == 0 {
+            &[]
+        } else {
+            slice::from_raw_parts(content.ptr.cast::<u8>(), content.len as usize)
+        };
+
+        let json = generate_json(bytes, ffi_to_str(filename))?;
         Ok(json)
     })();
 
@@ -1152,7 +840,7 @@ pub unsafe extern "C" fn rpgm_generate_json(content: FFIString, filename: FFIStr
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -1160,7 +848,19 @@ pub unsafe extern "C" fn rpgm_generate_json(content: FFIString, filename: FFIStr
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rpgm_serde_export(content: FFIString, format: SerdeFormat, out: *mut ByteBuffer) -> bool {
-    match serde_export(ffi_to_str(content), format) {
+    // A translation file edited outside the application is not guaranteed to be UTF-8
+    let content = if content.len == 0 {
+        Ok("")
+    } else {
+        str::from_utf8(slice::from_raw_parts(content.ptr.cast::<u8>(), content.len as usize))
+    };
+
+    let result = match content {
+        Ok(content) => serde_export(content, format),
+        Err(err) => Err(Error::Serde(err.to_string())),
+    };
+
+    match result {
         Ok(bytes) => {
             *out = ByteBuffer {
                 ptr: bytes.as_ptr(),
@@ -1172,7 +872,7 @@ pub unsafe extern "C" fn rpgm_serde_export(content: FFIString, format: SerdeForm
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -1180,7 +880,11 @@ pub unsafe extern "C" fn rpgm_serde_export(content: FFIString, format: SerdeForm
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rpgm_serde_import(bytes: ByteBuffer, format: SerdeFormat, out: *mut FFIString) -> bool {
-    let slice = slice::from_raw_parts(bytes.ptr, bytes.len as usize);
+    let slice: &[u8] = if bytes.len == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(bytes.ptr, bytes.len as usize)
+    };
 
     match serde_import(slice, format) {
         Ok(text) => {
@@ -1190,7 +894,7 @@ pub unsafe extern "C" fn rpgm_serde_import(bytes: ByteBuffer, format: SerdeForma
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -1201,7 +905,7 @@ pub unsafe extern "C" fn rpgm_store_credential(account: FFIString, secret: FFISt
     match store_credential(ffi_to_str(account), ffi_to_str(secret)) {
         Ok(()) => true,
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -1223,8 +927,16 @@ pub unsafe extern "C" fn rpgm_get_credential(account: FFIString, out: *mut FFISt
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn rpgm_delete_credential(account: FFIString) {
-    let _ = delete_credential(ffi_to_str(account));
+pub unsafe extern "C" fn rpgm_delete_credential(account: FFIString) -> bool {
+    match delete_credential(ffi_to_str(account)) {
+        Ok(()) => true,
+        // Nothing is stored under the account, so there is nothing to delete
+        Err(Error::Keyring(keyring::Error::NoEntry)) => true,
+        Err(err) => {
+            set_error(err.to_string());
+            false
+        }
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -1254,7 +966,7 @@ pub unsafe extern "C" fn rpgm_get_ini_title(
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
@@ -1262,8 +974,12 @@ pub unsafe extern "C" fn rpgm_get_ini_title(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn rpgm_hash_file(content: ByteBuffer, duplicate_mode: DuplicateMode, out: *mut u64) {
-    let content = slice::from_raw_parts(content.ptr, content.len as usize);
-    *out = gxhash64(content, duplicate_mode as i64);
+    let content: &[u8] = if content.len == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(content.ptr, content.len as usize)
+    };
+    *out = content_hash(duplicate_mode, content);
 }
 
 enum DataPath<'a> {
@@ -1273,12 +989,10 @@ enum DataPath<'a> {
 }
 
 fn parse_next_path(paths: &str) -> Option<DataPath<'_>> {
-    let bytes = paths.as_bytes();
+    let typ = *paths.as_bytes().first()?;
 
-    let typ = bytes[0];
-    let content_start = 1;
-
-    let content = &paths[content_start..];
+    // The type is a byte below 0x80, so the content starts on a character boundary
+    let content = paths.get(1..)?;
 
     let path = match typ {
         1 => {
@@ -1289,10 +1003,32 @@ fn parse_next_path(paths: &str) -> Option<DataPath<'_>> {
             }
         }
         3 => DataPath::Index(content.parse().unwrap_or(usize::MAX)),
-        _ => unreachable!(),
+        _ => return None,
     };
 
     Some(path)
+}
+
+/// The database file the last tooltip read, with its modification time. A tooltip looks up several entities of one
+/// file, one after another.
+static ENTITY_FILE_CACHE: Mutex<Option<(PathBuf, SystemTime, Arc<Vec<u8>>)>> = Mutex::new(None);
+
+fn read_entity_file(path: &str) -> Result<Arc<Vec<u8>>, Error> {
+    let io_error = |err| Error::Io(PathBuf::from(path), err);
+    let modified = fs::metadata(path).and_then(|meta| meta.modified()).map_err(io_error)?;
+
+    let mut cache = ENTITY_FILE_CACHE.lock().unwrap_or_else(PoisonError::into_inner);
+
+    if let Some((cached_path, cached_modified, content)) = &*cache
+        && cached_path == Path::new(path)
+        && *cached_modified == modified
+    {
+        return Ok(Arc::clone(content));
+    }
+
+    let content = Arc::new(fs::read(path).map_err(io_error)?);
+    *cache = Some((PathBuf::from(path), modified, Arc::clone(&content)));
+    Ok(content)
 }
 
 #[unsafe(no_mangle)]
@@ -1301,32 +1037,26 @@ pub unsafe extern "C" fn rpgm_get_entity_data(
     engine_type: EngineType,
     _file_type: RPGMFileType,
     paths: FFIString,
+    read_encoding: FFIString,
     out: *mut FFIString,
+    out_capacity: u32,
 ) -> bool {
     let path = ffi_to_str(path);
     let paths = ffi_to_str(paths);
 
     let result = (|| -> Result<_, Error> {
-        let content = fs::read(path).map_err(|err| Error::Io(Path::new(path).to_path_buf(), err))?;
+        let content = read_entity_file(path)?;
 
-        // Every entry but the last steps one level deeper (`Key`/`Index`
-        // only - `Keys` is only meaningful as the final entry); the last
-        // entry names the (possibly several sibling) leaves to read out of
-        // whatever `steps` bottomed out at.
         let mut entries = paths.split('\x04').peekable();
         let mut steps: Vec<PathSegment<'_>> = Vec::new();
         let mut leaves: Vec<PathSegment<'_>> = Vec::new();
 
         while let Some(entry) = entries.next() {
             let Some(segment) = parse_next_path(entry) else {
-                return Err(Error::InvalidKey(String::from("0"), path.to_string()));
+                return Err(Error::InvalidKey(entry.to_string(), path.to_string()));
             };
 
             if entries.peek().is_none() {
-                // Matched directly (rather than through `DataPath::iter`,
-                // which borrows `&'a self` - `segment` is a local here, too
-                // short-lived to satisfy that) so this consumes `segment` by
-                // value instead of borrowing it.
                 leaves = match segment {
                     DataPath::Keys(iter) => iter.map(PathSegment::Key).collect(),
                     DataPath::Key(key) => vec![PathSegment::Key(key)],
@@ -1336,13 +1066,18 @@ pub unsafe extern "C" fn rpgm_get_entity_data(
             }
 
             match segment {
-                DataPath::Keys(_) => unreachable!(),
+                // Only the last segment can name several keys
+                DataPath::Keys(_) => return Err(Error::InvalidKey(String::from(entry), path.to_string())),
                 DataPath::Key(key) => steps.push(PathSegment::Key(key)),
                 DataPath::Index(idx) => steps.push(PathSegment::Index(idx)),
             }
         }
 
-        let values = get_entity_values(&content, engine_type, &steps, &leaves)?;
+        let values = get_entity_values(&content, engine_type, ffi_encoding(read_encoding), &steps, &leaves)?;
+
+        if values.len() > out_capacity as usize {
+            return Err(Error::TooManyValues(values.len(), out_capacity as usize));
+        }
 
         for (out_idx, string) in values.into_iter().enumerate() {
             *out.add(out_idx) = FFIString {
@@ -1360,15 +1095,109 @@ pub unsafe extern "C" fn rpgm_get_entity_data(
     match result {
         Ok(()) => true,
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }
 }
 
+/// Hands `result` to the caller: the string goes to `out` (freed with `rpgm_string_free`), an error to `rpgm_error`.
+unsafe fn write_string_result(result: Result<String, Error>, out: *mut FFIString) -> bool {
+    match result {
+        Ok(string) => {
+            let mut string = string.into_bytes();
+
+            *out = FFIString {
+                ptr: string.as_mut_ptr().cast::<i8>(),
+                len: string.len() as u32,
+                cap: string.capacity() as u32,
+            };
+
+            mem::forget(string);
+
+            true
+        }
+        Err(err) => {
+            set_error(err.to_string());
+            false
+        }
+    }
+}
+
+/// Writes the name of entry `id` of `entity` in the RPG Maker 2000/2003 database at `path` to `out` (freed with
+/// `rpgm_string_free`). `read_encoding` is the project's read encoding, empty for UTF-8.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn rpgm_get_rm2k_entity_name(
+    path: FFIString,
+    entity: Rm2kEntity,
+    id: i32,
+    read_encoding: FFIString,
+    out: *mut FFIString,
+) -> bool {
+    let path = ffi_to_str(path);
+
+    let result = (|| -> Result<_, Error> {
+        let content = read_entity_file(path)?;
+        Ok(get_rm2k_entity_name(&content, entity, id, ffi_encoding(read_encoding))?)
+    })();
+
+    write_string_result(result, out)
+}
+
+/// Writes the name of the system graphic the RPG Maker 2000/2003 database at `path` selects to `out` (freed with
+/// `rpgm_string_free`). `read_encoding` is as for `rpgm_get_rm2k_entity_name`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn rpgm_get_rm2k_system_graphic_name(
+    path: FFIString,
+    read_encoding: FFIString,
+    out: *mut FFIString,
+) -> bool {
+    let path = ffi_to_str(path);
+
+    let result = (|| -> Result<_, Error> {
+        let content = read_entity_file(path)?;
+        Ok(get_rm2k_system_graphic_name(&content, ffi_encoding(read_encoding))?)
+    })();
+
+    write_string_result(result, out)
+}
+
+/// Writes the JSON of a `SaveSummary` of the save file at `path` to `out` (freed with `rpgm_string_free`).
+/// `read_encoding` is as for `rpgm_get_rm2k_entity_name`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn rpgm_get_save_summary(
+    path: FFIString,
+    engine_type: EngineType,
+    read_encoding: FFIString,
+    out: *mut FFIString,
+) -> bool {
+    let path = ffi_to_str(path);
+
+    let result = (|| -> Result<_, Error> {
+        let content = fs::read(path).map_err(|err| Error::Io(Path::new(path).to_path_buf(), err))?;
+        let summary = get_save_summary(&content, engine_type, ffi_encoding(read_encoding))?;
+        Ok(serde_json::to_string(&summary)?)
+    })();
+
+    write_string_result(result, out)
+}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gxhash(ptr: *const std::ffi::c_void, len: usize) -> u64 {
-    gxhash::gxhash64(slice::from_raw_parts(ptr.cast::<u8>(), len), 0)
+    let bytes: &[u8] = if len == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(ptr.cast::<u8>(), len)
+    };
+
+    #[cfg(feature = "gxhash")]
+    {
+        gxhash::gxhash64(bytes, 0)
+    }
+    #[cfg(not(feature = "gxhash"))]
+    {
+        rapidhash::v3::rapidhash_v3(bytes)
+    }
 }
 
 #[cfg(any(feature = "js-formatting", feature = "ruby-formatting"))]
@@ -1393,7 +1222,7 @@ pub unsafe extern "C" fn rpgm_format_src(src: FFIString, lang: HighlightLanguage
             true
         }
         Err(err) => {
-            ERROR = err.to_string();
+            set_error(err.to_string());
             false
         }
     }

@@ -4,16 +4,16 @@
 #include "FileSelectMenu.hpp"
 #include "Notice.hpp"
 #include "ProjectSettings.hpp"
+#include "ScriptEditor.hpp"
 #include "Types.hpp"
 #include "Utils.hpp"
 #include "ui_BatchMenu.h"
 
 #include <QDir>
-#include <QLineEdit>
+#include <QFileInfo>
+#include <QSaveFile>
 
 namespace {
-constexpr i32 TRANSLATE_ACTION_INDEX = 1;
-
 constexpr array<BatchAction, 3> BUILTIN_SCRIPTS = { BatchAction::Trim, BatchAction::Wrap, BatchAction::Latinize };
 
 [[nodiscard]] constexpr auto scriptAction(const i32 index) -> BatchAction {
@@ -28,49 +28,21 @@ BatchMenu::BatchMenu(QWidget* const parent) :
     fileSelectMenu(new FileSelectMenu(parent)) {
     setDragMoveEnabled(true);
 
-    ui->translationEndpointSelect->hide();
-    ui->contextContainer->hide();
-    ui->scriptWidget->hide();
-
-    ui->wrapWidget->hide();
-    ui->trimWidget->hide();
-
-    connect(ui->batchActionSelect, &QComboBox::currentIndexChanged, this, [this](const i32 index) -> void {
-        const bool translating = index == TRANSLATE_ACTION_INDEX;
-
-        ui->translationEndpointSelect->setVisible(translating);
-        ui->contextContainer->setVisible(translating);
-        ui->scriptWidget->setHidden(translating);
-
-        adjustSize();
-    });
-
-    connect(ui->processButton, &QPushButton::pressed, this, [this] -> void {
-        const i32 actionIndex = ui->batchActionSelect->currentIndex();
+    // Not `pressed`: the handler may run a modal dialog or start the task, and a second press (double click) of the
+    // still-held button would request the script again while the first runs
+    connect(ui->processButton, &QPushButton::clicked, this, [this] -> void {
         const i32 column = ui->translationColumnSelect->currentIndex();
-
-        if (actionIndex == 0) {
-            present(this, NOTICE("Select the batch action you want to perform.", Warning, Modal));
-            return;
-        }
 
         if (column == 0) {
             present(this, NOTICE("Select the translation column you want perform the action in.", Warning, Modal));
             return;
         }
 
-        const bool translating = actionIndex == TRANSLATE_ACTION_INDEX;
         const i32 scriptIndex = ui->scriptSelect->currentIndex();
 
-        JSScript script = { .action = translating ? BatchAction::Translate : scriptAction(scriptIndex),
-                            .name = ui->scriptSelect->currentText() };
+        JSScript script = { .action = scriptAction(scriptIndex), .name = ui->scriptSelect->currentText() };
 
-        if (translating) {
-            if (ui->translationEndpointSelect->currentIndex() == 0) {
-                present(this, NOTICE("Select the translation endpoint you want to use.", Warning, Modal));
-                return;
-            }
-        } else if (script.action == BatchAction::Wrap && !ui->wrapSpinBox->hasAcceptableInput()) {
+        if (script.action == BatchAction::Wrap && !ui->wrapSpinBox->hasAcceptableInput()) {
             present(this, NOTICE("Wrap length input requires a number from 20 to 255.", Warning, Modal));
             return;
         }
@@ -85,13 +57,6 @@ BatchMenu::BatchMenu(QWidget* const parent) :
         BatchVariant variant;
 
         switch (script.action) {
-            case BatchAction::Translate:
-                variant = EndpointContext{
-                    .endpointIndex = scast<u8>(ui->translationEndpointSelect->currentIndex() - 1),
-                    .context = ui->contextInput->toPlainText(),
-                };
-                break;
-
             case BatchAction::Trim:
                 switch (ui->trimSelect->currentIndex()) {
                     case 0:
@@ -116,9 +81,7 @@ BatchMenu::BatchMenu(QWidget* const parent) :
                 break;
         }
 
-        if (!translating) {
-            script.source = ui->scriptEdit->toPlainText();
-        }
+        script.source = ui->scriptEdit->toPlainText();
 
         emit actionRequested(script, selected, column, variant);
     });
@@ -128,19 +91,17 @@ BatchMenu::BatchMenu(QWidget* const parent) :
         ui->fileSelectButton->setChecked(false);
     });
 
-    connect(ui->fileSelectButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->fileSelectButton, &QPushButton::clicked, this, [this] -> void {
         fileSelectMenu->setHidden(!fileSelectMenu->isHidden());
         fileSelectMenu->move(mapToGlobal(QPoint(width(), 0)));
     });
 
-    connect(ui->wrapValueButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->wrapValueButton, &QPushButton::clicked, this, [this] -> void {
         ui->wrapSpinBox->setValue(projectSettings->lineLengthHint);
     });
 
-    connect(ui->scriptSelect, &QComboBox::currentIndexChanged, this, [this](const i32 index) -> void {
-        if (scriptAction(prevScript) == BatchAction::Custom) {
-            scripts[prevScript - BUILTIN_SCRIPTS.size()] = ui->scriptEdit->toPlainText();
-        }
+    const auto showScript = [this](const i32 index) -> void {
+        storeCurrentScript();
 
         const BatchAction action = scriptAction(index);
 
@@ -168,36 +129,40 @@ BatchMenu::BatchMenu(QWidget* const parent) :
         }
 
         prevScript = index;
-    });
+    };
+
+    connect(ui->scriptSelect, &QComboBox::currentIndexChanged, this, showScript);
 
     connect(ui->scriptSelect, &QComboBox::editTextChanged, this, [this](const QString& text) -> void {
         ui->scriptSelect->setItemText(ui->scriptSelect->currentIndex(), text);
     });
 
-    connect(ui->createScriptButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->editScriptButton, &QPushButton::clicked, this, [this] -> void {
+        auto editor = ScriptEditor(
+            this,
+            ui->scriptSelect->currentText(),
+            ui->scriptEdit->toPlainText(),
+            ui->scriptEdit->isReadOnly()
+        );
+
+        if (editor.exec() == QDialog::Accepted) {
+            ui->scriptEdit->setPlainText(editor.source());
+        }
+    });
+
+    connect(ui->createScriptButton, &QPushButton::clicked, this, [this] -> void {
         scripts.push_back(TEMPLATE_SCRIPT.toString());
+        savedNames.emplace_back();
         ui->scriptSelect->addItem(tr("New Script"));
         ui->scriptSelect->setCurrentIndex(ui->scriptSelect->count() - 1);
     });
 
-    const auto entries =
-        QDirListing(dataLocation() % u"/scripts"_qsv, { u"*.js"_s }, QDirListing::IteratorFlag::FilesOnly);
+    ui->scriptSelect->installEventFilter(this);
 
-    for (const auto& entry : entries) {
-        auto path = entry.absoluteFilePath();
-        auto file = QFile(path);
+    refreshScripts();
 
-        if (!file.open(QFile::ReadOnly)) {
-            qWarning().noquote() << u"Failed to open script %1: %2"_qsv.arg(path, file.errorString());
-            continue;
-        }
-
-        const QString name = lastPathComponent(path).toString();
-
-        ui->scriptSelect->addItem(name);
-
-        scripts.push_back(QString::fromUtf8(file.readAll()));
-    }
+    // The combo box starts on the first built-in script, which nothing has shown yet
+    showScript(0);
 
     adjustSize();
 };
@@ -206,14 +171,119 @@ BatchMenu::~BatchMenu() {
     delete ui;
 }
 
+void BatchMenu::storeCurrentScript() {
+    // `prevScript` is the script the editor shows
+    if (scriptAction(prevScript) == BatchAction::Custom) {
+        scripts[prevScript - BUILTIN_SCRIPTS.size()] = ui->scriptEdit->toPlainText();
+    }
+}
+
+void BatchMenu::refreshScripts() {
+    // The edit of the open script is not in `scripts` until it is stored
+    storeCurrentScript();
+
+    const QString dir = dataLocation() % u"/scripts"_qsv;
+
+    QStringList onDisk;
+
+    for (const auto& entry : QDirListing(dir, { u"*.js"_s }, QDirListing::IteratorFlag::FilesOnly)) {
+        onDisk.push_back(entry.fileName());
+    }
+
+    // A script that was never saved has no file, so it is never removed
+    const auto isRemoved = [&onDisk](const QString& name) -> bool { return !name.isEmpty() && !onDisk.contains(name); };
+
+    const QString openName =
+        scriptAction(prevScript) == BatchAction::Custom ? savedNames[prevScript - BUILTIN_SCRIPTS.size()] : QString();
+    const bool openRemoved = isRemoved(openName);
+
+    // Moves the editor off the removed script, so the item can go without leaving a stale selection
+    if (openRemoved) {
+        ui->scriptSelect->setCurrentIndex(0);
+    }
+
+    {
+        const QSignalBlocker blocker(ui->scriptSelect);
+
+        // Walks backward, so erasing an index does not shift the ones still to visit
+        for (usize idx = scripts.size(); idx-- > 0;) {
+            if (isRemoved(savedNames[idx])) {
+                ui->scriptSelect->removeItem(scast<i32>(idx + BUILTIN_SCRIPTS.size()));
+                scripts.erase(scripts.begin() + scast<isize>(idx));
+                savedNames.erase(savedNames.begin() + scast<isize>(idx));
+            }
+        }
+
+        for (const QString& name : onDisk) {
+            if (ranges::contains(savedNames, name)) {
+                continue;
+            }
+
+            const QString path = dir % u'/' % name;
+            auto file = QFile(path);
+
+            if (!file.open(QFile::ReadOnly)) {
+                qWarning().noquote() << u"Failed to open script %1: %2"_qsv.arg(path, file.errorString());
+                continue;
+            }
+
+            ui->scriptSelect->addItem(name);
+
+            scripts.push_back(QString::fromUtf8(file.readAll()));
+            savedNames.push_back(name);
+        }
+
+        // The combo box tracks its current item through removals, so this is the open script's new index
+        prevScript = ui->scriptSelect->currentIndex();
+    }
+
+    if (openRemoved) {
+        present(this, NOTICE("The script %1 has been removed from the scripts directory.", Warning, Modal, openName));
+    }
+}
+
+auto BatchMenu::eventFilter(QObject* const watched, QEvent* const event) -> bool {
+    if (watched == ui->scriptSelect) {
+        if (event->type() == QEvent::MouseButtonPress) {
+            refreshScripts();
+        } else if (event->type() == QEvent::KeyPress) {
+            const auto* const keyEvent = scast<QKeyEvent*>(event);
+            const bool popupPressed =
+                keyEvent->key() == Qt::Key_F4 ||
+                (keyEvent->key() == Qt::Key_Down && keyEvent->modifiers().testFlag(Qt::AltModifier));
+
+            if (popupPressed) {
+                refreshScripts();
+            }
+        }
+    }
+
+    return PersistentMenu::eventFilter(watched, event);
+}
+
 auto BatchMenu::save() -> bool {
+    // The edit of the open script is not in `scripts` until another script is picked
+    storeCurrentScript();
+
     const auto dest = dataLocation() % u"/scripts"_qsv;
-    QDir().mkdir(dest);
+    QDir().mkpath(dest);
 
     QStringList errs;
 
     for (const auto& [idx, script] : views::enumerate(scripts)) {
-        const QString filename = ui->scriptSelect->itemText(scast<i32>(idx + BUILTIN_SCRIPTS.size()));
+        const i32 itemIndex = scast<i32>(idx + BUILTIN_SCRIPTS.size());
+
+        // The name is typed by the user: only a file name, and one the next start loads (`*.js`)
+        QString filename = QFileInfo(ui->scriptSelect->itemText(itemIndex)).fileName();
+
+        if (filename.isEmpty()) {
+            filename = u"script"_s;
+        }
+
+        if (!filename.endsWith(u".js"_qsv, Qt::CaseInsensitive)) {
+            filename = filename % u".js"_qsv;
+        }
+
         const QString suffix = u'/' + filename;
         QString path = dest % suffix;
 
@@ -231,6 +301,22 @@ auto BatchMenu::save() -> bool {
         }
 
         file->write(script.toUtf8());
+
+        if (!commitFile(this, *file)) {
+            errs.push_back(u"Failed to save script %1"_qsv.arg(filename));
+            continue;
+        }
+
+        // A renamed script would otherwise be loaded twice, under the old name and the new one
+        if (!savedNames[idx].isEmpty() && savedNames[idx] != filename) {
+            QFile::remove(dest % u'/' % savedNames[idx]);
+        }
+
+        savedNames[idx] = filename;
+
+        if (ui->scriptSelect->itemText(itemIndex) != filename) {
+            ui->scriptSelect->setItemText(itemIndex, filename);
+        }
     }
 
     if (!errs.empty()) {
@@ -255,18 +341,13 @@ void BatchMenu::changeEvent(QEvent* const event) {
 };
 
 void BatchMenu::clear() {
-    for (u8 index = ui->translationColumnSelect->count() - 1; index >= 1; index++) {
-        ui->translationColumnSelect->removeItem(index);
+    // Item 0 is the "- Translation Column -" placeholder
+    while (ui->translationColumnSelect->count() > 1) {
+        ui->translationColumnSelect->removeItem(ui->translationColumnSelect->count() - 1);
     }
 
     ui->translationColumnSelect->setCurrentIndex(0);
-    ui->batchActionSelect->setCurrentIndex(0);
-    ui->translationEndpointSelect->setCurrentIndex(0);
-
     ui->wrapSpinBox->clear();
-
-    ui->contextInput->clear();
-    ui->fileContextList->clear();
 
     fileSelectMenu->clear();
 }
@@ -282,14 +363,4 @@ void BatchMenu::renameColumn(const u8 index, const QString& name) {
 void BatchMenu::init(const vector<TabListItem>& files, const ProjectSettings* const projectSettings) {
     fileSelectMenu->init(files);
     this->projectSettings = projectSettings;
-}
-
-void BatchMenu::setEndpoints(const vector<EndpointSettings>& endpoints) {
-    for (i32 idx = ui->translationEndpointSelect->count() - 1; idx >= 1; idx--) {
-        ui->translationEndpointSelect->removeItem(idx);
-    }
-
-    for (const auto& endpoint : endpoints) {
-        ui->translationEndpointSelect->addItem(endpoint.name);
-    }
 }

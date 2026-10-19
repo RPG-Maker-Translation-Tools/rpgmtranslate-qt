@@ -78,7 +78,7 @@ void messageHandler(const QtMsgType type, const QMessageLogContext& ctx, const Q
     const QString formatted = u"[%1] %2:%3 (%4): %5"_qsv.arg(
         svtostr(levelToString(type)),
         svtostr(QUtf8SV(shortFile(ctx.file))),
-        itos(ctx.line).qsv(),
+        qsv(qitos(ctx.line)),
         svtostr(QUtf8SV(ctx.function)),
         msg
     );
@@ -114,6 +114,12 @@ auto main(i32 argCount, char* args[]) -> i32 {
     // Use system default locale
     std::locale::global(std::locale(""));
 
+#ifdef Q_OS_WINDOWS
+    // What the updater renamed the previous executable to. It fails while that instance is still closing, and succeeds
+    // at the next start.
+    QFile::remove(qApp->applicationDirPath() % u"/rpgmtranslate-old.exe"_qsv);
+#endif
+
     qApp->setOrganizationName(u"rpg-maker-translation-tools"_s);
     qApp->setApplicationName(u"rpgmtranslate"_s);
     qApp->setWindowIcon(QIcon(u":/icons/rpgmtranslate-logo.png"_s));
@@ -143,6 +149,7 @@ auto main(i32 argCount, char* args[]) -> i32 {
                 );
 
                 dataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+                QDir().mkpath(dataDir);
                 logFile.setFileName(dataDir + u"/rpgmtranslate.log");
 
                 if (logFile.open(QFile::WriteOnly | QFile::Truncate)) {

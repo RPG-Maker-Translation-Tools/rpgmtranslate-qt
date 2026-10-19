@@ -67,7 +67,7 @@ void CodeViewer::lineNumberAreaPaintEvent(QPaintEvent* const event) {
 
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
-            const QString number = QString(itos(blockNumber + 1).qsv());
+            const QString number = QString(qsv(qitos(blockNumber + 1)));
             painter.setPen(palette().color(QPalette::PlaceholderText));
             painter.drawText(
                 0,

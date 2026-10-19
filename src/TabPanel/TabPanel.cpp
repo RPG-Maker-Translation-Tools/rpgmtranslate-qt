@@ -2,7 +2,6 @@
 
 #include "TabList.hpp"
 #include "TabListModel.hpp"
-#include "Utils.hpp"
 
 #include <QMenu>
 
@@ -29,19 +28,18 @@ TabPanel::TabPanel(QWidget* const parent) :
     );
 
     connect(tabList, &TabList::rightClicked, this, [this](const QModelIndex& index, const QPoint& pos) -> void {
-        auto* const menu = new QMenu(this);
+        auto menu = QMenu(this);
 
-        menu->addSeparator();
+        const bool completed = tabList->tab(index.row()).properties.get<"completed">();
 
-        const bool completed = !index.isValid() || tabList->tab(index.row()).properties.get<"completed">();
+        const QAction* const markCompletedAction =
+            menu.addAction(completed ? tr("Unmark Completed") : tr("Mark as Completed"));
 
-        auto* const markCompletedAction = menu->addAction(completed ? tr("Unmark Completed") : tr("Mark as Completed"));
+        menu.addSeparator();
 
-        menu->addSeparator();
+        const QAction* const toggleProgressDisplayAction = menu.addAction(tr("Toggle Progress Display"));
 
-        auto* const toggleProgressDisplayAction = menu->addAction(tr("Toggle Progress Display"));
-
-        auto* const selectedAction = menu->exec(pos);
+        const QAction* const selectedAction = menu.exec(pos);
 
         if (selectedAction == markCompletedAction) {
             tabList->toggleCompleted(index);
@@ -80,16 +78,6 @@ void TabPanel::clear() {
     tabList->clear();
 }
 
-[[nodiscard]] auto TabPanel::tabIndex(const QString& tabName) const -> i32 {
-    for (i32 tab = 0; tab < tabCount(); tab++) {
-        if (tabList->tab(tab).name == tabName) {
-            return tab;
-        }
-    }
-
-    std::unreachable();
-};
-
 [[nodiscard]] auto TabPanel::currentTranslated() const -> i32 {
     const QModelIndex currentIndex = tabList->currentIndex();
 
@@ -120,6 +108,7 @@ void TabPanel::clear() {
 
 void TabPanel::setTabTranslated(const i32 tabIndex, const i32 translated) const {
     tabList->tab(tabIndex).properties.set<"translated">(translated);
+    tabList->viewport()->update();
 };
 
 void TabPanel::setCurrentTranslated(const i32 translated) const {
@@ -131,6 +120,7 @@ void TabPanel::setCurrentTranslated(const i32 translated) const {
 
     const i32 currentTranslated = tabList->tab(currentIndex.row()).properties.get<"translated">();
     tabList->tab(currentIndex.row()).properties.set<"translated">(currentTranslated + translated);
+    tabList->viewport()->update();
 }
 
 void TabPanel::setCurrentTotal(const i32 total) const {
@@ -142,6 +132,7 @@ void TabPanel::setCurrentTotal(const i32 total) const {
 
     const i32 currentTotal = tabList->tab(currentIndex.row()).properties.get<"total">();
     tabList->tab(currentIndex.row()).properties.set<"total">(currentTotal + total);
+    tabList->viewport()->update();
 }
 
 void TabPanel::setProgressDisplay(const bool percents) const {
@@ -161,16 +152,3 @@ void TabPanel::changeTab(const QString& filename) {
         }
     }
 }
-
-auto TabPanel::tabs() const -> QStringList {
-    const i32 rowCount = tabList->model()->rowCount();
-
-    QStringList tabs;
-    tabs.reserve(rowCount);
-
-    for (i32 idx = 0; idx < rowCount; idx++) {
-        tabs.append(tabList->tab(idx).name);
-    }
-
-    return tabs;
-};

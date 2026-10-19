@@ -7,9 +7,9 @@ WriteMenu::WriteMenu(QWidget* const parent) :
     QDialog(parent, Qt::FramelessWindowHint | Qt::Popup),
     ui(setupUi()),
     fileSelectMenu(new FileSelectMenu(parent)) {
-    connect(ui->applyButton, &QPushButton::pressed, this, [this] -> void { accept(); });
+    connect(ui->applyButton, &QPushButton::clicked, this, [this] -> void { accept(); });
 
-    connect(ui->fileSelectButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->fileSelectButton, &QPushButton::clicked, this, [this] -> void {
         fileSelectMenu->setHidden(!fileSelectMenu->isHidden());
         fileSelectMenu->move(mapToGlobal(QPoint(width(), 0)));
     });

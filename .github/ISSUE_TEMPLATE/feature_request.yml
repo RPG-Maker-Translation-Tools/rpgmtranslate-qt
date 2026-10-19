@@ -1,0 +1,61 @@
+name: Feature request
+description: Suggest something RPGMTranslate should do
+labels: ["enhancement"]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Nearly anything can be implemented in Rust and C++, so ask. Check the [documentation](https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/) first - the feature, or a batch script that does it, may already exist.
+
+    - type: textarea
+      id: problem
+      attributes:
+          label: What are you trying to do?
+          description: The translation workflow this gets in the way of, not the solution yet.
+          placeholder: When translating plugin-heavy MZ games I have to ...
+      validations:
+          required: true
+
+    - type: textarea
+      id: solution
+      attributes:
+          label: What would you like to happen?
+      validations:
+          required: true
+
+    - type: dropdown
+      id: area
+      attributes:
+          label: Area
+          options:
+              - Engine / format support (new engine, plugin text codes, file types)
+              - Text editing
+              - Search / replace
+              - Lint / spellcheck / LanguageTool
+              - Batch processing / scripting API
+              - Machine translation
+              - Asset inspector
+              - Glossary
+              - Git integration
+              - Export / import formats
+              - Settings / shortcuts / UI
+              - Packaging / platforms
+              - Other
+      validations:
+          required: true
+
+    - type: textarea
+      id: alternatives
+      attributes:
+          label: Workarounds you tried
+          description: Including custom batch scripts, and why they fall short.
+      validations:
+          required: false
+
+    - type: textarea
+      id: context
+      attributes:
+          label: Examples
+          description: For engine/plugin support, name the plugin and link it or paste an example of the text codes/note tags. Mockups and screenshots help for UI.
+      validations:
+          required: false

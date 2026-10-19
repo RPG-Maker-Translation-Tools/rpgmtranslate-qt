@@ -2,7 +2,7 @@
 
 #include "Utils.hpp"
 
-#include <QCoreApplication>
+#include <QApplication>
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QStatusBar>
@@ -11,9 +11,8 @@ namespace {
 constexpr i32 STATUS_MESSAGE_TIMEOUT_MS = 8000;
 constexpr i32 MAX_PLACEHOLDER_DIGITS = 2;
 
-// `n` is only consulted for a literal %n left in `pattern` - the translated path never sees one, since
-// QCoreApplication::translate() already substitutes %n itself once it's given the numerus argument; this only
-// matters for the untranslated form (the English literal used for logging), which bypasses translate() entirely.
+// `n` only matters for a literal %n in `pattern`: the translated path has it substituted by translate() already, so
+// this is for the untranslated (logged) form, which bypasses translate().
 [[nodiscard]] auto substitute(const QString& pattern, const QStringList& args, const i32 n) -> QString {
     if (args.isEmpty() && n < 0) {
         return pattern;
@@ -31,7 +30,7 @@ constexpr i32 MAX_PLACEHOLDER_DIGITS = 2;
         }
 
         if (n >= 0 && pos + 1 < pattern.size() && pattern[pos + 1] == u'n') {
-            out += itos(n).qsv();
+            out += qsv(qitos(n));
             pos += 1;
             continue;
         }

@@ -1600,9 +1600,6 @@
    <property name="text">
     <string>Close Tab</string>
    </property>
-   <property name="shortcut">
-    <string>Esc</string>
-   </property>
   </action>
   <action name="actionCheckSourceUpdates">
    <property name="text">
@@ -1612,11 +1609,6 @@
   <action name="actionLoadBackup">
    <property name="text">
     <string>Load Backup</string>
-   </property>
-  </action>
-  <action name="actionThirdParty">
-   <property name="text">
-    <string>Third Party Notice</string>
    </property>
   </action>
  </widget>

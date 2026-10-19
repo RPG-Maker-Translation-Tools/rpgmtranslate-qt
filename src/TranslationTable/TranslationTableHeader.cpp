@@ -2,7 +2,7 @@
 
 #include "LabelInput.hpp"
 
-#include <QKeyEvent>
+#include <QMouseEvent>
 #include <QPainter>
 
 namespace {
@@ -18,10 +18,6 @@ TranslationTableHeader::TranslationTableHeader(QWidget* const parent) : QHeaderV
     connect(labelInput, &LabelInput::editingFinished, this, &TranslationTableHeader::commitEdit);
 }
 
-void TranslationTableHeader::paintSection(QPainter* const painter, const QRect& rect, const i32 logicalIndex) const {
-    QHeaderView::paintSection(painter, rect, logicalIndex);
-}
-
 void TranslationTableHeader::paintEvent(QPaintEvent* const event) {
     QHeaderView::paintEvent(event);
 
@@ -31,7 +27,8 @@ void TranslationTableHeader::paintEvent(QPaintEvent* const event) {
     if (buttonRect.intersects(viewport()->rect())) {
         QStyleOptionButton buttonOpt;
         buttonOpt.rect = buttonRect;
-        buttonOpt.icon = QIcon(u":/icons/add.svg"_s);
+        static const auto addIcon = QIcon(u":/icons/add.svg"_s);
+        buttonOpt.icon = addIcon;
         buttonOpt.iconSize = QSize(16, 16);
 
         buttonOpt.state = QStyle::State_Enabled;
@@ -137,8 +134,7 @@ void TranslationTableHeader::leaveEvent(QEvent* const event) {
 
 [[nodiscard]] auto TranslationTableHeader::getButtonRect() const -> QRect {
     const i32 xPos = sectionViewportPosition(count() - 1) + sectionSize(count() - 1);
-    const i32 buttonWidth = 32;
-    return { xPos, 0, buttonWidth, height() };
+    return { xPos, 0, ADD_BUTTON_EXTRA_WIDTH, height() };
 }
 
 void TranslationTableHeader::beginEditSection(const i32 logicalIndex) {
@@ -160,13 +156,22 @@ void TranslationTableHeader::beginEditSection(const i32 logicalIndex) {
 }
 
 void TranslationTableHeader::commitEdit() {
+    // Hiding the input finishes its editing once more, with nothing left to commit
+    if (editingSection < 0) {
+        return;
+    }
+
     const QString newText = labelInput->text().trimmed();
     const i32 idx = editingSection;
 
-    labelInput->hide();
     editingSection = -1;
+    labelInput->hide();
 
-    model()->setHeaderData(idx, orientation(), newText, Qt::EditRole);
+    // A column without a name can't be told from the others
+    if (newText.isEmpty()) {
+        return;
+    }
+
     model()->setHeaderData(idx, orientation(), newText, Qt::DisplayRole);
     viewport()->update();
 }

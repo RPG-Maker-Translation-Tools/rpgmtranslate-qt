@@ -2,13 +2,9 @@
 
 #include <QDialog>
 
-QT_BEGIN_NAMESPACE
-
 namespace Ui {
-    class AboutWindow;
+class AboutWindow;
 }  // namespace Ui
-
-QT_END_NAMESPACE
 
 class AboutWindow final : public QDialog {
     Q_OBJECT
@@ -22,5 +18,6 @@ class AboutWindow final : public QDialog {
 
    private:
     [[nodiscard]] inline auto setupUi() -> Ui::AboutWindow*;
+    void fill();
     Ui::AboutWindow* const ui;
 };

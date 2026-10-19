@@ -6,7 +6,6 @@
 #include <QListView>
 #include <QStyledItemDelegate>
 #include <QTimer>
-#include <deque>
 
 struct GitCommit {
     QString hash;
@@ -38,7 +37,7 @@ class GitCommitModel : public QAbstractListModel {
     [[nodiscard]] auto commitAt(i32 row) const -> const GitCommit&;
 
    private:
-    std::deque<GitCommit> commits;
+    deque<GitCommit> commits;
 };
 
 class GitCommitDelegate : public QStyledItemDelegate {
@@ -50,7 +49,6 @@ class GitCommitDelegate : public QStyledItemDelegate {
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
     [[nodiscard]] auto sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const -> QSize override;
-
 };
 
 class GitCommitList : public QListView {

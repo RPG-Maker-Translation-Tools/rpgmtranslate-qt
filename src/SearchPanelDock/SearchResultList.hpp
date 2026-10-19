@@ -17,11 +17,11 @@ enum SearchResultListRole : u16 {
     SpansRole = Qt::UserRole + 3
 };
 
+// The title and subtitle are made when the item is shown, from `file` and `cellMatch`.
 struct SearchResultListItem {
-    QString title;
-    QString subtitle;
+    FileMatches& file;
+    CellMatch& cellMatch;
     QL1SV filename;
-    CellMatch cellMatch;
     bool replaced;
     bool hidden;
 };
@@ -58,17 +58,32 @@ class SearchResultListModel final : public QAbstractListModel {
 
     void clear() { setItems({}); };
 
+    // Makes the subtitles
+    constexpr void setPanel(const SearchPanelDock* const panel) { panel_ = panel; }
+
     void setItems(vector<SearchResultListItem>&& items);
 
     [[nodiscard]] constexpr auto item(const i32 row) -> SearchResultListItem& { return items[row]; };
 
+    // Counts the times the items were replaced: an item that was handed out can outlive the list.
+    [[nodiscard]] constexpr auto generation() const -> u32 { return generation_; }
+
+    // Tells the views that `changed`, an item of the list, was edited.
+    void itemChanged(const SearchResultListItem& changed) {
+        const QModelIndex changedIndex = index(scast<i32>(&changed - items.data()), 0);
+        emit dataChanged(changedIndex, changedIndex);
+    }
+
    private:
     vector<SearchResultListItem> items;
+    const SearchPanelDock* panel_ = nullptr;
+    u32 generation_ = 0;
 };
 
 class SearchResultListProxy final : public QSortFilterProxyModel {
    public:
     using QSortFilterProxyModel::QSortFilterProxyModel;
+    using QSortFilterProxyModel::invalidateFilter;
 
    protected:
     [[nodiscard]] auto filterAcceptsRow(
@@ -104,7 +119,6 @@ class SearchResultList final : public QListView {
 
    private:
     QTimer relayoutTimer;
-    QPoint pressPos;
 
     SearchResultListDelegate* delegate_;
     SearchResultListModel* model_;

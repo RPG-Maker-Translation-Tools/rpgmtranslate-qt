@@ -8,13 +8,9 @@
 #include <QEventLoop>
 #include <QWidget>
 
-QT_BEGIN_NAMESPACE
-
 namespace Ui {
-    class PurgeMenu;
+class PurgeMenu;
 }  // namespace Ui
-
-QT_END_NAMESPACE
 
 class PurgeMenu final : public QWidget {
     Q_OBJECT
@@ -29,7 +25,7 @@ class PurgeMenu final : public QWidget {
     [[nodiscard]] auto selected(bool skipped = false) const -> Selected;
     [[nodiscard]] auto createIgnore() const -> bool;
 
-    auto exec() -> QDialog::DialogCode {
+    [[nodiscard]] auto exec() const -> QDialog::DialogCode {
         QEventLoop loop;
         QDialog::DialogCode code;
 

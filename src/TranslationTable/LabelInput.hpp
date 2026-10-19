@@ -1,6 +1,7 @@
 #pragma once
 
-#include <QKeyEvent>
+#include "FWD.hpp"
+
 #include <QLineEdit>
 
 class LabelInput final : public QLineEdit {

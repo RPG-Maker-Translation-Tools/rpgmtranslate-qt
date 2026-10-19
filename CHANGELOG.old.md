@@ -7,53 +7,53 @@ Note that tags and sequences linting requires a lot of work. This release brings
 ### Changes
 
 - Updated to `rvpacker-txt-rs-lib` v13.0.0:
-    - Made `core::parse_rpgm_file` function public.
-    - Remove `core::get_engine_extension` function.
-    - Changed how hashing works: Now program operates on 64-bit hash outputs of `gxhash` instead of 128-bit ones, and accepts/returns hashes as iterators over filename-hash pairs.
-    - Added `from_filename`, `to_str` and `extension` methods for `EngineType`.
-    - Added `Display` impl for `EngineType`.
+  - Made `core::parse_rpgm_file` function public.
+  - Remove `core::get_engine_extension` function.
+  - Changed how hashing works: Now program operates on 64-bit hash outputs of `gxhash` instead of 128-bit ones, and accepts/returns hashes as iterators over filename-hash pairs.
+  - Added `from_filename`, `to_str` and `extension` methods for `EngineType`.
+  - Added `Display` impl for `EngineType`.
 - Added reasoning effort to translation settings.
 - The program now generates `.rvpacker-metadata` file for compatibility with `rvpacker-txt-rs`.
 - Translations menu now has fixed size, but each translation label is now scrollable along with the menu view.
 - Fixes:
-    - The previously selected model is now restored in settings. If this model is no longer in the list of models, provided by the endpoint, user will be notified.
-    - Small fixes for media player.
-    - Fixed writing wrong settings to project settings on the first read.
-    - Closing a project will always trigger a save now.
-    - Closing a project won't cause it to load on the second startup now.
+  - The previously selected model is now restored in settings. If this model is no longer in the list of models, provided by the endpoint, user will be notified.
+  - Small fixes for media player.
+  - Fixed writing wrong settings to project settings on the first read.
+  - Closing a project will always trigger a save now.
+  - Closing a project won't cause it to load on the second startup now.
 - Backups:
-    - Backups are now LZMA2-compressed to save space.
-    - Numbers in backup file names, like days, months, hours etc. are now padded with leading zero.
-    - Added `File > Load Backup` button to restore the project to a specific backup.
+  - Backups are now LZMA2-compressed to save space.
+  - Numbers in backup file names, like days, months, hours etc. are now padded with leading zero.
+  - Added `File > Load Backup` button to restore the project to a specific backup.
 - Linting:
-    - Support and linting for a lot of Yanfly plugins - still WIP.
-    - Support and linting for ATS Message Options plugin - still WIP.
-    - Support for custom sequences and tags - still WIP.
-    - Separate options for highlighting trailing/leading/sequential whitespace.
-    - Option for detecting tag/sequence mismatches between source and translation text - still WIP.
-    - Linting is highly customizable through settings - still WIP.
+  - Support and linting for a lot of Yanfly plugins - still WIP.
+  - Support and linting for ATS Message Options plugin - still WIP.
+  - Support for custom sequences and tags - still WIP.
+  - Separate options for highlighting trailing/leading/sequential whitespace.
+  - Option for detecting tag/sequence mismatches between source and translation text - still WIP.
+  - Linting is highly customizable through settings - still WIP.
 - Stability:
-    - When the directory where the program is located not writable, it will try to find other directory for the application data. Users can manually specify `RPGMTRANSLATE_DATA_DIR` variable to store the data in desired place. Otherwise, data will be put in the local data directory - [see paths for `AppLocalDataLocation` here](https://doc.qt.io/qt-6/qstandardpaths.html).
-    - Reduced possible errors due to improper memory handling when doing FFI calls.
-    - New baseline data tracking system:
-        - On the first read, `data`/`Data` directory will be copied to `.rpgmtranslate/baseline-data`.
-        - All program operations will use `baseline-data` from this point.
-        - On startup, the program will check, whether the files in the original data directory changed.
-        - If those files have changed, it will suggest to append the new text to the translation files.
-        - You can always trigger the check manually through `File > Check for source file changes`.
-    - A lot of micro-optimizations.
-    - Changed the standard hasher from `rapidhash` to `gxhash` which proves to be much faster.
+  - When the directory where the program is located not writable, it will try to find other directory for the application data. Users can manually specify `RPGMTRANSLATE_DATA_DIR` variable to store the data in desired place. Otherwise, data will be put in the local data directory - [see paths for `AppLocalDataLocation` here](https://doc.qt.io/qt-6/qstandardpaths.html).
+  - Reduced possible errors due to improper memory handling when doing FFI calls.
+  - New baseline data tracking system:
+    - On the first read, `data`/`Data` directory will be copied to `.rpgmtranslate/baseline-data`.
+    - All program operations will use `baseline-data` from this point.
+    - On startup, the program will check, whether the files in the original data directory changed.
+    - If those files have changed, it will suggest to append the new text to the translation files.
+    - You can always trigger the check manually through `File > Check for source file changes`.
+  - A lot of micro-optimizations.
+  - Changed the standard hasher from `rapidhash` to `gxhash` which proves to be much faster.
 - Asset inspector:
-    - Asset inspector now processes files with both lowercase and uppercase extensions.
-    - Implemented searching text when inspecting code assets.
-    - It's now possible to refresh the list of assets for any new assets.
-    - Implemented the ability to change sample text and font size when inspecting font assets.
-    - Added display of current scaling (in percents) when inspecting image assets.
-    - Added image scale slider to image viewer in case you don't have a mouse wheel.
+  - Asset inspector now processes files with both lowercase and uppercase extensions.
+  - Implemented searching text when inspecting code assets.
+  - It's now possible to refresh the list of assets for any new assets.
+  - Implemented the ability to change sample text and font size when inspecting font assets.
+  - Added display of current scaling (in percents) when inspecting image assets.
+  - Added image scale slider to image viewer in case you don't have a mouse wheel.
 - Development:
-    - Removed `rapidhash` dependency. `gxhash` is invoked from Rust instead, and it's much faster.
-    - Added `magic_enum.hpp`, `miniaudio.h` and new `jeaiii_to_text.h`, `zmij.h` and `zmij.cc` files directly to the source tree.
-    - Changed hashing to use unsigned 64-bit integers instead of 128-bit integers. This improves compatibility.
+  - Removed `rapidhash` dependency. `gxhash` is invoked from Rust instead, and it's much faster.
+  - Added `magic_enum.hpp`, `miniaudio.h` and new `jeaiii_to_text.h`, `zmij.h` and `zmij.cc` files directly to the source tree.
+  - Changed hashing to use unsigned 64-bit integers instead of 128-bit integers. This improves compatibility.
 
 ## v1.0.0-rc.5
 
@@ -62,10 +62,10 @@ This release candidate introduces asset inspector support. Next release candidat
 ### Changes
 
 - Updated to `rvpacker-txt-rs-lib` v12.1.0:
-    - Fix EOF parsing bug: flush final translation section in initialize_translation by @CreepsoOff
-    - Changed `generate_file` function in `json` module to also accept filename argument, and have a special case for `Scripts` files.
-    - Added `set_game_title` argument to `Reader` for compatibility with RPG Maker XP/VX/VXAce. This allows user to manually decode game title from Game.ini file and pass it here as UTF-8, since system file not always contains game title.
-    - Documentation fixes.
+  - Fix EOF parsing bug: flush final translation section in initialize_translation by @CreepsoOff
+  - Changed `generate_file` function in `json` module to also accept filename argument, and have a special case for `Scripts` files.
+  - Added `set_game_title` argument to `Reader` for compatibility with RPG Maker XP/VX/VXAce. This allows user to manually decode game title from Game.ini file and pass it here as UTF-8, since system file not always contains game title.
+  - Documentation fixes.
 - Fixed wrong extraction of encrypted archives which resulted in an unreadable project.
 - When reading RPG Maker XP/VX/VXAce projects, read menu will now have option to use the game title from Game.ini file. Since Game.ini is not necessarily UTF-8 encoded, this allows user to manually find the encoding and use correct game title.
 - Fixed possible panics on read.

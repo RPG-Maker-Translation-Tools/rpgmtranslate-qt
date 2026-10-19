@@ -28,6 +28,7 @@ include = [
     "HighlightLanguage",
     "SerdeFormat",
     "ReadMode",
+    "TranslationEndpoint",
 ]
 exclude = ["Bitset2048", "Selected"]
 item_types = ["functions", "structs", "enums", "typedefs", "constants"]

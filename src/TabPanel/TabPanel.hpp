@@ -11,15 +11,12 @@ class TabPanel final : public QDockWidget {
    public:
     explicit TabPanel(QWidget* parent = nullptr);
 
-    void init();
-    void addTab(const QString& basename, i32 total, i32 translated, bool completed);
     [[nodiscard]] auto tabCount() const -> i32;
     [[nodiscard]] auto tabName(i32 tabIndex) const -> QString;
     [[nodiscard]] auto currentTabName() const -> QString;
     void clear();
     void changeTab(const QString& filename);
 
-    [[nodiscard]] auto tabIndex(const QString& tabName) const -> i32;
     [[nodiscard]] auto currentTranslated() const -> i32;
     [[nodiscard]] auto currentTotal() const -> i32;
     [[nodiscard]] auto tabTotal(i32 tabIndex) const -> i32;
@@ -29,7 +26,6 @@ class TabPanel final : public QDockWidget {
     void setCurrentTotal(i32 total) const;
     void setProgressDisplay(bool percents) const;
 
-    [[nodiscard]] auto tabs() const -> QStringList;
     void setTabs(vector<TabListItem> tabs);
 
    signals:

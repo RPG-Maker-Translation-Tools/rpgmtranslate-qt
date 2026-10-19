@@ -1,7 +1,6 @@
 #include "TabListDelegate.hpp"
 
 #include "Aliases.hpp"
-#include "Constants.hpp"
 #include "TabList.hpp"
 #include "TabListModel.hpp"
 #include "Utils.hpp"
@@ -39,8 +38,9 @@ void TabListDelegate::paint(
             maxCachedNameWidth =
                 max(maxCachedNameWidth, fontMetrics.horizontalAdvance(tab.name) + (spaceAdvance * 2) + 2);
 
+            // The widest the text gets is with everything translated
             const QString progressSample =
-                itos(tab.properties.get<"translated">()).qsv() % u'/' % itos(tab.properties.get<"total">()).qsv();
+                qsv(qitos(tab.properties.get<"total">())) % u'/' % qsv(qitos(tab.properties.get<"total">()));
 
             maxCachedProgressWidth =
                 max(maxCachedProgressWidth, fontMetrics.horizontalAdvance(progressSample) + (spaceAdvance * 2) + 2);
@@ -82,16 +82,18 @@ void TabListDelegate::paint(
     progressBar.progress = translated;
 
     const auto* const list = scast<const TabList*>(option.widget);
-    const bool percentMode = list->displayingPercents();
+    const bool percentMode = list->progressDisplay();
 
     QString progressText;
 
     if (percentMode) {
-        const u32 percent = scast<u32>((scast<f32>(translated) / scast<f32>(total)) * scast<f32>(PERCENT_MULTIPLIER));
+        // A tab without text has nothing left to translate
+        const u32 percent =
+            total > 0 ? scast<u32>(scast<i64>(translated) * PERCENT_MULTIPLIER / total) : PERCENT_MULTIPLIER;
 
-        progressText = itos(percent).qsv() % u'%';
+        progressText = qsv(qitos(percent)) % u'%';
     } else {
-        progressText = itos(translated).qsv() % u'/' % itos(total).qsv();
+        progressText = qsv(qitos(translated)) % u'/' % qsv(qitos(total));
     }
 
     style->drawControl(QStyle::CE_ProgressBar, &progressBar, painter);

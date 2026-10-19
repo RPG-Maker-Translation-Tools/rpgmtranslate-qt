@@ -21,6 +21,10 @@ class AssetPreviewWidget final : public QWidget {
     void showAsset(const QString& path);
     void clear();
 
+   protected:
+    void changeEvent(QEvent* event) override;
+    void hideEvent(QHideEvent* event) override;
+
    private:
     enum class Page : u8 {
         Error,
@@ -41,11 +45,11 @@ class AssetPreviewWidget final : public QWidget {
     void navigateSearch(i32 delta);
 
     void updateFontPreview();
+    void removeTempFile();
 
     QString currentPath;
     QString lastTempFile;
 
-    QByteArray codeUtf8;
     QByteArray formatSource;
     HighlightLanguage formatLanguage;
     QList<QTextCursor> searchResults;
@@ -100,4 +104,5 @@ class AssetPreviewWidget final : public QWidget {
 
     i32 currentFontID = -1;
     i32 currentSearchIndex = -1;
+    bool searchTruncated = false;
 };

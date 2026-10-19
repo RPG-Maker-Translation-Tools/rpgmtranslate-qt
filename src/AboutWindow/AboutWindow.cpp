@@ -8,6 +8,7 @@
 
 #include <glaze/version.hpp>
 
+#include <QApplication>
 #include <archive.h>
 #include <quickjs.h>
 
@@ -33,156 +34,91 @@ extern "C" {
 namespace {
 constexpr QChar LINE_SEPARATOR = u'\u2028';
 
-// std::format has no hex specifier we can use here without pulling QString through an
-// intermediate wstring, so this is a small local formatter instead.
-[[nodiscard]] auto toHex(const u32 value) -> QString {
-    static constexpr array<char16_t, 17> DIGITS = { u"0123456789abcdef" };
-
-    QString out;
-    bool started = false;
-
-    for (i32 shift = 28; shift >= 0; shift -= 4) {
-        const u32 nibble = (value >> shift) & 0xFU;
-
-        if (nibble != 0) {
-            started = true;
-        }
-
-        if (started) {
-            out += DIGITS[nibble];
-        }
-    }
-
-    if (out.isEmpty()) {
-        out += u'0';
-    }
-
-    return out;
-}
-
 [[nodiscard]] auto produceBuildInfo() -> QString {
     QString out;
 
 #ifdef __clang__
-    out += u"Compiler: Clang "_qsv % QL1SV(__clang_version__) % LINE_SEPARATOR;
+    out += u"Compiler: Clang "_qsv % u"" __clang_version__ % LINE_SEPARATOR;
 #elifdef __INTEL_LLVM_COMPILER
-    out += u"Compiler: Intel LLVM "_qsv % itos(__INTEL_LLVM_COMPILER).qsv() % LINE_SEPARATOR;
+    out += u"Compiler: Intel LLVM "_qsv % qsv(qitos(__INTEL_LLVM_COMPILER)) % LINE_SEPARATOR;
 #elifdef __GNUC__
-    out += u"Compiler: GCC "_qsv % QL1SV(__VERSION__) % LINE_SEPARATOR;
+    out += u"Compiler: GCC "_qsv % u"" __VERSION__ % LINE_SEPARATOR;
 #elifdef _MSC_VER
-    out += u"Compiler: MSVC "_qsv % itos(_MSC_FULL_VER).qsv() % u" (toolset "_qsv % itos(_MSC_VER).qsv() % u')' %
+    out += u"Compiler: MSVC "_qsv % qsv(qitos(_MSC_FULL_VER)) % u" (toolset "_qsv % qsv(qitos(_MSC_VER)) % u')' %
            LINE_SEPARATOR;
 #endif
 
 #ifdef _LIBCPP_VERSION
-    out += u"STL: libc++ "_qsv % itos(_LIBCPP_VERSION).qsv() % LINE_SEPARATOR;
+    out += u"STL: libc++ "_qsv % qsv(qitos(_LIBCPP_VERSION)) % LINE_SEPARATOR;
 #elifdef __GLIBCXX__
-    out += u"STL: libstdc++ (date "_qsv % itos(__GLIBCXX__).qsv() % u')' % LINE_SEPARATOR;
+    out += u"STL: libstdc++ (date "_qsv % qsv(qitos(__GLIBCXX__)) % u')' % LINE_SEPARATOR;
 #elifdef _MSVC_STL_VERSION
-    out += u"STL: MSVC STL "_qsv % itos(_MSVC_STL_VERSION).qsv() % u" update "_qsv % itos(_MSVC_STL_UPDATE).qsv() %
+    out += u"STL: MSVC STL "_qsv % qsv(qitos(_MSVC_STL_VERSION)) % u" update "_qsv % qsv(qitos(_MSVC_STL_UPDATE)) %
            LINE_SEPARATOR;
 #endif
 
 #ifdef _WIN32
-    out += u"Windows SDK: NTDDI "_qsv % toHex(NTDDI_VERSION) % u", build "_qsv % itos(VER_PRODUCTBUILD).qsv() %
-           LINE_SEPARATOR;
+    out += u"Windows SDK: NTDDI "_qsv % qsv(qhtos(scast<u32>(NTDDI_VERSION))) % u", build "_qsv %
+           qsv(qitos(VER_PRODUCTBUILD)) % LINE_SEPARATOR;
 #ifdef WDK_NTDDI_VERSION
-    out += u"WDK target: NTDDI "_qsv % toHex(WDK_NTDDI_VERSION) % LINE_SEPARATOR;
+    out += u"WDK target: NTDDI "_qsv % qsv(qhtos(scast<u32>(WDK_NTDDI_VERSION))) % LINE_SEPARATOR;
 #endif
 #endif
 
     out += u"Rust version: "_qsv % RUST_VERSION % LINE_SEPARATOR;
-    out += u"Built: "_qsv % QL1SV(__DATE__) % u' ' % QL1SV(__TIME__) % LINE_SEPARATOR;
+    out += u"Built: "_qsv % u"" __DATE__ % u' ' % u"" __TIME__ % LINE_SEPARATOR;
 
     return out;
 }
 
-constexpr const char* ABOUT_TEMPLATE = QT_TR_NOOP(
-    "RPGMTranslate v%1 'Death of RPG Maker forums'**\u{2028}\u{2028}Direct dependencies:\u{2028}\u{2028}**fast_float %2\u{2028}jeaii-itoa\u{2028}enchantum\u{2028}miniaudio %3\u{2028}zmij\u{2028}glaze %4\u{2028}Qt %5\u{2028}%6\u{2028}FFmpeg %7\u{2028}libgit2 %8\u{2028}quickjs-ng %9\u{2028}Nuspell %10\u{2028}mimalloc %11**\u{2028}\u{2028}Legal info:\u{2028}\u{2028}**RPGMTranslate is licensed under [WTPFL](https://www.wtfpl.net/).\u{2028}RPGMTranslate bundles assets and statically links to the libraries licensed by other terms. See \"Third Party Notice\" tab for more information.\u{2028}See [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt) GitHub repository for more information.**\u{2028}\u{2028}Build info:\u{2028}\u{2028}**%12"
+constexpr const char* ABOUT_TEMPLATE = QT_TRANSLATE_NOOP(
+    "AboutWindow",
+    "RPGMTranslate v%1 'Death of RPG Maker forums'**\u{2028}\u{2028}Direct dependencies:\u{2028}\u{2028}**fast_float %2\u{2028}enchantum\u{2028}miniaudio %3\u{2028}zmij\u{2028}glaze %4\u{2028}Qt %5\u{2028}%6\u{2028}FFmpeg %7\u{2028}libgit2 %8\u{2028}quickjs-ng %9\u{2028}Nuspell %10\u{2028}mimalloc %11\u{2028}TinySoundFont**\u{2028}\u{2028}Legal info:\u{2028}\u{2028}**RPGMTranslate is licensed under [WTFPL](https://www.wtfpl.net/).\u{2028}RPGMTranslate bundles assets and statically links to the libraries licensed by other terms. See \"Third Party Notice\" tab for more information.\u{2028}See [rpgmtranslate-qt](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt) GitHub repository for more information.**\u{2028}\u{2028}Build info:\u{2028}\u{2028}**%12"
 );
 
-constexpr i32 SEMVER_STRING_MAX_LEN = 8;
-constexpr i32 SINGLE_DIGIT_MAX = 9;
+[[nodiscard]] auto semver(const i32 major, const i32 minor, const i32 patch) -> Digits<char16_t> {
+    Digits<char16_t> out{};
+    out.length = 0;
 
-[[nodiscard]] constexpr auto constructSemverString(const i32 maj, const i32 min, const i32 pth)
-    -> array<char16_t, SEMVER_STRING_MAX_LEN> {
-    const auto majStr = itos(maj);
-    const auto minStr = itos(min);
-    const auto pthStr = itos(pth);
+    for (const i32 part : { major, minor, patch }) {
+        if (out.length != 0) {
+            out.buffer[out.length++] = u'.';
+        }
 
-    array<char16_t, SEMVER_STRING_MAX_LEN> buf{};
-    i32 offset = 0;
-
-    buf[offset++] = majStr[0];
-
-    if (maj > SINGLE_DIGIT_MAX) {
-        buf[offset++] = majStr[1];
+        for (const char16_t chr : qitos(part).view()) {
+            out.buffer[out.length++] = chr;
+        }
     }
 
-    buf[offset++] = '.';
-    buf[offset++] = minStr[0];
-
-    if (min > SINGLE_DIGIT_MAX) {
-        buf[offset++] = minStr[1];
-    }
-
-    buf[offset++] = '.';
-    buf[offset++] = pthStr[0];
-
-    if (pth > SINGLE_DIGIT_MAX) {
-        buf[offset++] = pthStr[1];
-    }
-
-    return buf;
+    return out;
 }
-}  // namespace
+
+#ifdef ENABLE_MIMALLOC
+[[nodiscard]] auto mimallocVersion() -> Digits<char16_t> {
+    const i32 version = mi_version();
+    return semver(version / 10000, (version / 100) % 100, version % 100);
+}
+#endif
+}
 
 AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi()) {
+    fill();
+}
+
+// The texts that are set in code. `retranslateUi` puts the placeholders of the `.ui` file back over them.
+void AboutWindow::fill() {
 #ifdef ENABLE_LIBGIT2
     i32 maj, min, pth;
     git_libgit2_version(&maj, &min, &pth);
-#endif
-
-#ifdef ENABLE_MIMALLOC
-    array<QChar, 8> mimallocVerBuf;
-
-    const i32 mimallocVersion = mi_version();
-    const auto mimallocVersionStr = itos(mimallocVersion);
-
-    mimallocVerBuf[0] = u'v';
-    mimallocVerBuf[1] = mimallocVersionStr.qsv()[0];
-    mimallocVerBuf[2] = u'.';
-
-    u8 bufIdx;
-
-    if (mimallocVersionStr.qsv()[1] != u'0') {
-        mimallocVerBuf[3] = mimallocVersionStr.qsv()[1];
-        mimallocVerBuf[4] = mimallocVersionStr.qsv()[2];
-        bufIdx = 5;
-    } else {
-        mimallocVerBuf[3] = mimallocVersionStr.qsv()[2];
-        bufIdx = 4;
-    }
-
-    mimallocVerBuf[bufIdx++] = u'.';
-
-    if (mimallocVersionStr.qsv()[3] != u'0') {
-        mimallocVerBuf[bufIdx++] = mimallocVersionStr.qsv()[3];
-        mimallocVerBuf[bufIdx++] = mimallocVersionStr.qsv()[4];
-    } else {
-        mimallocVerBuf[bufIdx++] = mimallocVersionStr.qsv()[4];
-    }
-
-    mimallocVerBuf[bufIdx] = u'\0';
 #endif
 
     ui->aboutLabel->setText(
         tr(ABOUT_TEMPLATE)
             .arg(
                 QStringView(RPGMT_VERSION),
-                svtostr(QL1SV(FASTFLOAT_VERSION_STR)),
-                svtostr(QL1SV(MA_VERSION_STRING)),
-                QStringView(constructSemverString(glz::version.major, glz::version.minor, glz::version.patch).data()),
+                svtostr(u"" FASTFLOAT_VERSION_STR),
+                svtostr(u"" MA_VERSION_STRING),
+                QStringView(semver(glz::version.major, glz::version.minor, glz::version.patch).data()),
                 svtostr(QL1SV(qVersion())),
                 svtostr(QL1SV(archive_version_string())),
                 svtostr(
@@ -194,7 +130,7 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
                 ),
                 svtostr(
 #ifdef ENABLE_LIBGIT2
-                    QStringView(constructSemverString(maj, min, pth).data())
+                    qsv(semver(maj, min, pth))
 #else
                     u"DISABLED"
 #endif
@@ -203,7 +139,7 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
                 svtostr(NUSPELL_VERSION),
                 svtostr(
 #ifdef ENABLE_MIMALLOC
-                    QStringView(mimallocVerBuf.data())
+                    qsv(mimallocVersion())
 #else
                     u"DISABLED"
 #endif
@@ -212,7 +148,7 @@ AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi())
             )
     );
 
-    auto thirdPartyNoticeFile = QFile(dataLocation() % u"/THIRD-PARTY-NOTICE.md"_qsv);
+    auto thirdPartyNoticeFile = QFile(qApp->applicationDirPath() % u"/THIRD-PARTY-NOTICE.md"_qsv);
 
     if (!thirdPartyNoticeFile.open(QFile::ReadOnly)) {
         ui->thirdPartyLabel->setText(
@@ -238,6 +174,7 @@ auto AboutWindow::setupUi() -> Ui::AboutWindow* {
 void AboutWindow::changeEvent(QEvent* const event) {
     if (event->type() == QEvent::LanguageChange) {
         ui->retranslateUi(this);
+        fill();
     }
 
     QDialog::changeEvent(event);

@@ -17,7 +17,6 @@ class TranslationTableDelegate final : public QStyledItemDelegate {
         this->settings = settings;
     }
 
-    void setText(const QString& text);
     auto createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const
         -> QWidget* override;
     void setEditorData(QWidget* editor, const QModelIndex& index) const override;
@@ -33,9 +32,18 @@ class TranslationTableDelegate final : public QStyledItemDelegate {
     void textChanged();
 
    private:
+    [[nodiscard]] auto table() const -> TranslationTable*;
+
+    void commitAndClose(QWidget* editor);
+    void editLater(const QModelIndex& index);
+
+    // Commit the editor and edit the next editable cell in the direction, false if there is no current cell
+    auto moveEdit(QWidget* editor, i8 rowStep, i8 colStep) -> bool;
+    // Same for the first or last editable cell of the current column
+    auto jumpEdit(QWidget* editor, bool toFirst) -> bool;
+
     const Settings* settings;
     const ProjectSettings* projectSettings;
 
     mutable TranslationInput* activeInput = nullptr;
-    mutable u32 activeRow;
 };

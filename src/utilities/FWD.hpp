@@ -27,6 +27,7 @@ class QListWidget;
 class QValidator;
 class QStackedWidget;
 class QFile;
+class QSaveFile;
 class QFileInfo;
 class QGraphicsEffect;
 class QImage;
@@ -99,6 +100,8 @@ class SearchPanelDock;
 class SerdeMenu;
 
 struct ColumnInfo;
+struct FileStatistics;
+struct SaveSummary;
 struct ProjectSettings;
 struct TranslationSettings;
 struct AppearanceSettings;

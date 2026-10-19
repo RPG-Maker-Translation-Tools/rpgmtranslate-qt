@@ -1,5 +1,7 @@
 #include "LabelInput.hpp"
 
+#include <QKeyEvent>
+
 void LabelInput::keyPressEvent(QKeyEvent* const event) {
     if (event->key() == Qt::Key_Escape) {
         setText(initialText);

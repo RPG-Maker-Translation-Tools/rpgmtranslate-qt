@@ -9,10 +9,8 @@
 #include "ui_MainWindow.h"
 
 #include <QComboBox>
-#include <QDirIterator>
-#include <QLayout>
+#include <QDir>
 #include <QMenu>
-#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QToolButton>
 
@@ -26,7 +24,7 @@ void logErr(QWidget* const parent, const ezgit2::Error& err) {
             NOTICE_IN("SourceControlDock", "libgit2 returned error code %1: %2"),
             Severity::Warning,
             Delivery::Modal,
-            { itos(err.code).qsv(), err.message }
+            { qsv(qitos(err.code)), err.message }
         )
     );
 }
@@ -48,7 +46,8 @@ void SourceControlDock::init(const Ui::MainWindow& ui_) {
 
     connect(fileList, &GitFileList::staged, this, [this](const QString& path) -> void {
         const auto& items = fileList->items();
-        const auto item = ranges::find_if(items, [&path](const GitFileItem& item) -> bool { return item.filePath == path; });
+        const auto item =
+            ranges::find_if(items, [&path](const GitFileItem& item) -> bool { return item.filePath == path; });
 
         if (item == items.end()) {
             return;
@@ -69,7 +68,7 @@ void SourceControlDock::init(const Ui::MainWindow& ui_) {
         }
     });
 
-    connect(commitButton, &QPushButton::pressed, this, [this] -> void { commit(); });
+    connect(commitButton, &QPushButton::clicked, this, [this] -> void { commit(); });
 
     connect(commitOptionsButton, &QToolButton::pressed, this, [this] -> void {
         QMenu menu;
@@ -87,7 +86,7 @@ void SourceControlDock::init(const Ui::MainWindow& ui_) {
         }
     });
 
-    connect(copyTranslationButton, &QPushButton::pressed, this, [this] -> void {
+    connect(copyTranslationButton, &QPushButton::clicked, this, [this] -> void {
         const QString workdir = QString::fromUtf8(repo.workdir());
 
         auto dir = QDir(workdir);
@@ -162,7 +161,7 @@ void SourceControlDock::loadUI(const GitSettings& gitSettings) {
 }
 
 auto SourceControlDock::openRepository(const QString& dataPath, const GitSettings& gitSettings)
-    -> result<void, QString> {
+    -> Result<void, QString> {
     clear();
     sourceControlDockContent->show();
 
@@ -183,12 +182,13 @@ auto SourceControlDock::openRepository(const QString& dataPath, const GitSetting
 
             connect(
                 createRepositoryButton,
-                &QPushButton::pressed,
+                &QPushButton::clicked,
                 this,
                 [this, createRepositoryButton, dataPathStd, dataPath, &gitSettings] -> void {
                 auto gitignoreFile = QFile(dataPath % u"/.gitignore");
 
-                if (!gitignoreFile.exists() && gitignoreFile.open(QFile::WriteOnly)) {
+                // NewOnly fails if the file exists, so a user's own .gitignore is never overwritten
+                if (gitignoreFile.open(QFile::WriteOnly | QFile::NewOnly)) {
                     gitignoreFile.write(GITIGNORE_CONTENT.data(), GITIGNORE_CONTENT.size());
                 }
 

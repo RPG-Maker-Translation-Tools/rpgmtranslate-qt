@@ -7,7 +7,7 @@
 #include <QDockWidget>
 
 namespace Ui {
-    class MainWindow;
+class MainWindow;
 }  // namespace Ui
 
 class LintMenu final : public QDockWidget {
@@ -20,10 +20,16 @@ class LintMenu final : public QDockWidget {
         Ui::MainWindow* ui_,
         const vector<TabListItem>& files,
         Settings* sets,
-        const ProjectSettings* projS,
+        ProjectSettings* projS,
         GlossaryMenu* glossaryMenu
     );
+    // Closing a project: the results and what the selection menus list of it
     void clear();
+    // Only the results, for a new lint run
+    void clearResults();
+
+    // The settings were changed (by the settings window): what the lint selection menu holds of them is stale.
+    void settingsChanged();
 
    signals:
     void checkRequested(Selected selected);
@@ -31,15 +37,17 @@ class LintMenu final : public QDockWidget {
    private:
     void toggleAboveDock(QWidget* menu, const QWidget* anchor);
 
-    QPushButton* clearButton;
-    QPushButton* checkButton;
-    QPushButton* fileSelectMenuButton;
-    QPushButton* lintSelectMenuButton;
+    QPushButton* clearButton = nullptr;
+    QPushButton* checkButton = nullptr;
+    QPushButton* fileSelectMenuButton = nullptr;
+    QPushButton* lintSelectMenuButton = nullptr;
     LintTable* lintTable = nullptr;
 
     FileSelectMenu* fileSelectMenu;
     LintSelectMenu* lintSelectMenu;
 
-    Settings* sets;
-    const ProjectSettings* projS;
+    Settings* sets = nullptr;
+    ProjectSettings* projS = nullptr;
+
+    bool connected = false;
 };

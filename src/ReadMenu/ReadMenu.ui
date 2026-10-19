@@ -202,7 +202,7 @@
       <item>
        <widget class="QLabel" name="duplicateModeLabel">
         <property name="text">
-         <string>Remove duplicates across maps and events. Recommended. In system, scripts and plugins files this mode is always overridden by allow mode.</string>
+         <string>Allow duplicates across maps and events. Recommended: every occurrence keeps its own translation. This mode is always set for system, scripts, and plugins files.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -263,11 +263,6 @@
          </item>
          <item>
           <widget class="QComboBox" name="encodingSelect">
-           <item>
-            <property name="text">
-             <string notr="true"/>
-            </property>
-           </item>
            <item>
             <property name="text">
              <string notr="true">UTF-8</string>
@@ -346,7 +341,146 @@
       <item>
        <widget class="QLabel" name="encodingLabel">
         <property name="text">
-         <string>Forces text decoding to the given codepage, instead of guessing it. Needed for RPG Maker 2000/2003, XP and VX - these are legacy engines having no encoding of their own, defaulting to the system's codepage (unlike VX Ace, MV and MZ). Leave blank to guess. If the game's title below has native, non-ASCII characters, it can help pinpoint the right encoding.</string>
+         <string>Decodes the game text in the given codepage. RPG Maker 2000/2003 have no encoding of their own and use the system's codepage, so set it for them. XP and VX are generally UTF-8 (RGSS sets $KCODE to UTF-8), the default, but a game *might probably* override that: change it if the text comes out garbled. Text that doesn't decode is reported as an error.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="archiveEncodingWidget" native="true">
+     <layout class="QVBoxLayout" name="verticalLayout_archiveEncoding">
+      <property name="spacing">
+       <number>8</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QWidget" name="archiveEncodingRow" native="true">
+        <layout class="QHBoxLayout" name="horizontalLayout_archiveEncoding">
+         <property name="spacing">
+          <number>8</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="archiveEncodingTitle">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Archive Encoding</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="archiveEncodingSelect">
+           <item>
+            <property name="text">
+             <string notr="true">UTF-8</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">Shift_JIS</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">GB18030</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">EUC-KR</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">Big5</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1250</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1251</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1252</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1253</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1254</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1255</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1256</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1257</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">windows-1258</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="archiveEncodingLabel">
+        <property name="text">
+         <string>Decodes the file names inside the archive, which is extracted when the project is first opened.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -543,7 +677,7 @@
       <item>
        <widget class="QLabel" name="label_9">
         <property name="text">
-         <string>Use title from ini file: If game is RPG Maker XP/VX/VX Ace or RM2K/2003, it may not necessarily contain game title in the system file. Use this option to take it from Game.ini (XP/VX/VX Ace) or RPG_RT.ini (RM2K/2003), whichever is present in the game directory. You will have to pick the right encoding in &quot;Text Encoding&quot; field above. If the title comes out garbled, that's a hint the encoding is wrong. If this option is not set, we'll try to use the title from system file, if it's there.</string>
+         <string>Use title from ini file: If game is RPG Maker XP/VX/VX Ace or RM2K/2003, it may not necessarily contain game title in the system file. Use this option to take it from Game.ini (XP/VX/VX Ace) or RPG_RT.ini (RM2K/2003), whichever is present in the game directory. You will have to pick the right encoding for it in the field that appears after enabling this option. If the title comes out garbled, that's a hint the encoding is wrong. If this option is not set, we'll try to use the title from system file, if it's there.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -556,6 +690,80 @@
    <item>
     <widget class="QWidget" name="iniTitleDisplayWidget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout_11">
+      <item>
+       <widget class="QComboBox" name="iniEncodingSelect">
+        <item>
+         <property name="text">
+          <string notr="true">UTF-8</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">Shift_JIS</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">GB18030</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">EUC-KR</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">Big5</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1250</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1251</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1252</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1253</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1254</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1255</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1256</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1257</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string notr="true">windows-1258</string>
+         </property>
+        </item>
+       </widget>
+      </item>
       <item>
        <widget class="QLabel" name="iniTitleLabel">
         <property name="text">

@@ -1,3 +1,4 @@
+#define MINIAUDIO_COMMIT_OID "9634bed"
 /*
 Audio playback and capture library. Choice of public domain or MIT-0. See license statements at the end of this file.
 miniaudio - v0.11.25 - 2026-03-04

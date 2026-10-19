@@ -11,17 +11,17 @@ PurgeMenu::PurgeMenu(QWidget* const parent) :
     setAttribute(Qt::WA_StyledBackground, true);
     setStyleSheet(u"PurgeMenu { background-color: palette(window) }"_s);
 
-    connect(ui->applyButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->applyButton, &QPushButton::clicked, this, [this] -> void {
         emit accepted();
         hide();
     });
 
-    connect(ui->closeButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->closeButton, &QPushButton::clicked, this, [this] -> void {
         emit rejected();
         hide();
     });
 
-    connect(ui->fileSelectButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->fileSelectButton, &QPushButton::clicked, this, [this] -> void {
         fileSelectMenu->setHidden(!fileSelectMenu->isHidden());
         fileSelectMenu->move(mapToGlobal(QPoint(width(), 0)));
     });
@@ -57,6 +57,10 @@ void PurgeMenu::clear() {
 
 auto PurgeMenu::selected(const bool skipped) const -> Selected {
     return fileSelectMenu->selected(skipped);
+}
+
+auto PurgeMenu::createIgnore() const -> bool {
+    return ui->createIgnoreCheckbox->isChecked();
 }
 
 void PurgeMenu::init(const vector<TabListItem>& files) {

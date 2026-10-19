@@ -3,9 +3,9 @@
 [README на русском](./README-ru.md)
 [简体中文](./README.zh-CN.md)
 
-<p align="center">
-    <img src="./icons/rpgmtranslate-logo.png" alt="Description" width="256"/>
-</p>
+<div style="display: flex; align-items: center; justify-content: center;">
+    <img src="./icons/rpgmtranslate-logo.png" width="128"/>
+</div>
 
 A complete rewrite of the [original RPGMTranslate application](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate) in C++23/Qt6.
 
@@ -18,16 +18,15 @@ A complete rewrite of the [original RPGMTranslate application](https://github.co
 - [x] Support for RPG Maker 2000/2003/XP/VX/VXAce/MV/MZ, with automated archive decryption and file parsing.
 - [x] Easy plain text format that's manually editable.
 - [x] Translations can be exported into other formats - XLSX, CSV, XML, YAML and JSON.
-- [x] Built-in [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation) features for more than 40 languages.
+- [x] Built-in [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation) features for more than 35 languages.
 - [x] Convenience-oriented user experience with bookmarks, shortcuts, and highly customizable features.
-- [x] Built-in batch processing of files, including batch translation, batch trim and batch text wrap.
-- [x] Integrated APIs for machine translation - Google Translate, DeepL, AI endpoints, local endpoints, OpenRouter.
+- [x] Batch processing of files using an advanced scripting system: you can even spawn external processes!
 - [x] Integrated asset inspector, which allows to inspect images, videos, fonts, scripts and more.
 - [x] Integrated spell-checking and advanced linting, including linting of tags from different plugins (like Yanfly Message Core) and information about them.
 - [x] **partially** Integrated Git client.
 - [x] **i guess** LanguageTool integration.
 
-**Feature requests:** It's possible to implement virtually anything in Rust and C++. Request features that you and others would benefit from, and we will implement them.
+**Feature requests:** Almost anything is possible in Rust and C++. Request features that you and others would benefit from, and we will implement them.
 
 Under the hood, this application uses:
 
@@ -39,7 +38,7 @@ Under the hood, this application uses:
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
 
-If you have troubles figuring out the program, check the `Help > Usage Documentation` top menu option. That will probably help.
+Stuck? Check the `Help > Usage Documentation` top menu option.
 
 ## Releases
 
@@ -71,22 +70,21 @@ See the [development documentation](https://RPG-Maker-Translation-Tools.github.i
 
 If you could, please consider supporting us through:
 
+- [Boosty](https://boosty.to/mcdeimos) (has lower fees)
 - [Ko-fi](https://ko-fi.com/savannstm)
-- [Patreon](https://www.patreon.com/cw/savannstm)
-- [Boosty](https://boosty.to/mcdeimos)
 
-Even if you don't, it's fine. We'll continue to do as we right now.
+We will keep working on the project either way.
 
 ## License
 
-Project is licensed under [WTFPL](https://www.wtfpl.net/).
+Licensed under [WTFPL](https://www.wtfpl.net/).
 
 The repository contains third-party software, that is licensed under other conditions:
 
-- `icons` - contains [Google Material Symbols](https://fonts.google.com/icons) - licensed under `Apache License Version 2.0`.
+- `icons` - [Google Material Symbols](https://fonts.google.com/icons), [Apache License v2.0](licenses/material-design-icons).
 - `src/3rdparty` - contains 3rd-party libraries:
   - [fast_float](https://github.com/fastfloat/fast_float), [MIT](licenses/fast_float)
-  - [jeaiii/itoa](https://github.com/jeaiii/itoa), [MIT](licenses/jeaiii-itoa)
   - [enchantum](https://github.com/ZXShady/enchantum), [MIT](licenses/enchantum)
   - [zmij](https://github.com/vitaut/zmij), [MIT](licenses/zmij)
   - [miniaudio](https://github.com/mackron/miniaudio), [Unlicense](licenses/miniaudio)
+  - [TinySoundFont](https://github.com/schellingb/TinySoundFont), [MIT](licenses/TinySoundFont) (`tml.h`: Zlib)

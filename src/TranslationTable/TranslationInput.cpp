@@ -4,18 +4,159 @@
 #include "ProjectSettings.hpp"
 #include "Settings.hpp"
 
-#include <QAbstractItemView>
 #include <QDesktopServices>
+#include <QFontMetricsF>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QScrollBar>
 #include <QSignalBlocker>
 #include <QTextBlock>
 #include <QTextCursor>
-#include <QUrlQuery>
 
 namespace {
 constexpr QColor LINE_LENGTH_HINT_COLOR = QColor(UINT8_MAX, 0, 0, 80);
+constexpr QColor LINE_LENGTH_HINT_OVERFLOW_COLOR = QColor(UINT8_MAX, 0, 0, 200);
+
+// RPG Maker MV/MZ message font size: default, step and clamp bounds of `\{` / `\}`.
+constexpr f64 DEFAULT_GAME_FONT_SIZE = 28;
+constexpr f64 FONT_SIZE_STEP = 12;
+constexpr f64 FONT_SIZE_MIN = 24;
+constexpr f64 FONT_SIZE_MAX = 96;
+
+// Static estimate of one character's width. Font metadata (`QFontInfo::fixedPitch()`, `averageCharWidth()`) is
+// unreliable across platforms, so this averages real advances: the midpoint of printable ASCII and a fixed CJK sample
+// (translators often keep CJK punctuation). Strings go through the shaping overload, so a font without CJK glyphs is
+// measured through its fallback, not as zero-width.
+[[nodiscard]] auto hintCharWidth(const QFont& font) -> f64 {
+    static vector<pair<QFont, f64>> cache;
+    constexpr usize MAX_CACHED_FONTS = 8;
+
+    for (const auto& [cachedFont, width] : cache) {
+        if (cachedFont == font) {
+            return width;
+        }
+    }
+
+    constexpr QStringView CJK_PUNCTUATION = u"、。，．・：；？！「」『』（）【】〜…";
+    constexpr QStringView KANJI =
+        u"日本語人大年出中国上時見行思分生何者事今前後外手気力水火木金土学校先友心目口言話聞読書食飲";
+
+    QString ascii;
+    ascii.reserve(0x7E - 0x20 + 1);
+
+    for (char16_t chr = u' '; chr <= u'~'; chr++) {
+        ascii += QChar(chr);
+    }
+
+    QString cjk;
+    cjk.reserve(CJK_PUNCTUATION.size() + (2 * (0x3093 - 0x3041 + 1)) + KANJI.size());
+    cjk += CJK_PUNCTUATION;
+
+    for (char16_t chr = 0x3041; chr <= 0x3093; chr++) {
+        cjk += QChar(chr);
+    }
+
+    for (char16_t chr = 0x30A1; chr <= 0x30F3; chr++) {
+        cjk += QChar(chr);
+    }
+
+    cjk += KANJI;
+
+    const auto metrics = QFontMetricsF(font);
+    const f64 width =
+        (metrics.horizontalAdvance(ascii) / ascii.size() + metrics.horizontalAdvance(cjk) / cjk.size()) / 2;
+
+    if (cache.size() >= MAX_CACHED_FONTS) {
+        cache.clear();
+    }
+
+    cache.emplace_back(font, width);
+    return width;
+}
+
+// Index of the `]` that closes the `[` at `open`, counting the brackets of nested codes (`\N[\V[3]]`); -1 when it is
+// never closed.
+[[nodiscard]] auto closingBracket(const QStringView text, const isize open) -> isize {
+    i32 depth = 0;
+
+    for (isize idx = open; idx < text.size(); idx++) {
+        if (text[idx] == u'[') {
+            depth++;
+        } else if (text[idx] == u']' && --depth == 0) {
+            return idx;
+        }
+    }
+
+    return -1;
+}
+
+// Width of `text` as the game draws it, relative to `metrics` at the base size. `\{`, `\}`, `\fs[n]` rescale glyphs,
+// `\_` is half a space, other codes draw nothing. Ignores kerning and surrogate pairs: an overflow estimate only.
+[[nodiscard]] auto gameTextWidth(const QStringView text, const QFontMetricsF& metrics, const f64 baseSize) -> f64 {
+    f64 width = 0;
+    f64 size = baseSize;
+
+    for (isize idx = 0; idx < text.size(); idx++) {
+        const QChar chr = text[idx];
+
+        if (chr != u'\\' || idx + 1 == text.size()) {
+            width += metrics.horizontalAdvance(chr) * (size / baseSize);
+            continue;
+        }
+
+        const QChar code = text[++idx];
+
+        if (code == u'\\') {
+            width += metrics.horizontalAdvance(u'\\') * (size / baseSize);
+            continue;
+        }
+
+        // RPG Maker 2000/2003: a half-width space.
+        if (code == u'_') {
+            width += metrics.horizontalAdvance(u' ') * 0.5 * (size / baseSize);
+            continue;
+        }
+
+        if (code == u'{') {
+            if (size <= FONT_SIZE_MAX) {
+                size += FONT_SIZE_STEP;
+            }
+
+            continue;
+        }
+
+        if (code == u'}') {
+            if (size >= FONT_SIZE_MIN) {
+                size -= FONT_SIZE_STEP;
+            }
+
+            continue;
+        }
+
+        const bool isFontSize = code == u'f' && idx + 1 < text.size() && text[idx + 1] == u's';
+
+        if (isFontSize) {
+            idx++;
+        }
+
+        if (idx + 1 < text.size() && text[idx + 1] == u'[') {
+            const isize close = closingBracket(text, idx + 1);
+
+            if (close != -1) {
+                if (isFontSize) {
+                    if (const optional<u32> value = stoa<u32>(text.sliced(idx + 2, close - idx - 2));
+                        value && *value != 0) {
+                        size = *value;
+                    }
+                }
+
+                idx = close;
+            }
+        }
+    }
+
+    return width;
+}
 }  // namespace
 
 TranslationInput::TranslationInput(
@@ -41,19 +182,12 @@ TranslationInput::TranslationInput(
     connect(&tooltipDelayTimer, &QTimer::timeout, this, &TranslationInput::showPendingTooltip);
     connect(this, &QPlainTextEdit::textChanged, this, &TranslationInput::onTextChanged);
     connect(document(), &QTextDocument::contentsChanged, this, &TranslationInput::updateContentHeight);
-
-    connect(&tooltip, &LintTooltip::linkActivated, this, [this](const QUrl& url) -> void {
-        if (url.scheme() == u"lint"_qsv && url.host() == u"apply-suggestion"_qsv) {
-            const auto query = QUrlQuery(url);
-            applySuggestion(
-                scast<LintType>(stoa<u8>(query.queryItemValue(u"type"_s))),
-                stoa<i32>(query.queryItemValue(u"lint"_s)),
-                stoa<i32>(query.queryItemValue(u"index"_s))
-            );
-        } else {
-            QDesktopServices::openUrl(url);
-        }
-    });
+    connect(
+        document(),
+        &QTextDocument::contentsChange,
+        this,
+        [this](const i32 /* position */, const i32 /* removed */, const i32 added) -> void { lastCharsAdded = added; }
+    );
 }
 
 void TranslationInput::applyLintFormats(vector<LintCharState> charStates, const i32 size) {
@@ -68,11 +202,14 @@ void TranslationInput::applyLintFormats(vector<LintCharState> charStates, const 
 }
 
 void TranslationInput::keyPressEvent(QKeyEvent* const event) {
-    if (event->key() == Qt::Key_Escape || event->key() == Qt::Key_Return) {
-        if (event->key() == Qt::Key_Return && (event->modifiers() & Qt::ShiftModifier) != 0) {
-            QTimer::singleShot(0, [this] -> void { verticalScrollBar()->setValue(0); });
+    // The Enter of the numpad is a line break for `QPlainTextEdit`, but it must commit like Return
+    const bool isReturn = event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter;
+
+    if (event->key() == Qt::Key_Escape || isReturn) {
+        if (isReturn && (event->modifiers() & Qt::ShiftModifier) != 0) {
+            QTimer::singleShot(0, this, [this] -> void { verticalScrollBar()->setValue(0); });
         } else {
-            if (event->key() == Qt::Key_Return && (event->modifiers() & Qt::ControlModifier) != 0) {
+            if (isReturn && (event->modifiers() & Qt::ControlModifier) != 0) {
                 emit focusNextInput();
             }
 
@@ -115,7 +252,18 @@ void TranslationInput::onTextChanged() {
         return;
     }
 
-    performAutoReplacements();
+    // The positions of the lint under the cursor are those of the text before it changed
+    hoveredRangeStart = -1;
+    hoveredRangeEnd = -1;
+    shownRangeStart = -1;
+    shownRangeEnd = -1;
+
+    // Deleting text must not bring a replacement back, e.g. `...` left after erasing a fourth dot
+    if (lastCharsAdded != 0) {
+        performAutoReplacements();
+    } else {
+        lastReplacements.clear();
+    }
 }
 
 void TranslationInput::updateContentHeight() {
@@ -134,12 +282,29 @@ void TranslationInput::updateContentHeight() {
     }
 }
 
+void TranslationInput::replaceText(const QString& text) {
+    QTextCursor cursor = textCursor();
+
+    blockTextChanged = true;
+
+    cursor.beginEditBlock();
+    cursor.select(QTextCursor::Document);
+    cursor.insertText(text);
+    cursor.endEditBlock();
+
+    blockTextChanged = false;
+
+    setTextCursor(cursor);
+    updateContentHeight();
+}
+
 void TranslationInput::performAutoReplacements() {
     lastReplacements.clear();
 
     QTextCursor cursor = textCursor();
     const i32 originalPosition = cursor.position();
-    const QString text = toPlainText();
+    // Copied when a replacement can match, most keystrokes have none enabled
+    QString text;
 
     for (const auto& [source, replacement, enabled] : settings->translation.replacements) {
         if (!enabled) {
@@ -147,6 +312,10 @@ void TranslationInput::performAutoReplacements() {
         }
 
         if (originalPosition >= source.size()) {
+            if (text.isNull()) {
+                text = toPlainText();
+            }
+
             const i32 checkPos = originalPosition - scast<i32>(source.size());
 
             if (QStringView(text).mid(checkPos, source.size()) == source) {
@@ -168,19 +337,39 @@ void TranslationInput::performAutoReplacements() {
 void TranslationInput::paintEvent(QPaintEvent* const event) {
     QPlainTextEdit::paintEvent(event);
 
-    if (projectSettings->lineLengthHint == 0) {
+    const u16 hint = projectSettings->lineLengthHint;
+
+    if (hint == 0) {
         return;
     }
 
+    const i32 xPos = round(contentOffset().x() + document()->documentMargin() + (hintCharWidth(font()) * hint));
+
     auto painter = QPainter(viewport());
     painter.setPen(LINE_LENGTH_HINT_COLOR);
-
-    const i32 charWidth = fontMetrics().horizontalAdvance(u' ');
-
-    const i32 xPos =
-        scast<i32>(contentOffset().x() + document()->documentMargin() + (charWidth * projectSettings->lineLengthHint));
-
     painter.drawLine(xPos, 0, xPos, viewport()->height());
+
+    // Overflow is a width *ratio* in the reference font (the game's font), so the editor font doesn't affect it.
+    // `hintFontSize` is the game's base size, only needed to scale `\{` / `\fs[n]` relative to it.
+    const QFont refFont = projectSettings->hintFont.isEmpty() ? font() : QFont(projectSettings->hintFont);
+    const auto refMetrics = QFontMetricsF(refFont);
+    const f64 limit = hintCharWidth(refFont) * hint;
+    const f64 baseSize = projectSettings->hintFontSize == 0 ? DEFAULT_GAME_FONT_SIZE : projectSettings->hintFontSize;
+    const i32 viewHeight = viewport()->height();
+
+    painter.setPen(LINE_LENGTH_HINT_OVERFLOW_COLOR);
+
+    for (QTextBlock block = firstVisibleBlock(); block.isValid(); block = block.next()) {
+        const QRectF rect = blockBoundingGeometry(block).translated(contentOffset());
+
+        if (rect.top() > viewHeight) {
+            break;
+        }
+
+        if (gameTextWidth(block.text(), refMetrics, baseSize) > limit) {
+            painter.drawLine(xPos, qRound(rect.top()), xPos, qRound(rect.bottom()));
+        }
+    }
 }
 
 void TranslationInput::mouseMoveEvent(QMouseEvent* const event) {
@@ -197,7 +386,10 @@ void TranslationInput::mouseMoveEvent(QMouseEvent* const event) {
     }
 
     tooltipDelayTimer.stop();
-    tooltip.hide();
+
+    if (tooltip != nullptr) {
+        tooltip->hide();
+    }
 
     hoveredRangeStart = -1;
     hoveredRangeEnd = -1;
@@ -227,7 +419,9 @@ void TranslationInput::mouseMoveEvent(QMouseEvent* const event) {
 void TranslationInput::leaveEvent(QEvent* const event) {
     tooltipDelayTimer.stop();
 
-    tooltip.waitForEnter();
+    if (tooltip != nullptr) {
+        tooltip->waitForEnter();
+    }
 
     hoveredRangeStart = -1;
     hoveredRangeEnd = -1;
@@ -236,19 +430,38 @@ void TranslationInput::leaveEvent(QEvent* const event) {
 }
 
 void TranslationInput::showPendingTooltip() {
-    tooltip.showAt(pendingCursorPos, pendingLints, settings, projectSettings);
+    if (tooltip == nullptr) {
+        tooltip = make_unique<LintTooltip>();
+
+        // A tooltip shows text of the game and of custom lints as Markdown, guard against non-website links.
+        connect(tooltip.get(), &LintTooltip::linkActivated, this, [](const QUrl& url) -> void {
+            if (url.scheme() == u"http" || url.scheme() == u"https") {
+                QDesktopServices::openUrl(url);
+            }
+        });
+
+        connect(tooltip.get(), &LintTooltip::suggestionActivated, this, &TranslationInput::applySuggestion);
+    }
+
+    // The mouse leaves the text to reach the tooltip, which resets the hovered range, so the suggestions are applied
+    // to the range copied here
+    shownLints = pendingLints;
+    shownRangeStart = hoveredRangeStart;
+    shownRangeEnd = hoveredRangeEnd;
+
+    tooltip->showAt(pendingCursorPos, shownLints, projectSettings);
 }
 
 void TranslationInput::applySuggestion(const LintType type, const i32 lintIndex, const i32 suggestionIndex) {
-    if (hoveredRangeStart == -1) {
+    if (shownRangeStart == -1) {
         return;
     }
 
-    const auto entry = ranges::find_if(pendingLints, [type, lintIndex](const LintEntry& lint) -> bool {
+    const auto entry = ranges::find_if(shownLints, [type, lintIndex](const LintEntry& lint) -> bool {
         return lint.type == type && lint.index == lintIndex;
     });
 
-    if (entry == pendingLints.end()) {
+    if (entry == shownLints.end()) {
         return;
     }
 
@@ -259,12 +472,15 @@ void TranslationInput::applySuggestion(const LintType type, const i32 lintIndex,
     }
 
     auto cursor = QTextCursor(document());
-    cursor.setPosition(hoveredRangeStart);
-    cursor.setPosition(hoveredRangeEnd, QTextCursor::KeepAnchor);
+    cursor.setPosition(shownRangeStart);
+    cursor.setPosition(shownRangeEnd, QTextCursor::KeepAnchor);
     cursor.insertText(suggestions[suggestionIndex]);
     setTextCursor(cursor);
 
-    tooltip.hide();
+    // The click is inside the tooltip, so it would wait for the mouse to leave
+    tooltip->dismiss();
     hoveredRangeStart = -1;
     hoveredRangeEnd = -1;
+    shownRangeStart = -1;
+    shownRangeEnd = -1;
 }

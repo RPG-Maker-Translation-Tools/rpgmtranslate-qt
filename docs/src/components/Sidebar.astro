@@ -1,0 +1,105 @@
+---
+// Starlight's Sidebar (flat link list only - this site has no groups) plus the current page's headings nested under its link.
+import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
+import MobileMenuFooter from '@astrojs/starlight/components/MobileMenuFooter.astro';
+
+const { sidebar, toc } = Astro.locals.starlightRoute;
+
+type Heading = NonNullable<typeof toc>['items'][number];
+const flatten = (items: Heading[]): Heading[] => items.flatMap((item) => [item, ...flatten(item.children)]);
+// `_top` is the "Overview" entry Starlight prepends for the right-hand table of contents; the page link itself already goes there.
+const headings = toc ? flatten(toc.items).filter((item) => item.slug !== '_top') : [];
+---
+
+<SidebarPersister>
+    <ul>
+        {
+            sidebar.map(
+                (entry) =>
+                    entry.type === 'link' && (
+                        <li>
+                            <a href={entry.href} aria-current={entry.isCurrent ? 'page' : undefined} {...entry.attrs}>
+                                {entry.label}
+                            </a>
+                            {entry.isCurrent && headings.length > 0 && (
+                                <ul class="headings">
+                                    {headings.map((heading) => (
+                                        <li style={`--depth: ${heading.depth - toc!.minHeadingLevel}`}>
+                                            <a href={`#${heading.slug}`}>{heading.text}</a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </li>
+                    )
+            )
+        }
+    </ul>
+</SidebarPersister>
+
+<div class="md:sl-hidden">
+    <MobileMenuFooter />
+</div>
+
+<style>
+    ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    li {
+        overflow-wrap: anywhere;
+    }
+
+    li + li {
+        margin-top: 0.5rem;
+    }
+
+    a {
+        display: block;
+        border-radius: 0.25rem;
+        text-decoration: none;
+        color: var(--sl-color-gray-2);
+        padding: 0.3em 0.5rem;
+        line-height: 1.4;
+        font-size: var(--sl-text-lg);
+        font-weight: 600;
+    }
+
+    a:hover,
+    a:focus {
+        color: var(--sl-color-white);
+    }
+
+    [aria-current='page'],
+    [aria-current='page']:hover,
+    [aria-current='page']:focus {
+        color: var(--sl-color-text-invert);
+        background-color: var(--sl-color-text-accent);
+    }
+
+    .headings {
+        margin: 0.25rem 0 0.5rem 0.5rem;
+        border-inline-start: 1px solid var(--sl-color-hairline-light);
+    }
+
+    .headings li + li {
+        margin-top: 0;
+    }
+
+    .headings a {
+        font-weight: 400;
+        font-size: var(--sl-text-base);
+        padding-inline-start: calc(0.5rem + var(--depth) * 0.75rem);
+    }
+
+    @media (min-width: 50rem) {
+        a {
+            font-size: var(--sl-text-sm);
+        }
+
+        .headings a {
+            font-size: var(--sl-text-xs);
+        }
+    }
+</style>

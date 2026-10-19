@@ -27,6 +27,10 @@ static constexpr QStringView GLOSSARY_FILE = u"/glossary.json";
 static constexpr QStringView OUTPUT_DIRECTORY = u"/output";
 static constexpr QStringView RVPACKER_METADATA_FILE = u"/.rvpacker-metadata";
 
+// Fixed shortcuts, not configurable; settings validation keeps the configurable ones off them
+static constexpr QStringView WRITE_SHORTCUT = u"Ctrl+W";
+static constexpr QStringView CLOSE_TAB_SHORTCUT = u"Esc";
+
 static constexpr i32 MIN_BACKUP_PERIOD = 60;
 static constexpr i32 MAX_BACKUP_PERIOD = 3600;
 static constexpr i32 MAX_BACKUPS = 99;
@@ -36,6 +40,8 @@ static constexpr QStringView MAP_DISPLAY_NAME_COMMENT_PREFIX = u"<!>IN-GAME DISP
 static constexpr QStringView COMMENT_PREFIX = u"<!>";
 static constexpr QStringView BOOKMARK_COMMENT = u"<!>BOOKMARK";
 static constexpr QStringView NAME_COMMENT = u"<!>NAME";
+static constexpr QStringView ID_COMMENT = u"<!>ID";
+static constexpr QStringView GAME_TITLE_MARKER = u"<!>NAME<#>Game Title";
 
 static constexpr i32 DEFAULT_COLUMN_WIDTH = 768;
 

@@ -1,5 +1,6 @@
 #include "AssetPreviewWidget.hpp"
 
+#include "AssetKind.hpp"
 #include "Constants.hpp"
 #include "GraphicsAssetViewer.hpp"
 #include "Notice.hpp"
@@ -33,6 +34,11 @@ constexpr i32 FONT_SAMPLE_SIZE_MAX = 288;
 constexpr i32 FONT_SAMPLE_SIZE_DEFAULT = 24;
 constexpr i32 MONO_FONT_POINT_SIZE = 10;
 constexpr i32 MAIN_LAYOUT_SPACING = 8;
+
+// Qt parses highlighted HTML slowly, so a bigger text is shown plain
+constexpr isize MAX_HIGHLIGHT_BYTES = 1024 * 1024;
+// Every match is a cursor and a highlight that is rebuilt on each Next/Prev
+constexpr i32 MAX_SEARCH_RESULTS = 5000;
 }  // namespace
 
 AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
@@ -181,18 +187,14 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
     connect(scaleSlider, &QSlider::valueChanged, this, [this](const i32 scale) -> void {
         graphicsViewer->setScaleFactor(scast<f32>(scale) / 100.0F);
 
-        auto scaleString = itos(scale);
-        scaleString[scaleString.len++] = u'%';
-        scaleLabel->setText(QString(scaleString.qsv()));
+        scaleLabel->setText(qsv(qitos(scale)) % u'%');
     });
 
     connect(graphicsViewer, &GraphicsAssetViewer::rescaled, this, [this] -> void {
         const i32 scale = scast<i32>(roundf(graphicsViewer->currentScale() * 100));
         scaleSlider->setValue(scale);
 
-        auto scaleString = itos(scale);
-        scaleString[scaleString.len++] = u'%';
-        scaleLabel->setText(QString(scaleString.qsv()));
+        scaleLabel->setText(qsv(qitos(scale)) % u'%');
     });
 
     connect(fontSampleInput, &QLineEdit::textChanged, this, [this] -> void { updateFontPreview(); });
@@ -263,23 +265,66 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
 }
 
 AssetPreviewWidget::~AssetPreviewWidget() {
+    removeTempFile();
+}
+
+// The decrypted copy of an encrypted audio asset. The player must have let go of it (it does when its page hides).
+void AssetPreviewWidget::removeTempFile() {
     if (!lastTempFile.isEmpty()) {
         QFile::remove(lastTempFile);
+        lastTempFile.clear();
     }
 }
 
+void AssetPreviewWidget::hideEvent(QHideEvent* const event) {
+    // The children are hidden first, and the media player closes its file then
+    QWidget::hideEvent(event);
+    removeTempFile();
+}
+
+void AssetPreviewWidget::changeEvent(QEvent* const event) {
+    if (event->type() == QEvent::LanguageChange) {
+        locateButton->setText(tr("Locate file"));
+        openButton->setText(tr("Open in default app"));
+        beautifyButton->setText(tr("Beautify"));
+        fontSampleInput->setPlaceholderText(tr("The quick brown fox jumps over the lazy dog"));
+        fontSizeInput->setSuffix(tr(" pt"));
+
+#ifndef ENABLE_ASSET_PLAYBACK
+        if (auto* const mediaPlaceholder = qobject_cast<QLabel*>(stack->widget(scast<i32>(Page::Media)))) {
+            mediaPlaceholder->setText(tr("Media playback not available"));
+        }
+#endif
+    }
+
+    QWidget::changeEvent(event);
+}
+
 void AssetPreviewWidget::clear() {
+    removeTempFile();
     currentPath.clear();
     graphicsScene->clear();
     codeViewer->clear();
-    currentPath.clear();
-    currentFontID = -1;
-    graphicsScene->clear();
-    codeViewer->clear();
+
+    if (currentFontID != -1) {
+        QFontDatabase::removeApplicationFont(currentFontID);
+        currentFontID = -1;
+    }
 }
 
 void AssetPreviewWidget::showAsset(const QString& path) {
     currentPath = path;
+
+    // The results of a search belong to the text it was made in
+    searchResults.clear();
+    currentSearchIndex = -1;
+    searchResultsLabel->clear();
+    searchTruncated = false;
+    codeViewer->setExtraSelections({});
+
+    // Whatever is shown next that is not text must not leave the last text in memory, or in the search
+    codeViewer->clear();
+    formatSource.clear();
 
     supportedWritingSystemsLabel->hide();
     beautifyButton->hide();
@@ -287,36 +332,40 @@ void AssetPreviewWidget::showAsset(const QString& path) {
     searchContainer->hide();
     fontSampleContainer->hide();
 
-    if (!lastTempFile.isEmpty()) {
-        QFile::remove(lastTempFile);
-        lastTempFile = QString();
-    }
+    // The player may still hold the file of the previous audio open (it can't be deleted then, on Windows), and lets go
+    // of it only when it opens the next asset or its page is replaced. So it is deleted after that.
+    const QString staleTempFile = std::exchange(lastTempFile, QString());
 
     const QString extension = path.sliced(path.lastIndexOf(u'.') + 1).toLower();
 
-    if (extension == u"png_"_qsv || extension == u"rpgmvp"_qsv || extension == u"png"_qsv || extension == u"jpg"_qsv) {
-        scaleContainer->show();
-        loadGraphicsAsset(path, extension);
-    } else if (extension == u"ttf"_qsv || extension == u"otf"_qsv) {
-        fontSampleContainer->show();
-        searchContainer->show();
-        loadFontAsset(path);
-    } else if (
-        extension == u"ogg_"_qsv || extension == u"m4a_"_qsv || extension == u"rpgmvo"_qsv ||
-        extension == u"rpgmvm"_qsv || extension == u"ogg"_qsv || extension == u"m4a"_qsv
-    ) {
-        loadAudioAsset(path, extension);
-    } else if (extension == u"webm"_qsv || extension == u"mp4"_qsv) {
-        loadVideoAsset(path);
-    } else if (
-        extension == u"js"_qsv || extension == u"json"_qsv || extension == u"rxdata"_qsv ||
-        extension == u"rvdata"_qsv || extension == u"rvdata2"_qsv || extension == u"lmu"_qsv ||
-        extension == u"lmt"_qsv || extension == u"ldb"_qsv
-    ) {
-        searchContainer->show();
-        loadTextAsset(path, extension);
-    } else {
-        showPage(Page::Error, NOTICE("Extension is unsupported.", Warning, Inline).translated());
+    switch (assetKind(extension)) {
+        case AssetKind::Image:
+            scaleContainer->show();
+            loadGraphicsAsset(path, extension);
+            break;
+        case AssetKind::Font:
+            fontSampleContainer->show();
+            loadFontAsset(path);
+            break;
+        case AssetKind::Audio:
+            loadAudioAsset(path, extension);
+            break;
+        case AssetKind::Video:
+            loadVideoAsset(path);
+            break;
+        case AssetKind::Data:
+        case AssetKind::Script:
+        case AssetKind::Save:
+            searchContainer->show();
+            loadTextAsset(path, extension);
+            break;
+        case AssetKind::Unknown:
+            showPage(Page::Error, NOTICE("Extension is unsupported.", Warning, Inline).translated());
+            break;
+    }
+
+    if (!staleTempFile.isEmpty()) {
+        QFile::remove(staleTempFile);
     }
 
     setWindowTitle(lastPathComponent(path).toString());
@@ -336,7 +385,8 @@ void AssetPreviewWidget::loadGraphicsAsset(const QString& path, const QString& e
     QPixmap pixmap;
     bool loaded;
 
-    if (extension == u"png"_qsv || extension == u"jpg"_qsv) {
+    // Everything but the encrypted MV/MZ images is a plain picture
+    if (extension != u"png_"_qsv && extension != u"rpgmvp"_qsv) {
         auto imageFile = QFile(path);
 
         if (!imageFile.open(QFile::ReadOnly)) {
@@ -363,7 +413,9 @@ void AssetPreviewWidget::loadGraphicsAsset(const QString& path, const QString& e
             return;
         }
 
-        loaded = pixmap.loadFromData(imageData.ptr + HEADER_LENGTH, imageData.len - HEADER_LENGTH);
+        // A file shorter than the header it was encrypted with has no picture behind it
+        loaded = imageData.len > HEADER_LENGTH &&
+                 pixmap.loadFromData(imageData.ptr + HEADER_LENGTH, imageData.len - HEADER_LENGTH);
         rpgm_buffer_free(imageData);
     }
 
@@ -382,13 +434,17 @@ void AssetPreviewWidget::loadGraphicsAsset(const QString& path, const QString& e
         const i32 scale = scast<i32>(roundf(graphicsViewer->currentScale() * 100));
         scaleSlider->setValue(scale);
 
-        auto scaleString = itos(scale);
-        scaleString[scaleString.len++] = u'%';
-        scaleLabel->setText(QString(scaleString.qsv()));
+        scaleLabel->setText(qsv(qitos(scale)) % u'%');
     });
 }
 
 void AssetPreviewWidget::loadFontAsset(const QString& path) {
+    // Fonts viewed earlier would stay registered in the application for good
+    if (currentFontID != -1) {
+        QFontDatabase::removeApplicationFont(currentFontID);
+        currentFontID = -1;
+    }
+
     const i32 fontID = QFontDatabase::addApplicationFont(path);
 
     if (fontID == -1) {
@@ -521,15 +577,16 @@ void AssetPreviewWidget::loadFontAsset(const QString& path) {
     const i32 scale = scast<i32>(roundf(graphicsViewer->currentScale() * 100));
     scaleSlider->setValue(scale);
 
-    auto scaleString = itos(scale);
-    scaleString[scaleString.len++] = u'%';
-    scaleLabel->setText(QString(scaleString.qsv()));
+    scaleLabel->setText(qsv(qitos(scale)) % u'%');
 
     supportedWritingSystemsLabel->show();
 }
 
 void AssetPreviewWidget::loadAudioAsset(const QString& path, const QString& extension) {
-    if (extension != u"ogg"_qsv && extension != u"m4a"_qsv) {
+    const bool encrypted = extension == u"ogg_"_qsv || extension == u"m4a_"_qsv || extension == u"rpgmvo"_qsv ||
+                           extension == u"rpgmvm"_qsv;
+
+    if (encrypted) {
         const QByteArray utf8Path = path.toUtf8();
 
         ByteBuffer decryptedData;
@@ -544,7 +601,17 @@ void AssetPreviewWidget::loadAudioAsset(const QString& path, const QString& exte
             return;
         }
 
-        auto tempFile = QTemporaryFile(QDir::temp().filePath(u"rpgmtranslate-qt-XXXXXX.ogg"_s));
+        if (decryptedData.len <= HEADER_LENGTH) {
+            rpgm_buffer_free(decryptedData);
+            showPage(Page::Error, NOTICE("Failed to load audio from %1", Critical, Inline, path).translated());
+            return;
+        }
+
+        // The player picks the decoder by what the file holds, but the suffix is what a person finds it by
+        const bool m4a = extension == u"m4a_"_qsv || extension == u"rpgmvm"_qsv;
+        auto tempFile = QTemporaryFile(
+            QDir::temp().filePath(m4a ? u"rpgmtranslate-qt-XXXXXX.m4a"_s : u"rpgmtranslate-qt-XXXXXX.ogg"_s)
+        );
 
         if (!tempFile.open()) {
             rpgm_buffer_free(decryptedData);
@@ -562,20 +629,34 @@ void AssetPreviewWidget::loadAudioAsset(const QString& path, const QString& exte
             return;
         }
 
-        tempFile.write(
-            rcast<const char*>(decryptedData.ptr + HEADER_LENGTH),
-            scast<i64>(decryptedData.len - HEADER_LENGTH)
-        );
+        const i64 audioSize = scast<i64>(decryptedData.len - HEADER_LENGTH);
+        const bool written =
+            tempFile.write(rcast<const char*>(decryptedData.ptr + HEADER_LENGTH), audioSize) == audioSize;
+        rpgm_buffer_free(decryptedData);
+
+        if (!written) {
+            showPage(
+                Page::Error,
+                NOTICE(
+                    "Failed to write temporary file %1: %2",
+                    Critical,
+                    Inline,
+                    tempFile.fileName(),
+                    tempFile.errorString()
+                )
+                    .translated()
+            );
+            return;
+        }
+
         tempFile.setAutoRemove(false);
         tempFile.close();
-        rpgm_buffer_free(decryptedData);
 
         lastTempFile = tempFile.fileName();
     }
 
 #ifdef ENABLE_ASSET_PLAYBACK
-    if (const auto result =
-            mediaPlayer->open(extension == u"ogg"_qsv || extension == u"m4a"_qsv ? path : lastTempFile)) {
+    if (const auto result = mediaPlayer->open(encrypted ? lastTempFile : path)) {
         mediaPlayer->play();
         showPage(Page::Media);
     } else {
@@ -616,17 +697,18 @@ void AssetPreviewWidget::loadTextAsset(const QString& path, const QString& exten
         return;
     }
 
-    codeUtf8 = file.readAll();
+    const QByteArray codeUtf8 = file.readAll();
 
     QString code;
+    bool tooLarge = false;
 
 #if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || defined(ENABLE_RUBY_HIGHLIGHTING)
     bool highlighted = false;
     FFIString highlightedHtml;
 #endif
 
-    if (extension == u"rxdata"_qsv || extension == u"rvdata"_qsv || extension == u"rvdata2"_qsv ||
-        extension == u"lmu"_qsv || extension == u"lmt"_qsv || extension == u"ldb"_qsv) {
+    // Called only for Data/Script/Save assets, so everything but plain-text json/js is a binary RPG Maker format.
+    if (extension != u"json"_qsv && extension != u"js"_qsv) {
         FFIString json;
         const QByteArray filename = lastPathComponent(path).toUtf8();
 
@@ -634,13 +716,20 @@ void AssetPreviewWidget::loadTextAsset(const QString& path, const QString& exten
 
         if (!success) {
             const QUtf8SV error = ffitostr(rpgm_error());
-            present(this, NOTICE("Failed to generate JSON for file %1: %2", Critical, Modal, path, svtostr(error)));
+
+            // On the page, not in a dialog: the window would keep showing the previous asset under this one's name
+            showPage(
+                Page::Error,
+                NOTICE("Failed to generate JSON for file %1: %2", Critical, Inline, path, svtostr(error)).translated()
+            );
             return;
         }
 
+        tooLarge = json.len > MAX_HIGHLIGHT_BYTES;
+
         if (lastPathComponent(path).contains(u"Scripts"_qsv)) {
 #ifdef ENABLE_RUBY_HIGHLIGHTING
-            highlighted = rpgm_highlight_code(json, HighlightLanguage::Ruby, &highlightedHtml);
+            highlighted = !tooLarge && rpgm_highlight_code(json, HighlightLanguage::Ruby, &highlightedHtml);
 #endif
 
 #ifdef ENABLE_RUBY_FORMATTING
@@ -649,7 +738,7 @@ void AssetPreviewWidget::loadTextAsset(const QString& path, const QString& exten
 #endif
         } else {
 #ifdef ENABLE_JSON_HIGHLIGHTING
-            highlighted = rpgm_highlight_code(json, HighlightLanguage::JSON, &highlightedHtml);
+            highlighted = !tooLarge && rpgm_highlight_code(json, HighlightLanguage::JSON, &highlightedHtml);
 #endif
 
             formatLanguage = HighlightLanguage::JSON;
@@ -663,23 +752,25 @@ void AssetPreviewWidget::loadTextAsset(const QString& path, const QString& exten
     } else {
         QByteArrayView codeView;
 
-        // BOM check
         if (codeUtf8.startsWith("\xEF\xBB\xBF"_ba)) {
-            codeView = codeUtf8.slice(3);
+            codeView = QByteArrayView(codeUtf8).sliced(3);
         } else {
             codeView = codeUtf8;
         }
 
+        tooLarge = codeView.size() > MAX_HIGHLIGHT_BYTES;
+
         if (extension == u"json"_qsv) {
 #ifdef ENABLE_JSON_HIGHLIGHTING
-            highlighted = rpgm_highlight_code(strtoffi(codeView), HighlightLanguage::JSON, &highlightedHtml);
+            highlighted =
+                !tooLarge && rpgm_highlight_code(strtoffi(codeView), HighlightLanguage::JSON, &highlightedHtml);
 #endif
 
             formatLanguage = HighlightLanguage::JSON;
             beautifyButton->show();
         } else {
 #ifdef ENABLE_JS_HIGHLIGHTING
-            highlighted = rpgm_highlight_code(strtoffi(codeView), HighlightLanguage::JS, &highlightedHtml);
+            highlighted = !tooLarge && rpgm_highlight_code(strtoffi(codeView), HighlightLanguage::JS, &highlightedHtml);
 #endif
 
 #ifdef ENABLE_JS_FORMATTING
@@ -704,12 +795,17 @@ void AssetPreviewWidget::loadTextAsset(const QString& path, const QString& exten
 #endif
 
     showPage(Page::Text);
+
+    if (tooLarge) {
+        present(this, NOTICE("The file is large, so it is shown without syntax highlighting.", Info, Status));
+    }
 }
 
 void AssetPreviewWidget::performSearch() {
     searchResults.clear();
     currentSearchIndex = -1;
     searchResultsLabel->clear();
+    searchTruncated = false;
 
     const QString query = searchInput->text();
     if (query.isEmpty()) {
@@ -743,7 +839,13 @@ void AssetPreviewWidget::performSearch() {
 
         QTextCursor cursor = doc->find(regexp, 0, flags);
 
-        while (!cursor.isNull()) {
+        // A pattern that matches nothing (`a*`, `^`) finds the same empty spot again and again
+        while (!cursor.isNull() && cursor.hasSelection()) {
+            if (searchResults.size() == MAX_SEARCH_RESULTS) {
+                searchTruncated = true;
+                break;
+            }
+
             searchResults.append(cursor);
             cursor = doc->find(regexp, cursor, flags);
         }
@@ -751,6 +853,11 @@ void AssetPreviewWidget::performSearch() {
         QTextCursor cursor = doc->find(query, 0, flags);
 
         while (!cursor.isNull()) {
+            if (searchResults.size() == MAX_SEARCH_RESULTS) {
+                searchTruncated = true;
+                break;
+            }
+
             searchResults.append(cursor);
             cursor = doc->find(query, cursor, flags);
         }
@@ -762,7 +869,7 @@ void AssetPreviewWidget::performSearch() {
         return;
     }
 
-    const QColor allMatchColor = QColor(255, 220, 0, 80);
+    const auto allMatchColor = QColor(255, 220, 0, 80);
     QList<QTextEdit::ExtraSelection> allHighlights;
     allHighlights.reserve(searchResults.size());
 
@@ -786,10 +893,14 @@ void AssetPreviewWidget::navigateSearch(const i32 delta) {
 
     currentSearchIndex = scast<i32>((currentSearchIndex + delta + searchResults.size()) % searchResults.size());
 
-    searchResultsLabel->setText(u"%1/%2"_qsv.arg(itos(currentSearchIndex + 1).qsv(), itos(searchResults.size()).qsv()));
+    searchResultsLabel->setText(u"%1/%2%3"_qsv.arg(
+        qsv(qitos(currentSearchIndex + 1)),
+        qsv(qitos(searchResults.size())),
+        searchTruncated ? u"+"_qsv : QStringView()
+    ));
 
-    const QColor allMatchColor = QColor(255, 220, 0, 80);
-    const QColor currentMatchColor = QColor(255, 160, 0, 180);
+    const auto allMatchColor = QColor(255, 220, 0, 80);
+    const auto currentMatchColor = QColor(255, 160, 0, 180);
 
     QList<QTextEdit::ExtraSelection> highlights;
     highlights.reserve(searchResults.size());
@@ -831,8 +942,6 @@ void AssetPreviewWidget::updateFontPreview() {
         const i32 scale = scast<i32>(roundf(graphicsViewer->currentScale() * 100));
         scaleSlider->setValue(scale);
 
-        auto scaleString = itos(scale);
-        scaleString[scaleString.len++] = u'%';
-        scaleLabel->setText(QString(scaleString.qsv()));
+        scaleLabel->setText(qsv(qitos(scale)) % u'%');
     });
 }

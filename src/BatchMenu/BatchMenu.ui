@@ -51,34 +51,6 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QComboBox" name="batchActionSelect">
-           <item>
-            <property name="text">
-             <string>- Batch Action -</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Translate</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Script</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="translationEndpointSelect">
-           <item>
-            <property name="text">
-             <string>- Translation Endpoint -</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item>
           <widget class="QComboBox" name="translationColumnSelect">
            <item>
             <property name="text">
@@ -123,89 +95,6 @@
            <property name="checkable">
             <bool>true</bool>
            </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QWidget" name="contextContainer" native="true">
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <property name="spacing">
-          <number>4</number>
-         </property>
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QWidget" name="contextInputContainer" native="true">
-           <layout class="QVBoxLayout" name="verticalLayout_4">
-            <property name="spacing">
-             <number>8</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="label">
-              <property name="text">
-               <string>Context</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPlainTextEdit" name="contextInput"/>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QWidget" name="contextListContainer" native="true">
-           <layout class="QVBoxLayout" name="verticalLayout_5">
-            <property name="spacing">
-             <number>8</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="label_2">
-              <property name="text">
-               <string>Use File Context</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QListWidget" name="fileContextList"/>
-            </item>
-           </layout>
           </widget>
          </item>
         </layout>
@@ -298,6 +187,38 @@
              <string>Latinize</string>
             </property>
            </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="editScriptButton">
+           <property name="toolTip">
+            <string>Open the script in the editor</string>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../../resources.qrc">
+             <normaloff>:/icons/edit.svg</normaloff>:/icons/edit.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
           </widget>
          </item>
          <item>

@@ -1,11 +1,10 @@
 #include "LintMenu.hpp"
 
-#include "Constants.hpp"
 #include "FileSelectMenu.hpp"
+#include "GlossaryMenu.hpp"
 #include "LintSelectMenu.hpp"
 #include "LintTable.hpp"
 #include "Settings.hpp"
-#include "rpgmtranslate_rs.h"
 #include "ui_MainWindow.h"
 
 #include <QApplication>
@@ -27,8 +26,8 @@ LintMenu::LintMenu(QWidget* const parent) :
 void LintMenu::init(
     Ui::MainWindow* const ui_,
     const vector<TabListItem>& files,
-    Settings* sets,
-    const ProjectSettings* projS,
+    Settings* const sets,
+    ProjectSettings* const projS,
     GlossaryMenu* const glossaryMenu
 ) {
     this->clearButton = ui_->lintClearMenuButton;
@@ -38,7 +37,7 @@ void LintMenu::init(
     this->lintTable = ui_->lintMenuTable;
 
     fileSelectMenu->init(files);
-    lintSelectMenu->init(sets, glossaryMenu);
+    lintSelectMenu->init(sets, projS, glossaryMenu);
 
     this->sets = sets;
     this->projS = projS;
@@ -53,103 +52,40 @@ void LintMenu::init(
     ui_->ltCheckbox->setChecked((sets->translation.lintFlags & LintFlags::LanguageTool) != 0);
     ui_->termMismatchCheckbox->setChecked((sets->translation.lintFlags & LintFlags::TermMismatch) != 0);
 
-    connect(ui_->disableLintingCheckbox, &QCheckBox::checkStateChanged, this, [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::LintingDisabled;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::LintingDisabled;
-        }
-    });
-
-    connect(
-        ui_->leadingWhitespaceCheckbox,
-        &QCheckBox::checkStateChanged,
-        this,
-        [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::LeadingWhitespace;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::LeadingWhitespace;
-        }
+    if (connected) {
+        return;
     }
-    );
 
-    connect(
-        ui_->trailingWhitespaceCheckbox,
-        &QCheckBox::checkStateChanged,
-        this,
-        [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::TrailingWhitespace;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::TrailingWhitespace;
-        }
-    }
-    );
+    connected = true;
 
-    connect(
-        ui_->contiguousWhitespaceCheckbox,
-        &QCheckBox::checkStateChanged,
-        this,
-        [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::ContiguousWhitespace;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::ContiguousWhitespace;
-        }
-    }
-    );
+    // The menu lists the terms by position
+    connect(glossaryMenu, &GlossaryMenu::termRemoved, lintSelectMenu, &QWidget::hide);
 
-    connect(
-        ui_->unclosedPunctuationCheckbox,
-        &QCheckBox::checkStateChanged,
-        this,
-        [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::UnclosedPunctuation;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::UnclosedPunctuation;
-        }
-    }
-    );
+    const auto bindFlag = [this](const QCheckBox* const checkbox, const LintFlags flag) -> void {
+        connect(checkbox, &QCheckBox::checkStateChanged, this, [this, flag](const Qt::CheckState state) -> void {
+            if (state == Qt::Checked) {
+                this->sets->translation.lintFlags |= flag;
+            } else {
+                this->sets->translation.lintFlags &= ~flag;
+            }
+        });
+    };
 
-    connect(ui_->tagMismatchCheckbox, &QCheckBox::checkStateChanged, this, [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::TagMismatch;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::TagMismatch;
-        }
-    });
+    bindFlag(ui_->disableLintingCheckbox, LintFlags::LintingDisabled);
+    bindFlag(ui_->leadingWhitespaceCheckbox, LintFlags::LeadingWhitespace);
+    bindFlag(ui_->trailingWhitespaceCheckbox, LintFlags::TrailingWhitespace);
+    bindFlag(ui_->contiguousWhitespaceCheckbox, LintFlags::ContiguousWhitespace);
+    bindFlag(ui_->unclosedPunctuationCheckbox, LintFlags::UnclosedPunctuation);
+    bindFlag(ui_->tagMismatchCheckbox, LintFlags::TagMismatch);
+    bindFlag(ui_->spellcheckCheckbox, LintFlags::Spellcheck);
+    bindFlag(ui_->ltCheckbox, LintFlags::LanguageTool);
+    bindFlag(ui_->termMismatchCheckbox, LintFlags::TermMismatch);
 
-    connect(ui_->spellcheckCheckbox, &QCheckBox::checkStateChanged, this, [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::Spellcheck;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::Spellcheck;
-        }
-    });
-
-    connect(ui_->ltCheckbox, &QCheckBox::checkStateChanged, this, [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::LanguageTool;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::LanguageTool;
-        }
-    });
-
-    connect(ui_->termMismatchCheckbox, &QCheckBox::checkStateChanged, this, [=](const Qt::CheckState state) -> void {
-        if (state == Qt::Checked) {
-            sets->translation.lintFlags |= LintFlags::TermMismatch;
-        } else {
-            sets->translation.lintFlags &= ~LintFlags::TermMismatch;
-        }
-    });
-
-    connect(fileSelectMenuButton, &QPushButton::pressed, this, [this] -> void {
+    connect(fileSelectMenuButton, &QPushButton::clicked, this, [this] -> void {
         toggleAboveDock(fileSelectMenu, fileSelectMenuButton);
     });
 
-    connect(lintSelectMenuButton, &QPushButton::pressed, this, [this] -> void {
+    connect(lintSelectMenuButton, &QPushButton::clicked, this, [this] -> void {
         if (lintSelectMenu->isHidden()) {
             lintSelectMenu->refresh();
         }
@@ -157,16 +93,30 @@ void LintMenu::init(
         toggleAboveDock(lintSelectMenu, lintSelectMenuButton);
     });
 
-    connect(checkButton, &QPushButton::pressed, this, [this] -> void {
+    connect(checkButton, &QPushButton::clicked, this, [this] -> void {
         emit checkRequested(fileSelectMenu->selected());
     });
-    connect(clearButton, &QPushButton::pressed, this, [this] -> void { this->lintTable->model()->clear(); });
+    connect(clearButton, &QPushButton::clicked, this, [this] -> void { this->lintTable->model()->clear(); });
 }
 
-void LintMenu::clear() {
+void LintMenu::clearResults() {
     if (lintTable != nullptr) {
         lintTable->model()->clear();
     }
+}
+
+void LintMenu::clear() {
+    clearResults();
+
+    // What they list is that of the project that closes
+    fileSelectMenu->clear();
+    fileSelectMenu->hide();
+    lintSelectMenu->clear();
+}
+
+void LintMenu::settingsChanged() {
+    // The toggles of the menu point into the settings, and the settings window has replaced what they point to
+    lintSelectMenu->hide();
 }
 
 void LintMenu::toggleAboveDock(QWidget* const menu, const QWidget* const anchor) {

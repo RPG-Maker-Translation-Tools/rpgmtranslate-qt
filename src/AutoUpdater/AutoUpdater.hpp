@@ -17,18 +17,18 @@ class AutoUpdater final : public QObject {
     void downloadUpdate();
     void abortDownload();
 
-    [[nodiscard]] auto downloadedData() const -> QByteArray;
+    // Path of the running AppImage file, empty when not running from one. An AppImage is updated by replacing that
+    // file (its contents are a read-only mount), and has its own release asset.
+    [[nodiscard]] static auto appImagePath() -> QString;
 
    signals:
     void versionFetched(const QString& version);
     void updateDownloaded(const QByteArray& data);
     void updateDownloadProgress(u64 received, u64 total);
-    void updateFailed(QNetworkReply::NetworkError);
+    // download: the failure is that of the download, not of the version check
+    void updateFailed(const QString& error, bool download);
 
    private:
-    void downloadFile(QNetworkReply* reply);
-    void getVersion(QNetworkReply* reply);
-
     QNetworkAccessManager networkManager;
     QNetworkReply* downloadReply = nullptr;
     bool aborted = false;

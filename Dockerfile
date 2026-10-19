@@ -47,7 +47,7 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.91
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.95
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
@@ -93,7 +93,7 @@ RUN git clone --depth 1 --branch v0.16.2 https://github.com/quickjs-ng/quickjs.g
     && cmake --install /tmp/quickjs-ng/build \
     && rm -rf /tmp/quickjs-ng
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.91
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.95
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
@@ -183,7 +183,7 @@ ENV LD_LIBRARY_PATH="$QT_ROOT/lib:${LD_LIBRARY_PATH:-}"
 ENV CMAKE_PREFIX_PATH="$QT_ROOT" \
     Qt6_DIR="$QT_ROOT/lib/cmake/Qt6"
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.91
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.95
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf \
@@ -218,7 +218,7 @@ RUN --mount=type=cache,target=/root/.cargo/registry,sharing=locked \
            CFLAGS="-march=${TARGET_ARCH}" \
            CXXFLAGS="-march=${TARGET_ARCH}" \
            RUSTFLAGS="-Ctarget-cpu=${TARGET_ARCH} -Ctarget-feature=+aes,+sse2" \
-    && ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release ENABLE_ASSET_PLAYBACK=OFF \
+    && ./lua configure.lua -G=Ninja CMAKE_BUILD_TYPE=Release \
     && cmake --build build -j
 
 ARG APP_NAME=rpgmtranslate
@@ -253,7 +253,7 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.91
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.95
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
@@ -290,7 +290,7 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.91
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.95
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash

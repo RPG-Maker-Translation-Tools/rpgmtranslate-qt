@@ -22,6 +22,9 @@ class TranslationInput final : public QPlainTextEdit {
 
     void applyLintFormats(vector<LintCharState> charStates, i32 size);
 
+    // Replaces the whole text as one undoable edit, without triggering auto-replacements.
+    void replaceText(const QString& text);
+
    protected:
     void keyPressEvent(QKeyEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
@@ -45,8 +48,11 @@ class TranslationInput final : public QPlainTextEdit {
     void showPendingTooltip();
     void applySuggestion(LintType type, i32 lintIndex, i32 suggestionIndex);
 
-    LintTooltip tooltip;
+    // Created when the first tooltip is shown, most cells are edited without one
+    unique_ptr<LintTooltip> tooltip;
+    // The lints under the mouse, and those of the tooltip shown with the range of text they are of
     QList<LintEntry> pendingLints;
+    QList<LintEntry> shownLints;
 
     vector<Replacement> lastReplacements;
 
@@ -60,6 +66,11 @@ class TranslationInput final : public QPlainTextEdit {
 
     i32 hoveredRangeStart = -1;
     i32 hoveredRangeEnd = -1;
+    i32 shownRangeStart = -1;
+    i32 shownRangeEnd = -1;
+
+    // Characters added by the last change of the document, 0 for a deletion
+    i32 lastCharsAdded = 0;
 
     bool blockTextChanged = false;
 };

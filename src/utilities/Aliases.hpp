@@ -2,22 +2,35 @@
 
 #include "enchantum_single_header.hpp"
 
-#include <QString>
+#include <algorithm>
+#include <array>
 #include <atomic>
+#include <bit>
 #include <bitset>
+#include <climits>
+#include <concepts>
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <deque>
 #include <expected>
 #include <filesystem>
+#include <format>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <qtversionchecks.h>
+#include <print>
 #include <ranges>
+#include <span>
 #include <string>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+#include <variant>
 #include <vector>
 
-using namespace Qt::Literals::StringLiterals;
 using namespace std::literals::string_view_literals;
 
 using namespace enchantum::bitwise_operators;
@@ -56,8 +69,11 @@ using std::array;
 using std::bitset;
 using std::cerr;
 using std::cout;
+using std::deque;
+using std::error_code;
 using std::expected;
 using std::format;
+using std::function;
 using std::make_shared;
 using std::make_unique;
 using std::mutex;
@@ -71,6 +87,7 @@ using std::string;
 using std::string_view;
 using std::tuple;
 using std::unique_ptr;
+using std::variant;
 using std::vector;
 using std::wstring;
 using std::wstring_view;
@@ -79,12 +96,8 @@ using std::clamp;
 using std::max;
 using std::min;
 
-using QSVList = QList<QStringView>;
-using QUtf8SV = QUtf8StringView;
-using QL1SV = QLatin1StringView;
-
 template <typename T, typename E>
-using result = std::expected<T, E>;
+using Result = std::expected<T, E>;
 template <typename E>
 using Err = std::unexpected<E>;
 
@@ -104,3 +117,5 @@ template <typename O, typename T>
 }
 
 using FilenameArray = array<char, 16>;
+
+#include "QtAliases.hpp"

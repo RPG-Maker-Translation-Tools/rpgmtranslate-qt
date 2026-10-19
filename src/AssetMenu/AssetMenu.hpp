@@ -9,11 +9,13 @@ class AssetMenu final : public PersistentMenu {
 
    public:
     explicit AssetMenu(QWidget* parent = nullptr);
+    ~AssetMenu() override;
 
-    ~AssetMenu() override {}
-
-    void init(shared_ptr<ProjectSettings> projectSettings);
+    void init(const ProjectSettings* projectSettings);
     void clear();
+
+   protected:
+    void changeEvent(QEvent* event) override;
 
    private:
     static auto applyFilter(QTreeWidgetItem* item, const QString& lowerFilter) -> bool;
@@ -23,12 +25,8 @@ class AssetMenu final : public PersistentMenu {
 
     AssetPreviewWidget* const assetPreviewWidget;
     QPushButton* const refreshButton;
-    QWidget* const topWidget;
-    QHBoxLayout* const topLayout;
-    QVBoxLayout* const layout;
     QLineEdit* const searchInput;
     QTreeWidget* const tree;
-    QGraphicsScene* const graphicsScene;
 
-    shared_ptr<ProjectSettings> projectSettings;
+    const ProjectSettings* projectSettings = nullptr;
 };

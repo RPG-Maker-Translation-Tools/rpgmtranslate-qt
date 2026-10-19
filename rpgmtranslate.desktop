@@ -1,7 +1,11 @@
 [Desktop Entry]
 Type=Application
 Name=RPGMTranslate
+GenericName=RPG Maker Translation Tool
+Comment=Translate RPG Maker games
 Exec=rpgmtranslate
 Icon=rpgmtranslate-logo
-Categories=Utility;
+Categories=Utility;Qt;
+Keywords=RPG Maker;translation;localization;
+StartupWMClass=rpgmtranslate
 Terminal=false

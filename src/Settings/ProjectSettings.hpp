@@ -28,8 +28,6 @@ enum class SourceDirectory : u8 {
 
 struct ProjectSettings {
     HashMap<FilenameArray, u64> hashes;
-    HashMap<QString, QString> fileContexts;
-
     QStringList completedFiles;
 
     vector<ColumnInfo> columns;
@@ -37,20 +35,26 @@ struct ProjectSettings {
     QString projectPath;
     QString spellcheckDictionary;
 
-    QString projectContext;
+    // The save, relative to `projectPath`, whose party, items and variables lint tooltips show; empty for none.
+    QString activeSave;
 
     QString sourceLang;
     QString translationLang;
 
     // A codepage's WHATWG label (`"Shift_JIS"`, `"windows-1252"`, ...), or
-    // empty for "guess it"
+    // empty for UTF-8
     QString readEncoding;
 
     // A codepage's WHATWG label, or empty (the default) to always write
     // translated text as UTF-8
     QString writeEncoding;
 
+    // The game's font and base size, used only to estimate whether a line overflows `lineLengthHint`;
+    // empty/0 mean "editor font"/the engine default
+    QString hintFont;
+
     u16 lineLengthHint = 0;
+    u8 hintFontSize = 0;
 
     DuplicateMode duplicateMode = DuplicateMode::Allow;
     BaseFlags flags = scast<BaseFlags>(0);
@@ -58,22 +62,9 @@ struct ProjectSettings {
     SourceDirectory sourceDirectory = SourceDirectory::None;
     EngineType engineType = EngineType::MVMZ;
 
+    // RPG Maker 2000/2003 has no single data file extension (`.lmu`, `.lmt`, `.ldb`), so callers handle it before
+    // asking. Its value, like any other not listed, is unreachable: `postRead` rejects settings files that hold one.
     [[nodiscard]] constexpr auto engineExtension() const -> QStringView {
-        switch (engineType) {
-            case EngineType::MVMZ:
-                return u"json";
-            case EngineType::VXAce:
-                return u"rvdata2";
-            case EngineType::VX:
-                return u"rvdata";
-            case EngineType::XP:
-                return u"rxdata";
-            default:
-                std::unreachable();
-        }
-    }
-
-    [[nodiscard]] static constexpr auto engineExtension(const EngineType engineType) -> QStringView {
         switch (engineType) {
             case EngineType::MVMZ:
                 return u"json";
@@ -90,6 +81,8 @@ struct ProjectSettings {
 
     [[nodiscard]] auto programDataPath() const -> QString { return projectPath + PROGRAM_DATA_DIRECTORY; }
 
+    // `None` is the state of a project whose directory wasn't detected yet. `postRead` replaces it on load, so it
+    // never reaches here.
     [[nodiscard]] auto sourcePath() const -> QString {
         switch (sourceDirectory) {
             case SourceDirectory::UppercaseData:
@@ -104,6 +97,8 @@ struct ProjectSettings {
     }
 
     [[nodiscard]] auto baselinePath() const -> QString { return programDataPath() + BASELINE_DATA_DIRECTORY; }
+
+    [[nodiscard]] auto rm2kDatabasePath() const -> QString { return actualSourcePath() + u"/RPG_RT.ldb"_qsv; }
 
     [[nodiscard]] auto actualSourcePath() const -> QString {
         QString path = baselinePath();

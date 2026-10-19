@@ -6,13 +6,9 @@
 #include "PersistentMenu.hpp"
 #include "Types.hpp"
 
-QT_BEGIN_NAMESPACE
-
 namespace Ui {
-    class FileSelectMenu;
+class FileSelectMenu;
 }  // namespace Ui
-
-QT_END_NAMESPACE
 
 class FileSelectMenu final : public PersistentMenu {
     Q_OBJECT

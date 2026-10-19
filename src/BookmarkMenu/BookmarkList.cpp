@@ -46,8 +46,13 @@ BookmarkList::BookmarkList(QWidget* const parent) :
     return model_->rowCount();
 }
 
-void BookmarkList::appendRow(const QStringView description, const QStringView file, const u32 row) const {
-    model_->appendRow(file, description, row);
+void BookmarkList::appendRow(
+    const QStringView description,
+    const QStringView file,
+    const u32 row,
+    const QStringView entry
+) const {
+    model_->appendRow(file, description, row, entry);
 }
 
 void BookmarkList::removeRow(const i32 row) const {
@@ -74,7 +79,8 @@ void BookmarkList::mousePressEvent(QMouseEvent* const event) {
             return;
         }
 
-        const Bookmark& bookmark = model_->bookmark(index.row());
+        // The view shows the filtered rows: its row is not the bookmark's
+        const Bookmark& bookmark = model_->bookmark(proxy->mapToSource(index).row());
         emit bookmarkClicked(QL1SV(bookmark.filename.data()), bookmark.row);
     }
 }
@@ -101,7 +107,12 @@ void BookmarkListModel::removeRow(const i32 row) {
     endRemoveRows();
 }
 
-void BookmarkListModel::appendRow(const QStringView file, const QStringView description, const u32 row) {
+void BookmarkListModel::appendRow(
+    const QStringView file,
+    const QStringView description,
+    const u32 row,
+    const QStringView entry
+) {
     const auto filenameUtf8 = file.toUtf8();
 
     FilenameArray filename{};
@@ -109,7 +120,7 @@ void BookmarkListModel::appendRow(const QStringView file, const QStringView desc
 
     const i32 pos = rowCount();
     beginInsertRows(QModelIndex(), pos, pos);
-    bookmarks.emplaceBack(description.toString(), filename, row, false);
+    bookmarks.emplaceBack(description.toString(), entry.toString(), filename, row, false);
     endInsertRows();
 }
 
@@ -145,8 +156,12 @@ void BookmarkListDelegate::paint(
     const Bookmark& bookmark = src->bookmark(sourceRow);
 
     const QString& title = bookmark.description;
-    const QString subtitle =
-        tr("Row %1 / File %2").arg(itos(bookmark.row + 1).qsv(), svtostr(QUtf8SV(bookmark.filename.data())));
+    QString subtitle =
+        tr("Row %1 / File %2").arg(qsv(qitos(bookmark.row + 1)), svtostr(QUtf8SV(bookmark.filename.data())));
+
+    if (view->showEntryNames() && !bookmark.entry.isEmpty()) {
+        subtitle += tr(" / Entry %1").arg(bookmark.entry);
+    }
 
     painter->save();
     painter->setClipRect(opt.rect);

@@ -1,5 +1,7 @@
 #include "SearchResultList.hpp"
 
+#include "SearchPanelDock.hpp"
+
 #include <QPainter>
 #include <QTextLayout>
 #include <QTimer>
@@ -12,6 +14,34 @@ constexpr i32 PAD_Y = 8;
 constexpr i32 GAP = 4;
 }  // namespace
 
+namespace {
+// Lays out `textLayout` the way the title is painted and returns its height. The height of an item is measured with it
+// too, as a different wrapping would give a different number of lines.
+[[nodiscard]] auto layoutTitle(QTextLayout& textLayout, const i32 width) -> f32 {
+    QTextOption textOption;
+    textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    textOption.setAlignment(Qt::AlignLeft);
+    textLayout.setTextOption(textOption);
+
+    textLayout.beginLayout();
+    f32 yPos = 0.0F;
+
+    while (true) {
+        QTextLine line = textLayout.createLine();
+        if (!line.isValid()) {
+            break;
+        }
+
+        line.setLineWidth(width);
+        line.setPosition(QPointF(0.0, yPos));
+        yPos += scast<f32>(line.height());
+    }
+
+    textLayout.endLayout();
+    return yPos;
+}
+}  // namespace
+
 auto SearchResultListDelegate::computeHeight(
     const QStyleOptionViewItem& option,
     const QModelIndex& index,
@@ -22,8 +52,8 @@ auto SearchResultListDelegate::computeHeight(
 
     const auto fontMetrics = QFontMetrics(option.font);
 
-    const i32 titleHeight =
-        fontMetrics.boundingRect(QRect(0, 0, contentWidth, 1 << 30), Qt::TextWordWrap, title).height();
+    auto textLayout = QTextLayout(title, option.font);
+    const i32 titleHeight = scast<i32>(std::ceil(layoutTitle(textLayout, contentWidth)));
 
     const i32 subtitleHeigth =
         fontMetrics.boundingRect(QRect(0, 0, contentWidth, 1 << 30), Qt::TextWordWrap, subtitle).height();
@@ -73,37 +103,23 @@ void SearchResultListDelegate::paint(
     highlightedBG.setAlphaF(HIGHLIGHT_ALPHA);
     highlightedFormat.setBackground(highlightedBG);
 
-    QTextOption textOption;
-    textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-    textOption.setAlignment(Qt::AlignLeft);
-
     auto textLayout = QTextLayout(title, option.font);
-    textLayout.setTextOption(textOption);
 
     const auto spans = index.data(SearchResultListRole::SpansRole).value<span<const TextMatch>>();
 
     QList<QTextLayout::FormatRange> formatRanges;
     formatRanges.reserve(scast<isize>(spans.size()));
     for (const TextMatch span : spans) {
+        // A group is inside the full match, which is highlighted already; a range outside the text can't be
+        if (span.get<"capture">() || span.get<"start">() >= scast<u32>(title.size())) {
+            continue;
+        }
+
         formatRanges.emplace_back(span.get<"start">(), span.get<"len">(), highlightedFormat);
     }
     textLayout.setFormats(formatRanges);
 
-    textLayout.beginLayout();
-    f32 yPos = 0.0F;
-
-    while (true) {
-        QTextLine line = textLayout.createLine();
-        if (!line.isValid()) {
-            break;
-        }
-
-        line.setLineWidth(rect.width());
-        line.setPosition(QPointF(0.0, yPos));
-        yPos += scast<f32>(line.height());
-    }
-
-    textLayout.endLayout();
+    const f32 yPos = layoutTitle(textLayout, rect.width());
 
     painter->setPen(titleColor);
     textLayout.draw(painter, QPointF(rect.left(), rect.top()));
@@ -175,6 +191,7 @@ void SearchResultList::mousePressEvent(QMouseEvent* const event) {
 void SearchResultListModel::setItems(vector<SearchResultListItem>&& items) {
     beginResetModel();
     this->items = std::move(items);
+    generation_++;
     endResetModel();
 }
 
@@ -187,15 +204,19 @@ void SearchResultListModel::setItems(vector<SearchResultListItem>&& items) {
 }
 
 [[nodiscard]] auto SearchResultListModel::data(const QModelIndex& idx, const i32 role) const -> QVariant {
+    if (!idx.isValid() || idx.row() >= scast<i32>(items.size())) {
+        return {};
+    }
+
     const SearchResultListItem& item = items[idx.row()];
 
     switch (role) {
         case SearchResultListRole::TitleRole:
-            return item.title;
+            return item.file.text(item.cellMatch).toString();
         case SearchResultListRole::SubtitleRole:
-            return item.subtitle;
+            return panel_->subtitle(item);
         case SearchResultListRole::SpansRole:
-            return QVariant::fromValue(std::span<const TextMatch>(item.cellMatch.matches, item.cellMatch.matchesCount));
+            return QVariant::fromValue(item.file.matches(item.cellMatch));
         default:
             return {};
     }

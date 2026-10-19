@@ -14,7 +14,6 @@ class TranslationTableHeader final : public QHeaderView {
     void addButtonClicked();
 
    protected:
-    void paintSection(QPainter* painter, const QRect& rect, i32 logicalIndex) const override;
     void paintEvent(QPaintEvent* event) override;
 
     void mousePressEvent(QMouseEvent* event) override;
@@ -31,7 +30,6 @@ class TranslationTableHeader final : public QHeaderView {
 
     void beginEditSection(i32 logicalIndex);
     void commitEdit();
-    void cancelEdit();
 
     QLineEdit* labelInput = nullptr;
     i32 editingSection = -1;

@@ -52,9 +52,12 @@ GlossaryMenu::GlossaryMenu(QWidget* const parent) :
     header->setSectionResizeMode(ACTIONS_IDX, QHeaderView::Fixed);
     header->resizeSection(ACTIONS_IDX, ACTIONS_COL_WIDTH);
 
-    connect(addTermButton, &QPushButton::pressed, this, [this] -> void { addNewEntry(); });
+    connect(addTermButton, &QPushButton::clicked, this, [this] -> void {
+        addNewEntry();
+        resize(sizeHint());
+    });
 
-    connect(searchButton, &QPushButton::pressed, this, [this] -> void {
+    connect(searchButton, &QPushButton::clicked, this, [this] -> void {
         const QString searchText = searchInput->text();
         const QStringView trimmed = QStringView(searchText).trimmed();
 
@@ -83,8 +86,8 @@ GlossaryMenu::GlossaryMenu(QWidget* const parent) :
             const QString sourceText = sourceCell->text();
             const QString translationText = translationCell->text();
 
-            if (sourceText.contains(searchText, Qt::CaseInsensitive) ||
-                translationText.contains(searchText, Qt::CaseInsensitive)) {
+            if (sourceText.contains(trimmed, Qt::CaseInsensitive) ||
+                translationText.contains(trimmed, Qt::CaseInsensitive)) {
                 glossaryTable->setCurrentItem(item);
                 glossaryTable->scrollToItem(item);
                 lastSearchIndex = currentIndex;
@@ -93,7 +96,7 @@ GlossaryMenu::GlossaryMenu(QWidget* const parent) :
         }
 
         lastSearchIndex = 0;
-        present(this, NOTICE("No match found for: %1", Info, Status, searchText));
+        present(this, NOTICE("No match found for: %1", Info, Status, trimmed.toString()));
     });
 }
 
@@ -136,19 +139,14 @@ auto GlossaryMenu::makeNoteCell(const QString& note) -> QWidget* {
     return noteContainer;
 }
 
-auto GlossaryMenu::makeActionCell(QTreeWidgetItem* const item, const i32 index) -> QWidget* {
+auto GlossaryMenu::makeActionCell(QTreeWidgetItem* const item) -> QWidget* {
     auto* const actionsCell = new ActionButtonsCell(glossaryTable);
 
-    connect(
-        actionsCell,
-        &ActionButtonsCell::editToggled,
-        this,
-        [this, actionsCell, item, index](const bool editable) -> void {
+    connect(actionsCell, &ActionButtonsCell::editToggled, this, [this, actionsCell, item](const bool editable) -> void {
         if (!editable) {
-            auto* const rowItem = glossaryTable->itemFromIndex(glossaryTable->model()->index(index, 0));
-
-            auto* const sourceInput = glossaryTable->itemWidget(rowItem, 0)->findChild<QLineEdit*>();
-            auto* const translationInput = glossaryTable->itemWidget(rowItem, 1)->findChild<QLineEdit*>();
+            // The row's position changes as rows are deleted, so it is the item itself that is asked
+            auto* const sourceInput = glossaryTable->itemWidget(item, SOURCE_IDX)->findChild<QLineEdit*>();
+            auto* const translationInput = glossaryTable->itemWidget(item, TRANSLATION_IDX)->findChild<QLineEdit*>();
 
             if (sourceInput->text().isEmpty()) {
                 present(this, NOTICE("Empty term is not allowed.", Warning, Modal));
@@ -165,12 +163,11 @@ auto GlossaryMenu::makeActionCell(QTreeWidgetItem* const item, const i32 index) 
 
         actionsCell->setEditable(editable);
         setRowEditable(item, editable);
-    }
-    );
+    });
 
     connect(actionsCell, &ActionButtonsCell::deleteRequested, this, [this, item] -> void {
         const auto pressed =
-            QMessageBox::question(nullptr, tr("Confirm Delete"), tr("Are you sure you want to delete this entry?"));
+            QMessageBox::question(this, tr("Confirm Delete"), tr("Are you sure you want to delete this entry?"));
 
         if (pressed == QMessageBox::Yes) {
             qInfo().noquote() << u"Glossary entry deletion was confirmed by user."_qsv;
@@ -178,6 +175,7 @@ auto GlossaryMenu::makeActionCell(QTreeWidgetItem* const item, const i32 index) 
             const i32 index = glossaryTable->indexOfTopLevelItem(item);
             delete glossaryTable->takeTopLevelItem(index);
             adjustSize();
+            emit termRemoved();
         }
     });
 
@@ -203,8 +201,6 @@ void GlossaryMenu::addNewEntry(
     const bool editable,
     const bool enabled
 ) {
-    const u16 row = glossaryTable->model()->rowCount();
-
     auto* const item = new QTreeWidgetItem(glossaryTable);
     item->setData(SOURCE_IDX, ENABLED_ROLE, enabled);
 
@@ -213,7 +209,7 @@ void GlossaryMenu::addNewEntry(
     glossaryTable->setItemWidget(item, TRANSLATION_IDX, makeTermInfoCell(translation, translationMatchMode));
     auto* const noteCell = makeNoteCell(note);
     glossaryTable->setItemWidget(item, NOTE_IDX, noteCell);
-    glossaryTable->setItemWidget(item, ACTIONS_IDX, makeActionCell(item, row));
+    glossaryTable->setItemWidget(item, ACTIONS_IDX, makeActionCell(item));
 
     item->setTextAlignment(SOURCE_IDX, Qt::AlignTop | Qt::AlignHCenter);
     item->setTextAlignment(TRANSLATION_IDX, Qt::AlignTop | Qt::AlignHCenter);
@@ -225,8 +221,6 @@ void GlossaryMenu::addNewEntry(
 
     noteCell->setFixedHeight(sourceCell->sizeHint().height());
     glossaryTable->addTopLevelItem(item);
-
-    resize(sizeHint());
 }
 
 void GlossaryMenu::fill(const Glossary& glossary) {
@@ -241,6 +235,9 @@ void GlossaryMenu::fill(const Glossary& glossary) {
             term.enabled
         );
     }
+
+    // Once for all of them
+    resize(sizeHint());
 }
 
 void GlossaryMenu::setTermEnabled(const u32 index, const bool enabled) {
@@ -285,16 +282,18 @@ void GlossaryMenu::clear() {
 
 [[nodiscard]] auto TermInfoCell::toMatchModeInfo() const -> MatchModeInfo {
     const QString fuzzyText = fuzzyThresholdInput->text().trimmed();
-    const f32 fuzzyThreshold = fuzzyText.isEmpty() ? DEFAULT_FUZZY_THRESHOLD : stoa<f32>(fuzzyText);
+    // An unparsable text ("." or "0.") falls back to the default
+    // The validator lets out-of-range text stay in the field
+    const f32 fuzzyThreshold = clamp(stoa<f32>(fuzzyText).value_or(DEFAULT_FUZZY_THRESHOLD), FUZZY_MIN, FUZZY_MAX);
 
     const auto tagMode = MatchMode::Tag(modeSelect->currentIndex());
 
     MatchMode mode{ .tag = MatchMode::Tag::Exact };
 
     if (tagMode == MatchMode::Tag::Fuzzy) {
-        mode = MatchMode{ .fuzzy = { .tag = MatchMode::Tag::Exact, .threshold = fuzzyThreshold } };
+        mode = MatchMode{ .fuzzy = { .tag = MatchMode::Tag::Fuzzy, .threshold = fuzzyThreshold } };
     } else if (tagMode != MatchMode::Tag::Exact) {
-        mode = MatchMode{ .both = { .tag = MatchMode::Tag::Exact, .threshold = fuzzyThreshold } };
+        mode = MatchMode{ .both = { .tag = MatchMode::Tag::Both, .threshold = fuzzyThreshold } };
     }
 
     return MatchModeInfo{
@@ -315,9 +314,9 @@ void TermInfoCell::setFrom(const QString& text, const MatchModeInfo& info) {
     caseSensitive->setChecked(info.case_sensitive);
     permissive->setChecked(info.permissive);
 
-    const f64 threshold =
+    const f32 threshold =
         (info.mode.tag == MatchMode::Tag::Exact) ? DEFAULT_FUZZY_THRESHOLD : info.mode.fuzzy.threshold;
-    fuzzyThresholdInput->setText(QString(ftos(threshold).qsv()));
+    fuzzyThresholdInput->setText(QString(qsv(qftos(threshold))));
 
     const bool show = info.mode.tag != MatchMode::Tag::Exact;
     fuzzyThresholdInput->setVisible(show);
@@ -346,18 +345,20 @@ TermInfoCell::TermInfoCell(QWidget* const parent) : QWidget(parent) {
     rowLayout->setSpacing(ROW_SPACING);
 
     modeSelect = new QComboBox(row);
-    modeSelect->addItem(tr("Exact"));
-    modeSelect->addItem(tr("Fuzzy"));
-    modeSelect->addItem(tr("Both"));
+    // Texts are set by `retranslate()`, which runs again when the language changes
+    modeSelect->addItems({ QString(), QString(), QString() });
     rowLayout->addWidget(modeSelect);
 
-    caseSensitive = new QCheckBox(tr("Case Sensitive"), row);
-    permissive = new QCheckBox(tr("Permissive"), row);
+    caseSensitive = new QCheckBox(row);
+    permissive = new QCheckBox(row);
     rowLayout->addWidget(caseSensitive);
     rowLayout->addWidget(permissive);
 
     fuzzyThresholdInput = new QLineEdit(row);
-    fuzzyThresholdInput->setValidator(new QDoubleValidator(FUZZY_MIN, FUZZY_MAX, FUZZY_DECIMALS, fuzzyThresholdInput));
+    auto* const thresholdValidator = new QDoubleValidator(FUZZY_MIN, FUZZY_MAX, FUZZY_DECIMALS, fuzzyThresholdInput);
+    // The text is parsed with `.` as the separator; the default locale could demand `,` and make it unparsable
+    thresholdValidator->setLocale(QLocale::c());
+    fuzzyThresholdInput->setValidator(thresholdValidator);
     rowLayout->addWidget(fuzzyThresholdInput);
 
     rowLayout->addStretch(1);
@@ -369,16 +370,32 @@ TermInfoCell::TermInfoCell(QWidget* const parent) : QWidget(parent) {
         fuzzyThresholdInput->setVisible(show);
 
         if (show && fuzzyThresholdInput->text().trimmed().isEmpty()) {
-            // DEFAULT_FUZZY_THRESHOLD
-            fuzzyThresholdInput->setText(u"0.8"_s);
+            fuzzyThresholdInput->setText(QString(qsv(qftos(DEFAULT_FUZZY_THRESHOLD))));
         }
     };
 
     connect(modeSelect, &QComboBox::currentIndexChanged, this, updateThresholdVisibility);
 
     updateThresholdVisibility();
+    retranslate();
 
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+}
+
+void TermInfoCell::retranslate() {
+    modeSelect->setItemText(0, tr("Exact"));
+    modeSelect->setItemText(1, tr("Fuzzy"));
+    modeSelect->setItemText(2, tr("Both"));
+    caseSensitive->setText(tr("Case Sensitive"));
+    permissive->setText(tr("Permissive"));
+}
+
+void TermInfoCell::changeEvent(QEvent* const event) {
+    if (event->type() == QEvent::LanguageChange) {
+        retranslate();
+    }
+
+    QWidget::changeEvent(event);
 }
 
 ActionButtonsCell::ActionButtonsCell(QWidget* const parent) : QWidget(parent) {

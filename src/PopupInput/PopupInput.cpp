@@ -4,7 +4,7 @@
 
 void PopupInput::keyPressEvent(QKeyEvent* const event) {
     if (event->key() == Qt::Key_Escape) {
-        emit inputRejected();
+        emit escapePressed();
         event->accept();
         return;
     }

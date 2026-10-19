@@ -1,30 +1,34 @@
 #include "AssetMenu.hpp"
 
+#include "AssetKind.hpp"
 #include "AssetPreviewWidget.hpp"
+#include "Constants.hpp"
 #include "ProjectSettings.hpp"
+#include "Utils.hpp"
 #include "rpgmtranslate_rs.h"
 
 #include <QDir>
 #include <QDirListing>
-#include <QGraphicsPixmapItem>
 #include <QHBoxLayout>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QTreeWidget>
 
-// TODO(v1.2): Add saves to the asset menu
-// TODO(maybe): Each subdirectory is a tree sub-branch
+namespace {
+// Directories at the root of an RM2K project that hold the tool's own copies of the game's files
+constexpr array<QStringView, 2> RM2K_EXCLUDED_DIRECTORIES = { PROGRAM_DATA_DIRECTORY, TRANSLATION_DIRECTORY };
+}  // namespace
 
 AssetMenu::AssetMenu(QWidget* const parent) :
     PersistentMenu(parent),
     assetPreviewWidget(new AssetPreviewWidget()),
-    refreshButton(new QPushButton(QPushButton(QIcon(u":/icons/refresh.svg"_s), QString(), this))),
-    topWidget(new QWidget(this)),
-    topLayout(new QHBoxLayout(topWidget)),
-    layout(new QVBoxLayout(this)),
+    refreshButton(new QPushButton(QIcon(u":/icons/refresh.svg"_s), QString(), this)),
     searchInput(new QLineEdit(this)),
-    tree(new QTreeWidget(this)),
-    graphicsScene(new QGraphicsScene(this)) {
+    tree(new QTreeWidget(this)) {
+    auto* const topWidget = new QWidget(this);
+    auto* const topLayout = new QHBoxLayout(topWidget);
+    auto* const layout = new QVBoxLayout(this);
+
     tree->setUniformRowHeights(true);
     tree->setHeaderHidden(true);
     tree->setSelectionMode(QTreeWidget::SingleSelection);
@@ -55,19 +59,45 @@ AssetMenu::AssetMenu(QWidget* const parent) :
     }
     );
 
-    connect(refreshButton, &QPushButton::pressed, this, [this] -> void { refresh(); });
+    connect(refreshButton, &QPushButton::clicked, this, [this] -> void { refresh(); });
 
     connect(searchInput, &QLineEdit::textChanged, this, &AssetMenu::filterTree);
 }
 
-void AssetMenu::init(shared_ptr<ProjectSettings> projectSettings) {
-    this->projectSettings = std::move(projectSettings);
+AssetMenu::~AssetMenu() {
+    delete assetPreviewWidget;
+}
+
+void AssetMenu::changeEvent(QEvent* const event) {
+    if (event->type() == QEvent::LanguageChange) {
+        searchInput->setPlaceholderText(tr("Search file..."));
+
+        // The top-level items are the categories in the order `refresh()` makes them (JS, the last, has no translation)
+        const QStringList categories = { tr("Audio"), tr("Data"),  tr("Images"), tr("Icons"),
+                                         tr("Fonts"), tr("Saves"), tr("Movies") };
+
+        for (i32 idx = 0; idx < min<i32>(categories.size(), tree->topLevelItemCount()); idx++) {
+            tree->topLevelItem(idx)->setText(0, categories[idx]);
+        }
+    }
+
+    PersistentMenu::changeEvent(event);
+}
+
+void AssetMenu::init(const ProjectSettings* const projectSettings) {
+    this->projectSettings = projectSettings;
     refresh();
 }
 
+// The project is closed: the window can't keep showing its asset, and `projectSettings` is about to be freed
 void AssetMenu::clear() {
+    projectSettings = nullptr;
+
+    assetPreviewWidget->hide();
+    assetPreviewWidget->clear();
+
     tree->clear();
-    graphicsScene->clear();
+    searchInput->clear();
 }
 
 auto AssetMenu::applyFilter(QTreeWidgetItem* const item, const QString& lowerFilter) -> bool {
@@ -103,10 +133,10 @@ void AssetMenu::filterTree(const QString& text) {
 }
 
 void AssetMenu::refresh() {
-    clear();
+    tree->clear();
     searchInput->clear();
 
-    if (!projectSettings) {
+    if (projectSettings == nullptr) {
         return;
     }
 
@@ -115,24 +145,90 @@ void AssetMenu::refresh() {
     auto* const imagesItem = new QTreeWidgetItem(tree, { tr("Images") });
     auto* const iconsItem = new QTreeWidgetItem(tree, { tr("Icons") });
     auto* const fontsItem = new QTreeWidgetItem(tree, { tr("Fonts") });
+    auto* const savesItem = new QTreeWidgetItem(tree, { tr("Saves") });
     auto* const moviesItem = new QTreeWidgetItem(tree, { tr("Movies") });
     auto* const jsItem = new QTreeWidgetItem(tree, { u"JS"_s });
 
-    const auto populate =
-        [](QTreeWidgetItem* const parent, const QString& dirPath, const QStringList& filters) -> void {
+    // Where the files of a kind go, and which names are looked for. With several targets a file goes to the one of its
+    // extension's kind, so the directory is walked once for all of them.
+    struct Target {
+        QTreeWidgetItem* parent;
+        QStringList filters;
+        AssetKind kind;
+    };
+
+    // `excludedDirs` are top-level subdirectories of `dirPath` ("/name") that are not walked at all.
+    const auto populate = [](const span<const Target> targets,
+                             const QString& dirPath,
+                             const bool recursive = true,
+                             const span<const QStringView> excludedDirs = {}) -> void {
         if (!QFile::exists(dirPath)) {
             qWarning().noquote() << u"Path %1 does not exist."_qsv.arg(dirPath);
             return;
         }
 
-        auto listing =
-            QDirListing(dirPath, filters, QDirListing::IteratorFlag::Recursive | QDirListing::IteratorFlag::FilesOnly);
+        QStringList filters;
 
-        QList<pair<QString, QString>> list;
+        for (const Target& target : targets) {
+            filters.append(target.filters);
+        }
+
+        struct Entry {
+            QString path;
+            QString name;
+            // Subdirectory relative to `dirPath`, '/'-separated; empty for files directly inside it.
+            QString dir;
+            // Index into `targets`
+            usize target;
+        };
+
+        QList<Entry> list;
         list.reserve(2048);
 
-        for (const auto entry : listing) {
-            list.append({ entry.filePath(), entry.fileName() });
+        const isize dirStart = dirPath.size() + 1;
+
+        const auto targetOf = [targets](const QString& name) -> usize {
+            if (targets.size() == 1) {
+                return 0;
+            }
+
+            const AssetKind kind = assetKind(name.sliced(name.lastIndexOf(u'.') + 1).toLower());
+            const auto found = ranges::find(targets, kind, &Target::kind);
+
+            return found == targets.end() ? 0 : scast<usize>(found - targets.begin());
+        };
+
+        const auto collect = [&](const QString& root, const QDirListing::IteratorFlags flags) -> void {
+            for (const auto entry : QDirListing(root, filters, flags)) {
+                QString path = entry.filePath();
+                const isize nameStart = path.lastIndexOf(u'/') + 1;
+                QString dir = nameStart > dirStart ? path.sliced(dirStart, nameStart - 1 - dirStart) : QString();
+                QString name = entry.fileName();
+                const usize target = targetOf(name);
+
+                list.append(
+                    { .path = std::move(path), .name = std::move(name), .dir = std::move(dir), .target = target }
+                );
+            }
+        };
+
+        if (excludedDirs.empty()) {
+            collect(
+                dirPath,
+                recursive ? QDirListing::IteratorFlag::Recursive | QDirListing::IteratorFlag::FilesOnly
+                          : QDirListing::IteratorFlag::FilesOnly
+            );
+        } else {
+            // QDirListing can't prune a subtree, so the root's files and each allowed subdirectory are listed apart.
+            collect(dirPath, QDirListing::IteratorFlag::FilesOnly);
+
+            for (const auto subdir : QDirListing(dirPath, QDirListing::IteratorFlag::DirsOnly)) {
+                const QString subdirPath = subdir.filePath();
+
+                if (!ranges::contains(excludedDirs, QStringView(subdirPath).sliced(dirPath.size()))) {
+                    collect(subdirPath, QDirListing::IteratorFlag::Recursive | QDirListing::IteratorFlag::FilesOnly);
+                }
+            }
         }
 
         const auto extractMapNumber = [](const QStringView name) -> u16 {
@@ -147,59 +243,98 @@ void AssetMenu::refresh() {
                 end++;
             }
 
-            return stoa<u16>(name.sliced(start, end - start));
+            return stoa<u16>(name.sliced(start, end - start)).value_or(0);
         };
 
-        ranges::sort(list, [&extractMapNumber](const auto& lhs, const auto& rhs) -> bool {
-            const auto lhsNum = extractMapNumber(lhs.second);
-            const auto rhsNum = extractMapNumber(rhs.second);
+        ranges::sort(list, [&extractMapNumber](const Entry& lhs, const Entry& rhs) -> bool {
+            if (lhs.target != rhs.target) {
+                return lhs.target < rhs.target;
+            }
+
+            if (lhs.dir != rhs.dir) {
+                return lhs.dir < rhs.dir;
+            }
+
+            const auto lhsNum = extractMapNumber(lhs.name);
+            const auto rhsNum = extractMapNumber(rhs.name);
 
             if (lhsNum != UINT16_MAX && rhsNum != UINT16_MAX) {
                 return lhsNum < rhsNum;
             }
 
-            return lhs.second < rhs.second;
+            return lhs.name < rhs.name;
         });
 
+        // Every subdirectory becomes a branch of the tree, created on first use.
+        HashMap<QString, QTreeWidgetItem*> branches;
+
+        const auto branchFor = [&branches](this auto&& self, const QString& dir) -> QTreeWidgetItem* {
+            if (const auto found = branches.find(dir); found != branches.end()) {
+                return found->second;
+            }
+
+            const isize split = dir.lastIndexOf(u'/');
+            auto* const item =
+                new QTreeWidgetItem(self(split == -1 ? QString() : dir.first(split)), { dir.sliced(split + 1) });
+
+            branches.emplace(dir, item);
+            return item;
+        };
+
+        // The entries of one target are together, so its branches are made when the target starts
+        usize current = UINT64_MAX;
+
         for (const auto& entry : list) {
-            auto* const item = new QTreeWidgetItem(parent, { entry.second });
-            item->setData(0, Qt::UserRole, entry.first);
+            if (entry.target != current) {
+                current = entry.target;
+                branches.clear();
+                branches.emplace(QString(), targets[current].parent);
+            }
+
+            auto* const item = new QTreeWidgetItem(branchFor(entry.dir), { entry.name });
+            item->setData(0, Qt::UserRole, entry.path);
         }
     };
 
+    const auto populateOne =
+        [&populate](QTreeWidgetItem* const parent, const QString& dirPath, QStringList filters) -> void {
+        const Target target = { .parent = parent, .filters = std::move(filters), .kind = AssetKind::Unknown };
+        populate(span(&target, 1), dirPath);
+    };
     const QString& base = projectSettings->projectPath;
 
+    // Engines differ only in where assets live; which extensions count as an asset is the same everywhere.
     if (projectSettings->engineType == EngineType::MVMZ) {
-        const bool wwwExists = QFile::exists(base + u"/www");
+        const QString root = base + (QFile::exists(base + u"/www") ? u"/www" : u"");
 
-        populate(
-            audioItem,
-            base + (wwwExists ? u"/www/audio" : u"/audio"),
-            { u"*.ogg_"_s, u"*.m4a_"_s, u"*.rpgmvo"_s, u"*.rpgmvm"_s, u"*.ogg"_s, u"*.m4a"_s }
-        );
-        populate(dataItem, base + (wwwExists ? u"/www/data" : u"/data"), { u"*.json"_s });
-        populate(
-            imagesItem,
-            base + (wwwExists ? u"/www/img" : u"/img"),
-            { u"*.png_"_s, u"*.rpgmvp"_s, u"*.png"_s, u"*.jpg"_s }
-        );
-        populate(
-            iconsItem,
-            base + (wwwExists ? u"/www/icon" : u"/icon"),
-            { u"*.png_"_s, u"*.rpgmvp"_s, u"*.png"_s, u"*.jpg"_s }
-        );
-        populate(moviesItem, base + (wwwExists ? u"/www/movies" : u"/movies"), { u"*.webm"_s, u"*.mp4"_s });
-        populate(fontsItem, base + (wwwExists ? u"/www/fonts" : u"/fonts"), { u"*.ttf"_s, u"*.otf"_s });
-        populate(jsItem, base + (wwwExists ? u"/www/js" : u"/js"), { u"*.js"_s });
+        const QStringList imageFilters = assetFilters(AssetKind::Image);
+
+        populateOne(audioItem, root + u"/audio", assetFilters(AssetKind::Audio));
+        populateOne(dataItem, root + u"/data", assetFilters(AssetKind::Data));
+        populateOne(imagesItem, root + u"/img", imageFilters);
+        populateOne(iconsItem, root + u"/icon", imageFilters);
+        populateOne(moviesItem, root + u"/movies", assetFilters(AssetKind::Video));
+        populateOne(fontsItem, root + u"/fonts", assetFilters(AssetKind::Font));
+        populateOne(jsItem, root + u"/js", assetFilters(AssetKind::Script));
     } else if (projectSettings->engineType == EngineType::RM2K) {
-        populate(dataItem, base, { u"*.lmu"_s, u"*.lmt"_s, u"*.ldb"_s });
-        populate(audioItem, base, { u"*.wav"_s });
-        populate(imagesItem, base, { u"*.png"_s });
+        // No dedicated directories: assets are anywhere under the root, apart from the tool's own directories.
+        const array<Target, 4> targets = {
+            Target{ .parent = dataItem, .filters = assetFilters(AssetKind::Data), .kind = AssetKind::Data },
+            { .parent = audioItem, .filters = assetFilters(AssetKind::Audio), .kind = AssetKind::Audio },
+            { .parent = imagesItem, .filters = assetFilters(AssetKind::Image), .kind = AssetKind::Image },
+            { .parent = moviesItem, .filters = assetFilters(AssetKind::Video), .kind = AssetKind::Video },
+        };
+
+        populate(targets, base, true, RM2K_EXCLUDED_DIRECTORIES);
     } else {
-        populate(audioItem, base + u"/Audio", { u"*.ogg"_s, u"*.m4a"_s });
-        populate(dataItem, base + u"/Data", { u"*.rxdata"_s, u"*.rvdata"_s, u"*.rvdata2"_s });
-        populate(imagesItem, base + u"/Graphics", { u"*.png"_s, u"*.jpg"_s });
-        populate(fontsItem, base + u"/Fonts", { u"*.ttf"_s, u"*.otf"_s });
-        populate(moviesItem, base + u"/Movies", { u"*.webm"_s, u"*.mp4"_s });
+        populateOne(audioItem, base + u"/Audio", assetFilters(AssetKind::Audio));
+        populateOne(dataItem, base + u"/Data", assetFilters(AssetKind::Data));
+        populateOne(imagesItem, base + u"/Graphics", assetFilters(AssetKind::Image));
+        populateOne(fontsItem, base + u"/Fonts", assetFilters(AssetKind::Font));
+        populateOne(moviesItem, base + u"/Movies", assetFilters(AssetKind::Video));
     }
+
+    const auto [saveDirectory, saveFilter, saveRecursive] = saveLocation(projectSettings);
+    const Target saves = { .parent = savesItem, .filters = { saveFilter }, .kind = AssetKind::Save };
+    populate(span(&saves, 1), saveDirectory, saveRecursive);
 }

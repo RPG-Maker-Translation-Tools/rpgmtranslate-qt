@@ -1,13 +1,18 @@
 #include "LintSelectMenu.hpp"
 
 #include "GlossaryMenu.hpp"
-#include "PluginSequences.hpp"
+#include "ProjectSettings.hpp"
 #include "Settings.hpp"
 #include "Types.hpp"
+#include "Utils.hpp"
 
+#include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QDirListing>
 #include <QEvent>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QScrollArea>
 #include <QTabWidget>
@@ -60,8 +65,13 @@ auto LintSelectMenu::sizeHint() const -> QSize {
     return { DEFAULT_WIDTH, DEFAULT_HEIGHT };
 }
 
-void LintSelectMenu::init(Settings* const settings, GlossaryMenu* const glossaryMenu) {
+void LintSelectMenu::init(
+    Settings* const settings,
+    ProjectSettings* const projectSettings,
+    GlossaryMenu* const glossaryMenu
+) {
     this->settings = settings;
+    this->projectSettings = projectSettings;
     this->glossaryMenu = glossaryMenu;
 }
 
@@ -149,10 +159,7 @@ void LintSelectMenu::addCategory(const QString& title, const vector<Toggle>& tog
         box->setChecked(!*disabled);
         box->setToolTip(tooltip);
 
-        connect(box, &QCheckBox::toggled, this, [this, disabled](const bool checked) -> void {
-            *disabled = !checked;
-            emit lintsToggled();
-        });
+        connect(box, &QCheckBox::toggled, this, [disabled](const bool checked) -> void { *disabled = !checked; });
 
         groupLayout->addWidget(box);
     }
@@ -169,14 +176,66 @@ auto LintSelectMenu::takeToggles(
     toggles.reserve(patterns.size());
 
     for (const auto [idx, pattern] : views::enumerate(patterns)) {
-        toggles.emplace_back(pattern.toString(), tr(tooltips[idx]), &sequenceSettings[idx].disabled);
+        toggles.emplace_back(
+            pattern.toString(),
+            QCoreApplication::translate("Lint", tooltips[idx]),
+            &sequenceSettings[idx].disabled
+        );
     }
 
     return toggles;
 }
 
+void LintSelectMenu::buildSavePicker() {
+    auto* const row = new QWidget(this);
+    auto* const rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(0, 0, 0, 0);
+
+    auto* const label = new QLabel(tr("Active save:"), row);
+    label->setToolTip(
+        tr("Tooltips of text codes that depend on a save (party members, items, playtime...) show the values of it.")
+    );
+
+    auto* const combo = new QComboBox(row);
+    combo->addItem(tr("None"), QString());
+
+    const auto [directory, filter, recursive] = saveLocation(projectSettings);
+    const isize prefixSize = projectSettings->projectPath.size() + 1;
+    QStringList saves;
+
+    for (const auto& entry : QDirListing(
+             directory,
+             { filter },
+             recursive ? QDirListing::IteratorFlag::Recursive | QDirListing::IteratorFlag::FilesOnly
+                       : QDirListing::IteratorFlag::FilesOnly
+         )) {
+        saves.append(entry.filePath().sliced(prefixSize));
+    }
+
+    saves.sort();
+
+    for (const QString& save : saves) {
+        combo->addItem(save, save);
+    }
+
+    combo->setCurrentIndex(max(0, combo->findData(projectSettings->activeSave)));
+
+    connect(combo, &QComboBox::currentIndexChanged, this, [this, combo](const i32 /* index */) -> void {
+        projectSettings->activeSave = combo->currentData().toString();
+    });
+
+    rowLayout->addWidget(label);
+    rowLayout->addWidget(combo, 1);
+
+    lintsLayout->insertWidget(lintsLayout->count() - 1, row);
+}
+
 void LintSelectMenu::buildLints() {
     clearLayout(lintsLayout);
+
+    if (projectSettings != nullptr) {
+        buildSavePicker();
+    }
 
     auto& translation = settings->translation;
 
@@ -230,7 +289,6 @@ void LintSelectMenu::buildTerms() {
 
         connect(box, &QCheckBox::toggled, this, [this, idx](const bool checked) -> void {
             glossaryMenu->setTermEnabled(scast<u32>(idx), checked);
-            emit lintsToggled();
         });
 
         groupLayout->addWidget(box);
@@ -239,8 +297,16 @@ void LintSelectMenu::buildTerms() {
     bindToggleAll(toggleAll, group);
 }
 
+void LintSelectMenu::clear() {
+    projectSettings = nullptr;
+
+    hide();
+    clearLayout(lintsLayout);
+    clearLayout(termsLayout);
+}
+
 void LintSelectMenu::refresh() {
-    if (settings == nullptr || glossaryMenu == nullptr) {
+    if (settings == nullptr || projectSettings == nullptr || glossaryMenu == nullptr) {
         return;
     }
 

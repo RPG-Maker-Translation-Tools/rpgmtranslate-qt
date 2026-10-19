@@ -1,22 +1,21 @@
-// This is a default RPGMTranslate JavaScript script. You're free to change it, add new functions, as long as rpgmLineCallback function exists and is not malformed.
+// Default RPGMTranslate JavaScript script. Edit freely, but keep rpgmLineCallback well-formed.
 
 /**
  * Latinize CJK/Unicode (mainly punctuation) characters to their Latin equivalents.
  *
- * @param {string} sourceText - The original (untranslated) source text for this line.
- * @param {string[]} translations - The existing translation columns for this line, in order.
- * @param {string} filename - Name of the file currently being processed.
- * @param {number} lineNumber - Zero-based index of the current line within the file.
+ * @param {string} sourceText - Untranslated source text of this line.
+ * @param {string[]} translations - Existing translation columns of this line, in order.
+ * @param {string} filename - Name of the file being processed.
+ * @param {number} lineNumber - Zero-based line index within the file.
  * @param {Object} options - Action-specific settings.
- * @param {("trim"|"wrap"|"latinize"|"custom")} options.action - Which batch action triggered this call. Built-in actions have fixed identifiers; every user script gets "custom".
+ * @param {("trim"|"wrap"|"latinize"|"custom")} options.action - Triggering action. Built-ins keep their fixed names; user scripts always get "custom".
  * @param {number} options.columnIndex - Index into [sourceText, ...translations] that the action targets.
  * @param {boolean} [options.trimLeading] - Present when action === "trim"; whether to strip leading whitespace.
  * @param {boolean} [options.trimTrailing] - Present when action === "trim"; whether to strip trailing whitespace.
  * @param {number} [options.wrapLength] - Present when action === "wrap"; max line length to wrap at.
  *
- * @returns {Array<string|undefined|null>} An array shaped like [sourceText, ...translations].
- *   Each entry replaces the corresponding column; entries left as `undefined` or `null`
- *   leave that column unchanged.
+ * @returns {Array<string|undefined|null>} Shaped like `translations`: each entry replaces its column.
+ *   `undefined`/`null` entries leave the column unchanged.
  */
 function rpgmLineCallback(sourceText, translations, filename, lineNumber, options) {
     const REPLACEMENTS = {
@@ -106,11 +105,12 @@ function rpgmLineCallback(sourceText, translations, filename, lineNumber, option
     const columns = [sourceText, ...translations];
     const idx = options.columnIndex;
 
-    if (idx < 0 || idx >= columns.length || columns[idx] == null) {
-        return columns.map(() => undefined);
+    const out = translations.map(() => undefined);
+
+    if (idx < 1 || idx >= columns.length || columns[idx] == null) {
+        return out;
     }
 
-    const out = columns.map(() => undefined);
-    out[idx] = latinizeString(columns[idx]);
+    out[idx - 1] = latinizeString(columns[idx]);
     return out;
 }

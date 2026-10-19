@@ -6,7 +6,7 @@
 void AutoUpdater::checkForUpdates() {
     connect(&networkManager, &QNetworkAccessManager::finished, this, [this](QNetworkReply* const reply) -> void {
         if (reply->error() != QNetworkReply::NoError) {
-            emit updateFailed(reply->error());
+            emit updateFailed(reply->errorString(), false);
         } else {
             const QString url = reply->url().toString();
             emit versionFetched(url.sliced(url.lastIndexOf(u'/') + 2));
@@ -15,7 +15,8 @@ void AutoUpdater::checkForUpdates() {
         reply->deleteLater();
     }, Qt::SingleShotConnection);
 
-    networkManager.get(
+    // Only the address it redirects to is of interest, not the page
+    networkManager.head(
         QNetworkRequest(QUrl(u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest"_s))
     );
 };
@@ -24,7 +25,7 @@ void AutoUpdater::downloadUpdate() {
     connect(&networkManager, &QNetworkAccessManager::finished, this, [this](QNetworkReply* const reply) -> void {
         if (!aborted) {
             if (reply->error() != QNetworkReply::NoError) {
-                emit updateFailed(reply->error());
+                emit updateFailed(reply->errorString(), true);
             } else {
                 emit updateDownloaded(reply->readAll());
             }
@@ -34,15 +35,17 @@ void AutoUpdater::downloadUpdate() {
         downloadReply = nullptr;
     }, Qt::SingleShotConnection);
 
-    downloadReply = networkManager.get(QNetworkRequest(QUrl(
 #ifdef Q_OS_WINDOWS
-        u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest/download/rpgmtranslate.7z"_s
+    const QString asset = u"rpgmtranslate.7z"_s;
 #elifdef Q_OS_LINUX
-        u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest/download/rpgmtranslate.tar.xz"_s
+    const QString asset = appImagePath().isEmpty() ? u"rpgmtranslate.tar.xz"_s : u"rpgmtranslate-appimage.tar.xz"_s;
 #elifdef Q_OS_MACOS
-        u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest/download/rpgmtranslate.zip"_s
+    const QString asset = u"rpgmtranslate.zip"_s;
 #endif
-    )));
+
+    const QString url =
+        u"https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/releases/latest/download/"_qsv % asset;
+    downloadReply = networkManager.get(QNetworkRequest(QUrl(url)));
 
     connect(
         downloadReply,
@@ -53,6 +56,15 @@ void AutoUpdater::downloadUpdate() {
 }
 
 void AutoUpdater::abortDownload() {
+    // The finished handler nulls downloadReply, so there is nothing to abort once the download is over
+    if (downloadReply == nullptr) {
+        return;
+    }
+
     aborted = true;
     downloadReply->abort();
+}
+
+auto AutoUpdater::appImagePath() -> QString {
+    return qEnvironmentVariable("APPIMAGE");
 }

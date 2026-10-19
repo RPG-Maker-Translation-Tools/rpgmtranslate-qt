@@ -1,7 +1,9 @@
 [package]
 name = "rpgmtranslate_rs"
-version = "1.1.3"
+version = "1.2.0"
 edition = "2024"
+rust-version = "1.95"
+license = "WTFPL"
 publish = false
 
 [lib]
@@ -9,16 +11,21 @@ name = "rpgmtranslate_rs"
 crate-type = ["staticlib"]
 
 [features]
+# gxhash needs AES-NI / Armv8 crypto; without it the maps and the `gxhash` FFI export fall back to rapidhash.
+default = ["gxhash"]
+gxhash = ["dep:gxhash", "rvpacker-txt-rs-lib/gxhash"]
+rapidhash = ["dep:rapidhash"]
+
 json-highlighting = ["lumis/lang-json"]
 js-highlighting = ["lumis/lang-javascript"]
 ruby-highlighting = ["lumis/lang-ruby"]
+
 js-formatting = ["dep:dprint-plugin-typescript", "dep:anyhow"]
 ruby-formatting = ["dep:rubyfmt"]
 
 google-translate = ["dep:translators"]
 yandex-translate = ["dep:yandex-translate-v2"]
 deepl = ["dep:deepl"]
-llm-connector = ["dep:llm-connector"]
 
 chinese-icu = ["language-tokenizer/chinese-icu"]
 chinese-lindera = ["language-tokenizer/chinese-lindera"]
@@ -27,6 +34,9 @@ japanese-lindera = ["language-tokenizer/japanese-lindera"]
 korean-lindera = ["language-tokenizer/korean-lindera"]
 snowball = ["language-tokenizer/snowball"]
 southeast-asian = ["language-tokenizer/southeast-asian"]
+
+count-dictionary = ["text-stats/dictionary"]
+count-lstm = ["text-stats/lstm"]
 
 languagetool = ["dep:reqwest", "dep:languagetool-rust"]
 
@@ -37,31 +47,32 @@ serde-yaml = ["rvpacker-txt-rs-lib/serde-yaml"]
 
 [dependencies]
 anyhow = { optional = true, version = "1.0.104" }
-deepl = { version = "0.8.1", optional = true }
+deepl = { version = "0.8.2", optional = true }
 dprint-plugin-typescript = { version = "0.96.1", optional = true }
-encoding_rs = "0.8.41"
+encoding_rs = "0.8.42"
 gxhash = { version = "3.5.0", features = [
     "deterministic",
-], default-features = false }
+], default-features = false, optional = true }
 keyring = "4.2.0"
-language-tokenizer = { version = "0.4.0", default-features = false }
+language-tokenizer = { version = "0.4.2", default-features = false }
 languagetool-rust = { version = "3.0.1", default-features = false, optional = true, features = [
     "native-tls",
 ] }
-llm-connector = { version = "1.4.0", optional = true }
 log = "0.4.34"
-lumis = { version = "0.13.1", default-features = false, optional = true }
+lumis = { version = "0.17.1", default-features = false, optional = true }
+rapidhash = { version = "4.5.1", default-features = false, optional = true }
 reqwest = { version = "=0.12.28", default-features = false, optional = true, features = [
     "native-tls",
 ] }
-rpgm-asset-decrypter-lib = "3.2.3"
-rpgmad-lib = "5.0.1"
+rpgm-asset-decrypter-lib = { version = "5.0.0" }
+rpgmad-lib = { version = "7.0.0" }
 rubyfmt = { version = "0.14.1", optional = true, path = "./librubyfmt", default-features = false }
-rvpacker-txt-rs-lib = { version = "16.2.0" }
+rvpacker-txt-rs-lib = { version = "19.0.0", default-features = false }
 serde = "1.0.229"
-serde_json = "1.0.151"
-thiserror = "2.0.20"
-tokio = { version = "1.53.1", features = ["rt-multi-thread"] }
+serde_json = "1.0.154"
+text-stats = { version = "0.1.0", default-features = false }
+thiserror = "2.0.21"
+tokio = { version = "1.53.2", features = ["rt-multi-thread"] }
 translators = { version = "0.2.0", features = [
     "google",
     "tokio-async",
@@ -72,18 +83,10 @@ yandex-translate-v2 = { version = "0.1.3", features = [
 
 [profile.release]
 lto = "fat"
-debug = false
-debug-assertions = false
-overflow-checks = false
 codegen-units = 1
-opt-level = 3
 panic = "abort"
 strip = "symbols"
 
 [profile.release.build-override]
-debug = false
-debug-assertions = false
-overflow-checks = false
 codegen-units = 1
 opt-level = 3
-strip = "symbols"

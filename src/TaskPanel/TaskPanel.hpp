@@ -19,16 +19,23 @@ class TaskPanel final : public QWidget {
     [[nodiscard]] auto taskCount() const -> usize { return rows.size(); }
 
    signals:
-    void taskCountChanged(usize count);
+    void taskCountChanged(i32 count);
+
+   protected:
+    void changeEvent(QEvent* event) override;
 
    private:
     struct Row {
         QString name;
+        QString filename;
         QWidget* widget;
         QLabel* label;
         QProgressBar* progressBar;
         u32 taskId;
+        TaskKind kind;
     };
+
+    void updateLabel(const Row& row) const;
 
     [[nodiscard]] auto findRow(u32 taskId) -> Row*;
 

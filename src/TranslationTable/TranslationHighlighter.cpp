@@ -3,8 +3,6 @@
 #include "Constants.hpp"
 #include "Types.hpp"
 
-#include <QColor>
-#include <QFile>
 #include <QTextCharFormat>
 
 TranslationHighlighter::TranslationHighlighter(QTextDocument* const document) : QSyntaxHighlighter(document) {

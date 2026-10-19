@@ -4,6 +4,7 @@
 #include "Utils.hpp"
 
 #include <QApplication>
+#include <QEvent>
 #include <QPainter>
 #include <QTextLayout>
 
@@ -13,6 +14,7 @@ constexpr i32 PAD_X = 4;
 constexpr i32 PAD_Y = 4;
 
 constexpr i32 MAX_WRAPPED_COLUMN_WIDTH = 400;
+constexpr i32 RESIZE_DEBOUNCE_MS = 50;
 
 [[nodiscard]] constexpr auto wrappableColumn(const i32 column) -> bool {
     return column == LintTableModel::SourceMatch || column == LintTableModel::TranslationMatch ||
@@ -85,7 +87,7 @@ void MatchTableDelegate::paint(
         option.text.clear();
     }
 
-    const QStyle* const style = option.widget->style();
+    const QStyle* const style = option.widget != nullptr ? option.widget->style() : QApplication::style();
     style->drawControl(QStyle::CE_ItemViewItem, &option, painter, option.widget);
 
     if (!wrappable) {
@@ -215,6 +217,18 @@ void LintTableModel::appendRow(Row row) {
     endInsertRows();
 }
 
+// One insertion for all of them: the view lays out what is inserted once, not once per row
+void LintTableModel::appendRows(vector<Row> newRows) {
+    if (newRows.empty()) {
+        return;
+    }
+
+    const i32 first = scast<i32>(rows.size());
+    beginInsertRows(QModelIndex(), first, first + scast<i32>(newRows.size()) - 1);
+    rows.insert(rows.end(), std::make_move_iterator(newRows.begin()), std::make_move_iterator(newRows.end()));
+    endInsertRows();
+}
+
 auto LintTableModel::row(const u32 row) -> const Row& {
     return rows[row];
 }
@@ -251,29 +265,56 @@ LintTable::LintTable(QWidget* const parent) :
     setWordWrap(false);
     setTextElideMode(Qt::ElideNone);
 
-    connect(horHeader, &QHeaderView::sectionResized, this, [this] -> void { resizeRowsToContents(); });
+    resizeTimer.setSingleShot(true);
+    resizeTimer.setInterval(RESIZE_DEBOUNCE_MS);
+
+    connect(&resizeTimer, &QTimer::timeout, this, [this, horHeader] -> void {
+        // Columns follow the contents only after appends; a column the user dragged keeps its width
+        if (columnsStale) {
+            columnsStale = false;
+
+            // Each resized column would size all the rows again
+            const QSignalBlocker blocker(horHeader);
+            resizeColumnsToContents();
+        }
+
+        resizeRowsToContents();
+    });
+
+    // A column dragged by the user: only the rows depend on it
+    connect(horHeader, &QHeaderView::sectionResized, this, [this] -> void {
+        if (!resizeTimer.isActive()) {
+            resizeTimer.start();
+        }
+    });
+}
+
+void LintTable::scheduleResize() {
+    columnsStale = true;
+    resizeTimer.start();
 }
 
 [[nodiscard]] auto LintTable::model() const -> LintTableModel* {
     return model_;
 }
 
+void LintTable::changeEvent(QEvent* const event) {
+    if (event->type() == QEvent::LanguageChange) {
+        // The header labels come from the model's `headerData`, which is asked again only when told they changed
+        emit model_->headerDataChanged(Qt::Horizontal, 0, LintTableModel::ColumnCount - 1);
+    }
+
+    QTableView::changeEvent(event);
+}
+
 void LintTable::appendRow(LintTableModel::Row row) {
     model_->appendRow(std::move(row));
 
-    QMetaObject::invokeMethod(this, [this] -> void {
-        resizeColumnsToContents();
-        resizeRowsToContents();
-    }, Qt::QueuedConnection);
+    scheduleResize();
 }
 
 void LintTable::appendRows(vector<LintTableModel::Row> rows) {
-    for (auto& row : rows) {
-        model_->appendRow(std::move(row));
-    }
+    model_->appendRows(std::move(rows));
 
-    QMetaObject::invokeMethod(this, [this] -> void {
-        resizeColumnsToContents();
-        resizeRowsToContents();
-    }, Qt::QueuedConnection);
+    scheduleResize();
 }

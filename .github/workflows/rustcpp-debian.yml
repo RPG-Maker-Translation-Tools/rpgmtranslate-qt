@@ -110,7 +110,7 @@ jobs:
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
         with:
-            workspaces: .
+            workspaces: rust
 
       - name: Install Rust tools
         run: |

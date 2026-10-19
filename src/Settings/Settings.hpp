@@ -7,13 +7,6 @@
 
 #include <QLocale>
 #include <QStringList>
-#include <variant>
-
-enum ReasoningEffort : u8 {
-    Low,
-    Medium,
-    High
-};
 
 struct Backup {
     u16 period = MIN_BACKUP_PERIOD;
@@ -30,6 +23,8 @@ struct GitSettings {
 struct CoreSettings {
     GitSettings git;
     QStringList recentProjects;
+    // SHA-256 of every script the user allowed to run processes and read/write files.
+    QStringList approvedScripts;
     QString projectPath;
     Backup backup;
     bool checkForAppUpdates = true;
@@ -43,39 +38,23 @@ struct AppearanceSettings {
     QLocale::Language language = QLocale().language();
     u8 translationTableFontSize = 0;
     bool displayPercents = false;
+    // Show the name of the entry (actor, item, map...) a row belongs to in search results and bookmarks.
+    bool displayEntryNames = false;
 };
 
 struct EndpointSettings {
-    static constexpr i32 DEFAULT_TOKEN_LIMIT = 4000;
-
     // Stable identifier, immutable after creation - used as the OS keyring account name for
     // this endpoint's API key, so renaming the endpoint doesn't orphan its stored credential.
     QString id;
 
     QString name;
     QString apiKey;
-    QString yandexFolderID;
-    QString baseUrl;
-    QString model;
-    QString systemPrompt;
-    QString singleTranslateSystemPrompt;
-
-    optional<f32> temperature;
-    optional<f32> frequencyPenalty;
-    optional<f32> precensePenalty;
-    optional<f32> topP;
-
-    u16 tokenLimit = DEFAULT_TOKEN_LIMIT;
-    u16 outputTokenLimit = UINT16_MAX;
-    u16 thinkingBudget = UINT16_MAX;
-
-    ReasoningEffort reasoningEffort = ReasoningEffort::Low;
+    QString yandexFolderId;
+    QString scriptPath;
 
     bool useGlossary = false;
-    bool thinking = false;
-    bool singleTranslation = false;
 
-    TranslationEndpoint type;
+    TranslationEndpoint endpoint;
 };
 
 struct LanguageToolSettings {
@@ -105,12 +84,7 @@ enum LintFlags : u16 {
     TermMismatch = 1 << 8,
 };
 
-struct EndpointContext {
-    u8 endpointIndex;
-    QString context;
-};
-
-using BatchVariant = std::variant<LintFlags, EndpointContext, u8>;
+using BatchVariant = std::variant<LintFlags, u8>;
 
 struct Replacement {
     QString source;
@@ -166,7 +140,10 @@ struct ControlSettings {
     QString bookmarkMenu = u"Alt+B"_s;
     QString lintMenu = u"Ctrl+M"_s;
     QString glossaryMenu = u"Alt+L"_s;
-    QString translationsMenu = u"Ctrl+S"_s;
+    QString translationsMenu = u"Alt+T"_s;
+    QString singleTrim = u"Ctrl+Shift+T"_s;
+    QString singleWrap = u"Ctrl+Shift+W"_s;
+    QString singleLatinize = u"Ctrl+Shift+L"_s;
 };
 
 struct Settings {

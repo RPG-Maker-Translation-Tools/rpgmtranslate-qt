@@ -1,0 +1,109 @@
+name: Bug report
+description: Something in RPGMTranslate crashes, misparses a game, or behaves wrongly
+labels: ["bug"]
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Before filing: check the [documentation](https://RPG-Maker-Translation-Tools.github.io/rpgmtranslate-qt/) and the [existing issues](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate-qt/issues).
+              Problems with a game's text being parsed/written wrongly belong here too, but see the engine field below.
+
+    - type: textarea
+      id: description
+      attributes:
+          label: What happened?
+          description: What you did, what you expected, and what happened instead.
+      validations:
+          required: true
+
+    - type: textarea
+      id: steps
+      attributes:
+          label: Steps to reproduce
+          placeholder: |
+              1. Open a project with ...
+              2. Go to ...
+              3. ...
+      validations:
+          required: true
+
+    - type: dropdown
+      id: area
+      attributes:
+          label: Where does it happen?
+          options:
+              - Reading/parsing a game (creating a project)
+              - Writing translation back to a game
+              - Text editing (tables, cells, tabs)
+              - Search / replace
+              - Lint / spellcheck / LanguageTool
+              - Batch processing / scripts
+              - Machine translation (Google, Yandex, DeepL)
+              - Asset inspector (images, audio, video, fonts, scripts)
+              - Glossary
+              - Bookmarks
+              - Git integration
+              - Export / import (XLSX, CSV, XML, YAML, JSON)
+              - Settings / shortcuts / UI
+              - Auto-updater
+              - Crash on startup / unknown
+      validations:
+          required: true
+
+    - type: dropdown
+      id: engine
+      attributes:
+          label: RPG Maker engine
+          description: Leave as "Not engine-specific" if the bug has nothing to do with a particular game.
+          options:
+              - Not engine-specific
+              - RPG Maker 2000
+              - RPG Maker 2003
+              - RPG Maker XP
+              - RPG Maker VX
+              - RPG Maker VX Ace
+              - RPG Maker MV
+              - RPG Maker MZ
+      validations:
+          required: true
+
+    - type: input
+      id: version
+      attributes:
+          label: RPGMTranslate version
+          description: Shown in the About window, or the release tag you downloaded.
+          placeholder: v1.2.0
+      validations:
+          required: true
+
+    - type: dropdown
+      id: os
+      attributes:
+          label: Operating system and build
+          options:
+              - Windows 10/11 (official release)
+              - Linux (official release, Debian-based)
+              - Linux (AppImage)
+              - Linux (built from source / distro package)
+              - Windows (built from source)
+      validations:
+          required: true
+
+    - type: input
+      id: os-version
+      attributes:
+          label: OS version / distribution
+          placeholder: Windows 11 24H2, Debian 13, Arch ...
+      validations:
+          required: false
+
+    - type: textarea
+      id: log
+      attributes:
+          label: Log
+          description: |
+              `rpgmtranslate.log` is next to the executable (or in `RPGMTRANSLATE_DATA_DIR`, or the user's local app data if the executable directory is not writable). **It is overwritten on every start**, so copy it before launching the program again.
+              Paste it here, or drag the file into this box.
+          render: text
+      validations:
+          required: false

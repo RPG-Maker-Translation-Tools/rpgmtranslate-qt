@@ -38,14 +38,18 @@ local function is_dir(path)
     end
 end
 
--- Shared UPX invocation for the binaries this project builds. --best --lzma --brute --ultra-brute
--- trades runtime (this only runs once per release) for maximum compression; --compress-exports=0
--- keeps export-table compression off.
 local function upx_compress(paths)
     local ok = os.execute(
         "upx --best --lzma --brute --ultra-brute --compress-exports=0 " .. table.concat(paths, " "))
     if ok ~= true then
         io.stderr:write("upx failed to compress: " .. table.concat(paths, ", ") .. "\n")
+        os.exit(1)
+    end
+end
+
+local function run(command)
+    if os.execute(command) ~= true then
+        io.stderr:write("Command failed: " .. command .. "\n")
         os.exit(1)
     end
 end
@@ -77,6 +81,9 @@ local NOTICE_OUTPUT_FILE = "./THIRD-PARTY-NOTICE.md"
 --   license_files  (optional) explicit file list, if automatic discovery
 --                  (find_license_files) doesn't pick the right file(s) for
 --                  this library.
+--   build_only     (optional) true for tools that only run at build time (lua): documented here so
+--                  licenses/<name> is not reported as undocumented, but left out of the notice and
+--                  the archive, since nothing of them is shipped.
 --   vendored       (optional) true if the library's source lives directly under
 --                  src/3rdparty and is compiled into rpgmtranslate regardless of
 --                  platform. Everything else here is fetched/linked by CMake as a
@@ -98,27 +105,31 @@ local LIBRARY_LIST = {
     },
     {
         name = "ffmpeg",
-        spdx = "LGPL-2.1-only",
-        notes = { "The copy of FFmpeg linked is built with only built-in decoders and simple filters also licensed under LGPLv2.1." }
+        spdx = "LGPL-2.1-or-later",
+        notes = { "The copy of FFmpeg linked is built with only built-in decoders and simple filters also licensed under LGPLv2.1 or later." }
     },
-    { name = "freetype",          spdx = "FTL" },
-    { name = "glaze",             spdx = "MIT" },
-    { name = "harfbuzz",          spdx = "LicenseRef-HarfBuzz-Old-MIT" },
+    { name = "bzip2",             spdx = "bzip2-1.0.6" },
+    {
+        name = "freetype",
+        spdx = "FTL",
+        notes = { "Portions of this software are copyright © The FreeType Project (https://freetype.org). All rights reserved." }
+    },
+    { name = "glaze",    spdx = "MIT" },
+    { name = "harfbuzz", spdx = "LicenseRef-HarfBuzz-Old-MIT" },
     {
         name = "icu",
         spdx = "Unicode-3.0",
         notes = { "LICENSE.txt also bundles licenses for embedded third-party data (e.g. TaBE); those apply only to that data, not to ICU itself." }
     },
-    { name = "jeaiii-itoa", spdx = "MIT",         vendored = true },
     {
         name = "libarchive",
-        spdx = "BSD-2-Clause",
-        notes = { "A handful of individual source files carry their own (compatible) licenses; see COPYING.txt for specifics." }
+        spdx = "BSD-2-Clause AND BSD-3-Clause",
+        notes = { "A few files carry other terms (3-clause UC Regents code, public-domain and CC0/OpenSSL/Apache-2.0 BLAKE2 files); see COPYING.txt for specifics." }
     },
     {
         name = "libgit2",
-        spdx = "GPL-2.0-only",
-        notes = { "COPYING.txt merges the GPLv2 text with libgit2's own linking exception, which permits linking the compiled library into other programs without extending the GPL to them." }
+        spdx = "GPL-2.0-only WITH GCC-exception-2.0",
+        notes = { "COPYING.txt merges the GPLv2 text with libgit2's own linking exception (the GCC linking exception, reworded for libgit2), which permits linking the compiled library into other programs without extending the GPL to them. It also carries the licenses of the dependencies libgit2 bundles." }
     },
     {
         name = "libjpeg-turbo",
@@ -131,6 +142,7 @@ local LIBRARY_LIST = {
     {
         name = "lua",
         spdx = "MIT",
+        build_only = true,
         notes = { "Build-time only: lua.exe drives configure.lua, prepare-headers.lua and this script. Not linked, not shipped." }
     },
     { name = "enchantum",             spdx = "MIT",       vendored = true },
@@ -141,17 +153,50 @@ local LIBRARY_LIST = {
         vendored = true,
         notes = { "LICENSE file also includes MIT-0 text, but the project relies on Unlicense terms." }
     },
+    {
+        name = "TinySoundFont",
+        spdx = "MIT AND Zlib",
+        vendored = true,
+        notes = { "tsf.h is MIT (LICENSE); tml.h (TinyMidiLoader) is Zlib (LICENSE-TML.txt, taken from the notice at the top of the file)." }
+    },
+    { name = "md4c",     spdx = "MIT" },
     { name = "mimalloc", spdx = "MIT" },
-    { name = "nuspell",  spdx = "LGPL-3.0-only" },
+    { name = "nuspell",  spdx = "LGPL-3.0-or-later" },
     { name = "pcre2",    spdx = "BSD-3-Clause WITH PCRE2-exception" },
     {
         name = "qt6",
         spdx = "GPL-3.0-only OR LGPL-3.0-only",
         notes = { "Both GPLv3 and LGPLv3 are present - the project relies on LGPLv3 terms." }
     },
+    -- Third-party code Qt itself bundles in qtbase/src/3rdparty and compiles into the static Qt (not
+    -- separate libraries), so each needs its own notice. Only the ones that end up in the binary
+    -- and whose license demands attribution are listed; CC0/public-domain ones (siphash, md4, md5,
+    -- sha1, blake2) need none.
+    { name = "qt6/tinycbor", spdx = "MIT",          notes = { "Bundled in Qt Core." } },
+    { name = "qt6/easing",   spdx = "BSD-3-Clause", notes = { "Bundled in Qt Core (QEasingCurve)." } },
+    { name = "qt6/rfc6234",  spdx = "BSD-3-Clause", notes = { "Bundled in Qt Core (QCryptographicHash)." } },
+    {
+        name = "qt6/sha3",
+        spdx = "BSD-2-Clause AND CC0-1.0",
+        notes = { "Bundled in Qt Core (QCryptographicHash). BRG_ENDIAN_LICENSE (BSD-2-Clause) covers brg_endian.h; the Keccak code is CC0-1.0." }
+    },
+    { name = "qt6/D3D12MemoryAllocator", spdx = "MIT",                     notes = { "Bundled in Qt Gui (Direct3D 12 RHI backend), Windows only." } },
+    { name = "qt6/d3d12-miniengine",     spdx = "MIT",                     notes = { "Mipmap generation shader of Qt Gui's Direct3D 12 RHI backend, from Microsoft's MiniEngine. Windows only." } },
+    { name = "qt6/qimagescale",          spdx = "BSD-2-Clause AND Imlib2", notes = { "Bundled in Qt Gui (qimagescale.cpp, the smooth image scaling), based on Imlib2." } },
+    {
+        name = "qt6/unicode-data",
+        spdx = "Unicode-3.0",
+        notes = { "The Unicode Character Database and CLDR locale data Qt Core is generated from (qunicodetables.cpp, qlocale_data_p.h). Separate from ICU." }
+    },
+    { name = "qt6/xsvg",       spdx = "HPND-sell-variant", notes = { "Arc handling code in Qt Svg (qsvghandler.cpp) is derived from the XSVG project." } },
     { name = "quickjs-ng", spdx = "MIT" },
     { name = "zlib-ng",    spdx = "Zlib" },
-    { name = "zmij",       spdx = "MIT", vendored = true },
+    {
+        name = "zmij",
+        spdx = "MIT",
+        vendored = true,
+        notes = { "Upstream is dual MIT/BSL-1.0; only the MIT license text is vendored here." }
+    },
 }
 
 local LIBRARIES = {}
@@ -174,7 +219,7 @@ end
 local function find_license_files(all_entries)
     local matches = {}
     for _, e in ipairs(all_entries) do
-        if e:lower():match("license") or e:lower():match("licence") or e:lower():match("copying") or e == "FTL.TXT" then
+        if e:lower():match("license") or e:lower():match("licence") or e:lower():match("copying") or e:lower():match("copyright") or e == "FTL.TXT" then
             table.insert(matches, e)
         end
     end
@@ -198,6 +243,22 @@ local function gen_notice(vendored_only)
             local library = LIBRARIES[name]
             if not library then
                 table.insert(missing, name)
+            elseif library.build_only then
+                -- documented, nothing of it is shipped
+            elseif not vendored_only or library.vendored then
+                table.insert(library_dirs, name)
+                present[name] = true
+            end
+        end
+    end
+
+    -- Libraries bundled inside Qt live in licenses/qt6/<name> and are keyed as "qt6/<name>".
+    for _, sub in ipairs(list_dir(join(LICENSE_ROOT, "qt6"))) do
+        local name = "qt6/" .. sub
+        if is_dir(join(LICENSE_ROOT, name)) then
+            local library = LIBRARIES[name]
+            if not library then
+                table.insert(missing, name)
             elseif not vendored_only or library.vendored then
                 table.insert(library_dirs, name)
                 present[name] = true
@@ -217,7 +278,7 @@ local function gen_notice(vendored_only)
     -- skipped here too - Linux never fetches their license text in the first place.
     local undocumented = {}
     for _, entry in ipairs(LIBRARY_LIST) do
-        if (not vendored_only or entry.vendored) and not present[entry.name] then
+        if not entry.build_only and (not vendored_only or entry.vendored) and not present[entry.name] then
             table.insert(undocumented, entry.name)
         end
     end
@@ -294,24 +355,34 @@ local function gen_notice(vendored_only)
     out:close()
 
     print(string.format("Wrote %d entries to %s", #rows, NOTICE_OUTPUT_FILE))
+
+    return library_dirs
 end
 
 local function gen_rust_notice()
     if IS_WINDOWS then os.execute("mkdir licenses\\rust") else os.execute("mkdir licenses/rust") end
-    os.execute("cd rust && cargo-about generate about.hbs -o ../licenses/rust/THIRD-PARTY-NOTICE.md")
+    run("cd rust && cargo-about generate about.hbs -o ../licenses/rust/THIRD-PARTY-NOTICE.md")
 end
 
 -- Windows releases are static builds - every third-party library in LIBRARY_LIST is actually
 -- linked into rpgmtranslate.exe, so the full notice and every licenses/ subdirectory get bundled.
 local function main_windows()
-    gen_notice()
+    local license_dirs = gen_notice()
     gen_rust_notice();
 
+    local inputs = { "LICENSE.md", "THIRD-PARTY-NOTICE.md", "rpgmtranslate.exe", "licenses/rust" }
+    for _, name in ipairs(license_dirs) do
+        -- licenses/qt6/* ride along with licenses/qt6
+        if not name:find("/", 1, true) then
+            table.insert(inputs, "licenses/" .. name)
+        end
+    end
+
     os.execute("del /q rpgmtranslate.7z")
-    os.execute("copy build\\target\\bin\\rpgmtranslate.exe rpgmtranslate.exe")
+    run("copy build\\target\\bin\\rpgmtranslate.exe rpgmtranslate.exe")
     upx_compress({ "rpgmtranslate.exe" })
-    os.execute(
-        "\"C:\\Program Files\\7-Zip\\7z.exe\" a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=128 rpgmtranslate.7z THIRD-PARTY-NOTICE.md rpgmtranslate.exe licenses/")
+    run(
+        "7z.exe a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=128 rpgmtranslate.7z " .. table.concat(inputs, " "))
     os.execute("del /q rpgmtranslate.exe")
 
     os.execute("rmdir /s /q licenses\\rust")
@@ -327,7 +398,7 @@ local function main_linux()
     gen_notice(true)
     gen_rust_notice();
 
-    local archive_paths = { "THIRD-PARTY-NOTICE.md", "licenses/rust" }
+    local archive_paths = { "LICENSE.md", "THIRD-PARTY-NOTICE.md", "licenses/rust" }
     for _, entry in ipairs(LIBRARY_LIST) do
         if entry.vendored then
             table.insert(archive_paths, "licenses/" .. entry.name)
@@ -341,16 +412,16 @@ local function main_linux()
         os.execute("rm -f rpgmtranslate.tar.xz")
     end
 
-    os.execute("cp build/target/bin/rpgmtranslate rpgmtranslate")
+    run("cp build/target/bin/rpgmtranslate rpgmtranslate")
 
     if (arg[1] ~= "--appimage") then
         upx_compress({ "rpgmtranslate" })
     end
 
     if (arg[1] == "--appimage") then
-        os.execute("tar -cJf rpgmtranslate-appimage.tar.xz RPGMTranslate-x86_64.AppImage " .. archive_paths_str)
+        run("tar -cJf rpgmtranslate-appimage.tar.xz RPGMTranslate-x86_64.AppImage " .. archive_paths_str)
     else
-        os.execute("tar -cJf rpgmtranslate.tar.xz rpgmtranslate " .. archive_paths_str)
+        run("tar -cJf rpgmtranslate.tar.xz rpgmtranslate " .. archive_paths_str)
     end
 
     os.execute("rm -f rpgmtranslate")

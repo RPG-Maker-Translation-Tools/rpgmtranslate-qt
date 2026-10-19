@@ -1,3 +1,4 @@
+#define ENCHANTUM_COMMIT_OID "6ada6cb"
 // MIT License - Thanks for using this library!
 // Copyright (c) 2025 ZXShady
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -184,7 +185,7 @@ using ::std::string;
 #endif
 
 #ifndef ENCHANTUM_MAX_RANGE
-  #define ENCHANTUM_MAX_RANGE (32767 - 1)
+  #define ENCHANTUM_MAX_RANGE 2048
 #endif
 #ifndef ENCHANTUM_MIN_RANGE
   #define ENCHANTUM_MIN_RANGE (-ENCHANTUM_MAX_RANGE)

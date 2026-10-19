@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Aliases.hpp"
+#include "Constants.hpp"
 #include "Enums.hpp"
+#include "Numbers.hpp"
 #include "PackedBits.hpp"
 #include "glazemeta.hpp"
 #include "rpgmtranslate_rs.h"
@@ -56,9 +58,17 @@ using TextMatch = PackedBits<Field<"start", u32, 32>, Field<"len", u32, 31>, Fie
 
 using MatchIndex = PackedBits<Field<"row", u32, 24>, Field<"col", u8, 8>>;
 
+static constexpr u32 NO_ENTRY = std::numeric_limits<u32>::max();
+
+// The match, text and entry fields locate the matches of the cell, the text it shows and its entry in the
+// `FileMatches` that holds it. A search fills the text and entry for the result panel only; a replace leaves them as
+// they are.
 struct CellMatch {
-    TextMatch* matches;
-    u32 matchesCount;
+    u32 matchStart;
+    u32 matchCount;
+    u32 textStart;
+    u32 textLength;
+    u32 entryIndex;
     MatchIndex matchIndex;
 
     [[nodiscard]] constexpr auto rowIndex() const -> i32 { return matchIndex.get<"row">(); }
@@ -66,8 +76,69 @@ struct CellMatch {
     [[nodiscard]] constexpr auto colIndex() const -> i32 { return matchIndex.get<"col">(); }
 };
 
+// The results of one file, with the matches and text they show kept in one block each instead of one allocation per
+// result.
+struct FileMatches {
+    // The texts of the cells one after another, line breaks as `LINE_SEPARATOR`
+    QString texts;
+    // The names of the entries the results belong to; results of one entry in a row share a name
+    QStringList entries;
+    // The matches of the cells one after another
+    vector<TextMatch> spans;
+    vector<CellMatch> cells;
+
+    [[nodiscard]] auto matches(const CellMatch& cell) const -> span<const TextMatch> {
+        return span(spans).subspan(cell.matchStart, cell.matchCount);
+    }
+
+    // Appended, not written over the old matches: the other results point into `spans` too
+    void setMatches(CellMatch& cell, const span<const TextMatch> found) {
+        cell.matchStart = scast<u32>(spans.size());
+        cell.matchCount = scast<u32>(found.size());
+        spans.insert(spans.end(), found.begin(), found.end());
+    }
+
+    [[nodiscard]] auto text(const CellMatch& cell) const -> QStringView {
+        return QStringView(texts).sliced(cell.textStart, cell.textLength);
+    }
+
+    // Empty if the result belongs to no entry
+    [[nodiscard]] auto entry(const CellMatch& cell) const -> QStringView {
+        return cell.entryIndex == NO_ENTRY ? QStringView() : QStringView(entries[scast<isize>(cell.entryIndex)]);
+    }
+
+    // Appended, not written over the old text: the other results point into `texts` too
+    void setText(CellMatch& cell, const QStringView text) {
+        cell.textStart = scast<u32>(texts.size());
+        cell.textLength = scast<u32>(text.size());
+        texts.append(text);
+
+        const auto written = span(texts.data() + cell.textStart, cell.textLength);
+        ranges::replace(written, QChar(u'\n'), LINE_SEPARATOR);
+    }
+
+    void setEntry(CellMatch& cell, const QStringView name) {
+        if (name.isEmpty()) {
+            return;
+        }
+
+        if (entries.isEmpty() || entries.last() != name) {
+            entries.append(name.toString());
+        }
+
+        cell.entryIndex = scast<u32>(entries.size() - 1);
+    }
+
+    // The search is done adding: the slack is not needed
+    void trim() {
+        texts.squeeze();
+        spans.shrink_to_fit();
+        cells.shrink_to_fit();
+    }
+};
+
 inline auto u16ToAscii(u16 number) -> array<char, 4> {
-    array<char, 4> out;
+    array<char, 4> out{};
 
     // NOLINTBEGIN(readability-magic-numbers)
     if (number >= 1000) {
@@ -82,14 +153,11 @@ inline auto u16ToAscii(u16 number) -> array<char, 4> {
         number %= 100;
         out[1] = scast<char>('0' + (number / 10));
         out[2] = scast<char>('0' + (number % 10));
-        out[3] = '\0';
     } else if (number >= 10) {
         out[0] = scast<char>('0' + (number / 10));
         out[1] = scast<char>('0' + (number % 10));
-        out[2] = '\0';
     } else {
         out[0] = scast<char>('0' + number);
-        out[1] = '\0';
     }
     // NOLINTEND(readability-magic-numbers)
 
@@ -103,7 +171,7 @@ struct Selected {
     FileFlags flags = scast<FileFlags>(0);
 
     [[nodiscard]] auto empty() const -> bool {
-        for (i32 idx = 0; idx < mapCount; idx++) {
+        for (u16 idx = 0; idx < mapCount; idx++) {
             if (mapIndices[idx]) {
                 return false;
             }
@@ -112,12 +180,7 @@ struct Selected {
         return flags == 0;
     }
 
-    // RPG Maker 2000/2003 has no `Actors`/`Skills`/.../`System` file kinds of
-    // its own - `RPG_RT.ldb` bundles all of it into one `Database` flag - but
-    // its `.txt` outputs share the same names (`actors.txt`, `skills.txt`,
-    // ...), so `FileSelectMenu`'s checkboxes still set the MV/VX-shaped bits.
-    // Call this once, right before handing `flags` to the library, to fold
-    // any of those bits into `Database` for an RM2K project.
+    // RPG Maker 2000/2003's `RPG_RT.ldb` bundles all of it into one `Database` flag
     [[nodiscard]] auto forEngine(const EngineType engineType) const -> Selected {
         static constexpr FileFlags otherFamily = FileFlags_Actors | FileFlags_Armors | FileFlags_Classes |
                                                  FileFlags_CommonEvents | FileFlags_Enemies | FileFlags_Items |
@@ -156,9 +219,7 @@ struct Selected {
 
         u16 flagFileCount = 0;
 
-        // This recovers the number by which FileFlags_Database was shifted
-        // and since FileFlags_Database is the last flag it effectively
-        // gives us flag count after adding 1 to the result of countr_zero.
+        // FileFlags_Database is the last flag, so countr_zero + 1 is the flag count.
         //! Update if last FileFlags member changes.
         static constexpr i32 totalFlags = std::countr_zero(FileFlags_Database) + 1;
 
@@ -242,9 +303,8 @@ struct Selected {
                     }
                     break;
                 case FileFlags_Database:
-                    name = { "database" };
+                    name = { "terms" };
                     break;
-                case FileFlags_Map:
                 default:
                     throw std::runtime_error(format("Received {} flag. This shouldn't happen.", flag));
             }
@@ -272,13 +332,47 @@ struct JSScript {
     BatchAction action;
     QString name;
     QString source;
+    // Set by MainWindow once the user approved the script to run processes and touch files.
+    bool hostApi = false;
+};
+
+// What a save file holds about its party. The member names are the keys of its JSON. `switches` and `variables` are
+// indexed by the in-game ID, so index 0 is unused.
+struct SaveActor {
+    // Empty when the save has no name for the actor (RPG Maker 2000/2003 stores a name only after the game changed it).
+    QString name;
+    QString nickname;
+    i32 actorId;
+    i32 classId;
+    i32 level;
+    i32 hp;
+    i32 mp;
+    i32 tp;
+};
+
+struct SaveStack {
+    i32 id;
+    i32 count;
+};
+
+struct SaveSummary {
+    // The actor IDs of the party, in order; `actors` holds every actor the save knows, the party's or not.
+    vector<i32> party;
+    vector<SaveActor> actors;
+    // RPG Maker 2000/2003 has no weapons and armors apart from items; all of them are in `items`.
+    vector<SaveStack> items;
+    vector<SaveStack> weapons;
+    vector<SaveStack> armors;
+    vector<bool> switches;
+    vector<i32> variables;
+    // Playtime, 60 per second.
+    u32 frames;
+    i32 mapId;
+    i32 gold;
 };
 
 struct LintEntry {
     QVariant extra;
-    // Clickable replacement suggestions (spellcheck word list, LanguageTool replacements) - kept
-    // separate from `extra` since some lint kinds need both a free-form tooltip text and a
-    // suggestion list at once.
     QVariant suggestions;
     QString captured;
     const char* translationId;
@@ -321,7 +415,7 @@ struct LintOutcome {
     vector<LintCharState> charStates;
 };
 
-using CellMatches = HashMap<FilenameArray, vector<CellMatch>>;
+using CellMatches = HashMap<FilenameArray, FileMatches>;
 
 struct SearchResult {
     CellMatches matches;
@@ -331,7 +425,10 @@ struct SearchResult {
 
 struct ScriptSuccess {
     vector<FilenameArray> filenames;
+    QStringList log;
     u32 skippedCount;
+    // Files the script ran on. Zero means no file was read back, so the project need not be reopened.
+    u32 processedCount;
 };
 
 struct SerdeSuccess {
@@ -343,6 +440,19 @@ struct GlobalLintResult {
     vector<LintRow> rows;
     vector<FilenameArray> filenames;
     u32 skippedCount;
+};
+
+// Counts of the source column and of the first translation column of one file.
+struct FileStatistics {
+    FilenameArray filename;
+    TextCounts source;
+    TextCounts translation;
+};
+
+struct StatisticsResult {
+    vector<FileStatistics> files;
+    // Files that could not be read.
+    vector<FilenameArray> skipped;
 };
 
 struct ScriptError {
@@ -358,7 +468,21 @@ struct TranslatedFiles {
 
 struct ReplacedCell {
     QString text;
-    TextMatch* matches;
+    vector<TextMatch> matches;
+    // How many more (or fewer) rows of the file have a translation after the replacement
+    i32 translatedDelta;
+};
+
+// How the number of translated rows of a file changed by a replacement
+struct TranslatedDelta {
+    FilenameArray filename;
+    i32 delta;
+};
+
+struct ReplaceSuccess {
+    // The files that couldn't be replaced in
+    vector<FilenameArray> skipped;
+    vector<TranslatedDelta> deltas;
 };
 
 using ExtractResult = expected<void, FFIString>;
@@ -368,14 +492,93 @@ using PurgeResult = expected<void, FFIString>;
 using LintResult = expected<FFIString, FFIString>;
 using ScriptResult = expected<ScriptSuccess, ScriptError>;
 using SerdeResult = expected<SerdeSuccess, FFIString>;
-using TranslateResult = expected<TranslatedFiles, FFIString>;
-using BatchResult = std::variant<ScriptResult, TranslateResult>;
-using ReplaceResult = vector<FilenameArray>;
-using TranslateSingleResult = vector<QString>;
-using ReplaceSingleResult = expected<ReplacedCell, QString>;
+using ReplaceResult = ReplaceSuccess;
 
+// What an endpoint answered, or the reason it didn't (`failed`): the latter must not be offered as a translation
+struct EndpointAnswer {
+    QString text;
+    bool failed;
+};
+
+using TranslateSingleResult = vector<EndpointAnswer>;
+
+// `stale`: the file was readable, but the cell is no longer the one that was searched
+struct ReplaceSingleError {
+    QString filename;
+    bool stale;
+};
+
+using ReplaceSingleResult = expected<ReplacedCell, ReplaceSingleError>;
+
+// The contents of `.rvpacker-metadata`
 struct Metadata {
-    std::map<FilenameArray, u64> hashes;
+    HashMap<FilenameArray, u64> hashes;
+    optional<string> lineSeparator;
+    optional<string> lineBreak;
+    optional<string> commentPrefix;
     optional<string> readEncoding;
-    DuplicateMode duplicateMode;
+    // A number, like the file has it
+    optional<u8> duplicateMode;
+};
+
+// A hash is a `u64`, but rvpacker-txt-rs writes the same 64 bits as a signed number
+template <>
+struct glz::meta<Metadata> {
+    using T = Metadata;
+
+    static constexpr auto readHashes =
+        [](T& metadata, const std::map<string, glz::raw_json>& input, glz::context& ctx) -> void {
+        metadata.hashes.reserve(input.size());
+
+        for (const auto& [name, raw] : input) {
+            // Names are read into a `FilenameArray`, which has to hold them whole
+            if (!fitsFilenameArray(name.size())) {
+                ctx.error = glz::error_code::syntax_error;
+                return;
+            }
+
+            const string_view text = raw.str;
+            optional<u64> hash = stoa<u64>(text);
+
+            if (!hash) {
+                if (const optional<i64> signedHash = stoa<i64>(text)) {
+                    hash = std::bit_cast<u64>(*signedHash);
+                }
+            }
+
+            if (!hash) {
+                ctx.error = glz::error_code::parse_number_failure;
+                return;
+            }
+
+            FilenameArray filename{};
+            copyFilenameArray(name.data(), name.size(), filename.data());
+            metadata.hashes.insert({ filename, *hash });
+        }
+    };
+
+    static constexpr auto writeHashes = [](const T& metadata) -> std::map<string, i64> {
+        std::map<string, i64> out;
+
+        for (const auto& [name, hash] : metadata.hashes) {
+            out.emplace(string(name.data()), std::bit_cast<i64>(hash));
+        }
+
+        return out;
+    };
+
+    static constexpr auto value = glz::object(
+        "hashes",
+        glz::custom<readHashes, writeHashes>,
+        "lineSeparator",
+        &T::lineSeparator,
+        "lineBreak",
+        &T::lineBreak,
+        "commentPrefix",
+        &T::commentPrefix,
+        "readEncoding",
+        &T::readEncoding,
+        "duplicateMode",
+        &T::duplicateMode
+    );
 };

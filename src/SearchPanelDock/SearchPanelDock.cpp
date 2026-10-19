@@ -7,87 +7,97 @@
 #include "Utils.hpp"
 
 #include <QComboBox>
+#include <QEvent>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPushButton>
 
 SearchPanelDock::SearchPanelDock(QWidget* const parent) : QDockWidget(parent) {};
 
-SearchPanelDock::~SearchPanelDock() {
-    clearList();
+SearchPanelDock::~SearchPanelDock() = default;
+
+auto SearchPanelDock::generation() const -> u32 {
+    return searchResultList->model()->generation();
 }
 
-void SearchPanelDock::showMatches(
-    CellMatches matches,
-    HashMap<u16, QString>& mapSections,
-    shared_ptr<ProjectSettings> projectSettings
-) {
+void SearchPanelDock::itemChanged(const SearchResultListItem& item) const {
+    // The height of the item can differ now
+    searchResultList->delegate()->invalidateCache();
+    searchResultList->model()->itemChanged(item);
+}
+
+void SearchPanelDock::showMatches(CellMatches matches, const ProjectSettings* const projectSettings) {
     clearList();
 
+    // The old filter would hide nothing now, while the box still shows it
+    fileSelect->setCurrentIndex(0);
+
     this->matches = std::move(matches);
-    this->projectSettings = std::move(projectSettings);
+    this->projectSettings = projectSettings;
+
+    // The files in the order of the tabs, not in that of the hash map
+    struct FileResults {
+        QL1SV filename;
+        FileMatches* fileMatches;
+        i32 order;
+    };
+
+    vector<FileResults> files;
+    files.reserve(this->matches.size());
 
     u32 itemsSize = 0;
 
-    for (const auto& matches : views::values(this->matches)) {
-        itemsSize += matches.size();
+    for (auto& [filenameArray, fileMatches] : this->matches) {
+        const auto filename = QL1SV(filenameArray.data());
+
+        files.push_back({ filename, &fileMatches, fileSelect->findText(QString::fromLatin1(filename)) });
+        itemsSize += fileMatches.cells.size();
     }
 
+    ranges::sort(files, {}, &FileResults::order);
+
+    // Nothing is made for the items but the links: the texts are made when an item is shown
     vector<SearchResultListItem> items;
     items.reserve(itemsSize);
 
-    for (const auto& [filenameArray, cellMatches] : this->matches) {
-        QString content;
-        QSVList lines;
-
-        const auto filename = QL1SV(filenameArray.data());
-
-        if (filename.startsWith("map"_L1)) {
-            const u16 mapNumber = stoa<u16>(filename.sliced(3));
-            lines = QStringView(mapSections.find(mapNumber)->second).split(u'\n', Qt::SkipEmptyParts);
-        } else {
-            const QString path = this->projectSettings->translationPath() % u'/' % filename % u".txt"_qsv;
-            auto file = QFile(path);
-
-            if (!file.open(QFile::ReadOnly)) {
-                qWarning().noquote() << u"Failed to open file %1: %2"_qsv.arg(path, file.errorString());
-                continue;
-            }
-
-            content = QString::fromUtf8(file.readAll());
-            lines = QStringView(content).split(u'\n', Qt::SkipEmptyParts);
-        }
-
-        for (const auto& cellMatch : cellMatches) {
-            const QString sourceOwned = qsvReplace(lines.at(cellMatch.rowIndex()), NEW_LINE, LINE_FEED);
-
-            const QSVList parts = lineParts(sourceOwned, cellMatch.rowIndex(), filename);
-
-            if (parts.empty()) {
-                continue;
-            }
-
-            items.emplace_back(
-                qsvReplace(parts.at(cellMatch.colIndex()), u'\n', LINE_SEPARATOR),
-                tr("File %1 / Row %2 / Column %3 (%4)")
-                    .arg(
-                        svtostr(filename),
-                        itos(cellMatch.rowIndex() + 1).qsv(),
-                        itos(cellMatch.colIndex() + 1).qsv(),
-                        cellMatch.colIndex() == 0 ? tr("Source")
-                                                  : this->projectSettings->columns[cellMatch.colIndex()].name
-                    ),
-                filename,
-                cellMatch,
-                false,
-                false
-            );
+    for (const auto& [filename, fileMatches, order] : files) {
+        for (auto& cellMatch : fileMatches->cells) {
+            items.emplace_back(*fileMatches, cellMatch, filename, false, false);
         }
     }
 
     searchResultList->model()->setItems(std::move(items));
     show();
 };
+
+auto SearchPanelDock::subtitle(const SearchResultListItem& item) const -> QString {
+    const CellMatch& cellMatch = item.cellMatch;
+
+    QString subtitle = tr("File %1 / Row %2 / Column %3 (%4)")
+                           .arg(
+                               svtostr(item.filename),
+                               qsv(qitos(cellMatch.rowIndex() + 1)),
+                               qsv(qitos(cellMatch.colIndex() + 1)),
+                               cellMatch.colIndex() == 0 ? tr("Source")
+                               : cellMatch.colIndex() < scast<i32>(projectSettings->columns.size())
+                                   ? projectSettings->columns[cellMatch.colIndex()].name
+                                   : QString(qsv(qitos(cellMatch.colIndex() + 1)))
+                           );
+
+    if (const QStringView entry = item.file.entry(cellMatch); !entry.isEmpty()) {
+        subtitle += tr(" / Entry %1").arg(entry);
+    }
+
+    return subtitle;
+}
+
+void SearchPanelDock::changeEvent(QEvent* const event) {
+    if (event->type() == QEvent::LanguageChange && fileSelect != nullptr && fileSelect->count() > 0) {
+        fileSelect->setItemText(0, tr("- Filter by file -"));
+    }
+
+    QDockWidget::changeEvent(event);
+}
 
 void SearchPanelDock::clear() {
     clearList();
@@ -97,33 +107,37 @@ void SearchPanelDock::clear() {
 
 void SearchPanelDock::init(
     QComboBox* const fileSelect,
-    SearchResultList* const SearchResultList,
+    SearchResultList* const resultList,
     QPushButton* const clearButton
 ) {
     this->fileSelect = fileSelect;
-    this->searchResultList = SearchResultList;
+    this->searchResultList = resultList;
+    resultList->model()->setPanel(this);
 
-    connect(fileSelect, &QComboBox::currentIndexChanged, this, [this](const u16 index) -> void {
-        if (index == 0) {
-            for (i32 row = 0; row < this->searchResultList->model()->rowCount(); row++) {
-                this->searchResultList->model()->item(row).hidden = false;
-            }
-        } else {
-            for (i32 row = 0; row < this->searchResultList->model()->rowCount(); row++) {
-                this->searchResultList->model()->item(row).hidden =
-                    this->searchResultList->model()->item(row).filename != this->fileSelect->itemText(index);
-            }
+    connect(fileSelect, &QComboBox::currentIndexChanged, this, [this](const i32 index) -> void {
+        SearchResultListModel* const model = this->searchResultList->model();
+        const QString filename = index > 0 ? this->fileSelect->itemText(index) : QString();
+
+        for (i32 row = 0; row < model->rowCount(); row++) {
+            SearchResultListItem& item = model->item(row);
+            item.hidden = index > 0 && item.filename != filename;
         }
 
-        this->searchResultList->proxy()->invalidate();
+        this->searchResultList->proxy()->invalidateFilter();
     });
 
     connect(
-        SearchResultList,
+        resultList,
         &SearchResultList::clicked,
         this,
         [this](const Qt::MouseButton button, const QModelIndex& index) -> void {
-        SearchResultListItem& item = this->searchResultList->model()->item(index.row());
+        const QModelIndex sourceIndex = this->searchResultList->proxy()->mapToSource(index);
+
+        if (!sourceIndex.isValid()) {
+            return;
+        }
+
+        SearchResultListItem& item = this->searchResultList->model()->item(sourceIndex.row());
 
         if (button == Qt::LeftButton) {
             emit actionRequested(
@@ -135,13 +149,21 @@ void SearchPanelDock::init(
                 item
             );
         } else if (button == Qt::MiddleButton) {
+            // The menu and the dialog below run their own event loops, in which a finished task can refill the list and
+            // free `item`
+            const u32 shownGeneration = generation();
+
             if (item.cellMatch.colIndex() == 0) {
                 auto menu = QMenu(this);
 
                 for (const auto& [idx, column] : views::enumerate(views::drop(projectSettings->columns, 1))) {
-                    const QAction* const action = menu.addAction(itos(idx + 1).qsv() % u" (" % column.name % u')');
+                    const QAction* const action = menu.addAction(qsv(qitos(idx + 1)) % u" (" % column.name % u')');
 
-                    connect(action, &QAction::triggered, this, [this, &item, idx] -> void {
+                    connect(action, &QAction::triggered, this, [this, &item, idx, shownGeneration] -> void {
+                        if (generation() != shownGeneration) {
+                            return;
+                        }
+
                         emit actionRequested(
                             Action::Put,
                             item.filename,
@@ -168,6 +190,13 @@ void SearchPanelDock::init(
                     return;
                 }
 
+                if (generation() != shownGeneration) {
+                    return;
+                }
+
+                // Set before the request: the handler resets it if the task cannot start
+                item.replaced = true;
+
                 emit actionRequested(
                     Action::Put,
                     item.filename,
@@ -176,8 +205,6 @@ void SearchPanelDock::init(
                     {},
                     item
                 );
-
-                item.replaced = true;
             }
         } else if (button == Qt::RightButton) {
             if (item.cellMatch.colIndex() == 0) {
@@ -188,33 +215,28 @@ void SearchPanelDock::init(
                     return;
                 }
 
+                // Set before the request: the handler resets it if the task cannot start
+                item.replaced = true;
+
                 emit actionRequested(
                     Action::Replace,
                     item.filename,
                     item.cellMatch.rowIndex(),
                     item.cellMatch.colIndex(),
-                    span(item.cellMatch.matches, item.cellMatch.matchesCount),
+                    item.file.matches(item.cellMatch),
                     item
                 );
-
-                item.replaced = true;
             }
         }
     }
     );
 
-    connect(clearButton, &QPushButton::pressed, this, [this] -> void { clearList(); });
+    connect(clearButton, &QPushButton::clicked, this, [this] -> void { clearList(); });
 }
 
 void SearchPanelDock::clearList() {
-    for (const auto& [key, matches] : this->matches) {
-        for (const auto cmatch : matches) {
-            delete[] cmatch.matches;
-        }
-    }
-
-    this->matches = {};
     searchResultList->clear();
+    this->matches = {};
 }
 
 void SearchPanelDock::setFiles(const vector<TabListItem>& files) {

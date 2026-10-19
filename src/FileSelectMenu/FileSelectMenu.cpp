@@ -10,14 +10,14 @@
 FileSelectMenu::FileSelectMenu(QWidget* const parent) : PersistentMenu(parent), ui(setupUi()) {
     installEventFilter(this);
 
-    connect(ui->selectAllButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->selectAllButton, &QPushButton::clicked, this, [this] -> void {
         for (auto* const widget : views::drop(ui->gridWidget->children(), 1)) {
             auto* const checkbox = scast<QCheckBox*>(widget);
             checkbox->setChecked(true);
         }
     });
 
-    connect(ui->deselectAllButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->deselectAllButton, &QPushButton::clicked, this, [this] -> void {
         for (auto* const widget : views::drop(ui->gridWidget->children(), 1)) {
             auto* const checkbox = scast<QCheckBox*>(widget);
             checkbox->setChecked(false);
@@ -101,14 +101,19 @@ auto FileSelectMenu::selected(const bool skipped) -> Selected {
                 selected.flags |= FileFlags_Weapons;
             } else if (file == u"system"_qsv) {
                 selected.flags |= FileFlags_System;
-            } else if (file == u"scripts"_qsv) {
+            } else if (file == u"scripts"_qsv || file == u"plugins"_qsv) {
+                // MV/MZ call the file of the scripts `plugins`
                 selected.flags |= FileFlags_Scripts;
             } else if (file == u"terms"_qsv) {
                 selected.flags |= FileFlags_Database;
             } else if (file.startsWith(u"map"_qsv)) {
-                const u16 index = stoa<u16>(QStringView(file).sliced(3));
-                selected.validIndices[index] = true;
-                selected.mapIndices[selected.mapCount++] = true;
+                const u16 index = stoa<u16>(QStringView(file).sliced(3)).value_or(0);
+
+                // The sets hold a fixed number of maps; indexing past them is out of bounds
+                if (index < selected.validIndices.size() && selected.mapCount < selected.mapIndices.size()) {
+                    selected.validIndices[index] = true;
+                    selected.mapIndices[selected.mapCount++] = true;
+                }
             }
         }
     }

@@ -20,11 +20,18 @@ class SearchPanelDock final : public QDockWidget {
     explicit SearchPanelDock(QWidget* parent = nullptr);
     ~SearchPanelDock() override;
 
-    void
-    showMatches(CellMatches matches, HashMap<u16, QString>& mapSections, shared_ptr<ProjectSettings> projectSettings);
+    void showMatches(CellMatches matches, const ProjectSettings* projectSettings);
 
     void clear();
+    void clearList();
     void setFiles(const vector<TabListItem>& files);
+
+    // Changes whenever the list is cleared or refilled: the items handed out before are gone then, even if new ones
+    // lie at the same addresses.
+    [[nodiscard]] auto generation() const -> u32;
+    void itemChanged(const SearchResultListItem& item) const;
+
+    [[nodiscard]] auto subtitle(const SearchResultListItem& item) const -> QString;
 
     void init(QComboBox* fileSelect, SearchResultList* searchResultList, QPushButton* clearButton);
 
@@ -38,12 +45,13 @@ class SearchPanelDock final : public QDockWidget {
         SearchResultListItem& item
     );
 
+   protected:
+    void changeEvent(QEvent* event) override;
+
    private:
-    inline void clearList();
-
     CellMatches matches;
-    shared_ptr<ProjectSettings> projectSettings;
+    const ProjectSettings* projectSettings = nullptr;
 
-    QComboBox* fileSelect;
-    SearchResultList* searchResultList;
+    QComboBox* fileSelect = nullptr;
+    SearchResultList* searchResultList = nullptr;
 };

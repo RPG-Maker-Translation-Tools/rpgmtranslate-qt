@@ -4,6 +4,7 @@
 #include "Notice.hpp"
 #include "ui_SerdeMenu.h"
 
+#include <QDir>
 #include <QFileDialog>
 
 namespace {
@@ -51,7 +52,7 @@ SerdeMenu::SerdeMenu(QWidget* const parent) :
     setAttribute(Qt::WA_StyledBackground, true);
     setStyleSheet(u"SerdeMenu { background-color: palette(window) }"_s);
 
-    connect(ui->browseButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->browseButton, &QPushButton::clicked, this, [this] -> void {
         const QString dir = QFileDialog::getExistingDirectory(this, tr("Select a folder"), ui->directoryInput->text());
 
         if (!dir.isEmpty()) {
@@ -59,10 +60,22 @@ SerdeMenu::SerdeMenu(QWidget* const parent) :
         }
     });
 
-    connect(ui->exportButton, &QPushButton::pressed, this, [this] -> void {
-        if (ui->directoryInput->text().isEmpty()) {
-            present(this, NOTICE("Pick a destination folder first.", Warning, Modal));
-            return;
+    // What both buttons need before they start; false after telling the user what is missing
+    const auto ready = [this](const bool exporting) -> bool {
+        const QString directory = ui->directoryInput->text();
+
+        if (directory.isEmpty()) {
+            present(
+                this,
+                exporting ? NOTICE("Pick a destination folder first.", Warning, Modal)
+                          : NOTICE("Pick a source folder first.", Warning, Modal)
+            );
+            return false;
+        }
+
+        if (fileSelectMenu->selectedCount() == 0) {
+            present(this, NOTICE("Select some files to process in file select menu.", Warning, Modal));
+            return false;
         }
 
         if (const auto* const unavailable = unavailableSerdeFormatName(format())) {
@@ -70,34 +83,34 @@ SerdeMenu::SerdeMenu(QWidget* const parent) :
                 this,
                 NOTICE("%1 support was not compiled into this build.", Warning, Modal, QString::fromLatin1(unavailable))
             );
-            return;
+            return false;
         }
 
-        emit exportRequested();
-        hide();
+        // Typed by the user: with no such folder every file would fail to be written
+        if (exporting && !QDir().mkpath(directory)) {
+            present(this, NOTICE("Cannot create the folder %1.", Warning, Modal, directory));
+            return false;
+        }
+
+        return true;
+    };
+
+    connect(ui->exportButton, &QPushButton::clicked, this, [this, ready] -> void {
+        if (ready(true)) {
+            emit exportRequested();
+            hide();
+        }
     });
 
-    connect(ui->importButton, &QPushButton::pressed, this, [this] -> void {
-        if (ui->directoryInput->text().isEmpty()) {
-            present(this, NOTICE("Pick a source folder first.", Warning, Modal));
-            return;
+    connect(ui->importButton, &QPushButton::clicked, this, [this, ready] -> void {
+        if (ready(false)) {
+            emit importRequested();
+            hide();
         }
-
-        if (const auto* const unavailable = unavailableSerdeFormatName(format())) {
-            present(
-                this,
-                NOTICE("%1 support was not compiled into this build.", Warning, Modal, QString::fromLatin1(unavailable))
-            );
-            return;
-        }
-
-        emit importRequested();
-        hide();
     });
+    connect(ui->closeButton, &QPushButton::clicked, this, [this] -> void { hide(); });
 
-    connect(ui->closeButton, &QPushButton::pressed, this, [this] -> void { hide(); });
-
-    connect(ui->fileSelectButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->fileSelectButton, &QPushButton::clicked, this, [this] -> void {
         fileSelectMenu->setHidden(!fileSelectMenu->isHidden());
         fileSelectMenu->move(mapToGlobal(QPoint(width(), 0)));
     });

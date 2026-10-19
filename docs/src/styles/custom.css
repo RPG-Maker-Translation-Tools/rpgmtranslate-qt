@@ -1,0 +1,23 @@
+/* Indigo accent. */
+:root {
+    --sl-color-accent-low: #1e1b4b;
+    --sl-color-accent: #6366f1;
+    --sl-color-accent-high: #c7d2fe;
+}
+
+:root[data-theme='light'] {
+    --sl-color-accent-low: #e0e7ff;
+    --sl-color-accent: #4f46e5;
+    --sl-color-accent-high: #312e81;
+}
+
+/* Icons in page content (`![](icon.svg)`) sit inline in text and table cells; Starlight makes every content image a block. */
+.sl-markdown-content img[src*='.svg'] {
+    display: inline;
+    vertical-align: middle;
+}
+
+/* The icons are drawn light for the dark theme; flip them on the light one. */
+:root[data-theme='light'] .sl-markdown-content img[src*='.svg'] {
+    filter: invert(1);
+}

@@ -5,13 +5,9 @@
 #include "PersistentMenu.hpp"
 #include "Types.hpp"
 
-QT_BEGIN_NAMESPACE
-
 namespace Ui {
-    class GlossaryMenu;
+class GlossaryMenu;
 }  // namespace Ui
-
-QT_END_NAMESPACE
 
 class GlossaryMenu final : public PersistentMenu {
     Q_OBJECT
@@ -26,6 +22,10 @@ class GlossaryMenu final : public PersistentMenu {
 
     void setTermEnabled(u32 index, bool enabled);
 
+   signals:
+    // The terms after it moved up: whoever refers to a term by its position must look again
+    void termRemoved();
+
    protected:
     void changeEvent(QEvent* event) override;
 
@@ -34,7 +34,7 @@ class GlossaryMenu final : public PersistentMenu {
 
     [[nodiscard]] auto makeTermInfoCell(const QString& text, const MatchModeInfo& info) -> QWidget*;
     [[nodiscard]] auto makeNoteCell(const QString& note) -> QWidget*;
-    [[nodiscard]] auto makeActionCell(QTreeWidgetItem* item, i32 index) -> QWidget*;
+    [[nodiscard]] auto makeActionCell(QTreeWidgetItem* item) -> QWidget*;
     void addNewEntry(
         const QString& source = QString(),
         const QString& translation = QString(),
@@ -81,7 +81,12 @@ class TermInfoCell final : public QWidget {
     [[nodiscard]] auto text() const -> QString;
     void setEditable(bool editable);
 
+   protected:
+    void changeEvent(QEvent* event) override;
+
    private:
+    void retranslate();
+
     QLineEdit* textInput;
     QComboBox* modeSelect;
     QCheckBox* caseSensitive;

@@ -9,7 +9,6 @@
 #include <QModelIndex>
 #include <QPainter>
 #include <QScrollBar>
-#include <QSyntaxHighlighter>
 #include <QTimer>
 
 namespace {
@@ -20,10 +19,89 @@ constexpr i32 PAD_Y = 4;
 
 TranslationTableDelegate::TranslationTableDelegate(QObject* const parent) : QStyledItemDelegate(parent) {}
 
-void TranslationTableDelegate::setText(const QString& text) {
-    if (activeInput != nullptr) {
-        activeInput->setPlainText(text);
+auto TranslationTableDelegate::table() const -> TranslationTable* {
+    return scast<TranslationTable*>(parent());
+}
+
+void TranslationTableDelegate::commitAndClose(QWidget* const editor) {
+    emit commitData(editor);
+    emit closeEditor(editor, QStyledItemDelegate::SubmitModelCache);
+}
+
+void TranslationTableDelegate::editLater(const QModelIndex& index) {
+    if (!index.isValid()) {
+        return;
     }
+
+    TranslationTable* const tableView = table();
+
+    QTimer::singleShot(0, tableView, [tableView, index] -> void {
+        tableView->setCurrentIndex(index);
+        tableView->scrollTo(index);
+        tableView->edit(index);
+    });
+}
+
+auto TranslationTableDelegate::moveEdit(QWidget* const editor, const i8 rowStep, const i8 colStep) -> bool {
+    const TranslationTable* const tableView = table();
+    const QModelIndex current = tableView->currentIndex();
+
+    if (!current.isValid()) {
+        return false;
+    }
+
+    const TranslationTableModel* const model = tableView->model();
+    const i32 rowCount = model->rowCount();
+    const i32 colCount = model->columnCount();
+
+    i32 row = current.row() + rowStep;
+    i32 column = current.column() + colStep;
+
+    QModelIndex next;
+
+    // Invalid indexes have no flags, so out-of-range cells are never editable
+    while (row >= 0 && row < rowCount && column >= 0 && column < colCount) {
+        const QModelIndex candidate = model->index(row, column);
+
+        if ((candidate.flags() & Qt::ItemIsEditable) != 0) {
+            next = candidate;
+            break;
+        }
+
+        row += rowStep;
+        column += colStep;
+    }
+
+    commitAndClose(editor);
+    editLater(next);
+    return true;
+}
+
+auto TranslationTableDelegate::jumpEdit(QWidget* const editor, const bool toFirst) -> bool {
+    const TranslationTable* const tableView = table();
+    const QModelIndex current = tableView->currentIndex();
+
+    if (!current.isValid()) {
+        return false;
+    }
+
+    const TranslationTableModel* const model = tableView->model();
+    const i32 rowCount = model->rowCount();
+
+    QModelIndex target;
+
+    for (i32 step = 0; step < rowCount; step++) {
+        const QModelIndex candidate = model->index(toFirst ? step : rowCount - 1 - step, current.column());
+
+        if ((candidate.flags() & Qt::ItemIsEditable) != 0) {
+            target = candidate;
+            break;
+        }
+    }
+
+    commitAndClose(editor);
+    editLater(target);
+    return true;
 }
 
 auto TranslationTableDelegate::createEditor(
@@ -33,92 +111,40 @@ auto TranslationTableDelegate::createEditor(
 ) const -> QWidget* {
     auto* const editor = new TranslationInput(projectSettings, settings, parent);
 
-    activeRow = index.row();
     activeInput = editor;
 
-    connect(editor, &TranslationInput::textChanged, this, [this, index] -> void {
-        auto* const that = ccast<TranslationTableDelegate*>(this);
-        auto* const tableView = scast<TranslationTable*>(that->parent());
-        emit that->sizeHintChanged(index);
+    // The row can move while the editor is open (a row is removed or a bookmark is inserted above it)
+    const auto editedIndex = QPersistentModelIndex(index);
+
+    // Signals can't be emitted through a const `this`
+    auto* const that = ccast<TranslationTableDelegate*>(this);
+
+    connect(editor, &TranslationInput::textChanged, this, [that, editedIndex] -> void {
         emit that->textChanged();
-        tableView->resizeRowToContents(index.row());
-    });
 
-    connect(editor, &TranslationInput::focusNextInput, this, [this, editor] -> void {
-        auto* const that = ccast<TranslationTableDelegate*>(this);
-
-        static constexpr i8 rowStep = 1;
-        static constexpr i8 colStep = 0;
-
-        auto* const tableView = scast<TranslationTable*>(ccast<TranslationTableDelegate*>(this)->parent());
-        if (tableView == nullptr) {
-            return;
-        }
-
-        const TranslationTableModel* const model = tableView->model();
-        if (model == nullptr) {
-            return;
-        }
-
-        const QModelIndex current = tableView->currentIndex();
-        if (!current.isValid()) {
-            return;
-        }
-
-        const i32 rowCount = model->rowCount();
-        const i32 colCount = model->columnCount();
-
-        const auto isEditable = [model](const QModelIndex& idx) -> bool {
-            if (!idx.isValid()) {
-                return false;
-            }
-
-            return (idx.flags() & Qt::ItemIsEditable);
-        };
-
-        const auto commitAndClose = [editor, that] -> void {
-            emit that->commitData(scast<QWidget*>(editor));
-            emit that->closeEditor(scast<QWidget*>(editor), QStyledItemDelegate::SubmitModelCache);
-        };
-
-        const auto editIndexAsync = [tableView](const QModelIndex& idx) -> void {
-            if (!idx.isValid()) {
-                return;
-            }
-
-            QTimer::singleShot(0, tableView, [tableView, idx] -> void {
-                tableView->setCurrentIndex(idx);
-                tableView->scrollTo(idx);
-                tableView->edit(idx);
-            });
-        };
-
-        i32 row = current.row() + rowStep;
-        i32 column = current.column() + colStep;
-
-        QModelIndex next;
-        while (row >= 0 && row < rowCount && column >= 0 && column < colCount) {
-            const QModelIndex candidate = model->index(row, column, current.parent());
-
-            if (isEditable(candidate)) {
-                next = candidate;
-                break;
-            }
-
-            row += rowStep;
-            column += colStep;
-        }
-
-        commitAndClose();
-
-        if (next.isValid()) {
-            editIndexAsync(next);
+        if (editedIndex.isValid()) {
+            emit that->sizeHintChanged(editedIndex);
+            that->table()->resizeRowToContents(editedIndex.row());
         }
     });
 
-    connect(editor, &QObject::destroyed, this, [this] -> void { activeInput = nullptr; });
+    // Lines the text wraps into are counted when the editor has laid them out, which is after the text changed
+    connect(editor, &TranslationInput::contentHeightChanged, this, [that, editedIndex] -> void {
+        if (editedIndex.isValid()) {
+            that->table()->resizeRowToContents(editedIndex.row());
+        }
+    });
 
-    QTimer::singleShot(0, [editor] -> void { editor->verticalScrollBar()->setValue(0); });
+    connect(editor, &TranslationInput::focusNextInput, this, [that, editor] -> void { that->moveEdit(editor, 1, 0); });
+
+    // The next editor can be created before this one is deleted
+    connect(editor, &QObject::destroyed, this, [this, editor] -> void {
+        if (activeInput == editor) {
+            activeInput = nullptr;
+        }
+    });
+
+    QTimer::singleShot(0, editor, [editor] -> void { editor->verticalScrollBar()->setValue(0); });
 
     return editor;
 }
@@ -146,19 +172,21 @@ void TranslationTableDelegate::setModelData(
 }
 
 auto TranslationTableDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const -> QSize {
-    const auto* const tableView = scast<TranslationTable*>(scast<const TranslationTableDelegate*>(this)->parent());
-
-    const QWidget* const editor = tableView->indexWidget(index);
+    const QWidget* const editor = table()->indexWidget(index);
 
     const auto* const textEdit = qobject_cast<const TranslationInput*>(editor);
 
-    const QString text = textEdit != nullptr ? textEdit->toPlainText() : index.data(Qt::DisplayRole).toString();
+    // The width is that of the model's text (it is used when a column is fitted to its contents)
+    const QString text = index.data(Qt::DisplayRole).toString();
 
     const auto fontMetrics = QFontMetrics(option.font);
-    const i32 lines = scast<i32>(text.count(u'\n') + 1);
+
+    // The editor wraps its lines, so it counts the lines it has; a cell that is not edited is drawn in one line per
+    // line feed
+    const i32 lines =
+        textEdit != nullptr ? max(1, textEdit->document()->lineCount()) : scast<i32>(text.count(u'\n') + 1);
     const i32 height = (fontMetrics.lineSpacing() * lines) + 10;
 
-    // NOLINTNEXTLINE(readability-suspicious-call-argument)
     return { fontMetrics.horizontalAdvance(text), max(height, MIN_ROW_HEIGHT) };
 }
 
@@ -206,55 +234,12 @@ auto TranslationTableDelegate::eventFilter(QObject* const editor, QEvent* const 
     }
 
     const auto* const keyEvent = scast<QKeyEvent*>(event);
+    auto* const widget = scast<QWidget*>(editor);
 
     if (keyEvent->matches(QKeySequence::Cancel)) {
-        emit commitData(scast<QWidget*>(editor));
-        emit closeEditor(scast<QWidget*>(editor), QStyledItemDelegate::SubmitModelCache);
+        commitAndClose(widget);
         return true;
     }
-
-    auto* const tableView = scast<TranslationTable*>(ccast<TranslationTableDelegate*>(this)->parent());
-    if (tableView == nullptr) {
-        return QStyledItemDelegate::eventFilter(editor, event);
-    }
-
-    const TranslationTableModel* const model = tableView->model();
-    if (model == nullptr) {
-        return QStyledItemDelegate::eventFilter(editor, event);
-    }
-
-    const QModelIndex current = tableView->currentIndex();
-    if (!current.isValid()) {
-        return QStyledItemDelegate::eventFilter(editor, event);
-    }
-
-    const i32 rowCount = model->rowCount();
-    const i32 colCount = model->columnCount();
-
-    const auto isEditable = [model](const QModelIndex& idx) -> bool {
-        if (!idx.isValid()) {
-            return false;
-        }
-
-        return (idx.flags() & Qt::ItemIsEditable);
-    };
-
-    const auto commitAndClose = [this, editor] -> void {
-        emit commitData(scast<QWidget*>(editor));
-        emit closeEditor(scast<QWidget*>(editor), QStyledItemDelegate::SubmitModelCache);
-    };
-
-    const auto editIndexAsync = [tableView](const QModelIndex& idx) -> void {
-        if (!idx.isValid()) {
-            return;
-        }
-
-        QTimer::singleShot(0, tableView, [tableView, idx] -> void {
-            tableView->setCurrentIndex(idx);
-            tableView->scrollTo(idx);
-            tableView->edit(idx);
-        });
-    };
 
     const Qt::KeyboardModifiers mods = keyEvent->modifiers();
     const i32 key = keyEvent->key();
@@ -262,7 +247,7 @@ auto TranslationTableDelegate::eventFilter(QObject* const editor, QEvent* const 
     const bool ctrl = (mods & Qt::ControlModifier) != 0;
     const bool shift = !ctrl && ((mods & Qt::ShiftModifier) != 0);
 
-    if (shift && (key == Qt::Key_Up || key == Qt::Key_Down || key == Qt::Key_Left || key == Qt::Key_Right)) {
+    if (shift) {
         i8 rowStep = 0;
         i8 colStep = 0;
 
@@ -280,65 +265,14 @@ auto TranslationTableDelegate::eventFilter(QObject* const editor, QEvent* const 
                 colStep = 1;
                 break;
             default:
-                std::unreachable();
+                return QStyledItemDelegate::eventFilter(editor, event);
         }
 
-        i32 row = current.row() + rowStep;
-        i32 column = current.column() + colStep;
-
-        QModelIndex next;
-        while (row >= 0 && row < rowCount && column >= 0 && column < colCount) {
-            const QModelIndex candidate = model->index(row, column, current.parent());
-
-            if (isEditable(candidate)) {
-                next = candidate;
-                break;
-            }
-
-            row += rowStep;
-            column += colStep;
-        }
-
-        commitAndClose();
-
-        if (next.isValid()) {
-            editIndexAsync(next);
-        }
-
-        return true;
+        return moveEdit(widget, rowStep, colStep) || QStyledItemDelegate::eventFilter(editor, event);
     }
 
     if (ctrl && (key == Qt::Key_Up || key == Qt::Key_Down)) {
-        const i32 col = current.column();
-        QModelIndex target;
-
-        if (key == Qt::Key_Up) {
-            for (i32 row = 0; row < rowCount; row++) {
-                const QModelIndex candidate = model->index(row, col, current.parent());
-
-                if (isEditable(candidate)) {
-                    target = candidate;
-                    break;
-                }
-            }
-        } else {
-            for (i32 row = rowCount - 1; row >= 0; row--) {
-                const QModelIndex candidate = model->index(row, col, current.parent());
-
-                if (isEditable(candidate)) {
-                    target = candidate;
-                    break;
-                }
-            }
-        }
-
-        commitAndClose();
-
-        if (target.isValid()) {
-            editIndexAsync(target);
-        }
-
-        return true;
+        return jumpEdit(widget, key == Qt::Key_Up) || QStyledItemDelegate::eventFilter(editor, event);
     }
 
     return QStyledItemDelegate::eventFilter(editor, event);

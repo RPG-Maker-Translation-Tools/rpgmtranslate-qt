@@ -4,9 +4,7 @@
 #include "TabListDelegate.hpp"
 #include "TabListModel.hpp"
 
-#include <QApplication>
 #include <QMouseEvent>
-#include <QVBoxLayout>
 
 TabList::TabList(QWidget* const parent) :
     QListView(parent),
@@ -34,6 +32,7 @@ void TabList::toggleCompleted(const QModelIndex& index) {
     auto& tab = model_->tab(index.row());
     const bool current = tab.properties.get<"completed">();
     tab.properties.set<"completed">(!current);
+    viewport()->update();
 }
 
 void TabList::mousePressEvent(QMouseEvent* const event) {
@@ -43,7 +42,7 @@ void TabList::mousePressEvent(QMouseEvent* const event) {
         const QModelIndex index = indexAt(event->pos());
 
         if (index.isValid()) {
-            emit rightClicked(index, event->pos());
+            emit rightClicked(index, event->globalPosition().toPoint());
         }
 
         event->accept();
@@ -53,13 +52,24 @@ void TabList::mousePressEvent(QMouseEvent* const event) {
     }
 }
 
-auto TabList::tab(const u16 index) -> TabListItem& {
+void TabList::changeEvent(QEvent* const event) {
+    // The delegate measured its columns with the font and style that are gone
+    if (event->type() == QEvent::FontChange || event->type() == QEvent::StyleChange) {
+        delegate->maxCachedNameWidth = 0;
+        delegate->maxCachedProgressWidth = 0;
+    }
+
+    QListView::changeEvent(event);
+}
+
+auto TabList::tab(const u32 index) -> TabListItem& {
     return model_->tab(index);
 };
 
 void TabList::clear() {
     model_->clear();
     delegate->maxCachedNameWidth = 0;
+    delegate->maxCachedProgressWidth = 0;
 }
 
 void TabList::setTabs(vector<TabListItem> tabs) {

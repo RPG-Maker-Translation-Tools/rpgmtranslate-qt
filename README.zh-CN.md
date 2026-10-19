@@ -69,9 +69,8 @@ Windows 版本需要 Windows 10 或 11。程序为静态链接，无需额外安
 
 如果您愿意，请考虑通过以下方式支持我们：
 
-- [Ko-fi](https://ko-fi.com/savannstm)
-- [Patreon](https://www.patreon.com/cw/savannstm)
 - [Boosty](https://boosty.to/mcdeimos)
+- [Ko-fi](https://ko-fi.com/savannstm)
 
 即使您不支持，也没关系。我们会继续做下去。
 
@@ -88,3 +87,4 @@ Windows 版本需要 Windows 10 或 11。程序为静态链接，无需额外安
   - [enchantum](https://github.com/ZXShady/enchantum)，[MIT](licenses/enchantum)
   - [zmij](https://github.com/vitaut/zmij)，[MIT](licenses/zmij)
   - [miniaudio](https://github.com/mackron/miniaudio)，[Unlicense](licenses/miniaudio)
+  - [TinySoundFont](https://github.com/schellingb/TinySoundFont)，[MIT](licenses/TinySoundFont)（`tml.h`：Zlib）

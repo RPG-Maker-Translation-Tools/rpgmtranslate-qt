@@ -2,9 +2,9 @@
 
 [简体中文](./README.zh-CN.md)
 
-<p align="center">
-    <img src="./icons/rpgmtranslate-logo.png" alt="Description" width="256"/>
-</p>
+<div style="display: flex; align-items: center; justify-content: center;">
+    <img src="./icons/rpgmtranslate-logo.png" width="128"/>
+</div>
 
 Полностью переписанное на C++23/Qt6 [оригинальное приложение RPGMTranslate](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate).
 
@@ -17,10 +17,9 @@
 - [x] Поддержка движков RPG Maker 2000/2003/XP/VX/VXAce/MV/MZ, с автоматическим расшифровыванием архивов и парсингом файлов.
 - [x] Простой текстовый формат файлов перевода, который можно редактировать вручную.
 - [x] Перевод может быть экспортирован в другие форматы - XLSX, CSV, XML, YAML and JSON.
-- [x] Встроенные [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation)-функции для более чем сорока языков.
+- [x] Встроенные [CAT](https://en.wikipedia.org/wiki/Computer-assisted_translation)-функции для более чем тридцати пяти языков.
 - [x] Ориентированный на удобство интерфейс со вкладками, горячими клавишами и настраиваемыми функциями.
-- [x] Встроенная массовая обработка файлов **со своей скриптовой системой**, включая массовый перевод, удаление пробелов и перенос строк в тексте.
-- [x] Встроенные интерфейсы для машинного перевода - Google Translate, DeepL, ИИ точки, локальные точки, OpenRouter.
+- [x] Встроенная массовая обработка файлов со своей скриптовой системой: можно даже создавать отдельные процессы!
 - [x] Встроенный просмотрщик ассетов, позволяющий изучать изображения, видео, шрифты, скрипты и прочее.
 - [x] Встроенная проверка правописания и обширный линтинг, включая проверку тегов из различных плагинов (вроде Yanfly Message Core) и информация о них.
 - [x] **частично** Встроенный Git клиент.
@@ -70,11 +69,10 @@
 
 Если можете, поддержите нас через:
 
+- [Boosty](https://boosty.to/mcdeimos) (меньше комиссия)
 - [Ko-fi](https://ko-fi.com/savannstm)
-- [Patreon](https://www.patreon.com/cw/savannstm)
-- [Boosty](https://boosty.to/mcdeimos)
 
-Даже если не поддержите, чёрт с ним. Я буду дальше ерундой своей заниматься.
+Даже если не поддержите, мы будем продолжать трудиться.
 
 ## Лицензия
 
@@ -89,3 +87,4 @@
   - [enchantum](https://github.com/ZXShady/enchantum), [MIT](licenses/enchantum)
   - [zmij](https://github.com/vitaut/zmij), [MIT](licenses/zmij)
   - [miniaudio](https://github.com/mackron/miniaudio), [Unlicense](licenses/miniaudio)
+  - [TinySoundFont](https://github.com/schellingb/TinySoundFont), [MIT](licenses/TinySoundFont) (`tml.h`: Zlib)

@@ -2,15 +2,18 @@
 
 #include "CBSLIWidget.hpp"
 #include "Notice.hpp"
-#include "PluginSequences.hpp"
 #include "ProjectSettings.hpp"
+#include "ScriptHost.hpp"
 #include "Settings.hpp"
 #include "Utils.hpp"
 #include "rpgmtranslate_rs.h"
 #include "ui_SettingsWindow.h"
 
+#include <QBoxLayout>
 #include <QColorDialog>
+#include <QDialogButtonBox>
 #include <QDirListing>
+#include <QFile>
 #include <QFileDialog>
 #include <QFontComboBox>
 #include <QIntValidator>
@@ -18,16 +21,18 @@
 #include <QKeySequenceEdit>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QPlainTextEdit>
+#include <QSaveFile>
 #include <QStringListModel>
 #include <QStyleFactory>
 #include <QStyleHints>
 #include <QTableWidgetItem>
 #include <QUuid>
+#include <QtConcurrent>
 
 namespace {
 using Dir = SettingsWindow::Direction;
 
-constexpr f32 SAMPLING_PARAM_MAX = 2.0F;
 constexpr i32 TRANSLATION_TABLE_FONT_SIZE_MIN = 8;
 constexpr i32 TRANSLATION_TABLE_FONT_SIZE_MAX = 96;
 constexpr i32 MAX_LINE_LENGTH_HINT = 255;
@@ -44,25 +49,7 @@ constexpr i32 CUSTOM_LINT_COLOR_COLUMN = 4;
 
 constexpr i32 REPLACEMENT_ENABLED_COLUMN = 2;
 
-// itos is decimal-only by design, and hex is what "U+XXXX" means to anyone reading the field.
-[[nodiscard]] auto itox(u32 value) -> QString {
-    static constexpr const char16_t* DIGITS = u"0123456789ABCDEF";
-    static constexpr u8 MIN_DIGITS = 4;
-
-    array<char16_t, 8> buf{};
-    u8 len = 0;
-
-    do {
-        buf[buf.size() - ++len] = DIGITS[value & 0xF];
-        value >>= 4;
-    } while (value != 0);
-
-    while (len < MIN_DIGITS) {
-        buf[buf.size() - ++len] = u'0';
-    }
-
-    return QString(QStringView(buf.data() + buf.size() - len, len));
-}
+constexpr i32 SECTION_COUNT = 5;
 
 // One overload per (widget, field) shape. Every setting travels through exactly one of these in both
 // directions, which is what keeps a load from existing without its matching save.
@@ -89,9 +76,9 @@ void sync(const Dir dir, QLineEdit* const edit, T& value) {
     using Wide = std::conditional_t<std::is_signed_v<T>, i64, u64>;
 
     if (dir == Dir::Save) {
-        value = scast<T>(stoa<Wide>(edit->text()));
+        value = scast<T>(stoa<Wide>(edit->text()).value_or(0));
     } else {
-        edit->setText(QString(itos(value).qsv()));
+        edit->setText(QString(qsv(qitos(value))));
     }
 }
 
@@ -120,7 +107,15 @@ void sync(const Dir dir, QComboBox* const box, QString& value, bool useData = fa
         }
     } else {
         if (useData) {
-            box->setItemData(box->currentIndex(), value);
+            const i32 found = box->findData(value);
+
+            if (found != -1) {
+                box->setCurrentIndex(found);
+            } else if (!value.isEmpty()) {
+                // Not in the list (hand-edited or from another version): keep it instead of saving "" over it
+                box->addItem(value, value);
+                box->setCurrentIndex(box->count() - 1);
+            }
         } else {
             box->setCurrentText(value);
         }
@@ -142,17 +137,6 @@ void sync(const Dir dir, QFontComboBox* const box, QString& value) {
         value = box->currentFont().family();
     } else {
         box->setCurrentFont(QFont(value));
-    }
-}
-
-void sync(const Dir dir, CBSLIWidget* const widget, optional<f32>& value) {
-    if (dir == Dir::Save) {
-        value = widget->isChecked() ? optional(widget->value<f32>()) : nullopt;
-    } else if (value) {
-        widget->setChecked(true);
-        widget->setValue(value.value());
-    } else {
-        widget->setChecked(false);
     }
 }
 
@@ -179,11 +163,8 @@ void sync(const Dir dir, QLineEdit* const edit, vector<u32>& value) {
                 trimmed = trimmed.sliced(2);
             }
 
-            bool parsed = false;
-            const u32 codePoint = stoa<u32>(trimmed, 16, &parsed);
-
-            if (parsed) {
-                value.emplace_back(codePoint);
+            if (const optional<u32> codePoint = stoa<u32>(trimmed, 16)) {
+                value.emplace_back(*codePoint);
             }
         }
     } else {
@@ -191,7 +172,7 @@ void sync(const Dir dir, QLineEdit* const edit, vector<u32>& value) {
         parts.reserve(scast<isize>(value.size()));
 
         for (const u32 codePoint : value) {
-            parts.append(u"U+%1"_qsv.arg(itox(codePoint)));
+            parts.append(u"U+%1"_qsv.arg(qsv(qhtos(codePoint, 4, true))));
         }
 
         edit->setText(parts.join(u", "_qsv));
@@ -229,7 +210,7 @@ void syncColorCells(
     for (const auto& entry : listing) {
         QString filename = entry.filePath();
 
-        if (!filename.endsWith(u"aff")) {
+        if (!filename.endsWith(u".aff")) {
             continue;
         }
 
@@ -269,203 +250,64 @@ void syncColorCells(
             continue;
         }
 
+        // Only these territories of these languages get their own entry; every other locale is its bare language
+        bool withTerritory = false;
+
         if (ranges::contains(TERRITORY_SENSITIVE_LANGUAGES, lang)) {
-            const auto& relevant = ranges::find_if(LANGUAGE_RELEVANT_TERRITORIES, [lang](const auto kv_) -> bool {
-                return kv_.first == lang;
-            })->second;
-
-            if (ranges::contains(relevant, loc.territory())) {
-                pair<QString, QString> val = { QString(
-                                                   QLocale::languageToString(loc.language()) % u", "_qsv %
-                                                   QLocale::territoryToString(loc.territory()) % u" ("_qsv %
-                                                   loc.nativeLanguageName() % u')'
-                                               ),
-                                               loc.bcp47Name() };
-
-                if (!ranges::any_of(result, [&](const auto& pair) -> bool { return pair.second == val.second; })) {
-                    result.push_back(std::move(val));
-                }
-
-            } else {
-                pair<QString, QString> val = {
-                    QString(QLocale::languageToString(lang) % u" ("_qsv % QLocale(lang).nativeLanguageName() % u')'),
-                    QLocale::languageToCode(lang)
-                };
-
-                if (!ranges::any_of(result, [&](const auto& pair) -> bool { return pair.second == val.second; })) {
-                    result.push_back(std::move(val));
-                }
-            }
-        } else {
-            pair<QString, QString> val = {
-                QString(QLocale::languageToString(lang) % u" ("_qsv % QLocale(lang).nativeLanguageName() % u')'),
-                QLocale::languageToCode(lang)
-            };
-
-            if (!ranges::any_of(result, [&](const auto& pair) -> bool { return pair.second == val.second; })) {
-                result.push_back(std::move(val));
-            }
+            const auto& relevant = ranges::find(
+                                       LANGUAGE_RELEVANT_TERRITORIES,
+                                       lang,
+                                       &pair<QLocale::Language, array<QLocale::Territory, 4>>::first
+            )
+                                       ->second;
+            withTerritory = ranges::contains(relevant, loc.territory());
         }
+
+        QString code = withTerritory ? loc.bcp47Name() : QLocale::languageToCode(lang);
+
+        if (ranges::any_of(result, [&code](const auto& entry) -> bool { return entry.second == code; })) {
+            continue;
+        }
+
+        QString label =
+            withTerritory
+                ? QString(
+                      QLocale::languageToString(lang) % u", "_qsv % QLocale::territoryToString(loc.territory()) %
+                      u" ("_qsv % loc.nativeLanguageName() % u')'
+                  )
+                : QString(QLocale::languageToString(lang) % u" ("_qsv % QLocale(lang).nativeLanguageName() % u')');
+
+        result.emplace_back(std::move(label), std::move(code));
     }
 
     return result;
 }
 
-QString DEFAULT_SYSTEM_PROMPT =
-    uR"(Role:
-You are a professional videogame localization specialist for JRPG/RPG/Visual Novel titles (RPG Maker engine). Produce player-facing translations with high fidelity, cultural awareness, and strict terminology consistency.
-
-Task:
-Translate all provided text from sourceLanguage to translationLanguage using all available context.
-
-Input:
-You receive a JSON object with:
-
-- sourceLanguage - BCP-47 tag of the source text
-- translationLanguage - target BCP-47 tag
-- projectContext - global tone, lore, and style guidance
-- localContext - situational context for this batch
-- glossary - mandatory terminology with notes (always override default choices)
-- files - object:
-  - keys = filename / asset type (map, system, items, etc.) - indicates gameplay function
-  - values = array of lines to process
-
-Line semantics:
-
-- Comments starting with <!> are context only - DO NOT translate.
-- `<!>ID` starts a new independent entry.
-- `<!>NAME` is an internal identifier.
-- `<!>IN-GAME DISPLAY NAME` is the visible map name.
-- `<!>EVENT NAME` starts a new event block.
-
-Translation rules:
-
-- Preserve meaning, intent, tone, and gameplay function.
-- Prefer concise, idiomatic, UI-safe phrasing.
-- Maintain cross-file consistency within the batch.
-- Use projectContext and localContext aggressively.
-- Enforce glossary terminology exactly.
-
-Non-translatable elements (must remain byte-exact and in place):
-
-- Control codes and escape sequences:
-  `\V[n] \N[n] \P[n] \G \C[n] \I[n] \{ \} \\ \$ \. \| \! \> \< \^ \w[x]
- \n<x> \nc<x> \nr<x> <br> \px[x] \py[x] \oc[x] \ow[x] \fr \fs[x] \fn<x>
- \fb \fi \af[x] \ac[x] \an[x] \pf[x] \pc[x] \pn[x]
- \nc[x] \ni[x] \nw[x] \na[x] \ns[x] \nt[x]
- \ii[x] \iw[x] \ia[x] \is[x] \it[x]`
-- Printf-style substitutions (`%s`, `%d`, etc.).
-- Inline conditional constructs (e.g., `text if(\V[250])`).
-- Engine command tags and HTML-like functional elements
-  (e.g., `<Picture: icon_jumpsuit>`).
-- Any variables, placeholders, markup, or structural tokens.
-
-Do not:
-
-- Translate comments or identifiers.
-- Reorder, split, merge, or drop lines.
-- Add explanations or metadata.
-
-Output:
-Return ONLY a JSON object with the same keys and array structure as the `files` key:
-
-```json
-{
-  "name": [...]
-}
-```
-)"_s;
-
-QString DEFAULT_SINGLE_TRANSLATE_SYSTEM_PROMPT =
-    uR"(Role:
-You are a professional videogame localization specialist for JRPG/RPG/Visual Novel titles (RPG Maker engine). Produce player-facing translations with high fidelity, cultural awareness, and strict terminology consistency.
-
-Task:
-Translate all provided text from sourceLanguage to translationLanguage using all available context.
-
-Input:
-You receive a JSON object containing:
-
-- sourceLanguage - BCP-47 tag of the source text
-- translationLanguage - target BCP-47 tag
-- projectContext - global tone, lore, and style guidance
-- localContext - situational context for this batch
-- glossary - mandatory terminology with notes (always override default choices)
-- string - the text to translate
-- filename - filename / asset type (map, system, items, etc.) - indicates gameplay function
-
-Translation rules:
-
-- Preserve meaning, intent, tone, and gameplay function.
-- Prefer concise, idiomatic, UI-safe phrasing.
-- Maintain cross-file consistency within the batch.
-- Use projectContext and localContext aggressively.
-- Enforce glossary terminology exactly.
-
-Non-translatable elements (must remain byte-exact and in place):
-
-- Control codes and escape sequences:
-  `\V[n] \N[n] \P[n] \G \C[n] \I[n] \{ \} \\ \$ \. \| \! \> \< \^ \w[x]
-\n<x> \nc<x> \nr<x> <br> \px[x] \py[x] \oc[x] \ow[x] \fr \fs[x] \fn<x>
-\fb \fi \af[x] \ac[x] \an[x] \pf[x] \pc[x] \pn[x]
-\nc[x] \ni[x] \nw[x] \na[x] \ns[x] \nt[x]
-\ii[x] \iw[x] \ia[x] \is[x] \it[x]`
-- Printf-style substitutions (`%s`, `%d`, etc.).
-- Inline conditional constructs (e.g., `text if(\V[250])`).
-- Engine command tags and HTML-like functional elements
-  (e.g., `<Picture: icon_jumpsuit>`).
-- Any variables, placeholders, markup, or structural tokens.
-
-Do not:
-
-- Translate comments or identifiers.
-- Reorder, split, merge, or drop lines.
-- Add explanations or metadata.
-
-Output:
-Return ONLY a JSON string with the translation.
-)"_s;
 }  // namespace
 
 SettingsWindow::SettingsWindow(
-    const shared_ptr<Settings>& settings_,
-    const shared_ptr<ProjectSettings>& projectSettings_,
-    const QStringList& tabs,
+    Settings* const settings_,
+    ProjectSettings* const projectSettings_,
     QWidget* const parent
 ) :
     QDialog(parent),
 
     settings(settings_),
     projectSettings(projectSettings_),
+    initialSettings(*settings_),
 
     ui(setupUi()) {
-    ui->inputTokenLimitWidget->setRange(0, UINT16_MAX);
-    ui->inputTokenLimitWidget->setCheckable(false);
-    ui->inputTokenLimitWidget->setLabel(tr("Input token limit"));
-    ui->outputTokenLimitWidget->setRange(0, UINT16_MAX);
-    ui->outputTokenLimitWidget->setCheckable(false);
-    ui->outputTokenLimitWidget->setLabel(tr("Output token limit"));
-    ui->thinkingBudgetWidget->setRange(0, UINT16_MAX);
-    ui->thinkingBudgetWidget->setCheckable(false);
-    ui->thinkingBudgetWidget->setLabel(tr("Thinking budget limit"));
-
-    ui->temperatureWidget->setRange(0.0F, SAMPLING_PARAM_MAX);
-    ui->temperatureWidget->setLabel(tr("Temperature"));
-    ui->frequencyWidget->setRange(0.0F, SAMPLING_PARAM_MAX);
-    ui->frequencyWidget->setLabel(tr("Frequency penalty"));
-    ui->precenseWidget->setRange(0.0F, SAMPLING_PARAM_MAX);
-    ui->precenseWidget->setLabel(tr("Precense penalty"));
-    ui->topPWidget->setRange(0.0F, SAMPLING_PARAM_MAX);
-    ui->topPWidget->setLabel(tr("Top P"));
+    for (const auto endpoint : enchantum::names<TranslationEndpoint>) {
+        ui->typeSelect->addItem(QString::fromLatin1(endpoint));
+    }
 
     ui->translationTableFontSizeWidget->setRange(TRANSLATION_TABLE_FONT_SIZE_MIN, TRANSLATION_TABLE_FONT_SIZE_MAX);
-    ui->translationTableFontSizeWidget->setLabel(tr("Translation table font size"));
-    ui->translationTableFontSizeWidget->setCheckable(false);
 
     // Without these, hasAcceptableInput() is unconditionally true and the range hints below are decoration.
     ui->backupPeriodInput->setValidator(new QIntValidator(MIN_BACKUP_PERIOD, MAX_BACKUP_PERIOD, this));
     ui->maxBackupsInput->setValidator(new QIntValidator(1, MAX_BACKUPS, this));
     ui->lineLengthHintInput->setValidator(new QIntValidator(0, MAX_LINE_LENGTH_HINT, this));
+    ui->hintFontSizeInput->setValidator(new QIntValidator(0, UINT8_MAX, this));
 
     for (const QString& style : QStyleFactory::keys()) {
         ui->styleSelect->addItem(style);
@@ -473,7 +315,8 @@ SettingsWindow::SettingsWindow(
 
     const QList<pair<QString, QString>> languageTags = listLanguageTags();
 
-    for (const auto& [idx, pair] : views::enumerate(languageTags)) {
+    for (const auto& [iidx, pair] : views::enumerate(languageTags)) {
+        const i32 idx = scast<i32>(iidx);
         ui->sourceLanguageSelect->addItem(pair.first);
         ui->sourceLanguageSelect->setItemData(idx, pair.second);
         ui->translationLanguageSelect->addItem(pair.first);
@@ -481,9 +324,6 @@ SettingsWindow::SettingsWindow(
         ui->ltMotherTongueSelect->addItem(pair.first);
         ui->ltMotherTongueSelect->setItemData(idx, pair.second);
     }
-
-    auto* const fileContextListModel = new QStringListModel(tabs, ui->fileContextList);
-    ui->fileContextList->setModel(fileContextListModel);
 
     QStringList endpointNames;
     endpointNames.reserve(scast<isize>(settings->translation.endpoints.size()));
@@ -495,24 +335,40 @@ SettingsWindow::SettingsWindow(
     auto* const endpointListModel = new QStringListModel(endpointNames, ui->endpointList);
     ui->endpointList->setModel(endpointListModel);
 
-    auto* const sectionsListModel = new QStringListModel(
-        { tr("Core"), tr("Appearance"), tr("Controls"), tr("Translation"), tr("Project") },
-        ui->sectionsList
-    );
+    // The names are set by `retranslateDynamic()`
+    auto* const sectionsListModel = new QStringListModel(QStringList(SECTION_COUNT), ui->sectionsList);
     ui->sectionsList->setModel(sectionsListModel);
+    retranslateDynamic();
 
     ui->spellcheckDictionarySelect->installEventFilter(this);
     refreshSpellcheckDictionarySelect();
 
     buildSequenceTables();
 
+#ifndef ENABLE_UPDATER
+    ui->updatesCheckbox->setEnabled(false);
+#endif
+
     syncAll(Direction::Load);
 
     ui->stackedWidget->setCurrentIndex(0);
+    setEndpointFormEnabled(false);
 
-    connect(ui->addEndpointButton, &QPushButton::pressed, this, [this, endpointListModel] -> void {
+    // The window has no buttons of its own: Save applies the changes, Cancel (also Esc and the close button) drops them
+    auto* const buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, this);
+    auto* const contentColumn = new QVBoxLayout();
+    layout()->removeWidget(ui->stackedWidget);
+    contentColumn->setContentsMargins(0, 0, 0, 0);
+    contentColumn->addWidget(ui->stackedWidget, 1);
+    contentColumn->addWidget(buttons);
+    scast<QBoxLayout*>(layout())->addLayout(contentColumn, 1);
+
+    connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+    connect(ui->addEndpointButton, &QPushButton::clicked, this, [this, endpointListModel] -> void {
         const i32 index = endpointListModel->rowCount();
-        const QString name = tr("Endpoint %1").arg(itos(index + 1).qsv());
+        const QString name = tr("Endpoint %1").arg(qsv(qitos(index + 1)));
 
         settings->translation.endpoints.emplace_back(
             EndpointSettings{ .id = QUuid::createUuid().toString(QUuid::WithoutBraces), .name = name }
@@ -524,7 +380,7 @@ SettingsWindow::SettingsWindow(
         ui->endpointList->setCurrentIndex(endpointListModel->index(index, 0));
     });
 
-    connect(ui->removeEndpointButton, &QPushButton::pressed, this, [this, endpointListModel] -> void {
+    connect(ui->removeEndpointButton, &QPushButton::clicked, this, [this, endpointListModel] -> void {
         const QModelIndex index = ui->endpointList->currentIndex();
 
         if (!index.isValid()) {
@@ -539,8 +395,10 @@ SettingsWindow::SettingsWindow(
         endpointListModel->removeRow(row);
 
         const auto endpointIt = settings->translation.endpoints.begin() + row;
-        rpgm_delete_credential(strtoffi(endpointIt->id.toUtf8()));
+        removedEndpointIds.emplace_back(std::move(endpointIt->id));
         settings->translation.endpoints.erase(endpointIt);
+
+        setEndpointFormEnabled(false);
     });
 
     connect(
@@ -552,10 +410,16 @@ SettingsWindow::SettingsWindow(
     }
     );
 
-    connect(ui->defaultBaseURLButton, &QPushButton::pressed, this, [this] -> void {
-        const auto endpoint = TranslationEndpoint(ui->typeSelect->currentIndex());
-        if (endpoint > TranslationEndpoint::DeepL) {
-            setDefaultBaseURL(endpoint);
+    connect(ui->browseScriptButton, &QPushButton::clicked, this, [this] -> void {
+        const QString path = QFileDialog::getOpenFileName(
+            this,
+            tr("Select Script"),
+            ui->scriptPathInput->text(),
+            tr("JavaScript (*.js)")
+        );
+
+        if (!path.isEmpty()) {
+            ui->scriptPathInput->setText(path);
         }
     });
 
@@ -590,7 +454,6 @@ SettingsWindow::SettingsWindow(
             return index.isValid() && index.row() < scast<i32>(endpoints.size());
         };
 
-        // Removing an endpoint fires this with a `previous` that no longer exists.
         if (inRange(previous)) {
             syncEndpoint(Direction::Save, endpoints[previous.row()]);
         }
@@ -600,60 +463,17 @@ SettingsWindow::SettingsWindow(
         }
 
         auto& endpointSettings = endpoints[current.row()];
+        setEndpointFormEnabled(true);
         syncEndpoint(Direction::Load, endpointSettings);
 
-        if (endpointSettings.model.isEmpty()) {
-            return;
-        }
-
-        checkKey();
-
-        const i32 modelIndex = ui->modelSelect->findText(endpointSettings.model);
-
-        if (modelIndex != -1) {
-            ui->modelSelect->setCurrentIndex(modelIndex);
-        } else if (ui->modelSelect->count() > 0) {
-            // An empty list means checkKey() already reported why it couldn't fetch anything.
-            present(
-                this,
-                NOTICE(
-                    "Model that was previously selected for translation: %1 is not longer in the list of models provided by the endpoint.",
-                    Warning,
-                    Modal,
-                    endpointSettings.model
-                )
-            );
-        }
+        // The select signals only when the type differs from the one shown before, and the form depends on it
+        onTypeChange(endpointSettings.endpoint);
     }
     );
 
-    connect(ui->defaultSystemPromptButton, &QPushButton::pressed, this, [this] -> void {
-        ui->systemPromptInput->setPlainText(DEFAULT_SYSTEM_PROMPT);
-    });
+    connect(ui->checkKeyButton, &QPushButton::clicked, this, [this] -> void { checkKey(); });
 
-    connect(ui->singleSystemPromptDefaultButton, &QPushButton::pressed, this, [this] -> void {
-        ui->singleSystemPromptInput->setPlainText(DEFAULT_SINGLE_TRANSLATE_SYSTEM_PROMPT);
-    });
-
-    connect(ui->baseURLInput, &UnfocusLineEdit::editingFinished, this, [this] -> void {
-        const QString baseUrl = ui->baseURLInput->text();
-
-        if (baseUrl.isEmpty()) {
-            return;
-        }
-
-        const QUrl url = QUrl::fromUserInput(baseUrl);
-
-        if (url.scheme().isEmpty() || url.host().isEmpty()) {
-            present(this, NOTICE("Given URL is invalid. Please check the validity of submitted URL.", Warning, Modal));
-
-            ui->baseURLInput->clear();
-        }
-    });
-
-    connect(ui->checkKeyButton, &QPushButton::pressed, this, [this] -> void { checkKey(); });
-
-    connect(ui->ltCheckConnectionButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->ltCheckConnectionButton, &QPushButton::clicked, this, [this] -> void {
         checkLanguageToolConnection();
     });
 
@@ -679,7 +499,7 @@ SettingsWindow::SettingsWindow(
         }
     });
 
-    connect(ui->addReplacementButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->addReplacementButton, &QPushButton::clicked, this, [this] -> void {
         const i32 row = ui->replacementsTable->rowCount();
         ui->replacementsTable->insertRow(row);
 
@@ -691,7 +511,7 @@ SettingsWindow::SettingsWindow(
         ui->replacementsTable->setItem(row, REPLACEMENT_ENABLED_COLUMN, checkboxItem);
     });
 
-    connect(ui->removeReplacementButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->removeReplacementButton, &QPushButton::clicked, this, [this] -> void {
         const i32 row = ui->replacementsTable->currentRow();
 
         if (row != -1) {
@@ -699,9 +519,9 @@ SettingsWindow::SettingsWindow(
         }
     });
 
-    connect(ui->addLintButton, &QPushButton::pressed, this, [this] -> void { addCustomLintRow(CustomLint{}); });
+    connect(ui->addLintButton, &QPushButton::clicked, this, [this] -> void { addCustomLintRow(CustomLint()); });
 
-    connect(ui->removeLintButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->removeLintButton, &QPushButton::clicked, this, [this] -> void {
         const i32 row = ui->customLintsTable->currentRow();
 
         if (row != -1) {
@@ -709,8 +529,8 @@ SettingsWindow::SettingsWindow(
         }
     });
 
-    connect(ui->exportLintsButton, &QPushButton::pressed, this, [this] -> void { exportCustomLints(); });
-    connect(ui->importLintsButton, &QPushButton::pressed, this, [this] -> void { importCustomLints(); });
+    connect(ui->exportLintsButton, &QPushButton::clicked, this, [this] -> void { exportCustomLints(); });
+    connect(ui->importLintsButton, &QPushButton::clicked, this, [this] -> void { importCustomLints(); });
 
     connect(ui->customLintsTable, &QTableWidget::itemDoubleClicked, this, [this](QTableWidgetItem* const item) -> void {
         if (item->column() != CUSTOM_LINT_COLOR_COLUMN) {
@@ -739,24 +559,12 @@ SettingsWindow::SettingsWindow(
                     Warning,
                     Modal,
                     test.errorString(),
-                    itos(test.patternErrorOffset()).qsv()
+                    qsv(qitos(test.patternErrorOffset()))
                 )
             );
             ui->customLintsTable->editItem(item);
         }
     });
-
-    if (projectSettings != nullptr) {
-        connect(
-            ui->fileContextList->selectionModel(),
-            &QItemSelectionModel::currentRowChanged,
-            this,
-            [this](const QModelIndex& current, const QModelIndex& previous) -> void {
-            syncFileContext(Direction::Save, previous);
-            syncFileContext(Direction::Load, current);
-        }
-        );
-    }
 }
 
 SettingsWindow::~SettingsWindow() {
@@ -767,11 +575,33 @@ auto SettingsWindow::setupUi() -> Ui::SettingsWindow* {
     auto* const ui_ = new Ui::SettingsWindow();
     ui_->setupUi(this);
     return ui_;
-};
+}
+
+// The texts that are set in code, which `retranslateUi` doesn't know (or puts the `.ui` ones back over)
+void SettingsWindow::retranslateDynamic() {
+    ui->translationTableFontSizeWidget->setLabel(tr("Translation table font size"));
+
+    auto* const sectionsModel = ui->sectionsList->model();
+    const QStringList sections = { tr("Core"), tr("Appearance"), tr("Controls"), tr("Translation"), tr("Project") };
+
+    for (i32 idx = 0; idx < sections.size(); idx++) {
+        sectionsModel->setData(sectionsModel->index(idx, 0), sections[idx]);
+    }
+
+#ifndef ENABLE_UPDATER
+    ui->updatesCheckbox->setToolTip(tr("This build of RPGMTranslate has no self-updater."));
+#endif
+
+    // Only once an endpoint is selected: the form is meaningless, and its widgets hidden, before that
+    if (ui->endpointList->currentIndex().isValid()) {
+        onTypeChange(TranslationEndpoint(ui->typeSelect->currentIndex()));
+    }
+}
 
 void SettingsWindow::changeEvent(QEvent* const event) {
     if (event->type() == QEvent::LanguageChange) {
         ui->retranslateUi(this);
+        retranslateDynamic();
     }
 
     QDialog::changeEvent(event);
@@ -811,14 +641,66 @@ void SettingsWindow::refreshSpellcheckDictionarySelect() {
     ui->spellcheckDictionarySelect->setCurrentIndex(max(0, ui->spellcheckDictionarySelect->findText(selected)));
 }
 
-// Overriding done() rather than closeEvent() catches every way out of the dialog - Esc and reject() reach
-// done() without ever producing a QCloseEvent.
+void SettingsWindow::setEndpointFormEnabled(const bool enabled) {
+    // Nothing selected means nothing to save the form into
+    const array<QWidget*, 4> widgets = { ui->typeSelect,
+                                         ui->apiKeyWidget,
+                                         ui->yandexFolderWidget,
+                                         ui->scriptPathWidget };
+
+    for (QWidget* const widget : widgets) {
+        widget->setEnabled(enabled);
+    }
+
+    ui->glossaryCheckbox->setEnabled(enabled);
+    ui->checkKeyButton->setEnabled(enabled);
+}
+
 void SettingsWindow::done(const i32 result) {
+    if (result != Accepted) {
+        // Style and theme were applied live
+        *settings = std::move(initialSettings);
+
+        if (!settings->appearance.style.isEmpty()) {
+            qApp->setStyle(QStyleFactory::create(settings->appearance.style));
+        }
+
+        qApp->styleHints()->setColorScheme(Qt::ColorScheme(settings->appearance.theme));
+
+        QDialog::done(result);
+        return;
+    }
+
     if (!validate()) {
         return;
     }
 
     syncAll(Direction::Save);
+
+    for (const QString& endpointId : removedEndpointIds) {
+        if (!rpgm_delete_credential(strtoffi(endpointId.toUtf8()))) {
+            qWarning().noquote() << u"Failed to delete the API key of a removed endpoint: %1"_qsv.arg(
+                svtostr(ffitostr(rpgm_error()))
+            );
+        }
+    }
+
+    for (const auto& endpoint : settings->translation.endpoints) {
+        if (endpoint.endpoint != TranslationEndpoint::Script || endpoint.scriptPath.isEmpty()) {
+            continue;
+        }
+
+        auto file = QFile(endpoint.scriptPath);
+
+        if (!file.open(QFile::ReadOnly)) {
+            present(this, NOTICE("Cannot read script %1: %2", Warning, Modal, endpoint.scriptPath, file.errorString()));
+            continue;
+        }
+
+        // Declining just leaves the script unapproved; translating with it then reports that.
+        confirmScriptAccess(this, settings->core.approvedScripts, endpoint.name, QString::fromUtf8(file.readAll()));
+    }
+
     QDialog::done(result);
 }
 
@@ -830,8 +712,8 @@ auto SettingsWindow::validate() -> bool {
                 "Backup period must be between %1 and %2 seconds.",
                 Warning,
                 Modal,
-                itos(MIN_BACKUP_PERIOD).qsv(),
-                itos(MAX_BACKUP_PERIOD).qsv()
+                qsv(qitos(MIN_BACKUP_PERIOD)),
+                qsv(qitos(MAX_BACKUP_PERIOD))
             )
         );
         ui->backupPeriodInput->setFocus();
@@ -839,7 +721,7 @@ auto SettingsWindow::validate() -> bool {
     }
 
     if (!ui->maxBackupsInput->hasAcceptableInput()) {
-        present(this, NOTICE("Max backups must be between 1 and %1.", Warning, Modal, itos(MAX_BACKUPS).qsv()));
+        present(this, NOTICE("Max backups must be between 1 and %1.", Warning, Modal, qsv(qitos(MAX_BACKUPS))));
         ui->maxBackupsInput->setFocus();
         return false;
     }
@@ -847,28 +729,107 @@ auto SettingsWindow::validate() -> bool {
     if (projectSettings != nullptr && !ui->lineLengthHintInput->hasAcceptableInput()) {
         present(
             this,
-            NOTICE("Line length hint must be between 0 and %1.", Warning, Modal, itos(MAX_LINE_LENGTH_HINT).qsv())
+            NOTICE("Line length hint must be between 0 and %1.", Warning, Modal, qsv(qitos(MAX_LINE_LENGTH_HINT)))
         );
         ui->lineLengthHintInput->setFocus();
         return false;
     }
 
-    const array<pair<QStringView, QKeySequenceEdit*>, 8> hotkeyInputs{
-        { { u"Search Panel"_qsv, ui->searchPanelInput },
-          { u"Tab Panel"_qsv, ui->tabPanelInput },
-          { u"Go To Row"_qsv, ui->goToRowInput },
-          { u"Batch Menu"_qsv, ui->batchMenuInput },
-          { u"Bookmark Menu"_qsv, ui->bookmarkMenuInput },
-          { u"Lint Menu"_qsv, ui->lintMenuInput },
-          { u"Glossary Menu"_qsv, ui->glossaryMenuInput },
-          { u"Translations Menu"_qsv, ui->translationsMenuInput } }
+    if (projectSettings != nullptr && !ui->hintFontSizeInput->hasAcceptableInput()) {
+        present(this, NOTICE("Hint font size must be between 0 and %1.", Warning, Modal, qsv(qitos(UINT8_MAX))));
+        ui->hintFontSizeInput->setFocus();
+        return false;
+    }
+
+    // All custom lints are joined into one regex, so a single invalid pattern would silence every one of them
+    for (i32 row = 0; row < ui->customLintsTable->rowCount(); row++) {
+        const QString pattern = ui->customLintsTable->item(row, CUSTOM_LINT_PATTERN_COLUMN)->text();
+        const auto regexp = QRegularExpression(pattern);
+
+        if (!regexp.isValid()) {
+            present(
+                this,
+                NOTICE(
+                    "Custom lint \"%1\" is not a valid regular expression: %2",
+                    Warning,
+                    Modal,
+                    pattern,
+                    regexp.errorString()
+                )
+            );
+            ui->customLintsTable->setCurrentCell(row, CUSTOM_LINT_PATTERN_COLUMN);
+            ui->customLintsTable->setFocus();
+            return false;
+        }
+    }
+
+    // Startup removes a Script endpoint with no path, together with its stored key
+    const QModelIndex shownEndpoint = ui->endpointList->currentIndex();
+
+    for (const auto [idx, endpoint] : views::enumerate(settings->translation.endpoints)) {
+        // The selected endpoint is still in the form, not yet in `settings`
+        const bool isShown = shownEndpoint.isValid() && shownEndpoint.row() == scast<i32>(idx);
+        const bool isScript = isShown ? ui->typeSelect->currentIndex() == scast<i32>(TranslationEndpoint::Script)
+                                      : endpoint.endpoint == TranslationEndpoint::Script;
+        const bool hasPath = isShown ? !ui->scriptPathInput->text().isEmpty() : !endpoint.scriptPath.isEmpty();
+
+        if (isScript && !hasPath) {
+            present(this, NOTICE("The Script endpoint \"%1\" needs a script file.", Warning, Modal, endpoint.name));
+            ui->endpointList->setCurrentIndex(ui->endpointList->model()->index(scast<i32>(idx), 0));
+            ui->scriptPathInput->setFocus();
+            return false;
+        }
+    }
+
+    // The names are shown to the user, so they are translated
+    const array<pair<QString, QKeySequenceEdit*>, 11> hotkeyInputs{
+        { { tr("Search Panel"), ui->searchPanelInput },
+          { tr("Tab Panel"), ui->tabPanelInput },
+          { tr("Go To Row"), ui->goToRowInput },
+          { tr("Batch Menu"), ui->batchMenuInput },
+          { tr("Bookmark Menu"), ui->bookmarkMenuInput },
+          { tr("Lint Menu"), ui->lintMenuInput },
+          { tr("Glossary Menu"), ui->glossaryMenuInput },
+          { tr("Translations Menu"), ui->translationsMenuInput },
+          { tr("Trim Cell"), ui->singleTrimInput },
+          { tr("Wrap Cell"), ui->singleWrapInput },
+          { tr("Latinize Cell"), ui->singleLatinizeInput } }
     };
+
+    const auto reservedHotkeys =
+        array<pair<QString, QKeySequence>, 9>{ { { tr("Save"), QKeySequence(QKeySequence::Save) },
+                                                 { tr("Write"), QKeySequence(WRITE_SHORTCUT.toString()) },
+                                                 { tr("Search"), QKeySequence(QKeySequence::Find) },
+                                                 { tr("Close Tab"), QKeySequence(CLOSE_TAB_SHORTCUT.toString()) },
+                                                 { tr("Copy"), QKeySequence(QKeySequence::Copy) },
+                                                 { tr("Cut"), QKeySequence(QKeySequence::Cut) },
+                                                 { tr("Paste"), QKeySequence(QKeySequence::Paste) },
+                                                 { tr("Undo"), QKeySequence(QKeySequence::Undo) },
+                                                 { tr("Redo"), QKeySequence(QKeySequence::Redo) } } };
 
     for (const auto [idx, first] : views::enumerate(hotkeyInputs)) {
         const QKeySequence sequence = first.second->keySequence();
 
         if (sequence.isEmpty()) {
             continue;
+        }
+
+        const auto reserved = ranges::find(reservedHotkeys, sequence, &pair<QString, QKeySequence>::second);
+
+        if (reserved != reservedHotkeys.end()) {
+            present(
+                this,
+                NOTICE(
+                    "Hotkey %1 of \"%2\" is reserved for \"%3\". Please assign a different hotkey.",
+                    Warning,
+                    Modal,
+                    sequence.toString(),
+                    first.first,
+                    reserved->first
+                )
+            );
+            first.second->setFocus();
+            return false;
         }
 
         for (const auto& second : views::drop(hotkeyInputs, idx + 1)) {
@@ -880,8 +841,8 @@ auto SettingsWindow::validate() -> bool {
                         Warning,
                         Modal,
                         sequence.toString(),
-                        first.first.toString(),
-                        second.first.toString()
+                        first.first,
+                        second.first
                     )
                 );
                 first.second->setFocus();
@@ -920,8 +881,19 @@ void SettingsWindow::syncAll(const Direction direction) {
             appearance.translationTableFont = qApp->font().family();
         }
 
+        // `pointSize()` is -1 for a font given in pixels, `QFontInfo` always has a point size
         if (appearance.translationTableFontSize == 0) {
-            appearance.translationTableFontSize = scast<u8>(qApp->font().pointSize());
+            appearance.translationTableFontSize = scast<u8>(QFontInfo(qApp->font()).pointSize());
+        }
+
+        // With no style set the application runs in its default one. The select would show its first, and saving
+        // would make that one the style.
+        if (appearance.style.isEmpty()) {
+            const i32 styleIndex = ui->styleSelect->findText(qApp->style()->name(), Qt::MatchFixedString);
+
+            if (styleIndex != -1) {
+                appearance.style = ui->styleSelect->itemText(styleIndex);
+            }
         }
     }
 
@@ -930,6 +902,7 @@ void SettingsWindow::syncAll(const Direction direction) {
     sync(direction, ui->styleSelect, appearance.style);
     sync(direction, ui->themeSelect, appearance.theme);
     sync(direction, ui->displayPercentsCheckbox, appearance.displayPercents);
+    sync(direction, ui->displayEntryNamesCheckbox, appearance.displayEntryNames);
 
     // Controls
     sync(direction, ui->searchPanelInput, controls.searchPanel);
@@ -940,6 +913,9 @@ void SettingsWindow::syncAll(const Direction direction) {
     sync(direction, ui->lintMenuInput, controls.lintMenu);
     sync(direction, ui->glossaryMenuInput, controls.glossaryMenu);
     sync(direction, ui->translationsMenuInput, controls.translationsMenu);
+    sync(direction, ui->singleTrimInput, controls.singleTrim);
+    sync(direction, ui->singleWrapInput, controls.singleWrap);
+    sync(direction, ui->singleLatinizeInput, controls.singleLatinize);
 
     // Translation
     sync(direction, ui->displayWordsCheckbox, translation.displayWordsAndCharacters);
@@ -981,52 +957,37 @@ void SettingsWindow::syncAll(const Direction direction) {
     }
 
     sync(direction, ui->lineLengthHintInput, projectSettings->lineLengthHint);
+    // Empty means "the editor font", which the select can't show. Saving what it shows by default would turn it
+    // into that family, so an untouched select leaves the setting empty.
+    if (direction == Direction::Load) {
+        sync(direction, ui->hintFontSelect, projectSettings->hintFont);
+        defaultHintFont = projectSettings->hintFont.isEmpty() ? ui->hintFontSelect->currentFont().family() : QString();
+    } else if (!projectSettings->hintFont.isEmpty() || ui->hintFontSelect->currentFont().family() != defaultHintFont) {
+        sync(direction, ui->hintFontSelect, projectSettings->hintFont);
+    }
+
+    sync(direction, ui->hintFontSizeInput, projectSettings->hintFontSize);
 
     sync(direction, ui->sourceLanguageSelect, projectSettings->sourceLang, true);
     sync(direction, ui->translationLanguageSelect, projectSettings->translationLang, true);
 
     sync(direction, ui->spellcheckDictionarySelect, projectSettings->spellcheckDictionary);
     sync(direction, ui->writeEncodingSelect, projectSettings->writeEncoding);
-    sync(direction, ui->projectContextInput, projectSettings->projectContext);
 
-    if (direction == Direction::Save) {
-        syncFileContext(direction, ui->fileContextList->currentIndex());
+    // A stored "" (older versions' "always UTF-8") matches no item and would keep the previous project's choice
+    if (direction == Direction::Load && ui->writeEncodingSelect->findText(projectSettings->writeEncoding) == -1) {
+        ui->writeEncodingSelect->setCurrentIndex(0);
     }
 }
 
 void SettingsWindow::syncEndpoint(const Direction direction, EndpointSettings& endpoint) {
-    sync(direction, ui->typeSelect, endpoint.type);
-
-    if (direction == Direction::Save || !endpoint.baseUrl.isEmpty()) {
-        sync(direction, ui->baseURLInput, endpoint.baseUrl);
-    }
+    sync(direction, ui->typeSelect, endpoint.endpoint);
 
     sync(direction, ui->apiKeyInput, endpoint.apiKey);
-    sync(direction, ui->yandexFolderIDInput, endpoint.yandexFolderID);
-    sync(direction, ui->systemPromptInput, endpoint.systemPrompt);
-    sync(direction, ui->singleSystemPromptInput, endpoint.singleTranslateSystemPrompt);
+    sync(direction, ui->yandexFolderIdInput, endpoint.yandexFolderId);
+    sync(direction, ui->scriptPathInput, endpoint.scriptPath);
 
-    sync(direction, ui->temperatureWidget, endpoint.temperature);
-    sync(direction, ui->frequencyWidget, endpoint.frequencyPenalty);
-    sync(direction, ui->precenseWidget, endpoint.precensePenalty);
-    sync(direction, ui->topPWidget, endpoint.topP);
-
-    sync(direction, ui->inputTokenLimitWidget, endpoint.tokenLimit);
-    sync(direction, ui->outputTokenLimitWidget, endpoint.outputTokenLimit);
-    sync(direction, ui->thinkingBudgetWidget, endpoint.thinkingBudget);
-
-    sync(direction, ui->reasoningEffortSelect, endpoint.reasoningEffort);
     sync(direction, ui->glossaryCheckbox, endpoint.useGlossary);
-    sync(direction, ui->thinkingCheckbox, endpoint.thinking);
-    sync(direction, ui->singleTranslationCheckbox, endpoint.singleTranslation);
-
-    if (direction == Direction::Save) {
-        if (ui->modelSelect->count() > 0) {
-            endpoint.model = ui->modelSelect->currentText();
-        }
-    } else {
-        ui->modelSelect->clear();
-    }
 }
 
 void SettingsWindow::buildSequenceTables() {
@@ -1215,32 +1176,6 @@ void SettingsWindow::syncReplacements(const Direction direction) {
     settings->translation.replacements = std::move(replacements);
 }
 
-void SettingsWindow::syncFileContext(const Direction direction, const QModelIndex& index) {
-    if (!index.isValid()) {
-        if (direction == Direction::Load) {
-            ui->fileContextInput->setPlainText(QString());
-        }
-
-        return;
-    }
-
-    const QString tab = index.data().toString();
-
-    if (direction == Direction::Save) {
-        const QString context = ui->fileContextInput->toPlainText();
-
-        if (context.isEmpty()) {
-            projectSettings->fileContexts.erase(tab);
-        } else {
-            projectSettings->fileContexts.insert({ tab, context });
-        }
-    } else if (projectSettings->fileContexts.contains(tab)) {
-        ui->fileContextInput->setPlainText(projectSettings->fileContexts[tab]);
-    } else {
-        ui->fileContextInput->setPlainText(QString());
-    }
-}
-
 void SettingsWindow::exportCustomLints() {
     const QString path =
         QFileDialog::getSaveFileName(this, tr("Export custom lints"), QString(), tr("JSON files (*.json)"));
@@ -1266,14 +1201,15 @@ void SettingsWindow::exportCustomLints() {
         return;
     }
 
-    auto file = QFile(path);
+    // The target may be an existing file the user chose to overwrite; keep it intact unless the write succeeds
+    auto file = QSaveFile(path);
+    file.setDirectWriteFallback(true);
 
-    if (!file.open(QFile::WriteOnly)) {
+    const i64 size = scast<i64>(json.value().size());
+
+    if (!file.open(QFile::WriteOnly) || file.write(json.value().data(), size) != size || !file.commit()) {
         present(this, NOTICE("Writing %1 failed: %2", Warning, Modal, path, file.errorString()));
-        return;
     }
-
-    file.write(json.value().data(), scast<i64>(json.value().size()));
 }
 
 void SettingsWindow::importCustomLints() {
@@ -1292,7 +1228,7 @@ void SettingsWindow::importCustomLints() {
     }
 
     const QByteArray json = file.readAll();
-    const auto lints = glz::read_json<vector<CustomLint>>(string_view(json.data(), json.size()));
+    const auto lints = readLenient<vector<CustomLint>>(string_view(json.data(), json.size()));
 
     if (!lints) {
         present(
@@ -1308,106 +1244,80 @@ void SettingsWindow::importCustomLints() {
         return;
     }
 
-    for (const auto& lint : lints.value()) {
-        addCustomLintRow(lint);
-    }
-}
+    usize skipped = 0;
 
-void SettingsWindow::setDefaultBaseURL(const TranslationEndpoint endpoint) {
-    switch (endpoint) {
-        case TranslationEndpoint::Google:
-        case TranslationEndpoint::Yandex:
-        case TranslationEndpoint::DeepL:
-            std::unreachable();
-            break;
-        case TranslationEndpoint::Aliyun:
-            ui->baseURLInput->setText(u"https://dashscope.aliyuncs.com"_s);
-            break;
-        case TranslationEndpoint::Anthropic:
-            ui->baseURLInput->setText(u"https://api.anthropic.com"_s);
-            break;
-        case TranslationEndpoint::DeepSeek:
-            ui->baseURLInput->setText(u"https://api.deepseek.com/v1"_s);
-            break;
-        case TranslationEndpoint::Gemini:
-            ui->baseURLInput->setText(u"https://generativelanguage.googleapis.com/v1beta"_s);
-            break;
-        case TranslationEndpoint::Longcat:
-            ui->baseURLInput->setText(u"https://api.longcat.chat/openai/v1"_s);
-            break;
-        case TranslationEndpoint::Moonshot:
-            ui->baseURLInput->setText(u"https://api.moonshot.cn/v1"_s);
-            break;
-        case TranslationEndpoint::Mistral:
-            ui->baseURLInput->setText(u"https://api.mistral.ai/v1"_s);
-            break;
-        case TranslationEndpoint::OpenAI:
-            ui->baseURLInput->setText(u"https://api.openai.com/v1"_s);
-            break;
-        case TranslationEndpoint::Volcengine:
-            ui->baseURLInput->setText(u"https://ark.cn-beijing.volces.com/api/v3"_s);
-            break;
-        case TranslationEndpoint::Xiaomi:
-            ui->baseURLInput->setText(u"https://api.xiaomimimo.com/v1"_s);
-            break;
-        case TranslationEndpoint::Koboldcpp:
-        case TranslationEndpoint::Ollama:
-        case TranslationEndpoint::OpenAICompatible:
-        case TranslationEndpoint::Xinference:
-            ui->baseURLInput->clear();
-            break;
-        case TranslationEndpoint::Zhipu:
-            ui->baseURLInput->setText(u"https://open.bigmodel.cn"_s);
-            break;
+    for (const auto& lint : lints.value()) {
+        if (QRegularExpression(lint.sequence).isValid()) {
+            addCustomLintRow(lint);
+        } else {
+            skipped++;
+        }
+    }
+
+    if (skipped != 0) {
+        present(
+            this,
+            NOTICE(
+                "%1 imported custom lint(s) were skipped: their patterns are not valid regular expressions.",
+                Warning,
+                Modal,
+                qsv(qitos(skipped))
+            )
+        );
     }
 }
 
 void SettingsWindow::checkKey() {
-    const auto endpoint = TranslationEndpoint(ui->typeSelect->currentIndex());
+    EndpointSettings endpoint;
+    syncEndpoint(Direction::Save, endpoint);
 
-    if (endpoint <= TranslationEndpoint::DeepL) {
-        // TODO(v1.2): Check
-        return;
-    }
+    const auto endpointJson = glz::write_json(endpoint);
+    const QByteArray sourceLang = QByteArrayLiteral("en");
+    const QByteArray translationLang = QByteArrayLiteral("de");
+    const QByteArray text = QByteArrayLiteral("Hello");
 
-    ByteBuffer out;
+    ui->checkKeyButton->setEnabled(false);
 
-    const QByteArray apiKey = ui->apiKeyInput->text().toUtf8();
-    const QByteArray baseUrl = ui->baseURLInput->text().toUtf8();
+    QtConcurrent::run([=] -> ::Result<void, QString> {
+        FFIString out;
 
-    const bool success = rpgm_get_models(endpoint, strtoffi(apiKey), strtoffi(baseUrl), &out);
+        if (!rpgm_translate_single(
+                strtoffi(endpointJson.value().data()),
+                strtoffi(sourceLang),
+                strtoffi(translationLang),
+                strtoffi(text),
+                &out
+            )) {
+            return Err(ffitostr(rpgm_error()).toString());
+        }
 
-    if (!success) {
-        const QUtf8SV error = ffitostr(rpgm_error());
-        present(this, NOTICE("Getting available models failed with error: %1", Warning, Modal, svtostr(error)));
+        rpgm_string_free(out);
+        return {};
+    }).then(this, [this](const ::Result<void, QString>& checked) -> void {
+        ui->checkKeyButton->setEnabled(true);
 
-        return;
-    }
-
-    ui->modelSelect->clear();
-
-    u32 pos = 4;
-
-    while (pos < out.len) {
-        const u32 stringLen = *rcast<const u32*>(out.ptr + pos);
-        pos += 4;
-
-        ui->modelSelect->addItem(QString::fromUtf8(rcast<const char*>(out.ptr + pos), stringLen));
-        pos += stringLen;
-    }
-
-    rpgm_buffer_free(out);
+        if (checked) {
+            present(this, NOTICE("The API key works.", Info, Status));
+        } else {
+            present(this, NOTICE("API key check failed: %1", Warning, Modal, checked.error()));
+        }
+    });
 }
 
 void SettingsWindow::checkLanguageToolConnection() {
-    auto request = QNetworkRequest(QUrl(ui->ltBaseUrlInput->text() + u"/v2"_qsv));
+    QString baseUrl = ui->ltBaseUrlInput->text();
+
+    while (baseUrl.endsWith(u'/')) {
+        baseUrl.chop(1);
+    }
+
+    auto request = QNetworkRequest(QUrl(baseUrl + u"/v2"_qsv));
     request.setTransferTimeout(LANGUAGETOOL_CONNECTION_TIMEOUT_MS);
 
-    connect(
-        &languageToolNetworkManager,
-        &QNetworkAccessManager::finished,
-        this,
-        [this](QNetworkReply* const reply) -> void {
+    // One connection per reply: a check started while another is running must not take the other's `finished`
+    QNetworkReply* const pending = languageToolNetworkManager.get(request);
+
+    connect(pending, &QNetworkReply::finished, this, [this, reply = pending] -> void {
         if (reply->error() == QNetworkReply::NoError) {
             present(this, NOTICE("Successfully connected to the LanguageTool server.", Info, Status));
         } else {
@@ -1432,50 +1342,36 @@ void SettingsWindow::checkLanguageToolConnection() {
         }
 
         reply->deleteLater();
-    },
-        Qt::SingleShotConnection
-    );
-
-    languageToolNetworkManager.get(request);
+    });
 }
 
 void SettingsWindow::onTypeChange(const TranslationEndpoint endpoint) {
-    ui->baseURLInput->setEnabled(true);
+    const bool usesKey = endpoint == TranslationEndpoint::Yandex || endpoint == TranslationEndpoint::DeepL;
+    const bool isScript = endpoint == TranslationEndpoint::Script;
+
+    ui->apiKeyWidget->setVisible(usesKey);
+    ui->checkKeyButton->setVisible(usesKey);
+    ui->yandexFolderWidget->setVisible(endpoint == TranslationEndpoint::Yandex);
+    ui->scriptPathWidget->setVisible(isScript);
+    ui->glossaryCheckbox->setVisible(isScript);
 
     switch (endpoint) {
         case TranslationEndpoint::Google:
-            ui->typeDescriptionLabel->setText(
-                tr("Google Translate. Free and unlimited. Configured options don't work with this endpoint.")
-            );
+            ui->typeDescriptionLabel->setText(tr("Google Translate. Free and unlimited."));
             break;
         case TranslationEndpoint::Yandex:
-            ui->typeDescriptionLabel->setText(tr(
-                "Yandex Translate. Requires API key and folder ID. Configured options don't work with this endpoint."
-            ));
+            ui->typeDescriptionLabel->setText(tr("Yandex Translate. Requires API key and folder ID."));
             break;
         case TranslationEndpoint::DeepL:
+            ui->typeDescriptionLabel->setText(tr("DeepL. Requires API key."));
+            break;
+        case TranslationEndpoint::Script:
             ui->typeDescriptionLabel->setText(tr(
-                "DeepL. Requires API key and folder ID. Configured options don't work with this endpoint, except glossary usage."
+                "Script. Runs the rpgmTranslateCallback function of your JavaScript file, so any translation service or AI model can be connected."
             ));
-            ui->baseURLInput->setEnabled(false);
             break;
         default:
-            setDefaultBaseURL(endpoint);
-
-            ui->typeDescriptionLabel->setText(tr(
-                "LLM endpoint with pre-defined base URL. Don't change the base URL, unless you know what you're doing. Configured options will affect this endpoint."
-            ));
-
-            if (endpoint == TranslationEndpoint::OpenAICompatible) {
-                ui->typeDescriptionLabel->setText(tr(
-                    "OpenAI-compatible endpoint. This category fits many providers, including OpenAI itself, DeepSeek, Mistral, OpenRouter and local providers, such as llama.cpp and koboldcpp. Requires valid base URL, that should probably end with '/v1'. Configured options will affect this endpoint."
-                ));
-            } else if (endpoint == TranslationEndpoint::Ollama || endpoint == TranslationEndpoint::Koboldcpp) {
-                ui->typeDescriptionLabel->setText(tr(
-                    "Local endpoint. You need to set correct base url, that should probably end with '/v1'. Configured options will affect this endpoint."
-                ));
-            }
-            break;
+            std::unreachable();
     }
 
     QString unavailableBackend;
@@ -1496,11 +1392,10 @@ void SettingsWindow::onTypeChange(const TranslationEndpoint endpoint) {
             unavailableBackend = u"DeepL"_s;
 #endif
             break;
-        default:
-#ifndef ENABLE_LLM_CONNECTOR
-            unavailableBackend = tr("LLM connector");
-#endif
+        case TranslationEndpoint::Script:
             break;
+        default:
+            std::unreachable();
     }
 
     if (!unavailableBackend.isEmpty()) {

@@ -1,29 +1,20 @@
 #![allow(clippy::too_many_arguments)]
-use gxhash::{HashMap, HashMapExt};
 use language_tokenizer::{Algorithm, MatchMode, MatchResult, find_all_matches as find_all_matches_, tokenize};
 #[cfg(feature = "languagetool")]
 use languagetool_rust::api::{
     check::{Data, Level, Match, Request as LTRequest},
     server::ServerClient,
 };
-#[cfg(feature = "llm-connector")]
-use llm_connector::{
-    LlmClient, LlmConnectorError,
-    types::{ChatRequest, Message, ReasoningEffort, Role},
-};
-use log::{debug, info};
-use rpgmad_lib::{Decrypter, ExtractError};
-use rvpacker_txt_rs_lib::{
-    BaseFlags, DuplicateMode, EngineType, FileFlags, Mode, Processor, constants::DEFAULT_LINE_BREAK,
-};
-use serde::{Deserialize, Serialize};
-use serde_json::{Value, from_str, to_string};
+use log::{debug, info, warn};
+use rpgmad_lib::{ExtractError, decrypt};
+use rvpacker_txt_rs_lib::{BaseFlags, DuplicateMode, EngineType, FileFlags, HashMap, Mode, Processor};
+use serde::Deserialize;
 #[cfg(feature = "languagetool")]
 use std::time::Duration;
 use std::{
     fs::{self, create_dir_all},
     io::{self},
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     str::FromStr,
     time::Instant,
 };
@@ -41,48 +32,6 @@ pub(crate) fn get_credential(account: &str) -> Result<String, Error> {
 
 pub(crate) fn delete_credential(account: &str) -> Result<(), Error> {
     Ok(keyring::Entry::new(KEYRING_SERVICE, account)?.delete_credential()?)
-}
-
-/// Builds the `LlmClient` for any endpoint reachable through `llm-connector`.
-/// Never call with `Google`/`Yandex`/`DeepL` - those aren't `llm-connector` providers.
-#[cfg(feature = "llm-connector")]
-fn build_llm_client(
-    endpoint: TranslationEndpoint,
-    api_key: &str,
-    base_url: &str,
-) -> Result<LlmClient, LlmConnectorError> {
-    Ok(match endpoint {
-        TranslationEndpoint::Google | TranslationEndpoint::Yandex | TranslationEndpoint::DeepL => unreachable!(),
-        TranslationEndpoint::OpenAI
-        | TranslationEndpoint::Longcat
-        | TranslationEndpoint::Moonshot
-        | TranslationEndpoint::Mistral
-        | TranslationEndpoint::DeepSeek
-        | TranslationEndpoint::Koboldcpp
-        | TranslationEndpoint::OpenAICompatible
-        | TranslationEndpoint::Xiaomi => {
-            let provider_hint = match endpoint {
-                TranslationEndpoint::OpenAI => "openai",
-                TranslationEndpoint::Longcat => "longcat",
-                TranslationEndpoint::DeepSeek => "deepseek",
-                TranslationEndpoint::Moonshot => "moonshot",
-                TranslationEndpoint::Mistral => "mistral",
-                TranslationEndpoint::Koboldcpp => "koboldcpp",
-                TranslationEndpoint::OpenAICompatible => "",
-                TranslationEndpoint::Xiaomi => "xiaomi",
-                _ => unreachable!(),
-            };
-
-            LlmClient::openai_compatible(api_key, base_url, provider_hint)?
-        }
-        TranslationEndpoint::Anthropic => LlmClient::anthropic(api_key, base_url)?,
-        TranslationEndpoint::Gemini => LlmClient::google(api_key, base_url)?,
-        TranslationEndpoint::Ollama => LlmClient::ollama(base_url)?,
-        TranslationEndpoint::Aliyun => LlmClient::aliyun(api_key, base_url)?,
-        TranslationEndpoint::Volcengine => LlmClient::volcengine(api_key, base_url)?,
-        TranslationEndpoint::Xinference => LlmClient::xinference(base_url)?,
-        TranslationEndpoint::Zhipu => LlmClient::zhipu(api_key, base_url)?,
-    })
 }
 
 #[derive(Clone, Copy)]
@@ -107,18 +56,21 @@ pub(crate) enum Error {
          a different option."
     )]
     BackendNotCompiled(&'static str),
+    #[error("The file is not a valid MV/MZ save file.")]
+    InvalidSave,
+    #[error("Script endpoints are run by the application and cannot be translated by the core.")]
+    ScriptEndpoint,
     #[cfg(feature = "google-translate")]
     #[error(transparent)]
     Translators(#[from] translators::Error),
-    #[cfg(feature = "llm-connector")]
-    #[error(transparent)]
-    LLMConnectorError(#[from] LlmConnectorError),
     #[cfg(feature = "yandex-translate")]
     #[error(transparent)]
     Yandex(#[from] yandex_translate_v2::Error),
     #[cfg(feature = "yandex-translate")]
-    #[error("Yandex folder ID is not specified. Input it in settings.")]
-    YandexFolderNotSpecified,
+    #[error("The translation service returned no translation.")]
+    NoTranslation,
+    #[error("The entry has {0} values, but the caller reserved room for {1}.")]
+    TooManyValues(usize, usize),
     #[error(transparent)]
     JSON(#[from] serde_json::Error),
     #[cfg(feature = "deepl")]
@@ -159,27 +111,13 @@ pub(crate) enum Error {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(from = "u8")]
 pub enum TranslationEndpoint {
     Google,
     Yandex,
     DeepL,
-
-    Aliyun,
-    Anthropic,
-    DeepSeek,
-    Gemini,
-    Koboldcpp,
-    Longcat,
-    Moonshot,
-    Mistral,
-    Ollama,
-    OpenAI,
-    OpenAICompatible,
-    Volcengine,
-    Xiaomi,
-    Xinference,
-    Zhipu,
+    Script,
 }
 
 impl Default for TranslationEndpoint {
@@ -188,31 +126,16 @@ impl Default for TranslationEndpoint {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub(crate) struct GlossaryEntry<'a> {
-    term: &'a str,
-    translation: &'a str,
-    note: &'a str,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub(crate) struct Request<'a> {
-    source_language: &'a str,
-    translation_language: &'a str,
-    project_context: &'a str,
-    local_context: &'a str,
-    glossary: &'a [GlossaryEntry<'a>],
-    files: &'a HashMap<&'a str, Vec<String>>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub(crate) struct SingleRequest<'a> {
-    source_language: &'a str,
-    translation_language: &'a str,
-    project_context: &'a str,
-    local_context: &'a str,
-    glossary: &'a [GlossaryEntry<'a>],
-    text: &'a str,
+impl From<u8> for TranslationEndpoint {
+    fn from(v: u8) -> TranslationEndpoint {
+        // A value that no endpoint has (settings written by another version) is not a valid enum to transmute
+        match v {
+            1 => TranslationEndpoint::Yandex,
+            2 => TranslationEndpoint::DeepL,
+            3 => TranslationEndpoint::Script,
+            _ => TranslationEndpoint::Google,
+        }
+    }
 }
 
 pub(crate) fn write(
@@ -298,37 +221,14 @@ pub(crate) fn purge(
     Ok(())
 }
 
-pub(crate) async fn get_models(
-    endpoint: TranslationEndpoint,
-    api_key: &str,
-    base_url: &str,
-) -> Result<Vec<String>, Error> {
-    #[cfg(feature = "llm-connector")]
-    {
-        Ok(build_llm_client(endpoint, api_key, base_url)?.models().await?)
-    }
-
-    #[cfg(not(feature = "llm-connector"))]
-    {
-        let _ = (endpoint, api_key, base_url);
-        Err(Error::BackendNotCompiled("LLM connector"))
-    }
-}
-
-pub(crate) async fn translate_single<'a>(
+pub(crate) async fn translate_single(
     endpoint_settings: &str,
     source_language: &str,
     translation_language: &str,
-    project_context: &str,
-    local_context: &str,
     text: &str,
-    glossary: Vec<GlossaryEntry<'a>>,
 ) -> Result<String, Error> {
-    let source_language = source_language;
-    let translation_language = translation_language;
-
-    let endpoint_settings: Value = unsafe { serde_json::from_str(endpoint_settings).unwrap_unchecked() };
-    let endpoint = unsafe { std::mem::transmute(endpoint_settings["type"].as_u64().unwrap_unchecked() as u8) };
+    let endpoint_settings: EndpointSettings = serde_json::from_str(endpoint_settings)?;
+    let endpoint = endpoint_settings.endpoint;
 
     let translated = match endpoint {
         #[cfg(feature = "google-translate")]
@@ -342,354 +242,91 @@ pub(crate) async fn translate_single<'a>(
         #[cfg(not(feature = "google-translate"))]
         TranslationEndpoint::Google => return Err(Error::BackendNotCompiled("Google Translate")),
 
-        _ => {
-            let api_key = unsafe { endpoint_settings["apiKey"].as_str().unwrap_unchecked() };
+        #[cfg(feature = "yandex-translate")]
+        TranslationEndpoint::Yandex => {
+            use yandex_translate_v2::{TranslateRequest, YandexTranslateClient};
 
-            match endpoint {
-                #[cfg(feature = "yandex-translate")]
-                TranslationEndpoint::Yandex => {
-                    use yandex_translate_v2::{TranslateRequest, YandexTranslateClient};
+            let client = YandexTranslateClient::with_api_key(endpoint_settings.api_key)?;
+            let response = client
+                .translate(&TranslateRequest {
+                    folder_id: endpoint_settings.yandex_folder_id,
+                    texts: &[text],
+                    target_language_code: translation_language,
+                    source_language_code: Some(source_language),
+                })
+                .await?;
 
-                    let yandex_folder_id = unsafe { endpoint_settings["folderId"].as_str().unwrap_unchecked() };
-
-                    let client = YandexTranslateClient::with_api_key(api_key)?;
-                    let response = client
-                        .translate(&TranslateRequest {
-                            folder_id: yandex_folder_id,
-                            texts: &[text],
-                            target_language_code: translation_language,
-                            source_language_code: Some(source_language),
-                        })
-                        .await?;
-
-                    response
-                        .translations
-                        .into_iter()
-                        .next()
-                        .map(|x| x.text)
-                        .unwrap_or_default()
-                }
-                #[cfg(not(feature = "yandex-translate"))]
-                TranslationEndpoint::Yandex => return Err(Error::BackendNotCompiled("Yandex Translate")),
-
-                #[cfg(feature = "deepl")]
-                TranslationEndpoint::DeepL => {
-                    use deepl::*;
-
-                    let client = DeepLApi::with(api_key).new();
-                    client
-                        .translate_text(text, Lang::from_str(translation_language)?)
-                        .await?
-                        .to_string()
-                }
-                #[cfg(not(feature = "deepl"))]
-                TranslationEndpoint::DeepL => return Err(Error::BackendNotCompiled("DeepL")),
-
-                #[cfg(feature = "llm-connector")]
-                _ => {
-                    let base_url = unsafe { endpoint_settings["baseUrl"].as_str().unwrap_unchecked() };
-                    let client = build_llm_client(endpoint, api_key, base_url)?;
-
-                    let prompt = SingleRequest {
-                        source_language,
-                        translation_language,
-                        project_context,
-                        local_context,
-                        glossary: &glossary,
-                        text,
-                    };
-
-                    let model = unsafe { endpoint_settings["model"].as_str().unwrap_unchecked() };
-                    let thinking = unsafe { endpoint_settings["thinking"].as_bool().unwrap_unchecked() };
-                    let temperature = unsafe { endpoint_settings["temperature"].as_f64().unwrap_unchecked() };
-
-                    let request = ChatRequest {
-                        model: model.to_string(),
-                        messages: vec![
-                            Message::text(Role::System, unsafe {
-                                endpoint_settings["singleTranslationSystemPrompt"]
-                                    .as_str()
-                                    .unwrap_unchecked()
-                            }),
-                            Message::text(Role::User, to_string(&prompt)?),
-                        ],
-                        enable_thinking: Some(thinking),
-                        temperature: Some(temperature as f32),
-                        ..Default::default()
-                    };
-
-                    let response = client.chat(&request).await?;
-                    response.content
-                }
-                #[cfg(not(feature = "llm-connector"))]
-                _ => return Err(Error::BackendNotCompiled("LLM connector")),
-            }
+            response
+                .translations
+                .into_iter()
+                .next()
+                .map(|x| x.text)
+                .ok_or(Error::NoTranslation)?
         }
+        #[cfg(not(feature = "yandex-translate"))]
+        TranslationEndpoint::Yandex => return Err(Error::BackendNotCompiled("Yandex Translate")),
+
+        #[cfg(feature = "deepl")]
+        TranslationEndpoint::DeepL => {
+            use deepl::*;
+
+            let client = DeepLApi::with(endpoint_settings.api_key).new();
+            client
+                .translate_text(text, Lang::from_str(translation_language)?)
+                .await?
+                .to_string()
+        }
+        #[cfg(not(feature = "deepl"))]
+        TranslationEndpoint::DeepL => return Err(Error::BackendNotCompiled("DeepL")),
+
+        TranslationEndpoint::Script => return Err(Error::ScriptEndpoint),
     };
 
     Ok(translated)
 }
 
-pub(crate) async fn translate<'a>(
-    endpoint_settings: &str,
-    source_language: &str,
-    translation_language: &str,
-    project_context: &str,
-    local_context: &str,
-    files: HashMap<&str, Vec<String>>,
-    glossary: Vec<GlossaryEntry<'a>>,
-    is_interrupted: extern "C" fn(*mut std::ffi::c_void) -> bool,
-    is_interrupted_ctx: *mut std::ffi::c_void,
-) -> Result<HashMap<String, Vec<String>>, Error> {
-    let mut response: HashMap<String, Vec<String>> = HashMap::with_capacity(files.len());
-
-    let endpoint_settings: Value = unsafe { serde_json::from_str(endpoint_settings).unwrap_unchecked() };
-    let endpoint = unsafe { std::mem::transmute(endpoint_settings["type"].as_u64().unwrap_unchecked() as u8) };
-
-    let result: HashMap<String, Vec<String>> = match endpoint {
-        #[cfg(feature = "google-translate")]
-        TranslationEndpoint::Google => {
-            use translators::{GoogleTranslator, Translator};
-            let translator = GoogleTranslator::default();
-
-            'files: for (&file, strings) in &files {
-                if is_interrupted(is_interrupted_ctx) {
-                    break;
-                }
-
-                response.insert(file.to_string(), Vec::with_capacity(strings.len()));
-                let response_file = response.get_mut(file).unwrap();
-
-                for string in strings {
-                    if is_interrupted(is_interrupted_ctx) {
-                        break 'files;
-                    }
-
-                    let translated = translator
-                        .translate_async(string, source_language, translation_language)
-                        .await?;
-                    response_file.push(translated.replace('\n', DEFAULT_LINE_BREAK));
-                }
-            }
-
-            response
-        }
-        #[cfg(not(feature = "google-translate"))]
-        TranslationEndpoint::Google => return Err(Error::BackendNotCompiled("Google Translate")),
-
-        _ => {
-            let api_key = unsafe { endpoint_settings["apiKey"].as_str().unwrap_unchecked() };
-
-            match endpoint {
-                #[cfg(feature = "yandex-translate")]
-                TranslationEndpoint::Yandex => {
-                    use yandex_translate_v2::{TranslateRequest, YandexTranslateClient};
-
-                    let yandex_folder_id = unsafe { endpoint_settings["folderId"].as_str().unwrap_unchecked() };
-
-                    if yandex_folder_id.is_empty() {
-                        return Err(Error::YandexFolderNotSpecified);
-                    }
-
-                    for (&file, strings) in &files {
-                        if is_interrupted(is_interrupted_ctx) {
-                            break;
-                        }
-
-                        response.insert(file.to_string(), Vec::with_capacity(strings.len()));
-                        let response_file = response.get_mut(file).unwrap();
-
-                        let client = YandexTranslateClient::with_api_key(api_key)?;
-                        let response = client
-                            .translate(&TranslateRequest {
-                                folder_id: yandex_folder_id,
-                                texts: &strings.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
-                                target_language_code: translation_language,
-                                source_language_code: Some(source_language),
-                            })
-                            .await?;
-                        let strings = response
-                            .translations
-                            .into_iter()
-                            .map(|x| x.text.replace('\n', DEFAULT_LINE_BREAK))
-                            .collect();
-
-                        *response_file = strings;
-                    }
-
-                    response
-                }
-                #[cfg(not(feature = "yandex-translate"))]
-                TranslationEndpoint::Yandex => return Err(Error::BackendNotCompiled("Yandex Translate")),
-
-                #[cfg(feature = "deepl")]
-                TranslationEndpoint::DeepL => {
-                    use deepl::{glossary::*, *};
-
-                    let client = DeepLApi::with(api_key).new();
-                    let _ = client
-                        .create_glossary("glossary")
-                        .entries(glossary.iter().map(|e| (e.term, e.translation)))
-                        .source_lang(GlossaryLanguage::from_str(source_language)?)
-                        .target_lang(GlossaryLanguage::from_str(translation_language)?)
-                        .send()
-                        .await?;
-
-                    'files: for (&file, strings) in &files {
-                        if is_interrupted(is_interrupted_ctx) {
-                            break;
-                        }
-
-                        response.insert(file.to_string(), Vec::with_capacity(strings.len()));
-                        let response_file = response.get_mut(file).unwrap();
-
-                        let mut new_strings = Vec::with_capacity(files.len());
-
-                        for string in strings {
-                            if is_interrupted(is_interrupted_ctx) {
-                                *response_file = new_strings;
-                                break 'files;
-                            }
-
-                            let translated = client
-                                .translate_text(string.as_str(), Lang::from_str(translation_language)?)
-                                .await?
-                                .to_string();
-
-                            new_strings.push(translated.replace('\n', DEFAULT_LINE_BREAK));
-                        }
-
-                        *response_file = new_strings;
-                    }
-
-                    response
-                }
-                #[cfg(not(feature = "deepl"))]
-                TranslationEndpoint::DeepL => return Err(Error::BackendNotCompiled("DeepL")),
-
-                #[cfg(feature = "llm-connector")]
-                _ => {
-                    let base_url = unsafe { endpoint_settings["baseUrl"].as_str().unwrap_unchecked() };
-                    let client = build_llm_client(endpoint, api_key, base_url)?;
-
-                    let token_limit = unsafe { endpoint_settings["tokenLimit"].as_u64().unwrap_unchecked() } as u32;
-                    let output_token_limit =
-                        unsafe { endpoint_settings["tokenLimit"].as_u64().unwrap_unchecked() } as u32;
-                    let reasoning_effort =
-                        unsafe { endpoint_settings["reasoningEffort"].as_u64().unwrap_unchecked() } as u8;
-                    let reasoning_effort: ReasoningEffort = unsafe { std::mem::transmute(reasoning_effort) };
-                    let model = unsafe { endpoint_settings["model"].as_str().unwrap_unchecked() };
-                    let system_prompt = unsafe { endpoint_settings["systemPrompt"].as_str().unwrap_unchecked() };
-                    let thinking = unsafe { endpoint_settings["thinking"].as_bool().unwrap_unchecked() };
-                    let temperature = endpoint_settings["temperature"].as_f64().map(|t| t as f32);
-
-                    let mut limited_files: Vec<HashMap<&str, Vec<String>>> = vec![HashMap::default()];
-                    let mut entry: &mut HashMap<&str, Vec<String>> = limited_files.first_mut().unwrap();
-                    let mut limit = 0;
-
-                    for (file, strings) in files {
-                        for string in &strings {
-                            let tokens = string.len() / 4;
-                            limit += tokens;
-                        }
-
-                        if limit < token_limit as usize {
-                            entry.insert(file, strings);
-                        } else {
-                            limit = 0;
-                            limited_files.push(HashMap::default());
-                            entry = limited_files.last_mut().unwrap();
-                        }
-                    }
-
-                    let mut result: HashMap<String, Vec<String>> = HashMap::default();
-
-                    let mut request = ChatRequest {
-                        model: model.to_string(),
-                        messages: vec![Message::text(Role::System, system_prompt), Message::default()],
-                        enable_thinking: Some(thinking),
-                        temperature: temperature,
-                        max_tokens: Some(output_token_limit),
-                        reasoning_effort: Some(reasoning_effort),
-                        ..Default::default()
-                    };
-
-                    for files in limited_files {
-                        if is_interrupted(is_interrupted_ctx) {
-                            break;
-                        }
-
-                        let prompt = Request {
-                            source_language,
-                            translation_language,
-                            project_context,
-                            local_context,
-                            glossary: &glossary,
-                            files: &files,
-                        };
-
-                        request.messages[1] = Message::text(Role::User, to_string(&prompt)?);
-
-                        let response = client.chat(&request).await?;
-
-                        let response = from_str::<HashMap<String, Vec<String>>>(&response.content)?;
-
-                        result.extend(response);
-                    }
-
-                    for strings in result.values_mut() {
-                        for string in strings.iter_mut() {
-                            *string = string.replace('\n', DEFAULT_LINE_BREAK);
-                        }
-                    }
-
-                    result
-                }
-                #[cfg(not(feature = "llm-connector"))]
-                _ => return Err(Error::BackendNotCompiled("LLM connector")),
-            }
-        }
-    };
-
-    Ok(result)
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct EndpointSettings<'a> {
+    api_key: &'a str,
+    yandex_folder_id: &'a str,
+    endpoint: TranslationEndpoint,
 }
 
-fn fix_path_separators(raw: &mut [u8]) {
-    let mut i = 0;
-
-    while i < raw.len() {
-        let b = raw[i];
-
-        if b >= 0x80 {
-            i += 1;
-
-            if i < raw.len() {
-                i += 1;
-            }
-        } else if b == b'\\' {
-            raw[i] = b'/';
-            i += 1;
-        } else {
-            i += 1;
-        }
-    }
-}
-
-pub(crate) fn extract_archive(input_path: &Path, output_path: &Path) -> Result<(), Error> {
+pub(crate) fn extract_archive(
+    input_path: &Path,
+    output_path: &Path,
+    read_encoding: Option<&'static encoding_rs::Encoding>,
+) -> Result<(), Error> {
     debug!("Decrypting archive: {}", input_path.display());
 
     let mut bytes = fs::read(input_path).map_err(|err| Error::Io(input_path.to_path_buf(), err))?;
 
-    let mut decrypter = Decrypter::new();
-    let decrypted_entries = decrypter.decrypt(&mut bytes)?;
+    let decrypted_entries = decrypt(&mut bytes)?;
 
     for file in decrypted_entries {
-        fix_path_separators(unsafe { std::slice::from_raw_parts_mut(file.path.as_ptr().cast_mut(), file.path.len()) });
-
-        let path = String::from_utf8_lossy(&file.path);
+        // Decoded before the separators are changed: in Shift_JIS a 0x5C byte can be the second byte of a character
+        let decoded = match read_encoding {
+            Some(encoding) => encoding.decode_without_bom_handling(file.path).0,
+            None => String::from_utf8_lossy(file.path),
+        };
+        let path = decoded.replace('\\', "/");
         debug!("Decrypting archive entry: {}", path);
 
-        let output_file_path = output_path.join(path.as_ref());
+        // The archive comes with a game that is not trusted: an entry named `..\..\x` or `C:\x` would be written
+        // outside the folder it is extracted to
+        if Path::new(&path)
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_) | Component::CurDir))
+        {
+            warn!(
+                "Skipped archive entry with a path that leaves the output folder: {}",
+                path
+            );
+            continue;
+        }
+
+        let output_file_path = output_path.join(&path);
 
         if let Some(parent) = output_file_path.parent() {
             create_dir_all(parent).map_err(|err| Error::Io(parent.to_path_buf(), err))?;
@@ -738,11 +375,6 @@ pub(crate) fn find_all_matches(
     })
 }
 
-pub(crate) fn count_words(text: &str, algorithm: Algorithm) -> Result<u32, Error> {
-    let tokens = tokenize(text, algorithm, false)?;
-    Ok(tokens.len() as u32)
-}
-
 #[cfg(feature = "languagetool")]
 const LANGUAGETOOL_TIMEOUT: Duration = Duration::from_secs(20);
 
@@ -789,19 +421,27 @@ pub(crate) fn decrypt_asset(path: &Path) -> Result<Vec<u8>, Error> {
     use rpgm_asset_decrypter_lib::{FileType, MV_M4A_EXT, MV_OGG_EXT, MZ_M4A_EXT, MZ_OGG_EXT, decrypt_in_place};
 
     let mut file_content = fs::read(path).map_err(|err| Error::Io(path.to_path_buf(), err))?;
-    let extension = unsafe { path.extension().unwrap_unchecked() };
+    let Some(extension) = path.extension() else {
+        return Err(Error::Io(
+            path.to_path_buf(),
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "the file has no extension to tell its type by",
+            ),
+        ));
+    };
 
     let file_type = if extension == MV_M4A_EXT || extension == MZ_M4A_EXT {
-        FileType::M4A
+        FileType::M4a
     } else if extension == MV_OGG_EXT || extension == MZ_OGG_EXT {
-        FileType::OGG
+        FileType::Ogg
     } else {
-        FileType::PNG
+        FileType::Png
     };
 
     decrypt_in_place(&mut file_content, file_type)?;
 
-    return Ok(file_content);
+    Ok(file_content)
 }
 
 pub(crate) fn generate_json(content: &[u8], filename: &str) -> Result<String, Error> {
@@ -815,8 +455,15 @@ pub(crate) fn generate_json(content: &[u8], filename: &str) -> Result<String, Er
         json = generate_rm2k_database_file(content)?;
     } else if filename.ends_with(".lmt") {
         json = generate_rm2k_tree_map_file(content)?;
+    } else if filename.ends_with(".lsd") {
+        json = generate_rm2k_save_file(content)?;
+    } else if filename.ends_with(".rpgsave") {
+        let compressed = std::str::from_utf8(content).map_err(|_| Error::InvalidSave)?;
+        let raw = rvpacker_txt_rs_lib::save::load(compressed).ok_or(Error::InvalidSave)?;
+        json = serde_json::to_string_pretty(&serde_json::from_str::<serde_json::Value>(&raw)?)?;
     } else {
-        json = generate_file(content, filename)?;
+        // The preview has no project, so the text is read as UTF-8
+        json = generate_file(content, filename, None)?;
     }
 
     Ok(json)
@@ -1009,7 +656,8 @@ pub(crate) fn format_src(src: &str, lang: HighlightLanguage) -> Result<String, E
                 external_formatter: None,
             })?;
 
-            Ok(unsafe { result.unwrap_unchecked() })
+            // `None` means the text needs no change (it has dprint's ignore comment)
+            Ok(result.unwrap_or_else(|| src.to_owned()))
         }
         #[cfg(not(feature = "js-formatting"))]
         HighlightLanguage::JS => return Err(Error::BackendNotCompiled("JavaScript formatting")),
@@ -1017,12 +665,8 @@ pub(crate) fn format_src(src: &str, lang: HighlightLanguage) -> Result<String, E
         #[cfg(feature = "ruby-formatting")]
         HighlightLanguage::Ruby => {
             use rubyfmt::format_buffer;
-            let result = unsafe {
-                String::from_utf8_unchecked(
-                    format_buffer(src.as_bytes()).map_err(|err| Error::Rubyfmt(err.as_exit_code()))?,
-                )
-            };
-            Ok(result)
+            let formatted = format_buffer(src.as_bytes()).map_err(|err| Error::Rubyfmt(err.as_exit_code()))?;
+            Ok(String::from_utf8_lossy(&formatted).into_owned())
         }
         #[cfg(not(feature = "ruby-formatting"))]
         HighlightLanguage::Ruby => return Err(Error::BackendNotCompiled("Ruby formatting")),

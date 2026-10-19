@@ -6,6 +6,7 @@
 #include "TranslationTableDelegate.hpp"
 #include "TranslationTableHeader.hpp"
 #include "TranslationTableModel.hpp"
+#include "Utils.hpp"
 
 #include <QClipboard>
 #include <QKeyEvent>
@@ -36,7 +37,13 @@ TranslationTable::TranslationTable(QWidget* const parent) :
     verticalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignTop);
     verticalHeader()->setSectionsClickable(false);
     verticalHeader()->setHighlightSections(true);
-    verticalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
+    verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+    // The kept column is remembered per row number, which means another row once rows were inserted or removed
+    const auto forgetColumns = [this] -> void { selectedColumnPerRow.clear(); };
+    connect(model_, &TranslationTableModel::rowsInserted, this, forgetColumns);
+    connect(model_, &TranslationTableModel::rowsRemoved, this, forgetColumns);
+    connect(model_, &TranslationTableModel::modelReset, this, forgetColumns);
 
     connect(model_, &TranslationTableModel::translatedChanged, this, &TranslationTable::translatedChanged);
 
@@ -63,8 +70,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             const QItemSelection& selected,
             const QItemSelection& /* prev */
         ) -> void {
-        // Seed an anchor column for any row newly touched that doesn't
-        // have one yet.
+        // Seed an anchor column for any newly touched row that has none.
         for (const auto& range : selected) {
             for (i32 row = range.top(); row <= range.bottom(); row++) {
                 selectedColumnPerRow.try_emplace(row, scast<i8>(range.left()));
@@ -108,7 +114,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
                 qApp->clipboard()->setText(index.data(Qt::EditRole).toString());
                 present(
                     this,
-                    NOTICE("Source text from row %1 is copied to clipboard.", Info, Status, itos(index.row() + 1).qsv())
+                    NOTICE("Source text from row %1 is copied to clipboard.", Info, Status, qsv(qitos(index.row() + 1)))
                 );
             }
             return;
@@ -133,11 +139,24 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             model_->removeRow(index.row());
         } else if (selectedAction == bookmarkRowAction) {
             model_->insertRow(index.row(), { BOOKMARK_COMMENT.toString() });
-            emit bookmarked(index.row() + 1);
+            emit bookmarked(index.row());
         }
     });
 
     connect(header_, &TranslationTableHeader::addButtonClicked, this, [this] -> void {
+        if (model_->columnCount() >= TranslationTableModel::MAX_COLUMNS) {
+            present(
+                this,
+                NOTICE(
+                    "The table can't have more than %1 columns.",
+                    Warning,
+                    Status,
+                    qsv(qitos(TranslationTableModel::MAX_COLUMNS))
+                )
+            );
+            return;
+        }
+
         model_->appendColumn({});
 
         emit columnAdded();
@@ -180,7 +199,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
         const QString* const sourceText = model_->item(first, 0);
         auto flags = RowFlags(0);
 
-        if (sourceText->startsWith(COMMENT_PREFIX)) {
+        if (!translatableSource(*sourceText)) {
             flags |= RowFlags::CommentFlag;
 
             if (*sourceText == BOOKMARK_COMMENT) {
@@ -188,16 +207,19 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             }
         } else {
             for (i32 column = 1; column < model_->columnCount(); column++) {
-                if (model_->item(first, column)->isEmpty()) {
+                if (!QStringView(*model_->item(first, column)).trimmed().isEmpty()) {
                     flags |= RowFlags::TranslatedFlag;
                     break;
                 }
             }
         }
 
-        emit rowRemoved(RemovedRowInfo(first, flags));
+        // Reported once the row is gone, so that the handlers see the table as it is
+        removedRow = RemovedRowInfo(first, flags);
     }
     );
+
+    connect(model_, &TranslationTableModel::rowsRemoved, this, [this] -> void { emit rowRemoved(removedRow); });
 
     connect(delegate, &TranslationTableDelegate::inputFocused, this, &TranslationTable::inputFocused);
 
@@ -207,13 +229,15 @@ TranslationTable::TranslationTable(QWidget* const parent) :
 void TranslationTable::insertTranslation(const QString& translation) {
     const QModelIndex index = currentIndex();
 
-    if (!index.isValid()) {
+    if (!index.isValid() || (index.flags() & Qt::ItemIsEditable) == 0) {
         return;
     }
 
-    QString* const item = model_->itemFromIndex(index);
+    // While editing, the typed text is in the editor, not in the model
+    TranslationInput* const input = state() == QTableView::EditingState ? delegate->getActiveInput() : nullptr;
+    const bool isEmpty = input != nullptr ? input->document()->isEmpty() : model_->itemFromIndex(index)->isEmpty();
 
-    if (!item->isEmpty()) {
+    if (!isEmpty) {
         const auto selected = QMessageBox::question(
             this,
             tr("Cell is not empty"),
@@ -226,13 +250,14 @@ void TranslationTable::insertTranslation(const QString& translation) {
         }
     }
 
-    if (state() == QTableView::EditingState) {
-        delegate->setText(translation);
+    if (input != nullptr) {
+        input->replaceText(translation);
         return;
     }
 
-    *item = translation;
-};
+    model_->setData(index, translation, Qt::EditRole);
+    resizeRowToContents(index.row());
+}
 
 void TranslationTable::init(const Settings* const settings, const ProjectSettings* const projectSettings) const {
     delegate->init(projectSettings, settings);
@@ -248,8 +273,14 @@ void TranslationTable::fill(
     auto headerLabels = QStringList(model_->columnCount());
 
     for (i32 column = 0; column < model_->columnCount(); column++) {
-        headerLabels[column] = columns[column].name;
-        header_->resizeSection(column, columns[column].width);
+        // `columns` holds the columns of the project; a file edited outside can have more than it knows
+        if (column < scast<i32>(columns.size())) {
+            headerLabels[column] = columns[column].name;
+            header_->resizeSection(column, columns[column].width);
+        } else {
+            headerLabels[column] = tr("Translation");
+            header_->resizeSection(column, DEFAULT_COLUMN_WIDTH);
+        }
     }
 
     model_->setHeaderLabels(std::move(headerLabels));
@@ -298,7 +329,8 @@ auto TranslationTable::copy() -> u32 {
     for (const QModelIndex& index : indexes) {
         QString cellData = index.data(Qt::EditRole).toString();
 
-        if (cellData.isEmpty() || (index.flags() & Qt::ItemIsEditable) == 0) {
+        // Empty cells stay as empty lines, so that paste maps the lines to the same rows
+        if ((index.flags() & Qt::ItemIsEditable) == 0) {
             continue;
         }
 
@@ -326,7 +358,7 @@ auto TranslationTable::cut() -> u32 {
     u32 cut = 0;
 
     for (const QModelIndex& index : indexes) {
-        if (index.data(Qt::EditRole).toString().isEmpty() || (index.flags() & Qt::ItemIsEditable) != 0) {
+        if ((index.flags() & Qt::ItemIsEditable) != 0) {
             cut++;
             model_->setData(index, QString(), Qt::EditRole);
             resizeRowToContents(index.row());
@@ -347,7 +379,15 @@ auto TranslationTable::paste() -> u32 {
         return 0;
     }
 
-    QStringList rows = clipboardText.split(u'\n');
+    // Text from other programs may have Windows line endings and a trailing one, which would blank the next cell
+    QString normalized = clipboardText;
+    normalized.remove(u'\r');
+
+    if (normalized.endsWith(u'\n')) {
+        normalized.chop(1);
+    }
+
+    QStringList rows = normalized.split(u'\n');
 
     for (QString& row : rows) {
         row.replace(u'\1', u'\n');
@@ -397,6 +437,7 @@ auto TranslationTable::paste() -> u32 {
             if (dst.isValid() && ((dst.flags() & Qt::ItemIsEditable) != 0)) {
                 if (model_->setData(dst, rows[idx], Qt::EditRole)) {
                     pasted++;
+                    resizeRowToContents(row);
                 }
             }
         }

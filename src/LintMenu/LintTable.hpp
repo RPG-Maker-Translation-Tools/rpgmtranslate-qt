@@ -8,6 +8,7 @@
 #include <QHeaderView>
 #include <QStyledItemDelegate>
 #include <QTableView>
+#include <QTimer>
 
 class MatchTableDelegate final : public QStyledItemDelegate {
    public:
@@ -56,6 +57,7 @@ class LintTableModel final : public QAbstractTableModel {
     [[nodiscard]] auto headerData(i32 section, Qt::Orientation orientation, i32 role) const -> QVariant override;
 
     void appendRow(Row row);
+    void appendRows(vector<Row> newRows);
     auto row(u32 row) -> const Row&;
     void clear();
 
@@ -74,7 +76,15 @@ class LintTable final : public QTableView {
     void appendRow(LintTableModel::Row row);
     void appendRows(vector<LintTableModel::Row> rows);
 
+   protected:
+    void changeEvent(QEvent* event) override;
+
    private:
+    // Sizing every row lays its texts out, so it runs once after a burst of appends or resizes, not for each of them
+    void scheduleResize();
+
+    QTimer resizeTimer;
     LintTableModel* model_;
     MatchTableDelegate* delegate;
+    bool columnsStale = false;
 };

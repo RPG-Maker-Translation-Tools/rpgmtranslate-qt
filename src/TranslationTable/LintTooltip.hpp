@@ -8,6 +8,12 @@
 #include <QUrl>
 #include <QWidget>
 
+// The most images (icons, color swatches) one tooltip can hold.
+static constexpr usize MAX_RESOURCES = 16;
+
+// The room for the key of an entity (`3\x04name`), with its terminator. A key that doesn't fit is not looked up.
+static constexpr usize PATH_BUFFER_SIZE = 64;
+
 enum class SegmentType : u8 {
     Index,
     String,
@@ -30,19 +36,27 @@ struct Segment {
     const SegmentType type;
 };
 
+struct TagReference;
+
 class LintTooltip final : public QWidget {
     Q_OBJECT
 
    public:
     explicit LintTooltip(QWidget* parent = nullptr);
+    ~LintTooltip() override;
 
-    void
-    showAt(const QPoint& cursorPos, const QList<LintEntry>& lints, const Settings* sets, const ProjectSettings* projS);
+    void showAt(const QPoint& cursorPos, const QList<LintEntry>& lints, const ProjectSettings* projS);
+    // Hides once the mouse has left the tooltip
     void hide();
+
+    // Hides at once
+    void dismiss() { hide_(); }
+
     void waitForEnter();
 
    signals:
     void linkActivated(const QUrl& url);
+    void suggestionActivated(LintType type, i32 lintIndex, i32 suggestionIndex);
 
    protected:
     void mouseMoveEvent(QMouseEvent* event) override;
@@ -55,10 +69,20 @@ class LintTooltip final : public QWidget {
 
    private:
     inline void processTextCode(QString& markdownSource, const LintEntry& lint, const ProjectSettings* sets);
-    inline void processNoteTag(QString& markdownSource, const LintEntry& lint, const Settings* sets);
-    inline void processPluginCommand(QString& markdownSource, const LintEntry& lint, const Settings* sets);
-    inline void processCommentTag(QString& markdownSource, const LintEntry& lint, const Settings* sets);
-    inline void processMisc(QString& markdownSource, const LintEntry& lint, const Settings* sets);
+    inline void processReferences(
+        QString& markdownSource,
+        const LintEntry& lint,
+        const ProjectSettings* sets,
+        span<const TagReference> table
+    );
+    inline void releaseOut();
+    [[nodiscard]] inline auto fetchEntityData(
+        QString& markdownSource,
+        const ProjectSettings* sets,
+        QStringView folder,
+        RPGMFileType type,
+        const FFIString& key
+    ) -> bool;
     inline void hide_();
     [[nodiscard]] inline auto textAreaRect() const -> QRect;
     [[nodiscard]] inline auto toDocumentPos(const QPoint& widgetPos) const -> QPointF;
@@ -67,8 +91,8 @@ class LintTooltip final : public QWidget {
         requires(std::same_as<Segments, Segment> && ...)
     [[nodiscard]] constexpr auto buildPath(Segments&&... segments) -> FFIString;
 
-    array<pair<QUrl, QPixmap>, 2> resources;
-    array<char, 32> buf;
+    array<pair<QUrl, QPixmap>, MAX_RESOURCES> resources;
+    array<char, PATH_BUFFER_SIZE> buf;
     // Owned by Rust, refilled per processTextCode call and freed at its end -
     // value-initialized so the first free is a no-op.
     array<FFIString, 2> out{};

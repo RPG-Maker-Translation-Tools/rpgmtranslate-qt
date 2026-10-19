@@ -6,6 +6,7 @@
 #include "ui_SearchMenu.h"
 
 #include <QMessageBox>
+#include <QRegularExpression>
 
 void SearchMenu::requestAction(const bool replace) {
     if (fileSelectMenu->selectedCount() == 0) {
@@ -23,6 +24,36 @@ void SearchMenu::requestAction(const bool replace) {
     if (searchText.isEmpty()) {
         present(this, NOTICE("Search input is empty.", Warning, Modal));
         return;
+    }
+
+    if (ui->regexButton->isChecked()) {
+        const auto test = QRegularExpression(searchText);
+
+        if (!test.isValid()) {
+            present(
+                this,
+                NOTICE(
+                    "Regular expression is invalid: %1. Offset: %2",
+                    Warning,
+                    Modal,
+                    test.errorString(),
+                    qsv(qitos(test.patternErrorOffset()))
+                )
+            );
+            return;
+        }
+
+        if (test.match(QString()).hasMatch()) {
+            present(
+                this,
+                NOTICE(
+                    "Regular expression matches empty text, so it would match between every two characters. Make it require at least one.",
+                    Warning,
+                    Modal
+                )
+            );
+            return;
+        }
     }
 
     QString replaceText;
@@ -49,24 +80,24 @@ void SearchMenu::requestAction(const bool replace) {
     auto searchFlags = SearchFlags(0);
 
     if (ui->sensitivityButton->isChecked()) {
-        searchFlags ^= SearchFlags::CaseSensitive;
+        searchFlags |= SearchFlags::CaseSensitive;
     }
 
     if (ui->wholeButton->isChecked()) {
-        searchFlags ^= SearchFlags::WholeWord;
-    };
+        searchFlags |= SearchFlags::WholeWord;
+    }
 
     if (ui->regexButton->isChecked()) {
-        searchFlags ^= SearchFlags::RegExp;
-    };
+        searchFlags |= SearchFlags::RegExp;
+    }
 
     if (ui->commentButton->isChecked()) {
-        searchFlags ^= SearchFlags::Comment;
-    };
+        searchFlags |= SearchFlags::Comment;
+    }
 
     if (ui->putButton->isChecked()) {
-        searchFlags ^= SearchFlags::Put;
-    };
+        searchFlags |= SearchFlags::Put;
+    }
 
     SearchAction action = SearchAction::Search;
 
@@ -92,11 +123,11 @@ SearchMenu::SearchMenu(QWidget* const parent) :
     fileSelectMenu(new FileSelectMenu(parent)) {
     setDragMoveEnabled(true);
 
-    connect(ui->searchButton, &QPushButton::pressed, this, [=, this] -> void { requestAction(false); });
+    connect(ui->searchButton, &QPushButton::clicked, this, [=, this] -> void { requestAction(false); });
 
-    connect(ui->replaceButton, &QPushButton::pressed, this, [=, this] -> void { requestAction(true); });
+    connect(ui->replaceButton, &QPushButton::clicked, this, [=, this] -> void { requestAction(true); });
 
-    connect(ui->fileSelectButton, &QPushButton::pressed, this, [this] -> void {
+    connect(ui->fileSelectButton, &QPushButton::clicked, this, [this] -> void {
         fileSelectMenu->setHidden(!fileSelectMenu->isHidden());
         fileSelectMenu->move(mapToGlobal(QPoint(width(), 0)));
     });
@@ -126,8 +157,9 @@ void SearchMenu::changeEvent(QEvent* const event) {
 };
 
 void SearchMenu::clear() {
-    for (i32 index = 2; index < ui->searchColumnSelect->count(); index++) {
-        ui->searchColumnSelect->removeItem(index);
+    // Items 0 and 1 are "All Columns" and "Rightmost Column"
+    while (ui->searchColumnSelect->count() > 2) {
+        ui->searchColumnSelect->removeItem(ui->searchColumnSelect->count() - 1);
     }
 
     ui->searchInput->clear();
@@ -137,6 +169,7 @@ void SearchMenu::clear() {
     ui->wholeButton->setChecked(false);
     ui->regexButton->setChecked(false);
     ui->commentButton->setChecked(false);
+    ui->putButton->setChecked(false);
     ui->fileSelectButton->setChecked(false);
 
     fileSelectMenu->clear();

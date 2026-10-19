@@ -9,6 +9,7 @@
 
 struct Bookmark {
     QString description;
+    QString entry;
     FilenameArray filename;
     u32 row;
     bool hidden;
@@ -23,7 +24,12 @@ class BookmarkList final : public QListView {
     [[nodiscard]] auto bookmark(i32 row) const -> Bookmark&;
 
     [[nodiscard]] auto rowCount() const -> i32;
-    void appendRow(QStringView description, QStringView file, u32 row) const;
+    void appendRow(QStringView description, QStringView file, u32 row, QStringView entry) const;
+
+    void setShowEntryNames(const bool show) { showEntryNames_ = show; }
+
+    [[nodiscard]] auto showEntryNames() const -> bool { return showEntryNames_; }
+
     void removeRow(i32 row) const;
     void setRowHidden(i32 row, bool hidden) const;
 
@@ -40,6 +46,8 @@ class BookmarkList final : public QListView {
     BookmarkListModel* model_;
     BookmarkProxy* proxy;
     BookmarkListDelegate* delegate;
+
+    bool showEntryNames_ = false;
 };
 
 class BookmarkListModel final : public QAbstractListModel {
@@ -52,7 +60,7 @@ class BookmarkListModel final : public QAbstractListModel {
     [[nodiscard]] auto flags(const QModelIndex& idx) const -> Qt::ItemFlags override;
 
     void removeRow(i32 row);
-    void appendRow(QStringView file, QStringView description, u32 row);
+    void appendRow(QStringView file, QStringView description, u32 row, QStringView entry);
 
     void clear();
 

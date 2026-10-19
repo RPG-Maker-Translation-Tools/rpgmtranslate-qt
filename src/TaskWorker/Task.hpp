@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Aliases.hpp"
-
-#include <QMetaType>
-#include <QString>
+#include "FWD.hpp"
 
 enum class TaskKind : u8 {
     Read,
@@ -14,10 +12,10 @@ enum class TaskKind : u8 {
     Replace,
     ReplaceSingle,
     BatchScript,
-    BatchTranslate,
     GlobalLint,
     SerdeExport,
     SerdeImport,
+    Statistics,
 };
 
 enum class TaskAccess : u8 {
@@ -33,6 +31,7 @@ enum class TaskAccess : u8 {
         case TaskKind::Search:
         case TaskKind::GlobalLint:
         case TaskKind::SerdeExport:
+        case TaskKind::Statistics:
             return TaskAccess::Reads;
         default:
             return TaskAccess::Rewrites;
@@ -48,10 +47,10 @@ enum class TaskAccess : u8 {
         case TaskKind::Search:
         case TaskKind::Replace:
         case TaskKind::BatchScript:
-        case TaskKind::BatchTranslate:
         case TaskKind::GlobalLint:
         case TaskKind::SerdeExport:
         case TaskKind::SerdeImport:
+        case TaskKind::Statistics:
             return true;
         default:
             return false;
@@ -80,5 +79,3 @@ class Task final {
 };
 
 using TaskToken = shared_ptr<Task>;
-
-extern "C" auto taskInterrupted(void* context) -> bool;
