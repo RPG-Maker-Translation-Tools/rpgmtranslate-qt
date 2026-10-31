@@ -147,25 +147,27 @@ option(ENABLE_COUNTING_LSTM
     ON
 )
 
-set(MSVC_RUNTIME
-    "MT"
-    CACHE
-    STRING
-    "MT (static) / MD (dynamic) / MTd (static debug) / MDd (dynamic debug). Don't use debug versions if you use Clang with MSVC target with enabled ASan."
-)
+if (MSVC OR (CMAKE_C_SIMULATE_ID STREQUAL "MSVC"))
+    set(MSVC_RUNTIME
+        "MT"
+        CACHE
+        STRING
+        "MT (static) / MD (dynamic) / MTd (static debug) / MDd (dynamic debug). Don't use debug versions if you use Clang with MSVC target with enabled ASan."
+    )
 
-set(_valid_runtimes MT MD MTd MDd)
+    set(_valid_runtimes MT MD MTd MDd)
 
-if(NOT MSVC_RUNTIME IN_LIST _valid_runtimes)
-    message(FATAL_ERROR
-        "MSVC_RUNTIME must be one of: ${_valid_runtimes}. "
-        "Got: '${MSVC_RUNTIME}'")
+    if(NOT MSVC_RUNTIME IN_LIST _valid_runtimes)
+        message(FATAL_ERROR
+            "MSVC_RUNTIME must be one of: ${_valid_runtimes}. "
+            "Got: '${MSVC_RUNTIME}'")
+    endif()
+
+    set(_msvc_runtime_names MT MD MTd MDd)
+    set(_msvc_runtime_values MultiThreaded MultiThreadedDLL MultiThreadedDebug MultiThreadedDebugDLL)
+    list(FIND _msvc_runtime_names "${MSVC_RUNTIME}" _msvc_runtime_index)
+    list(GET _msvc_runtime_values ${_msvc_runtime_index} CMAKE_MSVC_RUNTIME_LIBRARY)
 endif()
-
-set(_msvc_runtime_names MT MD MTd MDd)
-set(_msvc_runtime_values MultiThreaded MultiThreadedDLL MultiThreadedDebug MultiThreadedDebugDLL)
-list(FIND _msvc_runtime_names "${MSVC_RUNTIME}" _msvc_runtime_index)
-list(GET _msvc_runtime_values ${_msvc_runtime_index} CMAKE_MSVC_RUNTIME_LIBRARY)
 
 set(RUST_PROFILE "" CACHE STRING "Rust profile to build the project.")
 
@@ -175,13 +177,23 @@ if (ENABLE_PIC)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
+option(ENABLE_WAYLAND "Link Qt's Wayland client when available" ON)
+
 set(_qt_components Widgets Concurrent Gui Svg Network LinguistTools)
 
-if (LINUX)
-    list(APPEND _qt_components WaylandClient)
+find_package(Qt6 6.8 REQUIRED COMPONENTS ${_qt_components})
+
+# Qt has no Wayland client on Windows and macOS, so only probe where it can exist.
+set(_wayland_found FALSE)
+if (ENABLE_WAYLAND AND UNIX AND NOT APPLE)
+    find_package(Qt6 6.8 QUIET COMPONENTS WaylandClient)
+    if (Qt6WaylandClient_FOUND)
+        set(_wayland_found TRUE)
+    else()
+        message(WARNING "Qt6 WaylandClient not found, building without Wayland support")
+    endif()
 endif()
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS ${_qt_components})
 qt_standard_project_setup(REQUIRES 6.8)
 find_package(glaze REQUIRED)
 
@@ -212,7 +224,7 @@ if (ENABLE_MIMALLOC)
     find_package(mimalloc 3 REQUIRED)
 endif()
 
-if (LINUX)
+if (UNIX AND NOT APPLE)
     find_package(OpenSSL REQUIRED)
 endif()
 
@@ -787,8 +799,11 @@ if (ENABLE_MIMALLOC)
     target_include_directories(${PROJECT_NAME} PRIVATE "${MIMALLOC_INCLUDE_DIR}")
 endif()
 
-if (LINUX)
+if (_wayland_found)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::WaylandClient)
+endif()
+
+if (UNIX AND NOT APPLE)
     corrosion_link_libraries(${PROJECT_NAME}_rs OpenSSL::Crypto OpenSSL::SSL)
 endif()
 
@@ -826,7 +841,7 @@ else()
 endif()
 summary_row("Compiler" "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 summary_row("Install prefix" "${CMAKE_INSTALL_PREFIX}")
-if (WIN32)
+if (MSVC OR (CMAKE_C_SIMULATE_ID STREQUAL "MSVC"))
     summary_row("MSVC runtime" "${MSVC_RUNTIME} (${CMAKE_MSVC_RUNTIME_LIBRARY})")
 endif()
 if (RUST_PROFILE)

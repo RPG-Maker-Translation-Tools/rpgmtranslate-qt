@@ -60,7 +60,7 @@ using PreparedGlossary = vector<PreparedTerm>;
 // and the settings window can change them meanwhile.
 struct TranslateContext {
     vector<EndpointSettings> endpoints;
-    QStringList approvedScripts;
+    QStringList approvedScriptsSha;
     QString sourceLang;
     QString translationLang;
 };

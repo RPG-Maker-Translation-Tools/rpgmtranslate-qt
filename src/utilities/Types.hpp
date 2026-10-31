@@ -18,7 +18,7 @@ struct glz::meta<MatchModeInfo> {
         "mode",
         glz::custom<[](MatchModeInfo& out, const u8 input) -> void {
         out.mode.tag = MatchMode::Tag(input);
-    }, [](const MatchModeInfo& input) -> u8 { return scast<u8>(input.mode.tag); }>,
+    }, [](const MatchModeInfo& input) -> u8 { return static_cast<u8>(input.mode.tag); }>,
         "fuzzyThreshold",
         glz::custom<
             [](MatchModeInfo& out, const f64 input) -> void {
@@ -56,7 +56,7 @@ struct Span {
 
 using TextMatch = PackedBits<Field<"start", u32, 32>, Field<"len", u32, 31>, Field<"capture", bool, 1>>;
 
-using MatchIndex = PackedBits<Field<"row", u32, 24>, Field<"col", u8, 8>>;
+using MatchIndex = PackedBits<Field<"row", i32, 24>, Field<"col", u8, 8>>;
 
 static constexpr u32 NO_ENTRY = std::numeric_limits<u32>::max();
 
@@ -93,8 +93,8 @@ struct FileMatches {
 
     // Appended, not written over the old matches: the other results point into `spans` too
     void setMatches(CellMatch& cell, const span<const TextMatch> found) {
-        cell.matchStart = scast<u32>(spans.size());
-        cell.matchCount = scast<u32>(found.size());
+        cell.matchStart = static_cast<u32>(spans.size());
+        cell.matchCount = static_cast<u32>(found.size());
         spans.insert(spans.end(), found.begin(), found.end());
     }
 
@@ -104,13 +104,13 @@ struct FileMatches {
 
     // Empty if the result belongs to no entry
     [[nodiscard]] auto entry(const CellMatch& cell) const -> QStringView {
-        return cell.entryIndex == NO_ENTRY ? QStringView() : QStringView(entries[scast<isize>(cell.entryIndex)]);
+        return cell.entryIndex == NO_ENTRY ? QStringView() : QStringView(entries[static_cast<isize>(cell.entryIndex)]);
     }
 
     // Appended, not written over the old text: the other results point into `texts` too
     void setText(CellMatch& cell, const QStringView text) {
-        cell.textStart = scast<u32>(texts.size());
-        cell.textLength = scast<u32>(text.size());
+        cell.textStart = static_cast<u32>(texts.size());
+        cell.textLength = static_cast<u32>(text.size());
         texts.append(text);
 
         const auto written = span(texts.data() + cell.textStart, cell.textLength);
@@ -126,7 +126,7 @@ struct FileMatches {
             entries.append(name.toString());
         }
 
-        cell.entryIndex = scast<u32>(entries.size() - 1);
+        cell.entryIndex = static_cast<u32>(entries.size() - 1);
     }
 
     // The search is done adding: the slack is not needed
@@ -140,26 +140,24 @@ struct FileMatches {
 inline auto u16ToAscii(u16 number) -> array<char, 4> {
     array<char, 4> out{};
 
-    // NOLINTBEGIN(readability-magic-numbers)
     if (number >= 1000) {
-        out[0] = scast<char>('0' + (number / 1000));
+        out[0] = static_cast<char>('0' + (number / 1000));
         number %= 1000;
-        out[1] = scast<char>('0' + (number / 100));
+        out[1] = static_cast<char>('0' + (number / 100));
         number %= 100;
-        out[2] = scast<char>('0' + (number / 10));
-        out[3] = scast<char>('0' + (number % 10));
+        out[2] = static_cast<char>('0' + (number / 10));
+        out[3] = static_cast<char>('0' + (number % 10));
     } else if (number >= 100) {
-        out[0] = scast<char>('0' + (number / 100));
+        out[0] = static_cast<char>('0' + (number / 100));
         number %= 100;
-        out[1] = scast<char>('0' + (number / 10));
-        out[2] = scast<char>('0' + (number % 10));
+        out[1] = static_cast<char>('0' + (number / 10));
+        out[2] = static_cast<char>('0' + (number % 10));
     } else if (number >= 10) {
-        out[0] = scast<char>('0' + (number / 10));
-        out[1] = scast<char>('0' + (number % 10));
+        out[0] = static_cast<char>('0' + (number / 10));
+        out[1] = static_cast<char>('0' + (number % 10));
     } else {
-        out[0] = scast<char>('0' + number);
+        out[0] = static_cast<char>('0' + number);
     }
-    // NOLINTEND(readability-magic-numbers)
 
     return out;
 }
@@ -168,7 +166,7 @@ struct Selected {
     bitset<2048> mapIndices = 0;
     bitset<2048> validIndices = 0;
     u16 mapCount = 0;
-    FileFlags flags = scast<FileFlags>(0);
+    FileFlags flags = static_cast<FileFlags>(0);
 
     [[nodiscard]] auto empty() const -> bool {
         for (u16 idx = 0; idx < mapCount; idx++) {
@@ -224,7 +222,7 @@ struct Selected {
         static constexpr i32 totalFlags = std::countr_zero(FileFlags_Database) + 1;
 
         for (i32 flagIdx = 1; flagIdx < totalFlags; flagIdx++) {
-            const auto flag = scast<FileFlags>(1 << flagIdx);
+            const auto flag = static_cast<FileFlags>(1 << flagIdx);
 
             if ((flags & flag) != 0) {
                 flagFileCount++;
@@ -253,7 +251,7 @@ struct Selected {
         }
 
         for (i32 flagIdx = 1; flagIdx < totalFlags; flagIdx++) {
-            const auto flag = scast<FileFlags>(1 << flagIdx);
+            const auto flag = static_cast<FileFlags>(1 << flagIdx);
 
             if ((flags & flag) == 0) {
                 continue;

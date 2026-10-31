@@ -64,12 +64,12 @@ class TranslationTable final : public QTableView {
    private:
     HashMap<i32, i8> selectedColumnPerRow;
 
-    // Taken when a row is about to go, sent when it has
-    RemovedRowInfo removedRow = RemovedRowInfo(0, RowFlags(0));
-
     TranslationTableModel* model_;
     TranslationTableHeader* header_;
     TranslationTableDelegate* delegate;
 
     const ProjectSettings* projectSettings;
+
+    // Taken when a row is about to go, sent when it has
+    RemovedRowInfo removedRow = RemovedRowInfo(0, RowFlags(0));
 };

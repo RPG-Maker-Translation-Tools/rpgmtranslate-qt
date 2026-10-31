@@ -1570,7 +1570,7 @@ class Repository final {
         const u32 allowedTypes,
         void* const payload
     ) -> i32 {
-        auto* const self = static_cast<Repository*>(payload);
+        auto const* const self = static_cast<Repository*>(payload);
 
         if (self->credentialsCallback == nullptr) {
             return GIT_PASSTHROUGH;
@@ -1580,7 +1580,7 @@ class Repository final {
     }
 
     static auto transferProgressTrampoline(const git_indexer_progress* const stats, void* const payload) -> i32 {
-        auto* const self = static_cast<Repository*>(payload);
+        auto const* const self = static_cast<Repository*>(payload);
 
         if (self->transferProgressCallback == nullptr) {
             return 0;
@@ -1591,7 +1591,7 @@ class Repository final {
 
     static auto pushProgressTrampoline(const u32 current, const u32 total, const usize bytes, void* const payload)
         -> i32 {
-        auto* const self = static_cast<Repository*>(payload);
+        auto const* const self = static_cast<Repository*>(payload);
 
         if (self->pushProgressCallback == nullptr) {
             return 0;

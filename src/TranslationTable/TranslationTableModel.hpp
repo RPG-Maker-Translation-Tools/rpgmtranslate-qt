@@ -30,7 +30,6 @@ class TranslationTableModel final : public QAbstractTableModel {
     void insertRow(u32 row, QStringList cells);
     auto removeRows(i32 row, i32 count, const QModelIndex& parent = QModelIndex()) -> bool override;
 
-    // Read-only: every write goes through `setData`, `fill` and the row/column methods above
     [[nodiscard]] auto item(u32 row, u8 column) const -> const QString*;
     [[nodiscard]] auto itemFromIndex(const QModelIndex& index) const -> const QString*;
 
@@ -39,9 +38,8 @@ class TranslationTableModel final : public QAbstractTableModel {
     void translatedChanged(i8 count);
 
    private:
-    // The cell of a row, which is `colCount` cells long in `texts`
     [[nodiscard]] auto cell(this auto&& self, const isize row, const isize column) -> decltype(auto) {
-        return (self.texts[(row * self.colCount) + column]);
+        return self.texts[(row * self.colCount) + column];
     }
 
     [[nodiscard]] auto isEditable(const isize row, const u8 column) const -> bool {
@@ -51,7 +49,6 @@ class TranslationTableModel final : public QAbstractTableModel {
     // Changes the length of every row, keeping the cells that fit
     void restride(u8 newCount);
 
-    // Row-major cells of all rows, so that a row costs only the columns the table has, not `MAX_COLUMNS`
     QList<QString> texts;
     // Bit N of a row is set if the column N of the row is editable
     QList<u16> editableColumns;

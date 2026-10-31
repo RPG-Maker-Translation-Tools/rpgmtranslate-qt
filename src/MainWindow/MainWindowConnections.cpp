@@ -46,7 +46,7 @@ void MainWindow::setupConnections() {
 
         QTimer::singleShot(1, [this, row] -> void {
             ui->translationTable->scrollTo(
-                ui->translationTable->model()->index(scast<i32>(row), 0),
+                ui->translationTable->model()->index(static_cast<i32>(row), 0),
                 TranslationTable::PositionAtCenter
             );
         });
@@ -71,13 +71,13 @@ void MainWindow::setupConnections() {
         [this](const TranslationTable::MultilineAction action, const u32 count) -> void {
         switch (action) {
             case TranslationTable::MultilineAction::Cut:
-                present(this, NOTICE_N("%n row(s) cut.", nullptr, scast<i32>(count), Info, Status));
+                present(this, NOTICE_N("%n row(s) cut.", nullptr, static_cast<i32>(count), Info, Status));
                 break;
             case TranslationTable::MultilineAction::Copy:
-                present(this, NOTICE_N("%n row(s) copied.", nullptr, scast<i32>(count), Info, Status));
+                present(this, NOTICE_N("%n row(s) copied.", nullptr, static_cast<i32>(count), Info, Status));
                 break;
             case TranslationTable::MultilineAction::Paste:
-                present(this, NOTICE_N("%n row(s) pasted.", nullptr, scast<i32>(count), Info, Status));
+                present(this, NOTICE_N("%n row(s) pasted.", nullptr, static_cast<i32>(count), Info, Status));
                 break;
         }
     }
@@ -220,7 +220,7 @@ void MainWindow::setupConnections() {
             return;
         }
 
-        auto* const dialog = new BackupSelectDialog(projectSettings->backupPath(), this);
+        const auto* const dialog = new BackupSelectDialog(projectSettings->backupPath(), this);
 
         // Deleted by itself when it closes
         connect(dialog, &BackupSelectDialog::accepted, this, [this, dialog] -> void {
@@ -258,7 +258,7 @@ void MainWindow::setupConnections() {
         bookmarkMenu->updateBookmark(
             ui->tabPanel->currentTabName(),
             row,
-            *ui->translationTable->model()->item(scast<i32>(row), 1)
+            *ui->translationTable->model()->item(static_cast<i32>(row), 1)
         );
     });
 
@@ -274,7 +274,7 @@ void MainWindow::setupConnections() {
         this,
         [this](const i32 index, const QString& name) -> void {
         // A file edited outside can have more columns than the project knows
-        if (scast<usize>(index) >= projectSettings->columns.size()) {
+        if (static_cast<usize>(index) >= projectSettings->columns.size()) {
             return;
         }
 
@@ -289,7 +289,7 @@ void MainWindow::setupConnections() {
         &TranslationTable::columnResized,
         this,
         [this](const i32 index, const u16 width) -> void {
-        if (scast<usize>(index) < projectSettings->columns.size()) {
+        if (static_cast<usize>(index) < projectSettings->columns.size()) {
             projectSettings->columns[index].width = width;
         }
     }
@@ -336,10 +336,10 @@ void MainWindow::setupConnections() {
 
     connect(ui->translationTable, &TranslationTable::bookmarked, this, [this](const u32 row) -> void {
         // The entry is that of the nearest `<!>NAME` row above the bookmark, up to the `<!>ID` row starting the entry.
-        auto* const model = ui->translationTable->model();
+        const auto* const model = ui->translationTable->model();
         QString entry;
 
-        for (i32 idx = scast<i32>(row) - 1; idx >= 0; idx--) {
+        for (i32 idx = static_cast<i32>(row) - 1; idx >= 0; idx--) {
             const QStringView source = *model->item(idx, 0);
 
             if (const auto name = entryNameOfLine(source)) {
@@ -457,7 +457,7 @@ void MainWindow::setupConnections() {
         const QString directory = serdeMenu->directory();
         const SerdeFormat format = serdeMenu->format();
 
-        QtConcurrent::run([this, task, filenames = std::move(filenames), directory, format]() mutable -> auto {
+        QtConcurrent::run([this, task, filenames = std::move(filenames), directory, format] mutable -> auto {
             return taskWorker->serdeExport(task, filenames, directory, format);
         })
             .then(this, [this, task](const SerdeResult& result) -> void {
@@ -472,7 +472,7 @@ void MainWindow::setupConnections() {
                 return;
             }
 
-            reportSkippedFiles(result.value().filenames, scast<u16>(result.value().skippedCount));
+            reportSkippedFiles(result.value().filenames, static_cast<u16>(result.value().skippedCount));
         }).onFailed(this, [this, task] -> void { taskFailed(task); });
     });
 
@@ -486,7 +486,7 @@ void MainWindow::setupConnections() {
                 tr("Import"),
                 tr("Import replaces the translation of %n file(s) with the imported one. Continue?",
                    nullptr,
-                   scast<i32>(filenames.size()))
+                   static_cast<i32>(filenames.size()))
             ) != QMessageBox::Yes) {
             return;
         }
@@ -506,7 +506,7 @@ void MainWindow::setupConnections() {
             return;
         }
 
-        QtConcurrent::run([this, task, filenames = std::move(filenames), directory, format]() mutable -> auto {
+        QtConcurrent::run([this, task, filenames = std::move(filenames), directory, format] mutable -> auto {
             return taskWorker->serdeImport(task, filenames, directory, format);
         })
             .then(this, [this, task](const SerdeResult& result) -> void {
@@ -521,7 +521,7 @@ void MainWindow::setupConnections() {
                 return;
             }
 
-            reportSkippedFiles(result.value().filenames, scast<u16>(result.value().skippedCount));
+            reportSkippedFiles(result.value().filenames, static_cast<u16>(result.value().skippedCount));
 
             // Not `translationsRewritten`: the imported maps exist only in `mapSections`, which the reload has to
             // save. The other files were written by the task, and the tab is closed.

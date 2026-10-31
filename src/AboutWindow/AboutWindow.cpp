@@ -1,6 +1,5 @@
 #include "AboutWindow.hpp"
 
-#include "ProjectSettings.hpp"
 #include "Utils.hpp"
 #include "config.h"
 #include "miniaudio.h"
@@ -9,6 +8,7 @@
 #include <glaze/version.hpp>
 
 #include <QApplication>
+#include <QFile>
 #include <archive.h>
 #include <quickjs.h>
 
@@ -58,10 +58,10 @@ constexpr QChar LINE_SEPARATOR = u'\u2028';
 #endif
 
 #ifdef _WIN32
-    out += u"Windows SDK: NTDDI "_qsv % qsv(qhtos(scast<u32>(NTDDI_VERSION))) % u", build "_qsv %
+    out += u"Windows SDK: NTDDI "_qsv % qsv(qhtos(static_cast<u32>(NTDDI_VERSION))) % u", build "_qsv %
            qsv(qitos(VER_PRODUCTBUILD)) % LINE_SEPARATOR;
 #ifdef WDK_NTDDI_VERSION
-    out += u"WDK target: NTDDI "_qsv % qsv(qhtos(scast<u32>(WDK_NTDDI_VERSION))) % LINE_SEPARATOR;
+    out += u"WDK target: NTDDI "_qsv % qsv(qhtos(static_cast<u32>(WDK_NTDDI_VERSION))) % LINE_SEPARATOR;
 #endif
 #endif
 
@@ -99,9 +99,10 @@ constexpr const char* ABOUT_TEMPLATE = QT_TRANSLATE_NOOP(
     return semver(version / 10000, (version / 100) % 100, version % 100);
 }
 #endif
-}
+}  // namespace
 
 AboutWindow::AboutWindow(QWidget* const parent) : QDialog(parent), ui(setupUi()) {
+    setAttribute(Qt::WA_DeleteOnClose);
     fill();
 }
 

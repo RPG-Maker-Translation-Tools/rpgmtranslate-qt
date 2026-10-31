@@ -7,6 +7,7 @@
 
 namespace {
 constexpr i32 ADD_BUTTON_EXTRA_WIDTH = 32;
+constexpr i32 ADD_BUTTON_SIZE = 16;
 }  // namespace
 
 TranslationTableHeader::TranslationTableHeader(QWidget* const parent) : QHeaderView(Qt::Horizontal, parent) {
@@ -29,7 +30,7 @@ void TranslationTableHeader::paintEvent(QPaintEvent* const event) {
         buttonOpt.rect = buttonRect;
         static const auto addIcon = QIcon(u":/icons/add.svg"_s);
         buttonOpt.icon = addIcon;
-        buttonOpt.iconSize = QSize(16, 16);
+        buttonOpt.iconSize = QSize(ADD_BUTTON_SIZE, ADD_BUTTON_SIZE);
 
         buttonOpt.state = QStyle::State_Enabled;
 

@@ -1,7 +1,5 @@
 #include "TaskPanel.hpp"
 
-#include "Utils.hpp"
-
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -69,7 +67,7 @@ void TaskPanel::addTask(const TaskToken& task) {
     layout->addWidget(widget);
     rows.emplace_back(name, QString(), widget, label, progressBar, task->id(), task->kind());
 
-    emit taskCountChanged(scast<i32>(rows.size()));
+    emit taskCountChanged(static_cast<i32>(rows.size()));
 }
 
 void TaskPanel::updateLabel(const Row& row) const {
@@ -102,8 +100,8 @@ void TaskPanel::updateTask(const u32 taskId, const QString& filename, const u32 
 
     row->filename = filename;
     updateLabel(*row);
-    row->progressBar->setRange(0, scast<i32>(total));
-    row->progressBar->setValue(scast<i32>(done));
+    row->progressBar->setRange(0, static_cast<i32>(total));
+    row->progressBar->setValue(static_cast<i32>(done));
 }
 
 void TaskPanel::removeTask(const u32 taskId) {
@@ -122,5 +120,5 @@ void TaskPanel::removeTask(const u32 taskId) {
     }
 
     adjustSize();
-    emit taskCountChanged(scast<i32>(rows.size()));
+    emit taskCountChanged(static_cast<i32>(rows.size()));
 }

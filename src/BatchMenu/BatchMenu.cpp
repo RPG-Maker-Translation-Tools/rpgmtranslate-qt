@@ -17,7 +17,7 @@ namespace {
 constexpr array<BatchAction, 3> BUILTIN_SCRIPTS = { BatchAction::Trim, BatchAction::Wrap, BatchAction::Latinize };
 
 [[nodiscard]] constexpr auto scriptAction(const i32 index) -> BatchAction {
-    return scast<usize>(index) < BUILTIN_SCRIPTS.size() ? BUILTIN_SCRIPTS[index] : BatchAction::Custom;
+    return static_cast<usize>(index) < BUILTIN_SCRIPTS.size() ? BUILTIN_SCRIPTS[index] : BatchAction::Custom;
 }
 }  // namespace
 
@@ -74,7 +74,7 @@ BatchMenu::BatchMenu(QWidget* const parent) :
                 break;
 
             case BatchAction::Wrap:
-                variant = scast<u8>(ui->wrapSpinBox->value());
+                variant = static_cast<u8>(ui->wrapSpinBox->value());
                 break;
 
             default:
@@ -208,9 +208,9 @@ void BatchMenu::refreshScripts() {
         // Walks backward, so erasing an index does not shift the ones still to visit
         for (usize idx = scripts.size(); idx-- > 0;) {
             if (isRemoved(savedNames[idx])) {
-                ui->scriptSelect->removeItem(scast<i32>(idx + BUILTIN_SCRIPTS.size()));
-                scripts.erase(scripts.begin() + scast<isize>(idx));
-                savedNames.erase(savedNames.begin() + scast<isize>(idx));
+                ui->scriptSelect->removeItem(static_cast<i32>(idx + BUILTIN_SCRIPTS.size()));
+                scripts.erase(scripts.begin() + static_cast<isize>(idx));
+                savedNames.erase(savedNames.begin() + static_cast<isize>(idx));
             }
         }
 
@@ -247,7 +247,7 @@ auto BatchMenu::eventFilter(QObject* const watched, QEvent* const event) -> bool
         if (event->type() == QEvent::MouseButtonPress) {
             refreshScripts();
         } else if (event->type() == QEvent::KeyPress) {
-            const auto* const keyEvent = scast<QKeyEvent*>(event);
+            const auto* const keyEvent = static_cast<QKeyEvent*>(event);
             const bool popupPressed =
                 keyEvent->key() == Qt::Key_F4 ||
                 (keyEvent->key() == Qt::Key_Down && keyEvent->modifiers().testFlag(Qt::AltModifier));
@@ -271,7 +271,7 @@ auto BatchMenu::save() -> bool {
     QStringList errs;
 
     for (const auto& [idx, script] : views::enumerate(scripts)) {
-        const i32 itemIndex = scast<i32>(idx + BUILTIN_SCRIPTS.size());
+        const i32 itemIndex = static_cast<i32>(idx + BUILTIN_SCRIPTS.size());
 
         // The name is typed by the user: only a file name, and one the next start loads (`*.js`)
         QString filename = QFileInfo(ui->scriptSelect->itemText(itemIndex)).fileName();
@@ -293,7 +293,7 @@ auto BatchMenu::save() -> bool {
             return false;
         }
 
-        auto file = std::move(opened.value());
+        const auto file = std::move(opened.value());
 
         if (file == nullptr) {
             errs.push_back(u"Skipped saving script %1"_qsv.arg(filename));

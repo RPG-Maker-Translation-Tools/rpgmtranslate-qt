@@ -12,6 +12,7 @@
 #include <QPushButton>
 #include <QSlider>
 #include <QVBoxLayout>
+#include <utility>
 
 namespace {
 constexpr i32 SECONDS_PER_MINUTE = 60;
@@ -175,7 +176,7 @@ auto MediaPlayer::open(const QString& filePath) -> Result<void, Notice> {
 
         const i32 bufSize = av_image_get_buffer_size(AV_PIX_FMT_RGB24, videoWidth, videoHeight, 1);
 
-        rgbBuffer = scast<u8*>(av_malloc(scast<usize>(bufSize)));
+        rgbBuffer = static_cast<u8*>(av_malloc(static_cast<usize>(bufSize)));
         if (rgbBuffer == nullptr) {
             return Err(NOTICE("av_malloc failed for RGB buffer", Critical, Inline));
         }
@@ -192,7 +193,7 @@ auto MediaPlayer::open(const QString& filePath) -> Result<void, Notice> {
     }
 
     // A stream can leave its length unknown, which is a large negative number
-    configureControls(scast<i32>(max<i64>(0, formatContext->duration / AV_TIME_BASE)));
+    configureControls(static_cast<i32>(max<i64>(0, formatContext->duration / AV_TIME_BASE)));
 
     // The device starts with something to play instead of silence
     if (isAudioOnly) {
@@ -205,7 +206,7 @@ auto MediaPlayer::open(const QString& filePath) -> Result<void, Notice> {
 void MediaPlayer::applyVolume() {
     if (audioDeviceOpen) {
         // Squared, so the slider follows loudness rather than amplitude.
-        const f32 level = scast<f32>(volumeSlider->value()) / VOLUME_MAX;
+        const f32 level = static_cast<f32>(volumeSlider->value()) / VOLUME_MAX;
         ma_device_set_master_volume(&device, level * level);
     }
 }
@@ -265,7 +266,7 @@ auto MediaPlayer::openMidi(const QString& filePath) -> Result<void, Notice> {
 
         // TinySoundFont converts the samples into its own buffers, so the file's bytes are only needed while loading.
         const QByteArray soundFontData = soundFontFile.readAll();
-        soundFont = tsf_load_memory(soundFontData.constData(), scast<i32>(soundFontData.size()));
+        soundFont = tsf_load_memory(soundFontData.constData(), static_cast<i32>(soundFontData.size()));
 
         if (soundFont == nullptr) {
             return Err(NOTICE("%1 is not a valid SoundFont", Critical, Inline, soundFontPath));
@@ -282,7 +283,7 @@ auto MediaPlayer::openMidi(const QString& filePath) -> Result<void, Notice> {
     }
 
     const QByteArray midiData = midiFile.readAll();
-    midiHead = tml_load_memory(midiData.constData(), scast<i32>(midiData.size()));
+    midiHead = tml_load_memory(midiData.constData(), static_cast<i32>(midiData.size()));
 
     if (midiHead == nullptr) {
         return Err(NOTICE("%1 is not a valid MIDI file", Critical, Inline, filePath));
@@ -295,7 +296,7 @@ auto MediaPlayer::openMidi(const QString& filePath) -> Result<void, Notice> {
     // The device callback renders from another thread, so every channel exists before it starts: setting one that
     // does not allocates.
     for (i32 channel = 0; channel < MIDI_TRACK_CHANNELS; channel++) {
-        tsf_channel_set_presetnumber(soundFont, channel, 0, channel == MIDI_DRUM_CHANNEL);
+        tsf_channel_set_presetnumber(soundFont, channel, 0, static_cast<int>(channel == MIDI_DRUM_CHANNEL));
     }
 
     deviceConfig = ma_device_config_init(ma_device_type_playback);
@@ -315,14 +316,14 @@ auto MediaPlayer::openMidi(const QString& filePath) -> Result<void, Notice> {
     isMidi = true;
     isAudioOnly = true;
     frameIntervalMS = AUDIO_ONLY_FRAME_INTERVAL_MS;
-    bytesPerSecond = scast<i64>(MIDI_SAMPLE_RATE) * MIDI_OUTPUT_CHANNELS * F32_SIZE;
+    bytesPerSecond = static_cast<i64>(MIDI_SAMPLE_RATE) * MIDI_OUTPUT_CHANNELS * F32_SIZE;
 
     midiNext = midiHead;
     midiMS = 0;
     midiSeekMS.store(-1, std::memory_order_relaxed);
     midiDone.store(false, std::memory_order_relaxed);
 
-    configureControls(scast<i32>(midiLengthMS / SECOND_MS));
+    configureControls(static_cast<i32>(midiLengthMS / SECOND_MS));
 
     return {};
 }
@@ -344,7 +345,7 @@ void MediaPlayer::renderMidi(f32* const output, const u32 frameCount) {
                         soundFont,
                         message.channel,
                         message.key,
-                        scast<f32>(message.velocity) / MIDI_MAX_VELOCITY
+                        static_cast<f32>(message.velocity) / MIDI_MAX_VELOCITY
                     );
                 }
                 break;
@@ -370,17 +371,17 @@ void MediaPlayer::renderMidi(f32* const output, const u32 frameCount) {
         tsf_reset(soundFont);
 
         for (i32 channel = 0; channel < MIDI_TRACK_CHANNELS; channel++) {
-            tsf_channel_set_presetnumber(soundFont, channel, 0, channel == MIDI_DRUM_CHANNEL);
+            tsf_channel_set_presetnumber(soundFont, channel, 0, static_cast<int>(channel == MIDI_DRUM_CHANNEL));
         }
 
         midiNext = midiHead;
 
-        while (midiNext != nullptr && midiNext->time < seekMS) {
+        while (midiNext != nullptr && std::cmp_less(midiNext->time, seekMS)) {
             apply(*midiNext, false);
             midiNext = midiNext->next;
         }
 
-        midiMS = scast<f64>(seekMS);
+        midiMS = static_cast<f64>(seekMS);
     }
 
     static constexpr f64 MS_PER_FRAME = 1000.0 / MIDI_SAMPLE_RATE;
@@ -395,13 +396,21 @@ void MediaPlayer::renderMidi(f32* const output, const u32 frameCount) {
             midiNext = midiNext->next;
         }
 
-        tsf_render_float(soundFont, output + (scast<usize>(rendered) * MIDI_OUTPUT_CHANNELS), scast<i32>(block), 0);
+        tsf_render_float(
+            soundFont,
+            output + (static_cast<usize>(rendered) * MIDI_OUTPUT_CHANNELS),
+            static_cast<i32>(block),
+            0
+        );
 
         midiMS += block * MS_PER_FRAME;
         rendered += block;
     }
 
-    audioBytesPlayed.fetch_add(scast<i64>(frameCount) * MIDI_OUTPUT_CHANNELS * F32_SIZE, std::memory_order_relaxed);
+    audioBytesPlayed.fetch_add(
+        static_cast<i64>(frameCount) * MIDI_OUTPUT_CHANNELS * F32_SIZE,
+        std::memory_order_relaxed
+    );
     midiDone.store(midiNext == nullptr && midiMS >= midiLengthMS + MIDI_TAIL_MS, std::memory_order_release);
 }
 
@@ -442,7 +451,7 @@ auto MediaPlayer::openAudio(const AVCodec* const codec) -> bool {
     deviceConfig.periodSizeInFrames = AUDIO_PERIOD_SIZE_IN_FRAMES;
     deviceConfig.periods = 2;
     deviceConfig.playback.channels = channels;
-    deviceConfig.sampleRate = scast<u32>(sampleRate);
+    deviceConfig.sampleRate = static_cast<u32>(sampleRate);
     deviceConfig.dataCallback = MediaPlayer::audioDataCallback;
     deviceConfig.pUserData = this;
 
@@ -451,9 +460,9 @@ auto MediaPlayer::openAudio(const AVCodec* const codec) -> bool {
     }
 
     audioDeviceOpen = true;
-    deviceLatency =
-        scast<f64>(device.playback.internalPeriodSizeInFrames) * device.playback.internalPeriods / device.sampleRate;
-    bytesPerSecond = scast<i64>(sampleRate) * channels * F32_SIZE;
+    deviceLatency = static_cast<f64>(device.playback.internalPeriodSizeInFrames) * device.playback.internalPeriods /
+                    device.sampleRate;
+    bytesPerSecond = static_cast<i64>(sampleRate) * channels * F32_SIZE;
 
     return true;
 }
@@ -526,7 +535,7 @@ void MediaPlayer::togglePlayback() {
     paused ? frameTimer.stop() : frameTimer.start(frameIntervalMS);
 
     if (paused) {
-        wallBase += scast<f64>(wallClock.elapsed()) / SECOND_MS;
+        wallBase += static_cast<f64>(wallClock.elapsed()) / SECOND_MS;
     } else {
         wallClock.restart();
     }
@@ -559,7 +568,7 @@ void MediaPlayer::play() {
 void MediaPlayer::decodeAudio() {
     const i32 channels = audioCodecContext->ch_layout.nb_channels;
     const i32 samples = audioFrame->nb_samples;
-    const usize frameBytes = scast<usize>(samples) * channels * F32_SIZE;
+    const usize frameBytes = static_cast<usize>(samples) * channels * F32_SIZE;
 
     const u32 head = ringHead.load(std::memory_order_relaxed);
     const u32 used = head - ringTail.load(std::memory_order_acquire);
@@ -575,7 +584,7 @@ void MediaPlayer::decodeAudio() {
         resampler,
         &output,
         samples,
-        ccast<const u8**>(rcast<const u8* const*>(audioFrame->extended_data)),
+        const_cast<const u8**>(reinterpret_cast<const u8* const*>(audioFrame->extended_data)),
         samples
     );
 
@@ -583,7 +592,7 @@ void MediaPlayer::decodeAudio() {
         return;
     }
 
-    const usize convertedBytes = scast<usize>(converted) * channels * F32_SIZE;
+    const usize convertedBytes = static_cast<usize>(converted) * channels * F32_SIZE;
 
     // The ring wraps, so the copy is at most two contiguous runs.
     const usize start = head & RING_MASK;
@@ -615,7 +624,7 @@ void MediaPlayer::finishPlayback() {
 void MediaPlayer::processTick() {
     if (isAudioOnly) {
         const i64 bytes = audioBytesPlayed.load(std::memory_order_relaxed);
-        const i32 seconds = scast<i32>(bytes / bytesPerSecond);
+        const i32 seconds = static_cast<i32>(bytes / bytesPerSecond);
 
         if (!progressSlider->isSliderDown()) {
             progressSlider->setValue(seconds);
@@ -659,7 +668,7 @@ void MediaPlayer::processTick() {
     }
 
     if (due != nullptr) {
-        const i32 seconds = scast<i32>(framePts(due));
+        const i32 seconds = static_cast<i32>(framePts(due));
 
         if (seconds != playbackSecond) {
             playbackSecond = seconds;
@@ -705,11 +714,9 @@ void MediaPlayer::readPacket() {
         if (avcodec_send_packet(videoCodecContext, packet) >= 0) {
             decodeVideoFrames();
         }
-    } else if (packet->stream_index == audioStreamIndex) {
-        if (avcodec_send_packet(audioCodecContext, packet) >= 0) {
-            while (avcodec_receive_frame(audioCodecContext, audioFrame) == 0) {
-                decodeAudio();
-            }
+    } else if ((packet->stream_index == audioStreamIndex) && (avcodec_send_packet(audioCodecContext, packet) >= 0)) {
+        while (avcodec_receive_frame(audioCodecContext, audioFrame) == 0) {
+            decodeAudio();
         }
     }
 
@@ -738,11 +745,12 @@ void MediaPlayer::clearFrames() {
 auto MediaPlayer::clockSeconds() const -> f64 {
     if (audioDeviceOpen) {
         // What the device was handed is not yet what is heard: it still has its own buffers to play.
-        const f64 played = scast<f64>(audioBytesPlayed.load(std::memory_order_relaxed)) / scast<f64>(bytesPerSecond);
+        const f64 played =
+            static_cast<f64>(audioBytesPlayed.load(std::memory_order_relaxed)) / static_cast<f64>(bytesPerSecond);
         return max(0.0, played - deviceLatency);
     }
 
-    return wallBase + (paused ? 0.0 : scast<f64>(wallClock.elapsed()) / SECOND_MS);
+    return wallBase + (paused ? 0.0 : static_cast<f64>(wallClock.elapsed()) / SECOND_MS);
 }
 
 auto MediaPlayer::framePts(const AVFrame* const source) const -> f64 {
@@ -754,12 +762,12 @@ auto MediaPlayer::framePts(const AVFrame* const source) const -> f64 {
 
     const i64 start = videoStream->start_time != AV_NOPTS_VALUE ? videoStream->start_time : 0;
 
-    return scast<f64>(timestamp - start) * av_q2d(videoStream->time_base);
+    return static_cast<f64>(timestamp - start) * av_q2d(videoStream->time_base);
 }
 
 // Half a second of what the device plays, and no more than half of the ring: a frame or two must always fit behind it.
 auto MediaPlayer::audioTargetBytes() const -> usize {
-    return scast<usize>(min<i64>(bytesPerSecond / 2, RING_CAPACITY / 2));
+    return static_cast<usize>(min<i64>(bytesPerSecond / 2, RING_CAPACITY / 2));
 }
 
 auto MediaPlayer::audioStarving() const -> bool {
@@ -817,17 +825,17 @@ void MediaPlayer::audioDataCallback(
     const void* const /* input */,
     const u32 frameCount
 ) {
-    auto* const self = scast<MediaPlayer*>(device->pUserData);
+    auto* const self = static_cast<MediaPlayer*>(device->pUserData);
 
     if (self->isMidi) {
-        self->renderMidi(scast<f32*>(output), frameCount);
+        self->renderMidi(static_cast<f32*>(output), frameCount);
         return;
     }
 
     const usize channels = self->audioCodecContext->ch_layout.nb_channels;
-    const u32 bytesNeeded = scast<u32>(frameCount * channels * F32_SIZE);
+    const u32 bytesNeeded = static_cast<u32>(frameCount * channels * F32_SIZE);
 
-    u8* const dst = scast<u8*>(output);
+    u8* const dst = static_cast<u8*>(output);
 
     const u32 tail = self->ringTail.load(std::memory_order_relaxed);
     const u32 available = self->ringHead.load(std::memory_order_acquire) - tail;
@@ -836,7 +844,7 @@ void MediaPlayer::audioDataCallback(
 
     // The ring wraps, so the copy is at most two contiguous runs.
     const u32 start = tail & RING_MASK;
-    const u32 firstRun = min(copySize, scast<u32>(RING_CAPACITY) - start);
+    const u32 firstRun = min(copySize, static_cast<u32>(RING_CAPACITY) - start);
 
     memcpy(dst, self->pcmBuffer.data() + start, firstRun);
     memcpy(dst + firstRun, self->pcmBuffer.data(), copySize - firstRun);
@@ -867,11 +875,9 @@ auto MediaPlayer::refillRingBuffer(const usize minBytes) -> bool {
             return false;
         }
 
-        if (packet->stream_index == audioStreamIndex) {
-            if (avcodec_send_packet(audioCodecContext, packet) >= 0) {
-                while (avcodec_receive_frame(audioCodecContext, audioFrame) == 0) {
-                    decodeAudio();
-                }
+        if ((packet->stream_index == audioStreamIndex) && (avcodec_send_packet(audioCodecContext, packet) >= 0)) {
+            while (avcodec_receive_frame(audioCodecContext, audioFrame) == 0) {
+                decodeAudio();
             }
         }
 
@@ -889,7 +895,7 @@ void MediaPlayer::hideEvent(QHideEvent* const event) {
 void MediaPlayer::seekSecond(const i32 second) {
     // The device callback touches the ring and decoder, so the device is stopped while they are rewound. Pausing and
     // resuming would start a device that was paused.
-    const bool resume = audioDeviceOpen && ma_device_is_started(&device);
+    const bool resume = audioDeviceOpen && (ma_device_is_started(&device) != 0);
 
     if (resume) {
         ma_device_stop(&device);
@@ -905,7 +911,7 @@ void MediaPlayer::seekSecond(const i32 second) {
 void MediaPlayer::rewindTo(const i32 second) {
     if (isMidi) {
         // The callback does the seeking, on its own thread, when the device next runs.
-        midiSeekMS.store(scast<i64>(second) * SECOND_MS, std::memory_order_release);
+        midiSeekMS.store(static_cast<i64>(second) * SECOND_MS, std::memory_order_release);
         midiDone.store(false, std::memory_order_relaxed);
         audioBytesPlayed.store(second * bytesPerSecond, std::memory_order_relaxed);
         finished = false;

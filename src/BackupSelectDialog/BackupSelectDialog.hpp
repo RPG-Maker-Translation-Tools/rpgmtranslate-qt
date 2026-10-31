@@ -19,7 +19,6 @@ class BackupSelectDialog final : public QDialog {
         list(new QListWidget(this)),
         bottomLabel(new QLabel(this)),
         acceptButton(new QPushButton(tr("Load"), this)) {
-        // Closing deletes it after its signals are done, so a slot can't delete it from inside its own emission
         setAttribute(Qt::WA_DeleteOnClose);
 
         auto* const layout = new QVBoxLayout(this);

@@ -58,7 +58,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
             return;
         }
 
-        selectedColumnPerRow.try_emplace(current.row(), scast<i8>(current.column()));
+        selectedColumnPerRow.try_emplace(current.row(), static_cast<i8>(current.column()));
     }
     );
 
@@ -73,7 +73,7 @@ TranslationTable::TranslationTable(QWidget* const parent) :
         // Seed an anchor column for any newly touched row that has none.
         for (const auto& range : selected) {
             for (i32 row = range.top(); row <= range.bottom(); row++) {
-                selectedColumnPerRow.try_emplace(row, scast<i8>(range.left()));
+                selectedColumnPerRow.try_emplace(row, static_cast<i8>(range.left()));
             }
         }
 
@@ -81,7 +81,8 @@ TranslationTable::TranslationTable(QWidget* const parent) :
 
         for (const auto& range : selectionModel()->selection()) {
             for (i32 row = range.top(); row <= range.bottom(); row++) {
-                const i8 keepColumn = selectedColumnPerRow.try_emplace(row, scast<i8>(range.left())).first->second;
+                const i8 keepColumn =
+                    selectedColumnPerRow.try_emplace(row, static_cast<i8>(range.left())).first->second;
 
                 for (i32 col = range.left(); col <= range.right(); col++) {
                     if (col != keepColumn) {
@@ -274,7 +275,7 @@ void TranslationTable::fill(
 
     for (i32 column = 0; column < model_->columnCount(); column++) {
         // `columns` holds the columns of the project; a file edited outside can have more than it knows
-        if (column < scast<i32>(columns.size())) {
+        if (column < static_cast<i32>(columns.size())) {
             headerLabels[column] = columns[column].name;
             header_->resizeSection(column, columns[column].width);
         } else {
@@ -396,7 +397,7 @@ auto TranslationTable::paste() -> u32 {
     const i32 column = indexes.front().column();
 
     vector<i32> selectedRows;
-    selectedRows.reserve(scast<usize>(indexes.size()));
+    selectedRows.reserve(static_cast<usize>(indexes.size()));
 
     for (const QModelIndex& idx : indexes) {
         selectedRows.push_back(idx.row());
@@ -428,10 +429,10 @@ auto TranslationTable::paste() -> u32 {
             row++;
         }
     } else {
-        const i32 count = min(scast<i32>(rows.size()), scast<i32>(selectedRows.size()));
+        const i32 count = min(static_cast<i32>(rows.size()), static_cast<i32>(selectedRows.size()));
 
         for (i32 idx = 0; idx < count; idx++) {
-            const i32 row = selectedRows[scast<usize>(idx)];
+            const i32 row = selectedRows[static_cast<usize>(idx)];
             const QModelIndex dst = model_->index(row, column);
 
             if (dst.isValid() && ((dst.flags() & Qt::ItemIsEditable) != 0)) {

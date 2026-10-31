@@ -42,6 +42,7 @@ constexpr array<ProgressSuffix, 3> PROGRESS_SUFFIXES = { {
     { .suffix = u"written.", .kind = TaskKind::Write },
     { .suffix = u"read.", .kind = TaskKind::Read },
 } };
+
 // The translated rows of a translation file or of a map section, counted as `openProject` counts them
 [[nodiscard]] auto countTranslatedRows(const QString& content, const QL1SV basename) -> i32 {
     const QStringView view = content;
@@ -52,7 +53,7 @@ constexpr array<ProgressSuffix, 3> PROGRESS_SUFFIXES = { {
                                   : -1;
 
     // The game title is the line after its marker, which is the last line: it is not a row
-    const bool holdsTitle = titleMarker != -1 && titleMarker + GAME_TITLE_MARKER.size() + 1 < size;
+    const bool holdsTitle = gameTitleLine(view, titleMarker).has_value();
 
     i32 translated = 0;
     isize pos = 0;
@@ -64,7 +65,7 @@ constexpr array<ProgressSuffix, 3> PROGRESS_SUFFIXES = { {
             newlinePos = size;
         }
 
-        const QStringView line = view.sliced(pos, newlinePos - pos);
+        const QStringView line = chopCarriageReturn(view.sliced(pos, newlinePos - pos));
         pos = newlinePos + 1;
 
         if (holdsTitle && pos >= size) {
@@ -245,7 +246,7 @@ void MainWindow::handleSearchMenuAction(
     })
         .then(this, [=, this](const SearchResult& searchResult) -> void {
         // Moved out of the future's store instead of copied; nothing else reads the result
-        auto& results = ccast<SearchResult&>(searchResult);
+        auto& results = const_cast<SearchResult&>(searchResult);
 
         taskWorker->finishTask(searchTask);
 
@@ -277,7 +278,7 @@ void MainWindow::handleSearchMenuAction(
         const auto confirmed = QMessageBox::question(
             this,
             tr("Confirmation"),
-            tr("Replace the text in %n cell(s) of %1 file(s)?", nullptr, scast<i32>(cellCount))
+            tr("Replace the text in %n cell(s) of %1 file(s)?", nullptr, static_cast<i32>(cellCount))
                 .arg(qsv(qitos(results.matches.size())))
         );
 
@@ -316,7 +317,7 @@ void MainWindow::handleSearchMenuAction(
             }
 
             if (!replaced.skipped.empty()) {
-                reportSkippedFiles(replaced.skipped, scast<u16>(replaced.skipped.size()));
+                reportSkippedFiles(replaced.skipped, static_cast<u16>(replaced.skipped.size()));
             }
         }).onFailed(this, [this, replaceTask] -> void { taskFailed(replaceTask); });
     }).onFailed(this, [this, searchTask] -> void { taskFailed(searchTask); });
@@ -424,7 +425,7 @@ void MainWindow::handleBatchMenuAction(
     JSScript runnable = script;
 
     if (script.action == BatchAction::Custom) {
-        if (!confirmScriptAccess(this, settings->core.approvedScripts, script.name, script.source)) {
+        if (!confirmScriptAccess(this, settings->core.approvedScriptsSha, script.name, script.source)) {
             return;
         }
 
@@ -488,7 +489,7 @@ void MainWindow::handleBatchMenuAction(
         }
 
         const auto& [filenames, log, skippedCount, processedCount] = scriptResult.value();
-        reportSkippedFiles(filenames, scast<u16>(skippedCount));
+        reportSkippedFiles(filenames, static_cast<u16>(skippedCount));
 
         // A script may catch its own errors and only log them, so what it logged is the only report there is
         if (!log.isEmpty()) {
@@ -535,7 +536,7 @@ void MainWindow::handleSearchPanelAction(
 
             QTimer::singleShot(1, this, [this, rowIndex] -> void {
                 ui->translationTable->scrollTo(
-                    ui->translationTable->model()->index(scast<i32>(rowIndex), 0),
+                    ui->translationTable->model()->index(static_cast<i32>(rowIndex), 0),
                     TranslationTable::PositionAtCenter
                 );
             });
@@ -616,7 +617,7 @@ void MainWindow::handleSearchPanelAction(
                     return;
                 }
 
-                auto& replaced = ccast<ReplaceSingleResult&>(result).value();
+                auto& replaced = const_cast<ReplaceSingleResult&>(result).value();
 
                 applyTranslatedDelta(filename, replaced.translatedDelta);
 
@@ -646,7 +647,7 @@ void MainWindow::updateCounts() {
         return;
     }
 
-    auto* const model = ui->translationTable->model();
+    const auto* const model = ui->translationTable->model();
     const i32 rowCount = model->rowCount();
 
     // Only the cells are picked here, as shared copies: joining them is what takes time on a big table
@@ -682,7 +683,7 @@ void MainWindow::updateCounts() {
             translation += u'\n';
         }
 
-        const auto counted = scast<u32>(cells.size());
+        const auto counted = static_cast<u32>(cells.size());
 
         return pair{ countText(source, counted), countText(translation, counted) };
     }).then(this, [this, generation](const pair<TextCounts, TextCounts>& counts) -> void {
@@ -740,10 +741,9 @@ void MainWindow::showProjectStatistics() {
             return;
         }
 
-        reportSkippedFiles(result.skipped, scast<u16>(result.skipped.size()));
+        reportSkippedFiles(result.skipped, static_cast<u16>(result.skipped.size()));
 
         auto* const dialog = new StatisticsDialog(this);
-        dialog->setAttribute(Qt::WA_DeleteOnClose);
         dialog->fill(result.files);
         dialog->show();
     }).onFailed(this, [this, task] -> void { taskFailed(task); });
@@ -773,7 +773,7 @@ void MainWindow::applyCellAction(const BatchAction action) {
                 return;
             }
 
-            variant = scast<u8>(min<u16>(projectSettings->lineLengthHint, UINT8_MAX));
+            variant = static_cast<u8>(min<u16>(projectSettings->lineLengthHint, UINT8_MAX));
             script = WRAP_SCRIPT;
             break;
         case BatchAction::Latinize:
@@ -792,7 +792,7 @@ void MainWindow::applyCellAction(const BatchAction action) {
         script,
         action,
         qsvReplace(current, LINE_FEED, NEW_LINE),
-        scast<u8>(index.column()),
+        static_cast<u8>(index.column()),
         variant,
         projectSettings.get(),
         noGlossary
@@ -845,7 +845,7 @@ void MainWindow::handleSingleLint() {
         return;
     }
 
-    const i32 size = scast<i32>(text.size());
+    const i32 size = static_cast<i32>(text.size());
     warnIfGlossaryLanguagesUnset();
 
     const QString sourceText = *source;
@@ -856,8 +856,15 @@ void MainWindow::handleSingleLint() {
     singleLintFuture = QtConcurrent::run([this, currentTab, row, sourceText, text, glossary] -> auto {
         const PreparedGlossary prepared = prepareGlossary(glossary);
 
-        return taskWorker
-            ->lint(currentTab, scast<u32>(row + 1), sourceText, text, prepared, taskWorker->customLintMatcher(), true);
+        return taskWorker->lint(
+            currentTab,
+            static_cast<u32>(row + 1),
+            sourceText,
+            text,
+            prepared,
+            taskWorker->customLintMatcher(),
+            true
+        );
     });
 
     singleLintFuture.then(this, [this, currentTab, row, size, generation, text](LintOutcome outcome) -> void {
@@ -902,7 +909,7 @@ void MainWindow::handleGlobalLint(const Selected selected) {
             return;
         }
 
-        reportSkippedFiles(result.filenames, scast<u16>(result.skippedCount));
+        reportSkippedFiles(result.filenames, static_cast<u16>(result.skippedCount));
         applyLintRows(std::move(result.rows));
 
         ui->lintMenu->show();
@@ -943,8 +950,6 @@ void MainWindow::showSettingsWindow() {
     }
 
     auto* const settingsWindow = new SettingsWindow(settings.get(), projectSettings.get(), this);
-    settingsWindow->setAttribute(Qt::WA_DeleteOnClose);
-    settingsWindow->setWindowModality(Qt::WindowModal);
     settingsWindow->show();
 
     connect(settingsWindow, &QDialog::destroyed, this, [this] -> void {
@@ -958,7 +963,6 @@ void MainWindow::showSettingsWindow() {
 
 void MainWindow::showAboutWindow() {
     auto* const aboutWindow = new AboutWindow(this);
-    aboutWindow->setAttribute(Qt::WA_DeleteOnClose);
     aboutWindow->show();
 }
 
@@ -982,7 +986,7 @@ void MainWindow::handleInputFocused() {
 
         // The request runs while the settings can change, so it works on a copy of what it reads
         auto context = TranslateContext{ .endpoints = settings->translation.endpoints,
-                                         .approvedScripts = settings->core.approvedScripts,
+                                         .approvedScriptsSha = settings->core.approvedScriptsSha,
                                          .sourceLang = projectSettings->sourceLang,
                                          .translationLang = projectSettings->translationLang };
 

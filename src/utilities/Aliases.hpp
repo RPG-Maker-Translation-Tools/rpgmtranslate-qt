@@ -8,6 +8,7 @@
 #include <bit>
 #include <bitset>
 #include <climits>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -32,7 +33,6 @@
 #include <vector>
 
 using namespace std::literals::string_view_literals;
-
 using namespace enchantum::bitwise_operators;
 
 namespace fs = std::filesystem;
@@ -52,7 +52,6 @@ using i64 = std::int64_t;
 using f32 = float;
 using f64 = double;
 using wchar = wchar_t;
-using wcstr = const wchar*;
 
 using atomicBool = std::atomic_bool;
 using atomicU8 = std::atomic_uint8_t;
@@ -92,29 +91,34 @@ using std::vector;
 using std::wstring;
 using std::wstring_view;
 
+using std::ceil;
+using std::ceilf;
+using std::ceill;
 using std::clamp;
+using std::log;
+using std::log10;
+using std::log10f;
+using std::log10l;
+using std::log2;
+using std::log2f;
+using std::log2l;
+using std::logf;
+using std::logl;
+using std::lround;
+using std::lroundf;
+using std::lroundl;
 using std::max;
 using std::min;
+using std::round;
+using std::roundf;
+using std::roundl;
 
 template <typename T, typename E>
 using Result = std::expected<T, E>;
 template <typename E>
 using Err = std::unexpected<E>;
 
-template <typename O, typename T>
-[[nodiscard]] constexpr auto scast(T&& arg) -> O {
-    return static_cast<O>(std::forward<T>(arg));
-}
-
-template <typename O, typename T>
-[[nodiscard]] constexpr auto rcast(T&& arg) -> O {
-    return reinterpret_cast<O>(std::forward<T>(arg));
-}
-
-template <typename O, typename T>
-[[nodiscard]] constexpr auto ccast(T&& arg) -> O {
-    return const_cast<O>(std::forward<T>(arg));
-}
+using FilenameArray = array<char, 16>;
 
 using FilenameArray = array<char, 16>;
 

@@ -40,8 +40,8 @@ class GitFileModel final : public QAbstractListModel {
 
     explicit GitFileModel(QObject* const parent = nullptr) : QAbstractListModel(parent) {}
 
-    [[nodiscard]] auto rowCount(const QModelIndex& parent = {}) const -> i32 override {
-        return scast<i32>(items_.size());
+    [[nodiscard]] auto rowCount(const QModelIndex& /*parent*/ = {}) const -> i32 override {
+        return static_cast<i32>(items_.size());
     }
 
     [[nodiscard]] auto data(const QModelIndex& index, const i32 role = Qt::DisplayRole) const -> QVariant override {
@@ -84,7 +84,7 @@ class GitFileModel final : public QAbstractListModel {
     }
 
     void appendItem(const GitFileItem& item) {
-        beginInsertRows({}, scast<i32>(items_.size()), scast<i32>(items_.size()));
+        beginInsertRows({}, static_cast<i32>(items_.size()), static_cast<i32>(items_.size()));
         items_.append(item);
         endInsertRows();
     }
@@ -293,7 +293,7 @@ class GitFileDelegate final : public QStyledItemDelegate {
             return false;
         }
 
-        const auto* const mouseEvent = scast<QMouseEvent*>(event);
+        const auto* const mouseEvent = static_cast<QMouseEvent*>(event);
         if (mouseEvent->button() != Qt::LeftButton) {
             return false;
         }
@@ -523,10 +523,10 @@ class GitFileList final : public QListView {
         }
 
         auto menu = QMenu(this);
-        QAction* const stageAction = menu.addAction(tr("Stage Selected"));
-        QAction* const revertAction = menu.addAction(tr("Revert Selected"));
+        const QAction* const stageAction = menu.addAction(tr("Stage Selected"));
+        const QAction* const revertAction = menu.addAction(tr("Revert Selected"));
 
-        QAction* const chosen = menu.exec(viewport()->mapToGlobal(pos));
+        const QAction* const chosen = menu.exec(viewport()->mapToGlobal(pos));
         if (chosen == stageAction) {
             emit stageMultipleRequested(paths);
         } else if (chosen == revertAction) {

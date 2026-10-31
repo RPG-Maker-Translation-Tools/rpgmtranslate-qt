@@ -3,7 +3,7 @@
 [README на русском](./README-ru.md)
 [简体中文](./README.zh-CN.md)
 
-<div style="display: flex; align-items: center; justify-content: center;">
+<div style="display: flex; align-items: center; justify-content: center; width: 100%">
     <img src="./icons/rpgmtranslate-logo.png" width="128"/>
 </div>
 

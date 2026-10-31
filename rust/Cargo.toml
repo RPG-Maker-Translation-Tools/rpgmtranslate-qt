@@ -59,7 +59,7 @@ languagetool-rust = { version = "3.0.1", default-features = false, optional = tr
     "native-tls",
 ] }
 log = "0.4.34"
-lumis = { version = "0.17.1", default-features = false, optional = true }
+lumis = { version = "0.17.2", default-features = false, optional = true }
 rapidhash = { version = "4.5.1", default-features = false, optional = true }
 reqwest = { version = "=0.12.28", default-features = false, optional = true, features = [
     "native-tls",
@@ -72,7 +72,7 @@ serde = "1.0.229"
 serde_json = "1.0.154"
 text-stats = { version = "0.1.0", default-features = false }
 thiserror = "2.0.21"
-tokio = { version = "1.53.2", features = ["rt-multi-thread"] }
+tokio = { version = "1.54.0", features = ["rt-multi-thread"] }
 translators = { version = "0.2.0", features = [
     "google",
     "tokio-async",

@@ -1,10 +1,5 @@
 #pragma once
 
-// Qt side of Numbers.hpp: the same numbers as UTF-16 text on the stack (`Digits<char16_t>`), and parsing from Qt string
-// views. Append `qsv(...)` to a QString or pass it to `arg`. Never `QString::number`, `.toInt()` and the like.
-//
-// Requires: "QtAliases.hpp", "Numbers.hpp" (cpp-headers).
-
 #include "Numbers.hpp"
 #include "QtAliases.hpp"
 
@@ -25,24 +20,24 @@ template <std::floating_point T>
 }
 
 [[nodiscard]] inline auto qsv(const Digits<char16_t>& digits) -> QStringView {
-    return { digits.data(), scast<isize>(digits.size()) };
+    return { digits.data(), static_cast<isize>(digits.size()) };
 }
 
 [[nodiscard]] inline auto qstr(const Digits<char16_t>& digits) -> QString {
-    return QString::fromUtf16(digits.data(), scast<isize>(digits.size()));
+    return QString::fromUtf16(digits.data(), static_cast<isize>(digits.size()));
 }
 
 template <typename T>
 [[nodiscard]] inline auto stoa(const QStringView text, const i32 base = 10) -> optional<T> {
-    return stoa<T>(std::u16string_view(text.utf16(), scast<usize>(text.size())), base);
+    return stoa<T>(std::u16string_view(text.utf16(), static_cast<usize>(text.size())), base);
 }
 
 template <typename T>
 [[nodiscard]] inline auto stoa(const QUtf8SV text, const i32 base = 10) -> optional<T> {
-    return stoa<T>(string_view(text.data(), scast<usize>(text.size())), base);
+    return stoa<T>(string_view(text.data(), static_cast<usize>(text.size())), base);
 }
 
 template <typename T>
 [[nodiscard]] inline auto stoa(const QL1SV text, const i32 base = 10) -> optional<T> {
-    return stoa<T>(string_view(text.data(), scast<usize>(text.size())), base);
+    return stoa<T>(string_view(text.data(), static_cast<usize>(text.size())), base);
 }

@@ -4,7 +4,7 @@ ColumnLimit: 120
 Language: Cpp
 LineEnding: LF
 AlignAfterOpenBracket: BlockIndent
-AlignConsecutiveMacros: false
+AlignConsecutiveMacros: None
 AlignEscapedNewlines: DontAlign
 AlignOperands: Align
 AlignTrailingComments: false
@@ -14,10 +14,10 @@ AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Inline
-AllowShortIfStatementsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 BinPackArguments: false
-BinPackParameters: false
+BinPackParameters: OnePerLine
 BreakBeforeInheritanceComma: false
 BreakConstructorInitializers: AfterColon
 BreakConstructorInitializersBeforeComma: false
@@ -35,9 +35,11 @@ NamespaceIndentation: None
 PackConstructorInitializers: CurrentLine
 QualifierAlignment: Left
 ReferenceAlignment: Left
-ReflowComments: true
+ReflowComments: Always
 SeparateDefinitionBlocks: Always
-SortIncludes: true
+SortIncludes:
+  Enabled: true
+  IgnoreCase: false
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '"[[:alnum:]._-]+"'
@@ -49,7 +51,7 @@ IncludeCategories:
   - Regex: "<[[:alnum:]._-]+>"
     Priority: 3
     SortPriority: 3
-SortUsingDeclarations: true
+SortUsingDeclarations: LexicographicNumeric
 SpaceBeforeCtorInitializerColon: true
 SpacesInContainerLiterals: false
 TabWidth: 4

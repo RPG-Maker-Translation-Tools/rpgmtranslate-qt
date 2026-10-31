@@ -54,7 +54,7 @@ constexpr i32 COLOR_SWATCH_SIZE = 12;
     if (seg.type == SegmentType::String) {
         buf[pos++] = '\x01';
         memcpy(buf + pos, seg.l1sv.data(), seg.l1sv.size());
-        pos += scast<u32>(seg.l1sv.size());
+        pos += static_cast<u32>(seg.l1sv.size());
     } else if (seg.type == SegmentType::Index) {
         buf[pos++] = '\x03';
         for (const QChar chr : seg.qsv) {
@@ -65,7 +65,7 @@ constexpr i32 COLOR_SWATCH_SIZE = 12;
 
         for (const auto name : seg.keys) {
             memcpy(buf + pos, name.data(), name.size());
-            pos += scast<u32>(name.size());
+            pos += static_cast<u32>(name.size());
             buf[pos++] = '\x02';
         }
 
@@ -76,7 +76,7 @@ constexpr i32 COLOR_SWATCH_SIZE = 12;
 }
 
 [[nodiscard]] inline auto parseCaptured(const QString& str, const i32 start, const i32 num) -> Segment {
-    return QStringView(str).sliced(start).chopped(num);
+    return Segment(QStringView(str).sliced(start).chopped(num));
 }
 
 constexpr QStringView SUGGESTION_ANCHOR_PREFIX = u"lint:";
@@ -111,7 +111,7 @@ suggestionLinksMarkdown(const QStringList& suggestions, const LintType type, con
         links.append(u"[%1](%2%3,%4,%5)"_qsv.arg(
             escapeMarkdown(suggestions[suggIdx]),
             SUGGESTION_ANCHOR_PREFIX,
-            qsv(qitos(scast<u8>(type))),
+            qsv(qitos(static_cast<u8>(type))),
             qsv(qitos(lintIndex)),
             qsv(qitos(suggIdx))
         ));
@@ -193,7 +193,6 @@ struct EntityKind {
 };
 
 [[nodiscard]] constexpr auto entityKindFor(const i32 lintIndex) -> EntityKind {
-    // NOLINTBEGIN(readability-magic-numbers)
     switch (lintIndex) {
         case 63:
             return { .file = u"Classes", .type = RPGMFileType::Classes };
@@ -220,9 +219,7 @@ struct EntityKind {
         default:
             std::unreachable();
     }
-    // NOLINTEND(readability-magic-numbers)
 }
-}  // namespace
 
 // What a number of a note tag, plugin command or comment tag refers to.
 enum class Ref : u8 {
@@ -243,6 +240,7 @@ enum class Ref : u8 {
     // An item, a weapon, an armor or a skill, depending on which of the words the tag has.
     ItemKind,
 };
+}  // namespace
 
 // The numbers of one tag, in written order. A list tag (`<Passive State: 1, 2, 3>`) has a kind per number; otherwise
 // `kinds` covers the first numbers and the rest are plain values. `index` and `prefix` tie the tag to its pattern
@@ -476,7 +474,7 @@ auto LintTooltip::fetchEntityData(
             key,
             strtoffi(encoding),
             out.data(),
-            scast<u32>(out.size())
+            static_cast<u32>(out.size())
         )) {
         markdownSource += tr("Failed to fetch data: %1").arg(svtostr(ffitostr(rpgm_error())));
         return false;
@@ -489,13 +487,13 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
         return fetchEntityData(markdownSource, sets, folder, type, key);
     };
 
-    const auto fetchRm2kName = [&](const Rm2kEntity entity, const i32 id) -> bool {
+    const auto fetchRm2kName = [&](const Rm2kEntity entity, const i32 idn) -> bool {
         releaseOut();
 
         const QByteArray path = sets->rm2kDatabasePath().toUtf8();
         const QByteArray encoding = sets->readEncoding.toUtf8();
 
-        if (!rpgm_get_rm2k_entity_name(strtoffi(path), entity, id, strtoffi(encoding), out.data())) {
+        if (!rpgm_get_rm2k_entity_name(strtoffi(path), entity, idn, strtoffi(encoding), out.data())) {
             markdownSource += tr("Failed to fetch data: %1").arg(svtostr(ffitostr(rpgm_error())));
             return false;
         }
@@ -503,12 +501,12 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
         return true;
     };
 
-    const auto variableName = [&](const QStringView id) -> optional<QString> {
+    const auto variableName = [&](const QStringView idn) -> optional<QString> {
         if (sets->engineType == EngineType::RM2K) {
-            if (!fetchRm2kName(Rm2kEntity::Variables, stoa<i32>(id).value_or(0))) {
+            if (!fetchRm2kName(Rm2kEntity::Variables, stoa<i32>(idn).value_or(0))) {
                 return nullopt;
             }
-        } else if (!fetchEntity(u"System", RPGMFileType::System, buildPath(Segment("variables"_L1), Segment(id)))) {
+        } else if (!fetchEntity(u"System", RPGMFileType::System, buildPath(Segment("variables"_L1), Segment(idn)))) {
             return nullopt;
         }
 
@@ -599,7 +597,7 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
 
         const i32 index = stoa<i32>(position).value_or(0) - 1;
 
-        if (index < 0 || index >= scast<i32>(summary->party.size())) {
+        if (index < 0 || index >= static_cast<i32>(summary->party.size())) {
             markdownSource += tr("The party of the active save has no member %1.").arg(position);
             return nullopt;
         }
@@ -630,7 +628,6 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
         return;
     }
 
-    // NOLINTBEGIN(readability-magic-numbers)
     switch (lint.index) {
         case 27: {
             const auto name = variableName(parseCaptured(lint.captured, 3, 1).qsv);
@@ -759,8 +756,8 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
         }
         case 43: {
             const u32 frameNum = stoa<u32>(parseCaptured(lint.captured, 3, 1).qsv).value_or(0);
-            markdownSource += tr("Here, the game will wait %n frame(s) (%1 sec.)", nullptr, scast<i32>(frameNum))
-                                  .arg(qsv(qftos(scast<f32>(frameNum) / 60, 3)));
+            markdownSource += tr("Here, the game will wait %n frame(s) (%1 sec.)", nullptr, static_cast<i32>(frameNum))
+                                  .arg(qsv(qftos(static_cast<f32>(frameNum) / 60, 3)));
             break;
         }
         case 58: {
@@ -898,16 +895,16 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
                 break;
             }
 
-            const i32 id = stoa<i32>(codeArgument(lint.captured)).value_or(0);
+            const i32 idn = stoa<i32>(codeArgument(lint.captured)).value_or(0);
             const auto& stacks = lint.index == 113   ? summary->items
                                  : lint.index == 114 ? summary->weapons
                                                      : summary->armors;
-            const auto stack = ranges::find(stacks, id, &SaveStack::id);
+            const auto stack = ranges::find(stacks, idn, &SaveStack::id);
             const auto [file, type] = entityKindFor(lint.index);
 
-            QString name = u"#%1"_qsv.arg(qsv(qitos(id)));
+            QString name = u"#%1"_qsv.arg(qsv(qitos(idn)));
 
-            if (fetchEntity(file, type, buildPath(Segment(qsv(qitos(id))), Segment("name"_L1)))) {
+            if (fetchEntity(file, type, buildPath(Segment(qsv(qitos(idn))), Segment("name"_L1)))) {
                 name = ffitostr(out[0]).toString();
             }
 
@@ -925,10 +922,10 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
 
             const QStringView switchId = codeArgument(lint.captured);
             const usize index = stoa<usize>(switchId).value_or(0);
-            const bool on = index < summary->switches.size() && summary->switches[index];
+            const bool switchOn = index < summary->switches.size() && summary->switches[index];
 
-            markdownSource += (on ? tr("Switch %1 is ON in the active save, so the first text is displayed.")
-                                  : tr("Switch %1 is OFF in the active save, so the second text is displayed."))
+            markdownSource += (switchOn ? tr("Switch %1 is ON in the active save, so the first text is displayed.")
+                                        : tr("Switch %1 is OFF in the active save, so the second text is displayed."))
                                   .arg(switchId);
             break;
         }
@@ -983,7 +980,6 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
             break;
         }
     }
-    // NOLINTEND(readability-magic-numbers)
 
     releaseOut();
 }
@@ -1069,11 +1065,11 @@ void LintTooltip::processReferences(
             continue;
         }
 
-        const i32 id = ids[pos];
+        const i32 idn = ids[pos];
         QString label;
 
         if (kind == Ref::Icon) {
-            const auto icon = getIcon(id, sets);
+            const auto icon = getIcon(idn, sets);
 
             if (!icon) {
                 markdownSource += tr("Failed to fetch icon: %1").arg(icon.error().translated());
@@ -1089,7 +1085,7 @@ void LintTooltip::processReferences(
                     sets,
                     u"System",
                     RPGMFileType::System,
-                    buildPath(Segment(list), Segment(qsv(qitos(id))))
+                    buildPath(Segment(list), Segment(qsv(qitos(idn))))
                 )) {
                 break;
             }
@@ -1099,8 +1095,8 @@ void LintTooltip::processReferences(
             const auto [folder, type, hasIcon] = entityFileFor(kind);
             static constexpr array<QL1SV, 2> NAME_AND_ICON = { "name"_L1, "icon_index"_L1 };
 
-            const FFIString key = hasIcon ? buildPath(Segment(qsv(qitos(id))), Segment(NAME_AND_ICON))
-                                          : buildPath(Segment(qsv(qitos(id))), Segment("name"_L1));
+            const FFIString key = hasIcon ? buildPath(Segment(qsv(qitos(idn))), Segment(NAME_AND_ICON))
+                                          : buildPath(Segment(qsv(qitos(idn))), Segment("name"_L1));
 
             if (!fetchEntityData(markdownSource, sets, folder, type, key)) {
                 break;
@@ -1118,7 +1114,7 @@ void LintTooltip::processReferences(
             }
         }
 
-        markdownSource += u"- %1: %2\n"_qsv.arg(qsv(qitos(id)), label);
+        markdownSource += u"- %1: %2\n"_qsv.arg(qsv(qitos(idn)), label);
     }
 
     releaseOut();
@@ -1200,11 +1196,11 @@ void LintTooltip::showAt(const QPoint& cursorPos, const QList<LintEntry>& lints,
     }
 
     document->setTextWidth(-1);  // measure unwrapped first
-    const i32 naturalWidth = scast<i32>(document->idealWidth());
+    const i32 naturalWidth = static_cast<i32>(document->idealWidth());
     const i32 textWidth = min(naturalWidth, MAX_WIDTH);
     document->setTextWidth(textWidth);
 
-    contentHeight = scast<i32>(document->size().height());
+    contentHeight = static_cast<i32>(document->size().height());
     scrollOffset = 0;
 
     const i32 width = textWidth + (H_PADDING * 2);
@@ -1296,7 +1292,7 @@ void LintTooltip::mouseReleaseEvent(QMouseEvent* const event) {
             // Text from the game or a custom tooltip can make a `lint:` link of its own, with fewer parts
             if (parts.size() == 3) {
                 emit suggestionActivated(
-                    scast<LintType>(stoa<u8>(parts[0]).value_or(0)),
+                    static_cast<LintType>(stoa<u8>(parts[0]).value_or(0)),
                     stoa<i32>(parts[1]).value_or(0),
                     stoa<i32>(parts[2]).value_or(0)
                 );

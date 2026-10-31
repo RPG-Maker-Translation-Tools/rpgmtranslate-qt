@@ -80,8 +80,9 @@ GlossaryMenu::GlossaryMenu(QWidget* const parent) :
             const i32 currentIndex = (startIndex + idx) % itemCount;
             auto* const item = glossaryTable->topLevelItem(currentIndex);
 
-            const auto* const sourceCell = scast<TermInfoCell*>(glossaryTable->itemWidget(item, SOURCE_IDX));
-            const auto* const translationCell = scast<TermInfoCell*>(glossaryTable->itemWidget(item, TRANSLATION_IDX));
+            const auto* const sourceCell = static_cast<TermInfoCell*>(glossaryTable->itemWidget(item, SOURCE_IDX));
+            const auto* const translationCell =
+                static_cast<TermInfoCell*>(glossaryTable->itemWidget(item, TRANSLATION_IDX));
 
             const QString sourceText = sourceCell->text();
             const QString translationText = translationCell->text();
@@ -145,8 +146,9 @@ auto GlossaryMenu::makeActionCell(QTreeWidgetItem* const item) -> QWidget* {
     connect(actionsCell, &ActionButtonsCell::editToggled, this, [this, actionsCell, item](const bool editable) -> void {
         if (!editable) {
             // The row's position changes as rows are deleted, so it is the item itself that is asked
-            auto* const sourceInput = glossaryTable->itemWidget(item, SOURCE_IDX)->findChild<QLineEdit*>();
-            auto* const translationInput = glossaryTable->itemWidget(item, TRANSLATION_IDX)->findChild<QLineEdit*>();
+            const auto* const sourceInput = glossaryTable->itemWidget(item, SOURCE_IDX)->findChild<QLineEdit*>();
+            const auto* const translationInput =
+                glossaryTable->itemWidget(item, TRANSLATION_IDX)->findChild<QLineEdit*>();
 
             if (sourceInput->text().isEmpty()) {
                 present(this, NOTICE("Empty term is not allowed.", Warning, Modal));
@@ -183,8 +185,8 @@ auto GlossaryMenu::makeActionCell(QTreeWidgetItem* const item) -> QWidget* {
 }
 
 void GlossaryMenu::setRowEditable(QTreeWidgetItem* const item, bool editable) {
-    auto* const sourceCell = scast<TermInfoCell*>(glossaryTable->itemWidget(item, SOURCE_IDX));
-    auto* const translationCell = scast<TermInfoCell*>(glossaryTable->itemWidget(item, TRANSLATION_IDX));
+    auto* const sourceCell = static_cast<TermInfoCell*>(glossaryTable->itemWidget(item, SOURCE_IDX));
+    auto* const translationCell = static_cast<TermInfoCell*>(glossaryTable->itemWidget(item, TRANSLATION_IDX));
     auto* const noteInput = glossaryTable->itemWidget(item, NOTE_IDX)->findChild<QPlainTextEdit*>();
 
     sourceCell->setEditable(editable);
@@ -217,7 +219,7 @@ void GlossaryMenu::addNewEntry(
     item->setTextAlignment(ACTIONS_IDX, Qt::AlignCenter);
 
     setRowEditable(item, editable);
-    scast<ActionButtonsCell*>(glossaryTable->itemWidget(item, ACTIONS_IDX))->setEditable(editable);
+    static_cast<ActionButtonsCell*>(glossaryTable->itemWidget(item, ACTIONS_IDX))->setEditable(editable);
 
     noteCell->setFixedHeight(sourceCell->sizeHint().height());
     glossaryTable->addTopLevelItem(item);
@@ -241,11 +243,11 @@ void GlossaryMenu::fill(const Glossary& glossary) {
 }
 
 void GlossaryMenu::setTermEnabled(const u32 index, const bool enabled) {
-    if (index >= scast<u32>(glossaryTable->topLevelItemCount())) {
+    if (index >= static_cast<u32>(glossaryTable->topLevelItemCount())) {
         return;
     }
 
-    glossaryTable->topLevelItem(scast<i32>(index))->setData(SOURCE_IDX, ENABLED_ROLE, enabled);
+    glossaryTable->topLevelItem(static_cast<i32>(index))->setData(SOURCE_IDX, ENABLED_ROLE, enabled);
 }
 
 auto GlossaryMenu::glossary() const -> Glossary {
@@ -257,8 +259,9 @@ auto GlossaryMenu::glossary() const -> Glossary {
     for (i32 idx = 0; idx < entryCount; idx++) {
         auto* const item = glossaryTable->topLevelItem(idx);
 
-        const auto* const sourceCell = scast<TermInfoCell*>(glossaryTable->itemWidget(item, SOURCE_IDX));
-        const auto* const translationCell = scast<TermInfoCell*>(glossaryTable->itemWidget(item, TRANSLATION_IDX));
+        const auto* const sourceCell = static_cast<TermInfoCell*>(glossaryTable->itemWidget(item, SOURCE_IDX));
+        const auto* const translationCell =
+            static_cast<TermInfoCell*>(glossaryTable->itemWidget(item, TRANSLATION_IDX));
         const auto* const noteInput = glossaryTable->itemWidget(item, NOTE_IDX)->findChild<QPlainTextEdit*>();
 
         out.emplace_back(
@@ -310,12 +313,12 @@ void GlossaryMenu::clear() {
 void TermInfoCell::setFrom(const QString& text, const MatchModeInfo& info) {
     textInput->setText(text);
 
-    modeSelect->setCurrentIndex(scast<u8>(info.mode.tag));
+    modeSelect->setCurrentIndex(static_cast<u8>(info.mode.tag));
     caseSensitive->setChecked(info.case_sensitive);
     permissive->setChecked(info.permissive);
 
-    const f32 threshold =
-        (info.mode.tag == MatchMode::Tag::Exact) ? DEFAULT_FUZZY_THRESHOLD : info.mode.fuzzy.threshold;
+    const f32 threshold = (info.mode.tag == MatchMode::Tag::Exact) ? DEFAULT_FUZZY_THRESHOLD
+                                                                   : static_cast<f32>(info.mode.fuzzy.threshold);
     fuzzyThresholdInput->setText(QString(qsv(qftos(threshold))));
 
     const bool show = info.mode.tag != MatchMode::Tag::Exact;

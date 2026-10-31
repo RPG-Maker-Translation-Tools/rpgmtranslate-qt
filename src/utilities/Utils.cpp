@@ -176,7 +176,7 @@ auto getTranslation(const QSVList& parts) -> struct Translation {
     // The column is counted from the source column (0), as the other columns of a search are
     for (isize column = parts.size(); column-- > 1;) {
         if (!parts[column].isEmpty()) {
-            return { parts[column], scast<u8>(column) };
+            return { parts[column], static_cast<u8>(column) };
         }
     }
 
@@ -201,6 +201,28 @@ auto hasTranslation(const QSVList& parts) -> bool {
 
 auto isRowLine(const QStringView line) -> bool {
     return !line.startsWith(COMMENT_PREFIX) || line.startsWith(MAP_DISPLAY_NAME_COMMENT_PREFIX);
+}
+
+auto chopCarriageReturn(const QStringView line) -> QStringView {
+    return line.endsWith(u'\r') ? line.chopped(1) : line;
+}
+
+auto gameTitleLine(const QStringView content, const isize titleMarker) -> optional<QStringView> {
+    if (titleMarker == -1) {
+        return nullopt;
+    }
+
+    // The title line starts after the marker's line ending, `\n` or `\r\n`
+    const isize markerEnd = titleMarker + GAME_TITLE_MARKER.size();
+    const isize titleStart = markerEnd + (content.sliced(markerEnd).startsWith(u"\r\n"_qsv) ? 2 : 1);
+
+    if (titleStart >= content.size()) {
+        return nullopt;
+    }
+
+    const QStringView rest = content.sliced(titleStart);
+    const isize lineEnd = rest.indexOf(u'\n');
+    return chopCarriageReturn(lineEnd == -1 ? rest : rest.first(lineEnd));
 }
 
 namespace {
@@ -290,7 +312,7 @@ mutex cachedColorsMutex;
     const QString basePath = systemGraphicsDirectory(sets) % u'/' % name % u'.';
 
     for (const auto& ext : EXTENSIONS) {
-        const QString candidate = basePath % ext;
+        QString candidate = basePath % ext;
 
         if (QFile::exists(candidate)) {
             return candidate;
@@ -331,7 +353,7 @@ mutex cachedColorsMutex;
         const QByteArray pathUtf8 = imagePath.toUtf8();
         ByteBuffer out{};
 
-        if (!rpgm_decrypt_asset(FFIString{ .ptr = pathUtf8.data(), .len = scast<u32>(pathUtf8.size()) }, &out)) {
+        if (!rpgm_decrypt_asset(FFIString{ .ptr = pathUtf8.data(), .len = static_cast<u32>(pathUtf8.size()) }, &out)) {
             return Err(Notice(
                 NOTICE_IN("Utils", "Failed to decrypt the system graphic %1: %2"),
                 Severity::Warning,
@@ -342,7 +364,7 @@ mutex cachedColorsMutex;
 
         // A file shorter than the header it was encrypted with has no picture behind it
         if (out.len > HEADER_LENGTH) {
-            image = QImage::fromData(out.ptr + HEADER_LENGTH, out.len - HEADER_LENGTH);
+            image = QImage::fromData(out.ptr + HEADER_LENGTH, static_cast<i32>(out.len) - HEADER_LENGTH);
         }
 
         rpgm_buffer_free(out);
@@ -425,7 +447,7 @@ auto getWindowColors(const ProjectSettings* const sets) -> Result<array<QRgb, WI
         }
 
         // Not colors of the game; transparent, so that nothing mistakes them for one.
-        std::fill(colors.begin() + RM2K_COLOR_COUNT, colors.end(), QRgb(0));
+        std::fill(colors.begin() + RM2K_COLOR_COUNT, colors.end(), static_cast<QRgb>(0));
     } else {
         const bool newer = sets->engineType == EngineType::MVMZ;
         const i32 windowOffsetX = newer ? NEWER_WINDOW_COLOR_OFFSET_X : OLDER_WINDOW_COLOR_OFFSET_X;
@@ -478,7 +500,7 @@ auto getIcon(const i32 iconIndex, const ProjectSettings* const sets) -> Result<Q
         ));
     }
 
-    const auto iconRect = QRect(scast<i32>(column), scast<i32>(row), iconSize, iconSize);
+    const auto iconRect = QRect(static_cast<i32>(column), static_cast<i32>(row), iconSize, iconSize);
 
     return QPixmap::fromImage(iconset->copy(iconRect));
 }
@@ -578,7 +600,7 @@ auto entryNameOfLine(const QStringView line) -> optional<QStringView> {
 }
 
 auto entryNameFor(const QSVList& lines, const usize rowIndex) -> QStringView {
-    for (usize idx = min(rowIndex + 1, scast<usize>(lines.size())); idx-- > 0;) {
+    for (isize idx = min(static_cast<isize>(rowIndex) + 1, static_cast<isize>(lines.size())); idx-- > 0;) {
         if (const auto name = entryNameOfLine(lines[idx])) {
             return *name;
         }

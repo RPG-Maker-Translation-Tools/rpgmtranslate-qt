@@ -199,7 +199,7 @@ void MainWindow::changeEvent(QEvent* const event) {
         }
 
         retranslateActions();
-        updateTaskButton(taskPanel->taskCount());
+        updateTaskButton(static_cast<i32>(taskPanel->taskCount()));
         updateStatusLabels();
         updateCounts();
     }

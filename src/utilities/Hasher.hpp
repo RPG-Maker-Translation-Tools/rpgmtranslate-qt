@@ -1,23 +1,17 @@
 #pragma once
 
-// HashMap/HashSet over gxhash. The only sanctioned hasher: no std::hash, no other hash function.
-//
-// Requires: "Aliases.hpp" and the project's Rust staticlib exporting `gxhash` (see README.md).
-
 #include "Aliases.hpp"
 
 #include <unordered_map>
 #include <unordered_set>
 
 extern "C" {
-// gxhash64, seed 0 (rapidhash v3 without the Rust `gxhash` feature; the symbol name is kept). `ptr` may be null only when `len` is 0.
 auto gxhash(const void* ptr, usize len) -> u64;
 }
 
-// Hashes the bytes of the contents, never the object itself (a view's pointer, a QString's d-pointer).
 template <typename T>
 concept ByteRange = ranges::contiguous_range<const T> && ranges::sized_range<const T> &&
-                    std::is_trivially_copyable_v<ranges::range_value_t<const T>>;
+                    std::has_unique_object_representations_v<ranges::range_value_t<const T>>;
 
 struct Hasher {
     template <typename T>
@@ -25,33 +19,25 @@ struct Hasher {
         if constexpr (ByteRange<T>) {
             return gxhash(
                 ranges::data(value),
-                scast<usize>(ranges::size(value)) * sizeof(ranges::range_value_t<const T>)
+                static_cast<usize>(ranges::size(value)) * sizeof(ranges::range_value_t<const T>)
             );
-        } else if constexpr (std::is_trivially_copyable_v<T>) {
+        } else if constexpr (std::has_unique_object_representations_v<T>) {
             return gxhash(&value, sizeof(T));
         } else {
-            static_assert(sizeof(T) == 0, "Unsupported type for Hasher");
+            static_assert(sizeof(T) == 0, "Unsupported type for Hasher: padding or floating-point bytes");
         }
     }
 };
 
 template <typename K, typename V>
-using hashmap = std::unordered_map<K, V, Hasher>;
-template <typename E>
-using hashset = std::unordered_set<E, Hasher>;
+class HashMap : public std::unordered_map<K, V, Hasher> {
+    using Base = std::unordered_map<K, V, Hasher>;
 
-template <typename K, typename V>
-class HashMap : public hashmap<K, V> {
    public:
-    using hashmap<K, V>::hashmap;
+    using Base::Base;
 
-    // Lookup only: declaring this hides the base's inserting operator[], so a missing key can never be created
-    // by accident. The caller guarantees `key` is present - find() is dereferenced unchecked.
-    [[nodiscard]] auto operator[](const K& key) const -> const V& { return hashmap<K, V>::find(key)->second; }
+    [[nodiscard]] auto operator[](this auto&& self, const K& key) -> decltype(auto) { return self.find(key)->second; }
 };
 
 template <typename E>
-class HashSet : public hashset<E> {
-   public:
-    using hashset<E>::hashset;
-};
+using HashSet = std::unordered_set<E, Hasher>;

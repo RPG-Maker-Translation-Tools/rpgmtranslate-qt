@@ -69,22 +69,11 @@ namespace zmij {
 namespace detail {
 namespace {
 
-// Traps unless `out` has room for `need` bytes. Skipped when the size isn't
-// known, exactly as _FORTIFY_SOURCE does.
-ZMIJ_INLINE void check_room(void* out, size_t need) noexcept {
-#if ZMIJ_HAS_BUILTIN(__builtin_dynamic_object_size)
-  size_t room = __builtin_dynamic_object_size(out, 0);
-  if (room != size_t(-1) && room < need) __builtin_trap();
-#else
-  (void)out, (void)need;
-#endif
-}
-
-// Copy for destinations already covered by a check_room call. Bypasses the
-// fortified memcpy, whose per-copy check is a runtime computation whenever
-// the destination offset isn't constant -- as in itoa, where the digit count
-// decides where the last digits land, costing a call plus clamp branches on
-// every conversion.
+// Copy that bypasses the fortified memcpy, whose per-copy check is a runtime
+// computation whenever the destination offset isn't constant -- as in itoa,
+// where the digit count decides where the last digits land, costing a call
+// plus clamp branches on every conversion. Callers provide the documented
+// *_buffer_size, which covers every copy.
 ZMIJ_INLINE void copy_bytes(void* dst, const void* src, size_t n) noexcept {
 #if ZMIJ_HAS_BUILTIN(__builtin_memcpy)
   __builtin_memcpy(dst, src, n);
@@ -1198,11 +1187,6 @@ ZMIJ_INLINE auto itoa_u128(char* out, uint128_t value) noexcept -> char* {
 // wrappers). Returns one past the last digit.
 template <typename UInt>
 ZMIJ_INLINE auto itoa(char* out, UInt value) noexcept -> char* {
-  // One check up front covers every copy below, which then need none of their
-  // own: the kernels write within this bound regardless of the digit count.
-  check_room(out, sizeof(UInt) <= 4   ? uint32_buffer_size
-                  : sizeof(UInt) <= 8 ? uint64_buffer_size
-                                      : uint128_buffer_size);
 #if ZMIJ_USE_INT128
   // Guarded like the sizeof(Int) > 8 block in itoa_signed: MSVC at /Od keeps
   // the reference to itoa_u128 in the statically-false branch, so the
@@ -1316,9 +1300,6 @@ ZMIJ_INLINE auto itoa(char* out, UInt value) noexcept -> char* {
 // Write the decimal representation of signed value.
 template <typename Int>
 ZMIJ_INLINE auto itoa_signed(char* out, Int value) noexcept -> char* {
-  check_room(out, sizeof(Int) <= 4   ? int32_buffer_size
-                  : sizeof(Int) <= 8 ? int64_buffer_size
-                                     : int128_buffer_size);
 #if ZMIJ_USE_INT128
   // If possible, use the 64bit path.  The 128x128 multiplications required for
   // the full width are more expensive than branching.

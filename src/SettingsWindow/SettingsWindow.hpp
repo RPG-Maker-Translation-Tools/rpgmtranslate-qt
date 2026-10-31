@@ -38,7 +38,7 @@ class SettingsWindow final : public QDialog {
 
     void syncAll(Direction direction);
     void syncEndpoint(Direction direction, EndpointSettings& endpoint);
-    void syncSequenceTable(Direction direction, QTableWidget* table, span<SequenceSettings> sequences);
+    static void syncSequenceTable(Direction direction, QTableWidget* table, span<SequenceSettings> sequences);
     void syncCustomLints(Direction direction);
     void syncReplacements(Direction direction);
 
@@ -56,10 +56,6 @@ class SettingsWindow final : public QDialog {
 
     inline void onTypeChange(TranslationEndpoint endpoint);
 
-    Settings* settings;
-    ProjectSettings* projectSettings;
-
-    // What Cancel restores: the dialog edits `settings` directly (endpoints are added and removed in place).
     Settings initialSettings;
     // Their credentials are deleted only when the changes are saved.
     vector<QString> removedEndpointIds;
@@ -68,6 +64,10 @@ class SettingsWindow final : public QDialog {
     // setting stays empty ("the editor font") instead of becoming that family.
     QString defaultHintFont;
 
-    Ui::SettingsWindow* const ui;
     QNetworkAccessManager languageToolNetworkManager;
+
+    Settings* settings;
+    ProjectSettings* projectSettings;
+
+    Ui::SettingsWindow* const ui;
 };

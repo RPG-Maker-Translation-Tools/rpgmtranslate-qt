@@ -243,7 +243,7 @@ void SourceControlDock::commit(const bool amend, const bool force) {
     QString message = commitMessageInput->toPlainText();
 
     const auto items = fileList->selectedItems();
-    auto fileNames = ranges::to<vector>(views::transform(items, [](const auto& item) -> string {
+    auto const fileNames = ranges::to<vector>(views::transform(items, [](const auto& item) -> string {
         return item->filePath.toStdString();
     }));
 

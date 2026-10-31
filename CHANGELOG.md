@@ -8,7 +8,22 @@ This project uses (or at least tries to use) [Semantic Versioning](https://semve
 Dates are in DD.MM.YYYY format.
 Versions may carry a codename alongside the semver number.
 
-## [Unreleased]
+## [v1.2.1] "Death of RPG Maker forums" - Unreleased
+
+### Changed
+
+- Translation files with Windows line endings are read as they are and are no longer rewritten when a project opens. Files the app saves use `\n` line endings.
+- Wayland support is an optional build flag (`ENABLE_WAYLAND`, on by default) instead of being tied to Linux, so FreeBSD builds can use it too and builds against a Qt without WaylandClient no longer fail.
+
+### Planned for 1.3 (November)
+
+- Finishing built-in git client.
+- Built-in database like in RPG Maker to search for specific entries and quickly find anything by searching.
+- Wolf RPG support.
+- VisuStella support.
+- Translator++ project porting.
+- Cut remaining built-in translation points in favor of external scripts.
+- Finally add extensive GIFs and illustrations to the documentation.
 
 ## [v1.2.0] "Death of RPG Maker forums" - 19.10.2026
 

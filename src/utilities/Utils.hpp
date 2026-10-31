@@ -7,27 +7,25 @@
 #include "QtStrings.hpp"
 #include "rpgmtranslate_rs.h"
 
-#include <concepts>
-
 constexpr static usize TAG_SHIFT = 56;
 constexpr static usize TAG_MASK = 0xFFULL << TAG_SHIFT;  // 0xFF00000000000000
 constexpr static usize ADDR_MASK = ~TAG_MASK;
 
 static inline auto set_tag(void* const ptr, const u8 tag) -> u64 {
-    return (rcast<u64>(ptr) & ADDR_MASK) | (scast<u64>(tag) << TAG_SHIFT);
+    return (reinterpret_cast<u64>(ptr) & ADDR_MASK) | (static_cast<u64>(tag) << TAG_SHIFT);
 }
 
 static inline auto get_tag(const u64 tagged) -> u8 {
-    return scast<u8>(tagged >> TAG_SHIFT);
+    return static_cast<u8>(tagged >> TAG_SHIFT);
 }
 
 static inline auto strip_tag(const u64 tagged) -> void* {
-    return rcast<void*>(tagged & ADDR_MASK);
+    return reinterpret_cast<void*>(tagged & ADDR_MASK);
 }
 
 static inline auto replace_addr(const u64 tagged, void* const new_addr) -> u64 {
     const u64 preserved_tag = tagged & TAG_MASK;
-    const u64 new_addr_bits = rcast<u64>(new_addr) & ADDR_MASK;
+    const u64 new_addr_bits = reinterpret_cast<u64>(new_addr) & ADDR_MASK;
     return preserved_tag | new_addr_bits;
 }
 
@@ -44,20 +42,25 @@ struct Translation {
     }
 
     void setIndex(const u8 idx) {
-        translation = QStringView(rcast<QChar*>(set_tag(ccast<QChar*>(translation.data()), idx)), translation.size());
+        translation = QStringView(
+            reinterpret_cast<QChar*>(set_tag(const_cast<QChar*>(translation.data()), idx)),
+            translation.size()
+        );
     }
 
-    [[nodiscard]] auto getIndex() const -> u8 { return get_tag(rcast<u64>(translation.data())); }
+    [[nodiscard]] auto getIndex() const -> u8 { return get_tag(reinterpret_cast<u64>(translation.data())); }
 
     void setTranslation(const QStringView translation) {
         this->translation = QStringView(
-            rcast<QChar*>(replace_addr(rcast<u64>(this->translation.data()), ccast<QChar*>(translation.data()))),
+            reinterpret_cast<QChar*>(
+                replace_addr(reinterpret_cast<u64>(this->translation.data()), const_cast<QChar*>(translation.data()))
+            ),
             translation.size()
         );
     }
 
     [[nodiscard]] auto getTranslation() const -> QStringView {
-        return { rcast<QChar*>(strip_tag(rcast<u64>(translation.data()))), translation.size() };
+        return { reinterpret_cast<QChar*>(strip_tag(reinterpret_cast<u64>(translation.data()))), translation.size() };
     }
 };
 
@@ -84,6 +87,11 @@ struct Translation {
 [[nodiscard]] auto hasTranslation(const QSVList& parts) -> bool;
 // Whether a non-blank line of a translation file is a row to translate: a comment is not, but a map's display name is.
 [[nodiscard]] auto isRowLine(QStringView line) -> bool;
+// `line` without the `\r` of its `\r\n` line ending.
+[[nodiscard]] auto chopCarriageReturn(QStringView line) -> QStringView;
+// The game title's line, after the line ending of the marker at `titleMarker` (-1 if there is none). Empty if the file
+// has no title line.
+[[nodiscard]] auto gameTitleLine(QStringView content, isize titleMarker) -> optional<QStringView>;
 
 struct Abort;
 
@@ -102,11 +110,11 @@ static constexpr QStringView CORRUPT_SUFFIX = u".corrupt";
 void keepBackup(const QString& path);
 
 [[nodiscard]] static constexpr auto strtoffi(const QByteArrayView utf8) -> FFIString {
-    return { .ptr = utf8.data(), .len = scast<u32>(utf8.size()) };
+    return { .ptr = utf8.data(), .len = static_cast<u32>(utf8.size()) };
 }
 
 [[nodiscard]] static constexpr auto ffitostr(const FFIString str) -> QUtf8SV {
-    return { str.ptr, scast<isize>(str.len) };
+    return { str.ptr, static_cast<isize>(str.len) };
 }
 
 // Names a `FilenameArray` holds whole: the 4 to 15 character ones that `copyFilenameArray` copies correctly
@@ -168,7 +176,7 @@ struct SaveLocation {
             return u".json";
         case SerdeFormat::Yaml:
             return u".yaml";
+        default:
+            std::unreachable();
     }
-
-    std::unreachable();
 }

@@ -63,8 +63,9 @@ constexpr f64 FONT_SIZE_MAX = 96;
     cjk += KANJI;
 
     const auto metrics = QFontMetricsF(font);
-    const f64 width =
-        (metrics.horizontalAdvance(ascii) / ascii.size() + metrics.horizontalAdvance(cjk) / cjk.size()) / 2;
+    const f64 width = ((metrics.horizontalAdvance(ascii) / static_cast<f64>(ascii.size())) +
+                       (metrics.horizontalAdvance(cjk) / static_cast<f64>(cjk.size()))) /
+                      2;
 
     if (cache.size() >= MAX_CACHED_FONTS) {
         cache.clear();
@@ -225,7 +226,7 @@ void TranslationInput::keyPressEvent(QKeyEvent* const event) {
 
         if (!lastReplacements.empty()) {
             for (const auto& replacement : lastReplacements) {
-                const i32 replEndPos = replacement.position + scast<i32>(replacement.replacement.size());
+                const i32 replEndPos = replacement.position + static_cast<i32>(replacement.replacement.size());
 
                 if (cursorPos == replEndPos) {
                     blockTextChanged = true;
@@ -316,7 +317,7 @@ void TranslationInput::performAutoReplacements() {
                 text = toPlainText();
             }
 
-            const i32 checkPos = originalPosition - scast<i32>(source.size());
+            const i32 checkPos = originalPosition - static_cast<i32>(source.size());
 
             if (QStringView(text).mid(checkPos, source.size()) == source) {
                 blockTextChanged = true;
@@ -343,7 +344,8 @@ void TranslationInput::paintEvent(QPaintEvent* const event) {
         return;
     }
 
-    const i32 xPos = round(contentOffset().x() + document()->documentMargin() + (hintCharWidth(font()) * hint));
+    const i32 xPos =
+        static_cast<i32>(round(contentOffset().x() + document()->documentMargin() + (hintCharWidth(font()) * hint)));
 
     auto painter = QPainter(viewport());
     painter.setPen(LINE_LENGTH_HINT_COLOR);

@@ -50,7 +50,11 @@ void SearchPanelDock::showMatches(CellMatches matches, const ProjectSettings* co
     for (auto& [filenameArray, fileMatches] : this->matches) {
         const auto filename = QL1SV(filenameArray.data());
 
-        files.push_back({ filename, &fileMatches, fileSelect->findText(QString::fromLatin1(filename)) });
+        files.push_back(
+            { .filename = filename,
+              .fileMatches = &fileMatches,
+              .order = fileSelect->findText(QString::fromLatin1(filename)) }
+        );
         itemsSize += fileMatches.cells.size();
     }
 
@@ -79,7 +83,7 @@ auto SearchPanelDock::subtitle(const SearchResultListItem& item) const -> QStrin
                                qsv(qitos(cellMatch.rowIndex() + 1)),
                                qsv(qitos(cellMatch.colIndex() + 1)),
                                cellMatch.colIndex() == 0 ? tr("Source")
-                               : cellMatch.colIndex() < scast<i32>(projectSettings->columns.size())
+                               : cellMatch.colIndex() < static_cast<i32>(projectSettings->columns.size())
                                    ? projectSettings->columns[cellMatch.colIndex()].name
                                    : QString(qsv(qitos(cellMatch.colIndex() + 1)))
                            );
@@ -168,7 +172,7 @@ void SearchPanelDock::init(
                             Action::Put,
                             item.filename,
                             item.cellMatch.rowIndex(),
-                            scast<u8>(idx + 1),
+                            static_cast<u8>(idx + 1),
                             {},
                             item
                         );

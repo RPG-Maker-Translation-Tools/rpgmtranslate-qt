@@ -12,11 +12,11 @@
 #include "Notice.hpp"
 #include "PurgeMenu.hpp"
 #include "ReadMenu.hpp"
+#include "ScrollableMessageBox.hpp"
 #include "SearchMenu.hpp"
 #include "SearchPanelDock.hpp"
 #include "SerdeMenu.hpp"
 #include "SettingsWindow.hpp"
-#include "ScrollableMessageBox.hpp"
 #include "StatisticsDialog.hpp"
 #include "TabListModel.hpp"
 #include "TranslationTable.hpp"
@@ -34,7 +34,6 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QProgressDialog>
-#include <QSaveFile>
 #include <QSignalBlocker>
 #include <QVersionNumber>
 #include <QtConcurrent>
@@ -62,7 +61,7 @@ constexpr i32 MAX_RECENT_PROJECTS = 10;
     const QStringView stem = filename.sliced(0, max<isize>(filename.lastIndexOf(u'.'), 0));
 
     // The stem has to fit a FilenameArray with its terminator.
-    if (stem.size() >= scast<isize>(sizeof(FilenameArray))) {
+    if (stem.size() >= static_cast<isize>(sizeof(FilenameArray))) {
         return false;
     }
 
@@ -81,7 +80,7 @@ constexpr i32 MAX_RECENT_PROJECTS = 10;
 // The tab and worker APIs address a file by its name as a `FilenameArray` of Latin-1 characters, so a longer name or
 // one with other characters would point at another file.
 [[nodiscard]] auto isUsableTabName(const QStringView basename) -> bool {
-    return basename.size() < scast<isize>(sizeof(FilenameArray)) &&
+    return basename.size() < static_cast<isize>(sizeof(FilenameArray)) &&
            ranges::all_of(basename, [](const QChar chr) -> bool { return chr.unicode() <= 0x7F; });
 }
 
@@ -260,7 +259,7 @@ void MainWindow::checkForUpdates(const bool manual) {
             ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_SECURE_NODOTDOT | ARCHIVE_EXTRACT_UNLINK
         );
 
-        if (archive_read_open_memory(archive_, archiveData.constData(), scast<usize>(archiveData.size())) !=
+        if (archive_read_open_memory(archive_, archiveData.constData(), static_cast<usize>(archiveData.size())) !=
             ARCHIVE_OK) {
             qWarning().noquote() << u"libarchive failed to open archive: %1"_qsv.arg(
                 svtostr(QUtf8SV(archive_error_string(archive_)))
@@ -507,7 +506,7 @@ void MainWindow::checkForUpdates(const bool manual) {
 #endif
 }
 
-void MainWindow::openProject(QString folder, const bool newProject, const bool translationsRewritten) {
+void MainWindow::openProject(const QString& folder, const bool newProject, const bool translationsRewritten) {
     if (!QFile::exists(folder)) {
         present(this, NOTICE("Folder %1 does not exist.", Critical, Modal, folder));
         return;
@@ -530,7 +529,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
         return;
     }
 
-    auto tempProjectSettings = make_shared<ProjectSettings>();
+    const auto tempProjectSettings = make_shared<ProjectSettings>();
     tempProjectSettings->projectPath = folder;
 
     const QString rootTranslationPath = folder + TRANSLATION_DIRECTORY;
@@ -585,7 +584,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
         tempProjectSettings->readEncoding = QString::fromLatin1(metadata.readEncoding.value_or(""));
 
         if (metadata.duplicateMode) {
-            tempProjectSettings->duplicateMode = scast<DuplicateMode>(*metadata.duplicateMode);
+            tempProjectSettings->duplicateMode = static_cast<DuplicateMode>(*metadata.duplicateMode);
         }
     };
 
@@ -639,7 +638,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                         "project-settings.json is unusable and the engine of the project could not be detected "
                         "from its files.";
 
-                    return Err(FFIString{ .ptr = message.data(), .len = scast<u32>(message.size()), .cap = 0 });
+                    return Err(FFIString{ .ptr = message.data(), .len = static_cast<u32>(message.size()), .cap = 0 });
                 }
 
                 auto metadataFile = QFile(tempProjectSettings->translationPath() + RVPACKER_METADATA_FILE);
@@ -648,7 +647,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                     const QByteArray content = metadataFile.readAll();
                     auto metadata = readLenient<Metadata>(string_view(content.data(), content.size()));
 
-                    if (metadata && metadata->duplicateMode <= scast<u8>(DuplicateMode::Remove)) {
+                    if (metadata && metadata->duplicateMode <= static_cast<u8>(DuplicateMode::Remove)) {
                         applyMetadata(std::move(metadata.value()));
                     }
                 }
@@ -690,29 +689,12 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                 continue;
             }
 
-            QByteArray normalized = file.readAll();
+            const QString content = QString::fromUtf8(file.readAll());
             file.close();
-
-            // Rewrite only files with carriage returns, atomically, so a crash can't truncate a translation. A failed
-            // rewrite is not fatal: the normalized content is still parsed.
-            if (const isize sizeBefore = normalized.size();
-                normalized.removeIf([](const char byte) -> bool { return byte == '\r'; }).size() != sizeBefore) {
-                auto normalizedFile = QSaveFile(fileInfo.filePath());
-                normalizedFile.setDirectWriteFallback(true);
-
-                if (!normalizedFile.open(QFile::WriteOnly) || normalizedFile.write(normalized) != normalized.size() ||
-                    !normalizedFile.commit()) {
-                    qWarning().noquote() << u"Failed to normalize line endings of %1: %2"_qsv.arg(
-                        fileInfo.filePath(),
-                        normalizedFile.errorString()
-                    );
-                }
-            }
 
             QString basename = fileInfo.baseName();
             const bool isMap = basename.startsWith(u"map");
 
-            const QString content = QString::fromUtf8(normalized);
             const auto contentView = QStringView(content);
             const u32 size = contentView.size();
 
@@ -721,8 +703,8 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
             const isize titleMarker = basename.startsWith(u"system") || basename.startsWith(u"terms")
                                           ? contentView.lastIndexOf(GAME_TITLE_MARKER)
                                           : -1;
-            const bool holdsTitle =
-                titleMarker != -1 && titleMarker + GAME_TITLE_MARKER.size() + 1 < contentView.size();
+            const auto titleLine = gameTitleLine(contentView, titleMarker);
+            const bool holdsTitle = titleLine.has_value();
 
             u32 pos = 0;
             u32 lineIndex = 0;
@@ -738,12 +720,11 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                 const u32 lineStart = pos;
                 u32 newlinePos = contentView.indexOf(u'\n', pos);
 
-                if (newlinePos == scast<u32>(-1)) {
+                if (newlinePos == static_cast<u32>(-1)) {
                     newlinePos = size;
                 }
 
-                // No carriage returns here: they were removed above
-                const QStringView line = contentView.sliced(lineStart, newlinePos - lineStart);
+                const QStringView line = chopCarriageReturn(contentView.sliced(lineStart, newlinePos - lineStart));
                 pos = newlinePos + 1;
 
                 if (holdsTitle && pos >= size) {
@@ -755,7 +736,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                 }
 
                 // The table holds `MAX_COLUMNS` of them; a line with more parts is kept by it as it is
-                columnCount = scast<u8>(
+                columnCount = static_cast<u8>(
                     max<i64>(columnCount, min<i64>(line.count(SEPARATOR) + 1, TranslationTableModel::MAX_COLUMNS))
                 );
 
@@ -865,8 +846,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
             );
 
             if (holdsTitle) {
-                const QStringView titleLine = contentView.sliced(titleMarker + GAME_TITLE_MARKER.size() + 1);
-                const QSVList parts = lineParts(titleLine, 0, basename);
+                const QSVList parts = lineParts(*titleLine, 0, basename);
 
                 if (parts.isEmpty()) {
                     continue;
@@ -1149,7 +1129,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                             ));
                         }
 
-                        if (metadata->duplicateMode > scast<u8>(DuplicateMode::Remove)) {
+                        if (metadata->duplicateMode > static_cast<u8>(DuplicateMode::Remove)) {
                             return Err(NOTICE(
                                 "The .rvpacker-metadata file has an unknown duplicate mode: %1",
                                 Critical,
@@ -1187,7 +1167,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                     return Err(archive.error());
                 }
 
-                const QString archivePath = archive.value();
+                const QString& archivePath = archive.value();
                 const bool systemExists = archivePath.isEmpty();
 
                 firstReadPending = true;
@@ -1617,8 +1597,8 @@ void MainWindow::checkHashes() {
         }
 
         const QByteArray content = file.readAll();
-        const ByteBuffer contentBuffer{ .ptr = rcast<const u8*>(content.data()),
-                                        .len = scast<u32>(content.size()),
+        const ByteBuffer contentBuffer{ .ptr = reinterpret_cast<const u8*>(content.data()),
+                                        .len = static_cast<u32>(content.size()),
                                         .cap = 0 };
 
         u64 newHash;
@@ -1630,7 +1610,7 @@ void MainWindow::checkHashes() {
         FilenameArray filenameArray{};
 
         for (const auto [idx, chr] : views::enumerate(slicedFilename)) {
-            filenameArray[idx] = scast<char>(tolower(chr));
+            filenameArray[idx] = static_cast<char>(tolower(chr));
         }
 
         const auto entry = projectSettings->hashes.find(filenameArray);
@@ -1661,7 +1641,7 @@ void MainWindow::checkHashes() {
 
         const auto addSection = [&sections](const QString& heading, const vector<FilenameArray>& files) -> void {
             QStringList lines;
-            lines.reserve(files.size() + 1);
+            lines.reserve(static_cast<isize>(files.size() + 1));
             lines.append(heading);
 
             for (const auto& file : files) {

@@ -23,8 +23,7 @@ class TabListModel final : public QAbstractListModel {
     [[nodiscard]] auto data(const QModelIndex& index, i32 role = Qt::DisplayRole) const -> QVariant override;
     [[nodiscard]] auto flags(const QModelIndex& index) const -> Qt::ItemFlags override;
 
-    [[nodiscard]] auto tab(u32 index) const -> const TabListItem&;
-    [[nodiscard]] auto tab(u32 index) -> TabListItem&;
+    [[nodiscard]] auto tab(this auto&& self, u32 index) -> decltype(auto) { return self.tabs[index]; }
 
     void clear();
     void setTabs(vector<TabListItem> items);

@@ -2,7 +2,7 @@ use std::alloc::{GlobalAlloc, Layout};
 
 unsafe extern "C" {
     fn rpgmtranslate_cpp_alloc(size: usize, align: usize) -> *mut u8;
-    fn rpgmtranslate_cpp_dealloc(ptr: *mut u8, size: usize, align: usize);
+    fn rpgmtranslate_cpp_dealloc(ptr: *mut u8, align: usize);
     fn rpgmtranslate_cpp_realloc(ptr: *mut u8, old_size: usize, align: usize, new_size: usize) -> *mut u8;
 }
 
@@ -14,7 +14,7 @@ unsafe impl GlobalAlloc for CppAllocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        unsafe { rpgmtranslate_cpp_dealloc(ptr, layout.size(), layout.align()) }
+        unsafe { rpgmtranslate_cpp_dealloc(ptr, layout.align()) }
     }
 
     unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {

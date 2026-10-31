@@ -11,8 +11,8 @@ static constexpr i32 SECOND_MS = 1000;
 // front of the returned buffer and must be skipped by consumers.
 static constexpr i32 HEADER_LENGTH = 16;
 
-static constexpr QL1SV NEW_LINE = "\\#"_L1;
-static constexpr QL1SV LINE_FEED = "\n"_L1;
+static constexpr QStringView NEW_LINE = u"\\#";
+static constexpr QStringView LINE_FEED = u"\n";
 static constexpr QStringView SEPARATOR = u"<#>";
 
 static constexpr QStringView PROGRAM_DATA_DIRECTORY = u"/.rpgmtranslate";

@@ -49,12 +49,12 @@ class MainWindow final : public QMainWindow {
     void checkForUpdates(bool manual = false);
     // `folder` is taken by value: it may alias `settings` or `projectSettings`, which `closeProject()` clears.
     // `translationsRewritten`: a task rewrote the translation files, so `mapSections` must not be saved over them.
-    void openProject(QString folder, bool newProject, bool translationsRewritten = false);
+    void openProject(const QString& folder, bool newProject, bool translationsRewritten = false);
     void changeTab(const QString& tabName, const QString& previousTabName);
 
     // False if the project stays open (a task can't be stopped, or saving failed). The user is told why.
     // `translationsRewritten`: see `openProject()`.
-    bool closeProject(bool translationsRewritten = false);
+    auto closeProject(bool translationsRewritten = false) -> bool;
 
     // Stops the running tasks and waits for them. False, with a message, if one can't be stopped.
     [[nodiscard]] auto stopTasks() -> bool;

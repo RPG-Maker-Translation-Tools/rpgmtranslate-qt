@@ -32,13 +32,9 @@ Required modules:
 - Svg
 - LinguistTools
 
-Platform-specific:
-
-- WaylandClient (Linux only)
-
 Optional image format support (PNG, JPEG, etc.) can be omitted if intentionally configured.
 
-On Linux, OpenSSL is required as well.
+On Linux and other Unix-like systems except macOS, OpenSSL is required as well.
 
 ### Optional
 
@@ -77,6 +73,12 @@ Checks GitHub for a newer release and installs it over the running executable (o
 - libclang (library + headers only, **not** the full clang compiler toolchain)
 
 `rubyfmt`'s `prism-sys` build script runs `bindgen` against `libclang`, so this flag needs the clang library and headers even when the project is built with GCC/MSVC. Install the distro's clang library/headers package (e.g. `libclang-common-*-dev`, `clang-devel`, `clang21-libclang`/`clang21-headers`), not the full `clang` compiler where the two are split.
+
+#### Wayland (`ENABLE_WAYLAND`)
+
+- Qt WaylandClient
+
+On by default. If Qt was built without WaylandClient, CMake prints a warning and the build continues without Wayland support. Turn it off explicitly with `-DENABLE_WAYLAND=OFF`. Not looked up on Windows or macOS.
 
 #### mimalloc (`ENABLE_MIMALLOC`)
 

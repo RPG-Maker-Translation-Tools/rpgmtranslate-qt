@@ -134,7 +134,7 @@ auto MainWindow::saveCurrentTab(QString tabName) -> bool {
         stream = make_unique<QTextStream>(&mapText);
     }
 
-    TranslationTableModel* const model = ui->translationTable->model();
+    const TranslationTableModel* const model = ui->translationTable->model();
 
     for (i32 row = 0; row < model->rowCount(); row++) {
         if ((model->flags(model->index(row, 1)) & Qt::ItemIsEditable) == 0) {
@@ -200,7 +200,7 @@ auto MainWindow::saveMaps() -> bool {
         return false;
     }
 
-    auto mapsFile = std::move(opened.value());
+    const auto mapsFile = std::move(opened.value());
 
     if (mapsFile == nullptr) {
         return true;
@@ -215,6 +215,7 @@ auto MainWindow::saveMaps() -> bool {
         ranges::sort(keys);
 
         for (const auto key : keys) {
+            mapSections[key].remove(u'\r');
             stream << mapSections[key];
         }
     }
@@ -267,7 +268,7 @@ void MainWindow::saveBackup() {
     // The files are read here, as they are not touched by anything meanwhile; compressing them is what takes time
     vector<pair<QString, QByteArray>> files;
 
-    auto listing =
+    const auto listing =
         QDirListing(projectSettings->translationPath(), { u"*.txt"_s }, QDirListing::IteratorFlag::FilesOnly);
 
     for (const auto& entry : listing) {
@@ -323,7 +324,7 @@ auto MainWindow::saveSettings() -> bool {
         return false;
     }
 
-    auto settingsFile = std::move(opened.value());
+    const auto settingsFile = std::move(opened.value());
 
     if (settingsFile == nullptr) {
         return true;
@@ -406,7 +407,7 @@ auto MainWindow::saveSettings() -> bool {
     }
 
     keepBackup(path);
-    settingsFile->write(result->data(), scast<i64>(result->size()));
+    settingsFile->write(result->data(), static_cast<i64>(result->size()));
     return commitFile(this, *settingsFile);
 }
 
@@ -419,7 +420,7 @@ auto MainWindow::saveGlossary() -> bool {
         return false;
     }
 
-    auto glossaryFile = std::move(opened.value());
+    const auto glossaryFile = std::move(opened.value());
 
     if (glossaryFile == nullptr) {
         return true;
@@ -441,7 +442,7 @@ auto MainWindow::saveGlossary() -> bool {
     }
 
     keepBackup(path);
-    glossaryFile->write(result->data(), scast<i64>(result->size()));
+    glossaryFile->write(result->data(), static_cast<i64>(result->size()));
     return commitFile(this, *glossaryFile);
 }
 
@@ -471,7 +472,7 @@ auto MainWindow::saveProjectSettings() -> bool {
         }
 
         keepBackup(path);
-        projectSettingsFile->write(result->data(), scast<i64>(result->size()));
+        projectSettingsFile->write(result->data(), static_cast<i64>(result->size()));
 
         if (!commitFile(this, *projectSettingsFile)) {
             return false;
@@ -486,14 +487,14 @@ auto MainWindow::saveProjectSettings() -> bool {
         return false;
     }
 
-    auto metadataFile = std::move(openedMetadata.value());
+    const auto metadataFile = std::move(openedMetadata.value());
 
     if (metadataFile == nullptr) {
         return true;
     }
 
     auto metadata =
-        Metadata{ .hashes = projectSettings->hashes, .duplicateMode = scast<u8>(projectSettings->duplicateMode) };
+        Metadata{ .hashes = projectSettings->hashes, .duplicateMode = static_cast<u8>(projectSettings->duplicateMode) };
 
     if (!projectSettings->readEncoding.isEmpty()) {
         metadata.readEncoding = projectSettings->readEncoding.toStdString();
@@ -506,7 +507,7 @@ auto MainWindow::saveProjectSettings() -> bool {
         return false;
     }
 
-    metadataFile->write(json.data(), scast<qint64>(json.size()));
+    metadataFile->write(json.data(), static_cast<qint64>(json.size()));
 
     return commitFile(this, *metadataFile);
 }

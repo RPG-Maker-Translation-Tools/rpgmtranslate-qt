@@ -20,7 +20,7 @@ constexpr i32 PAD_Y = 4;
 TranslationTableDelegate::TranslationTableDelegate(QObject* const parent) : QStyledItemDelegate(parent) {}
 
 auto TranslationTableDelegate::table() const -> TranslationTable* {
-    return scast<TranslationTable*>(parent());
+    return static_cast<TranslationTable*>(parent());
 }
 
 void TranslationTableDelegate::commitAndClose(QWidget* const editor) {
@@ -115,9 +115,7 @@ auto TranslationTableDelegate::createEditor(
 
     // The row can move while the editor is open (a row is removed or a bookmark is inserted above it)
     const auto editedIndex = QPersistentModelIndex(index);
-
-    // Signals can't be emitted through a const `this`
-    auto* const that = ccast<TranslationTableDelegate*>(this);
+    auto* const that = const_cast<TranslationTableDelegate*>(this);
 
     connect(editor, &TranslationInput::textChanged, this, [that, editedIndex] -> void {
         emit that->textChanged();
@@ -128,7 +126,6 @@ auto TranslationTableDelegate::createEditor(
         }
     });
 
-    // Lines the text wraps into are counted when the editor has laid them out, which is after the text changed
     connect(editor, &TranslationInput::contentHeightChanged, this, [that, editedIndex] -> void {
         if (editedIndex.isValid()) {
             that->table()->resizeRowToContents(editedIndex.row());
@@ -151,10 +148,10 @@ auto TranslationTableDelegate::createEditor(
 
 void TranslationTableDelegate::setEditorData(QWidget* const editor, const QModelIndex& index) const {
     const QString value = index.model()->data(index, Qt::EditRole).toString();
-    auto* const textEdit = scast<TranslationInput*>(editor);
+    auto* const textEdit = static_cast<TranslationInput*>(editor);
     textEdit->setPlainText(value);
 
-    auto* const that = ccast<TranslationTableDelegate*>(this);
+    auto* const that = const_cast<TranslationTableDelegate*>(this);
     emit that->inputFocused();
 
     QTextCursor cursor = textEdit->textCursor();
@@ -167,7 +164,7 @@ void TranslationTableDelegate::setModelData(
     QAbstractItemModel* const model,
     const QModelIndex& index
 ) const {
-    const auto* const textEdit = scast<TranslationInput*>(editor);
+    const auto* const textEdit = static_cast<TranslationInput*>(editor);
     model->setData(index, textEdit->toPlainText(), Qt::EditRole);
 }
 
@@ -184,9 +181,10 @@ auto TranslationTableDelegate::sizeHint(const QStyleOptionViewItem& option, cons
     // The editor wraps its lines, so it counts the lines it has; a cell that is not edited is drawn in one line per
     // line feed
     const i32 lines =
-        textEdit != nullptr ? max(1, textEdit->document()->lineCount()) : scast<i32>(text.count(u'\n') + 1);
+        textEdit != nullptr ? max(1, textEdit->document()->lineCount()) : static_cast<i32>(text.count(u'\n') + 1);
     const i32 height = (fontMetrics.lineSpacing() * lines) + 10;
 
+    // NOLINTNEXTLINE(readability-suspicious-call-argument)
     return { fontMetrics.horizontalAdvance(text), max(height, MIN_ROW_HEIGHT) };
 }
 
@@ -217,7 +215,7 @@ void TranslationTableDelegate::paint(
         style->drawItemText(
             painter,
             paddedRect,
-            scast<i32>(opt.displayAlignment),
+            static_cast<i32>(opt.displayAlignment),
             opt.palette,
             (opt.state & QStyle::State_Enabled) != 0,
             opt.text,
@@ -233,8 +231,8 @@ auto TranslationTableDelegate::eventFilter(QObject* const editor, QEvent* const 
         return QStyledItemDelegate::eventFilter(editor, event);
     }
 
-    const auto* const keyEvent = scast<QKeyEvent*>(event);
-    auto* const widget = scast<QWidget*>(editor);
+    const auto* const keyEvent = static_cast<QKeyEvent*>(event);
+    auto* const widget = static_cast<QWidget*>(editor);
 
     if (keyEvent->matches(QKeySequence::Cancel)) {
         commitAndClose(widget);

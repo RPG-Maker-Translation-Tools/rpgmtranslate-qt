@@ -94,7 +94,7 @@ void BookmarkList::mousePressEvent(QMouseEvent* const event) {
 }
 
 [[nodiscard]] auto BookmarkListModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
-    return scast<i32>(bookmarks.size());
+    return static_cast<i32>(bookmarks.size());
 }
 
 [[nodiscard]] auto BookmarkListModel::flags(const QModelIndex& /* index */) const -> Qt::ItemFlags {
@@ -134,7 +134,7 @@ void BookmarkListModel::clear() {
     const i32 row,
     const QModelIndex& /* parent */
 ) const -> bool {
-    auto* const model = scast<BookmarkListModel*>(sourceModel());
+    auto* const model = static_cast<BookmarkListModel*>(sourceModel());
     const auto& item = model->bookmark(row);
     return !item.hidden;
 }
@@ -148,9 +148,9 @@ void BookmarkListDelegate::paint(
         return;
     }
 
-    const auto* const view = scast<const BookmarkList*>(opt.widget);
-    const auto* const proxy = scast<const BookmarkProxy*>(view->model());
-    auto* const src = scast<BookmarkListModel*>(proxy->sourceModel());
+    const auto* const view = static_cast<const BookmarkList*>(opt.widget);
+    const auto* const proxy = static_cast<const BookmarkProxy*>(view->model());
+    auto* const src = static_cast<BookmarkListModel*>(proxy->sourceModel());
 
     const i32 sourceRow = proxy->mapToSource(index).row();
     const Bookmark& bookmark = src->bookmark(sourceRow);

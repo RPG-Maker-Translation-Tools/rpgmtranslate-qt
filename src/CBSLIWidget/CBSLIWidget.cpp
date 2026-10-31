@@ -28,7 +28,7 @@ void CBSLIWidget::setRange(const i32 minimum, const i32 maximum) {
     slider_->setRange(minimum, maximum);
 
     lineEdit_->setValidator(new QIntValidator(minimum, maximum, lineEdit_));
-    lineEdit_->setMaxLength(scast<i32>(itos(maximum).size()));
+    lineEdit_->setMaxLength(static_cast<i32>(itos(maximum).size()));
 
     setValue(value());
 }
