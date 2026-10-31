@@ -1227,3 +1227,265 @@ pub unsafe extern "C" fn rpgm_format_src(src: FFIString, lang: HighlightLanguage
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[cfg(feature = "snowball")]
+    use language_tokenizer::MatchMode;
+
+    /// A view over `text`, as C++ passes it: `cap == 0`, so Rust never frees it.
+    fn view(text: &str) -> FFIString {
+        FFIString {
+            ptr: text.as_ptr().cast::<c_char>(),
+            len: text.len() as u32,
+            cap: 0,
+        }
+    }
+
+    /// Builds the buffer `parse_strings` reads: a `u32` count, then each string as a `u32` length and its bytes.
+    fn pack(strings: &[&str]) -> Vec<u8> {
+        let mut out = (strings.len() as u32).to_le_bytes().to_vec();
+
+        for string in strings {
+            out.extend((string.len() as u32).to_le_bytes());
+            out.extend(string.as_bytes());
+        }
+
+        out
+    }
+
+    // Searching needs a tokenizer, which only a crate feature provides: these tests run with `snowball`, the one with
+    // no heavy dependencies.
+    #[cfg(feature = "snowball")]
+    fn exact_mode() -> MatchModeInfo {
+        MatchModeInfo {
+            mode: MatchMode::Exact,
+            case_sensitive: true,
+            permissive: false,
+        }
+    }
+
+    #[test]
+    fn parse_strings_reads_what_cpp_packs() {
+        let strings = ["", "abc", "日本語", "😀 emoji", "line\nbreak"];
+        let buf = pack(&strings);
+
+        assert_eq!(unsafe { parse_strings(&buf) }, strings);
+    }
+
+    #[test]
+    fn parse_strings_reads_an_empty_list() {
+        let buf = pack(&[]);
+
+        assert!(unsafe { parse_strings(&buf) }.is_empty());
+    }
+
+    #[test]
+    fn push_matches_layout_is_count_then_twelve_byte_records() {
+        let mut out = Vec::new();
+        push_matches(
+            &mut out,
+            vec![
+                MatchResult::Exact { offset: 3, len: 4 },
+                MatchResult::Fuzzy {
+                    offset: 1,
+                    len: 2,
+                    score: 0.5,
+                },
+            ],
+        );
+
+        let mut expected = 2u32.to_le_bytes().to_vec();
+        expected.extend(3u32.to_le_bytes());
+        expected.extend(4u32.to_le_bytes());
+        expected.extend(0f32.to_le_bytes());
+        expected.extend(1u32.to_le_bytes());
+        expected.extend(2u32.to_le_bytes());
+        expected.extend(0.5f32.to_le_bytes());
+
+        assert_eq!(out, expected);
+        assert_eq!(out.len(), 4 + 2 * 12);
+    }
+
+    #[test]
+    fn push_matches_writes_only_the_count_for_no_matches() {
+        let mut out = Vec::new();
+        push_matches(&mut out, Vec::new());
+
+        assert_eq!(out, 0u32.to_le_bytes());
+    }
+
+    #[test]
+    #[cfg(feature = "snowball")]
+    fn find_all_matches_serializes_source_then_translation() {
+        let (haystack, needle) = ("hello world hello", "hello");
+        let (tr_haystack, tr_needle) = ("hola mundo hola", "hola");
+        let mut out = ByteBuffer::null();
+
+        let ok = unsafe {
+            rpgm_find_all_matches(
+                view(haystack),
+                view(needle),
+                exact_mode(),
+                view(tr_haystack),
+                view(tr_needle),
+                exact_mode(),
+                view("en"),
+                view("es"),
+                &mut out,
+            )
+        };
+        assert!(ok, "{}", ERROR.lock().unwrap());
+
+        let bytes = unsafe { slice::from_raw_parts(out.ptr, out.len as usize) }.to_vec();
+        let word = |at: usize| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
+
+        // Source: two matches, at characters 0 and 12, each 5 long and exact (score 0).
+        assert_eq!((word(0), word(4), word(8), word(12)), (2, 0, 5, 0));
+        assert_eq!((word(16), word(20), word(24)), (12, 5, 0));
+        // Translation follows at once: two matches, at 0 and 11, each 4 long.
+        assert_eq!((word(28), word(32), word(36), word(40)), (2, 0, 4, 0));
+        assert_eq!((word(44), word(48)), (11, 4));
+        assert_eq!(bytes.len(), 28 + 4 + 2 * 12);
+
+        unsafe { rpgm_buffer_free(out) };
+    }
+
+    #[test]
+    #[cfg(feature = "snowball")]
+    fn find_all_matches_counts_characters_not_bytes_or_utf16_units() {
+        // The emoji is 4 UTF-8 bytes and 2 UTF-16 units but one character: C++ converts from characters.
+        let mut out = ByteBuffer::null();
+
+        let ok = unsafe {
+            rpgm_find_all_matches(
+                view("😀 abc"),
+                view("abc"),
+                exact_mode(),
+                view("x"),
+                view("y"),
+                exact_mode(),
+                view("en"),
+                view("en"),
+                &mut out,
+            )
+        };
+        assert!(ok);
+
+        let bytes = unsafe { slice::from_raw_parts(out.ptr, out.len as usize) }.to_vec();
+        let word = |at: usize| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
+
+        assert_eq!((word(0), word(4), word(8)), (1, 2, 3));
+
+        unsafe { rpgm_buffer_free(out) };
+    }
+
+    #[test]
+    #[cfg(feature = "snowball")]
+    fn find_all_matches_gives_an_empty_buffer_when_the_source_has_no_match() {
+        let mut out = ByteBuffer::null();
+
+        let ok = unsafe {
+            rpgm_find_all_matches(
+                view("hello world"),
+                view("absent"),
+                exact_mode(),
+                view("hola"),
+                view("hola"),
+                exact_mode(),
+                view("en"),
+                view("es"),
+                &mut out,
+            )
+        };
+
+        assert!(ok);
+        assert_eq!(out.len, 0);
+
+        unsafe { rpgm_buffer_free(out) };
+    }
+
+    #[test]
+    fn free_functions_accept_owned_and_view_values() {
+        // Ownership passes to `rpgm_string_free`, as it does when Rust hands a string to C++ and C++ gives it back.
+        let owned = mem::ManuallyDrop::new(String::from("owned"));
+        let owned_ffi = str_to_ffi(&owned);
+        unsafe {
+            rpgm_string_free(owned_ffi);
+            // Views (`cap == 0`) and the null value are no-ops.
+            rpgm_string_free(view("view"));
+            rpgm_string_free(FFIString::null());
+        }
+
+        let mut bytes = mem::ManuallyDrop::new(vec![1u8, 2, 3]);
+        let buffer = ByteBuffer {
+            ptr: bytes.as_mut_ptr(),
+            len: bytes.len() as u32,
+            cap: bytes.capacity() as u32,
+        };
+        unsafe {
+            rpgm_buffer_free(buffer);
+            rpgm_buffer_free(ByteBuffer::null());
+        }
+    }
+
+    #[test]
+    fn hash_file_is_stable_and_depends_on_mode_and_content() {
+        let hash = |content: &[u8], mode| {
+            let mut out = 0u64;
+            let buffer = if content.is_empty() {
+                ByteBuffer::null()
+            } else {
+                ByteBuffer {
+                    ptr: content.as_ptr(),
+                    len: content.len() as u32,
+                    cap: 0,
+                }
+            };
+            unsafe { rpgm_hash_file(buffer, mode, &mut out) };
+            out
+        };
+
+        assert_eq!(
+            hash(b"line<#>translation", DuplicateMode::Allow),
+            content_hash(DuplicateMode::Allow, b"line<#>translation")
+        );
+        assert_eq!(hash(b"same", DuplicateMode::Allow), hash(b"same", DuplicateMode::Allow));
+        assert_ne!(hash(b"same", DuplicateMode::Allow), hash(b"same", DuplicateMode::Remove));
+        assert_ne!(hash(b"one", DuplicateMode::Allow), hash(b"two", DuplicateMode::Allow));
+        // An empty file has a null pointer from C++: it must hash as empty content, not dereference it.
+        assert_eq!(hash(b"", DuplicateMode::Allow), content_hash(DuplicateMode::Allow, b""));
+    }
+
+    #[test]
+    fn from_bcp47_uses_the_primary_subtag_case_insensitively() {
+        assert!(matches!(from_bcp47("en"), Algorithm::English));
+        assert!(matches!(from_bcp47("en-US"), Algorithm::English));
+        assert!(matches!(from_bcp47("pt_BR"), Algorithm::Portuguese));
+        assert!(matches!(from_bcp47("RU"), Algorithm::Russian));
+        assert!(matches!(from_bcp47("nb"), Algorithm::Norwegian));
+        assert!(matches!(from_bcp47("nn"), Algorithm::Norwegian));
+        assert!(matches!(from_bcp47("xx"), Algorithm::None));
+        assert!(matches!(from_bcp47(""), Algorithm::None));
+    }
+
+    #[test]
+    fn parse_next_path_reads_the_type_byte() {
+        assert!(matches!(parse_next_path("\x01Name"), Some(DataPath::Key("Name"))));
+        assert!(matches!(parse_next_path("\x01"), Some(DataPath::Key(""))));
+
+        match parse_next_path("\x01a\x02b\x02c") {
+            Some(DataPath::Keys(keys)) => assert_eq!(keys.collect::<Vec<_>>(), ["a", "b", "c"]),
+            _ => panic!("a path with separators is a key list"),
+        }
+
+        assert!(matches!(parse_next_path("\x037"), Some(DataPath::Index(7))));
+        // An index that is not a number can never match an element.
+        assert!(matches!(parse_next_path("\x03abc"), Some(DataPath::Index(usize::MAX))));
+        assert!(matches!(parse_next_path("\x03-1"), Some(DataPath::Index(usize::MAX))));
+
+        assert!(parse_next_path("").is_none());
+        assert!(parse_next_path("\x09x").is_none());
+    }
+}

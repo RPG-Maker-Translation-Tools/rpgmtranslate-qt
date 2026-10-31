@@ -122,3 +122,61 @@ fn tag_len(text: &str) -> Option<usize> {
 
     (text.as_bytes()[end] == b'>').then_some(end + 1)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plain_text_is_borrowed_untouched() {
+        assert!(matches!(strip_codes("Hello, world"), Cow::Borrowed("Hello, world")));
+    }
+
+    #[test]
+    fn codes_with_arguments_are_left_out() {
+        assert_eq!(strip_codes(r"\C[2]Red\C[0] text"), "Red text");
+        assert_eq!(strip_codes(r"\fn<Comic Sans>Hi"), "Hi");
+        assert_eq!(strip_codes(r"\{Big\} small"), "Big small");
+        assert_eq!(strip_codes(r"Wait\.\.\. ok\!"), "Wait ok");
+    }
+
+    #[test]
+    fn nested_brackets_close_at_the_balancing_one() {
+        assert_eq!(strip_codes(r"\N[\V[3]] says hi"), " says hi");
+    }
+
+    #[test]
+    fn the_line_break_marker_becomes_a_newline() {
+        assert_eq!(strip_codes(r"one\#two"), "one\ntwo");
+    }
+
+    #[test]
+    fn html_like_tags_are_left_out() {
+        assert_eq!(strip_codes("a<br>b</i>c<WordWrap>d"), "abcd");
+    }
+
+    #[test]
+    fn lone_backslash_and_angle_bracket_are_ordinary_text() {
+        assert_eq!(strip_codes(r"1 < 2 and 3 > 2"), "1 < 2 and 3 > 2");
+        assert_eq!(strip_codes(r"a\"), r"a\");
+        assert_eq!(strip_codes(r"\5 gold"), r"\5 gold");
+        // A second `<` before the `>` means the first one is not a tag.
+        assert_eq!(strip_codes("<a <b>"), "<a ");
+    }
+
+    #[test]
+    fn an_unclosed_argument_is_left_in_the_text() {
+        assert_eq!(strip_codes(r"\C[2 oops"), "[2 oops");
+    }
+
+    #[test]
+    fn counts_ignore_codes() {
+        let plain = count_text("Hello world");
+        let coded = count_text(r"\C[2]Hello\C[0] world");
+
+        assert_eq!(plain.words, 2);
+        assert_eq!(coded.words, plain.words);
+        assert_eq!(coded.characters, plain.characters);
+        assert_eq!(coded.characters_no_whitespace, plain.characters_no_whitespace);
+    }
+}

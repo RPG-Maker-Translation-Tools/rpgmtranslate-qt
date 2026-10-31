@@ -105,6 +105,7 @@ All of these default to `ON`, except the ICU-based tokenizers (`ENABLE_TOKENIZER
 - `MSVC_RUNTIME` (`MT`) - the MSVC runtime library: `MT`, `MD`, `MTd` or `MDd`.
 - `RUST_PROFILE` - the Cargo profile the Rust half is built with.
 - `LUA_EXECUTABLE` - the Lua used by the pre-build scripts. A Lua binary for Linux and Windows is shipped in the repository; set this to use your own.
+- `ENABLE_TESTS` (`OFF`) - builds the test suite. See [Running tests](#running-tests).
 
 ### Getting development headers on Linux
 
@@ -229,6 +230,19 @@ cmake --build build
 ```
 
 Output lands in `build/target/bin/`.
+
+## Running tests
+
+Tests are opt-in. Configure with `-DENABLE_TESTS=ON` (this also needs Qt's `Test` module), build, and run `ctest`:
+
+```bash
+cmake -B build -DENABLE_TESTS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+- The C++ tests live in `tests/` and use Qt Test. Each `tst_*.cpp` is its own executable, registered with `add_app_test()` in `tests/CMakeLists.txt`, which lists the application sources that test needs.
+- The Rust tests are inline `#[cfg(test)]` modules in `rust/src/`. `ctest` runs them as the `rust` test; to run them alone: `cargo test --lib --features snowball` from `rust/`. The search tests need a tokenizer, and `snowball` is the one with no heavy dependencies.
 
 ## Updating translations
 
