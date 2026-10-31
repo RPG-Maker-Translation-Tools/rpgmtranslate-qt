@@ -2,8 +2,8 @@
 
 #include "Constants.hpp"
 #include "QtAliases.hpp"
+#include "TestFiles.hpp"
 
-#include <QFile>
 #include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -18,23 +18,6 @@ auto toStrings(const QSVList& parts) -> QStringList {
     }
 
     return strings;
-}
-
-void writeFile(const QString& path, const QByteArray& content) {
-    QFile file(path);
-
-    QVERIFY2(file.open(QIODevice::WriteOnly), qPrintable(file.errorString()));
-    QCOMPARE(file.write(content), content.size());
-}
-
-auto readFile(const QString& path) -> QByteArray {
-    QFile file(path);
-
-    if (!file.open(QIODevice::ReadOnly)) {
-        return {};
-    }
-
-    return file.readAll();
 }
 }  // namespace
 

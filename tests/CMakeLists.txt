@@ -7,7 +7,8 @@ set(APP_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src")
 # Builds the Qt Test executable `name` from `ARGN`, which lists the test's own sources first and then the application
 # sources it needs. There is no application library yet, so a test compiles just the files it exercises.
 function(add_app_test name)
-    qt_add_executable(${name} ${ARGN})
+    # The Rust half allocates through the application's allocator, so every test that links it needs that file
+    qt_add_executable(${name} ${ARGN} ${APP_SOURCE_DIR}/utilities/Allocator.cpp)
 
     target_include_directories(${name} PRIVATE
         $<TARGET_PROPERTY:${PROJECT_NAME},INCLUDE_DIRECTORIES>
@@ -40,6 +41,22 @@ add_app_test(tst_lints
 
 add_app_test(tst_utils
     tst_utils.cpp
+    ${APP_SOURCE_DIR}/utilities/Utils.cpp
+    ${APP_SOURCE_DIR}/utilities/Notice.cpp
+    ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
+)
+
+add_app_test(tst_json
+    tst_json.cpp
+    ${APP_SOURCE_DIR}/utilities/Utils.cpp
+    ${APP_SOURCE_DIR}/utilities/Notice.cpp
+    ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
+)
+
+add_app_test(tst_taskworker
+    tst_taskworker.cpp
+    ${APP_SOURCE_DIR}/TaskWorker/TaskWorker.cpp
+    ${APP_SOURCE_DIR}/TaskWorker/ScriptHost.cpp
     ${APP_SOURCE_DIR}/utilities/Utils.cpp
     ${APP_SOURCE_DIR}/utilities/Notice.cpp
     ${APP_SOURCE_DIR}/utilities/QtStrings.cpp

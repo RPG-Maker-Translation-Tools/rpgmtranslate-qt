@@ -1488,4 +1488,87 @@ mod tests {
         assert!(parse_next_path("").is_none());
         assert!(parse_next_path("\x09x").is_none());
     }
+
+    /// A directory of its own under the system one, removed with its content when dropped.
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new(name: &str) -> Self {
+            let path = std::env::temp_dir().join(format!("rpgmtranslate-test-{name}-{}", std::process::id()));
+            let _ = fs::remove_dir_all(&path);
+            fs::create_dir_all(&path).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    // The error message is process-wide, so everything that sets or reads it is one test: the others would race it.
+    #[test]
+    fn failures_are_reported_through_rpgm_error() {
+        let dir = TempDir::new("error");
+        let project = dir.0.to_str().unwrap();
+        let mut out = ByteBuffer::null();
+        let mut is_rm2k = false;
+
+        // Neither `Game.ini` nor `RPG_RT.ini` exists
+        let ok = unsafe { rpgm_get_ini_title(view(project), &mut out, &mut is_rm2k) };
+        assert!(!ok);
+
+        let error = rpgm_error();
+        let message = unsafe { ffi_to_str(error) };
+        assert_eq!(error.cap, 0, "the message is borrowed, never freed by C++");
+        assert!(message.contains("RPG_RT.ini"), "{message}");
+
+        // Freeing the borrowed message is a no-op
+        unsafe { rpgm_string_free(error) };
+
+        // The same message again keeps the allocation: it is published to other threads, and must not leak anew
+        set_error(message.to_string());
+        assert_eq!(rpgm_error().ptr, error.ptr);
+
+        set_error(String::from("another message"));
+        assert_eq!(unsafe { ffi_to_str(rpgm_error()) }, "another message");
+    }
+
+    #[test]
+    fn entity_file_cache_follows_the_path_and_the_modification_time() {
+        let dir = TempDir::new("entity");
+        let first = dir.0.join("Actors.json");
+        let second = dir.0.join("Items.json");
+        let first_path = first.to_str().unwrap();
+
+        fs::write(&first, b"one").unwrap();
+        let modified = fs::metadata(&first).unwrap().modified().unwrap();
+
+        let read = read_entity_file(first_path).unwrap();
+        assert_eq!(read.as_slice(), b"one");
+
+        // Unchanged file: the cached content is shared, not read again
+        assert!(Arc::ptr_eq(&read, &read_entity_file(first_path).unwrap()));
+
+        // A changed file is read again. The time is set by hand, as a fast rewrite may keep the coarse one.
+        fs::write(&first, b"two!").unwrap();
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&first)
+            .unwrap()
+            .set_modified(modified + std::time::Duration::from_secs(10))
+            .unwrap();
+
+        let reread = read_entity_file(first_path).unwrap();
+        assert_eq!(reread.as_slice(), b"two!");
+        assert!(!Arc::ptr_eq(&read, &reread));
+
+        // Another path is another file, whatever the cache holds
+        fs::write(&second, b"items").unwrap();
+        assert_eq!(read_entity_file(second.to_str().unwrap()).unwrap().as_slice(), b"items");
+        assert_eq!(read_entity_file(first_path).unwrap().as_slice(), b"two!");
+
+        assert!(read_entity_file(dir.0.join("Missing.json").to_str().unwrap()).is_err());
+    }
 }

@@ -674,3 +674,59 @@ pub(crate) fn format_src(src: &str, lang: HighlightLanguage) -> Result<String, E
         _ => unreachable!(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn project(name: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(format!("rpgmtranslate-test-ini-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&path);
+        fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn ini_title_is_read_from_game_ini() {
+        let dir = project("mv");
+        fs::write(
+            dir.join("Game.ini"),
+            "[Game]\r\nTitleFont=Other\r\ntitle = My Game \r\n",
+        )
+        .unwrap();
+
+        let (title, is_rm2k) = get_ini_title(dir.to_str().unwrap()).unwrap();
+
+        // The whole key must match: `TitleFont` is not the title
+        assert_eq!(title, b"My Game");
+        assert!(!is_rm2k);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn ini_title_falls_back_to_rpg_rt_ini() {
+        let dir = project("rm2k");
+        fs::write(dir.join("RPG_RT.ini"), "[RPG_RT]\nGameTitle=Old Game\n").unwrap();
+
+        let (title, is_rm2k) = get_ini_title(dir.to_str().unwrap()).unwrap();
+
+        assert_eq!(title, b"Old Game");
+        assert!(is_rm2k);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn ini_title_errors_name_the_missing_file_or_the_missing_key() {
+        let dir = project("none");
+
+        assert!(matches!(get_ini_title(dir.to_str().unwrap()), Err(Error::Io(path, _)) if path.ends_with("RPG_RT.ini")));
+
+        fs::write(dir.join("Game.ini"), "[Game]\nFont=x\n").unwrap();
+
+        assert!(matches!(get_ini_title(dir.to_str().unwrap()), Err(Error::Rvpacker(_))));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+}
