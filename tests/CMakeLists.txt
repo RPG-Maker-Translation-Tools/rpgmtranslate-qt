@@ -105,6 +105,15 @@ add_app_test(tst_utilsio
     ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
 )
 
+add_app_test(tst_taskworker_project
+    tst_taskworker_project.cpp
+    ${APP_SOURCE_DIR}/TaskWorker/TaskWorker.cpp
+    ${APP_SOURCE_DIR}/TaskWorker/ScriptHost.cpp
+    ${APP_SOURCE_DIR}/utilities/Utils.cpp
+    ${APP_SOURCE_DIR}/utilities/Notice.cpp
+    ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
+)
+
 add_app_test(tst_utils
     tst_utils.cpp
     ${APP_SOURCE_DIR}/utilities/Utils.cpp

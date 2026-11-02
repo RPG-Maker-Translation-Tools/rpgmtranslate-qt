@@ -598,7 +598,11 @@ auto TaskWorker::search(
                     continue;
                 }
 
-                for (i32 idx = 0; idx < match.lastCapturedIndex() + 1; idx++) {
+                // Not `lastCapturedIndex`: it stops at the last group that took part, so a trailing optional group would be
+                // missing and `\2` in a replacement would stay as it is
+                const i32 groupCount = match.regularExpression().captureCount() + 1;
+
+                for (i32 idx = 0; idx < groupCount; idx++) {
                     // A group that took no part in the match is kept empty, so the numbers of the groups after it hold
                     if (match.capturedStart(idx) < 0) {
                         foundMatches.emplace_back(0, 0, true);
