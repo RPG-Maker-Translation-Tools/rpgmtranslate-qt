@@ -47,6 +47,12 @@ auto projectWithLanguages() -> ProjectSettings {
     return settings;
 }
 
+// The text of a failed result, or nothing for a good one. QVERIFY2 evaluates its message even when it passes, and
+// `error()` of a value is not defined.
+auto errorOf(const Result<QString, QString>& result) -> QString {
+    return result.has_value() ? QString() : result.error();
+}
+
 constexpr auto SCRIPT_ECHOING_ARGUMENTS = R"(
 function rpgmTranslateCallback(text, src, dst, glossary, filename) {
     return [text, src, dst, glossary.length, glossary[0].term, glossary[0].translation, glossary[0].note, filename].join("|");
@@ -171,7 +177,7 @@ class TestScriptHost final : public QObject {
             u"Map001.txt"_s
         );
 
-        QVERIFY2(result.has_value(), qPrintable(result.error()));
+        QVERIFY2(result.has_value(), qPrintable(errorOf(result)));
         QCOMPARE(*result, u"Hello|ja|en|1|HP|Health|stat|Map001.txt"_s);
     }
 
@@ -207,7 +213,7 @@ class TestScriptHost final : public QObject {
 
         const auto result = runTranslateScript(script, u"hi"_s, u"ja"_s, u"en"_s, Glossary{}, u"f"_s);
 
-        QVERIFY2(result.has_value(), qPrintable(result.error()));
+        QVERIFY2(result.has_value(), qPrintable(errorOf(result)));
         QCOMPARE(*result, u"hi!"_s);
     }
 
@@ -217,7 +223,7 @@ class TestScriptHost final : public QObject {
 
         const auto result = runCellScript(script, BatchAction::Custom, u"abc"_s, 2, BatchVariant{ u8{ 0 } }, &settings, Glossary{});
 
-        QVERIFY2(result.has_value(), qPrintable(result.error()));
+        QVERIFY2(result.has_value(), qPrintable(errorOf(result)));
         QCOMPARE(*result, u"ABC"_s);
     }
 

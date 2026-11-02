@@ -18,6 +18,7 @@ Versions may carry a codename alongside the semver number.
 ### Fixed
 
 - A custom lint marked case-insensitive made the pattern of every custom lint invalid, so none of them reported anything while it was enabled.
+- Replacing with a back-reference to a trailing optional group that did not take part in the match (`(a)(b)?` with `\2`) left the text `\2` in the cell instead of nothing.
 - Scripts that were handed accented text from a fixed Latin-1 string received a replacement character instead of the letter.
 
 ### Planned for 1.3 (November)

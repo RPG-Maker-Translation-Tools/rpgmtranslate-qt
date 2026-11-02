@@ -4,6 +4,7 @@
 #include "TestFiles.hpp"
 
 #include <QDir>
+#include <QDirIterator>
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -19,6 +20,19 @@ auto selectionOf(const FileFlags flags) -> Selected {
     Selected selected;
     selected.flags = flags;
     return selected;
+}
+
+// Reading, writing and purging take the files to leave out, not the ones to process
+auto onlyFiles(const FileFlags flags) -> Selected {
+    static constexpr FileFlags everything = (1 << 14) - 1;
+    return selectionOf(static_cast<FileFlags>(everything & ~flags));
+}
+
+// What a failed FFI result says, or nothing for a good one. QVERIFY2 evaluates its message even when it passes, and
+// `error()` of a value is not defined.
+template <typename Result>
+auto errorOf(const Result& result) -> QByteArray {
+    return result.has_value() ? QByteArray() : ffitostr(result.error()).toString().toUtf8();
 }
 
 auto searchFlags(const u8 flags = 0) -> SearchFlags {
@@ -62,6 +76,32 @@ class Project {
 
         tasks.push_back(*started);
         return *started;
+    }
+
+    // The data of a game with one actor
+    void writeActorsData() const {
+        QVERIFY(QDir().mkpath(projectSettings.sourcePath()));
+        writeFile(
+            projectSettings.sourcePath() + u"/Actors.json"_s,
+            R"([null,{"id":1,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"Harold","nickname":"The Brave","note":"","profile":"A hero"}])"
+        );
+    }
+
+    // Reads the actors of the game into the translation files
+    [[nodiscard]] auto readActors(const ReadMode mode = ReadMode::Default) -> ReadResult {
+        return worker.read(
+            projectSettings.sourcePath(),
+            projectSettings.translationPath(),
+            mode,
+            EngineType::MVMZ,
+            DuplicateMode::Allow,
+            onlyFiles(FileFlags_Actors),
+            static_cast<BaseFlags>(0),
+            false,
+            {},
+            u"Test Game"_s,
+            QString()
+        );
     }
 
     QTemporaryDir dir;
@@ -847,6 +887,96 @@ class TestTaskWorkerProject final : public QObject {
         QCOMPARE(result->translatedDelta, 1);
         QCOMPARE(result->text, u"Боб Bob"_s);
         QVERIFY(project.read(u"actors"_s).endsWith(u"Bob<#>Боб\\#Bob"_qsv));
+    }
+
+    // Reading and writing the game, through the Rust core
+    void readExtractsTheTextOfTheGame() {
+        Project project;
+        project.writeActorsData();
+
+        const auto read = project.readActors();
+
+        QVERIFY2(read.has_value(), errorOf(read).constData());
+        QCOMPARE(project.read(u"actors"_s), u"<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>\nThe Brave<#>"_s);
+        // The hashes come back as records of a name and a hash, after their count
+        QCOMPARE(read->len, u32{ 4 + 16 + 8 });
+    }
+
+    void writePutsTheTranslationIntoTheGame() {
+        Project project;
+        project.writeActorsData();
+        QVERIFY(project.readActors().has_value());
+
+        project.write(u"actors"_s, u"<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nThe Brave<#>Храбрый"_s);
+
+        const auto written = project.worker.write(onlyFiles(FileFlags_Actors));
+
+        QVERIFY2(written.has_value(), errorOf(written).constData());
+        QVERIFY(*written >= 0.0F);
+
+        const QByteArray output = readFile(project.projectSettings.outputPath() + u"/data/Actors.json"_s);
+        QVERIFY(!output.isEmpty());
+        QVERIFY(output.contains("Гарольд"));
+        QVERIFY(output.contains("Храбрый"));
+        // What has no translation is kept
+        QVERIFY(output.contains("A hero"));
+        QVERIFY(!output.contains("Harold"));
+
+        // The source is left as it was
+        QVERIFY(readFile(project.projectSettings.sourcePath() + u"/Actors.json"_s).contains("Harold"));
+    }
+
+    void readAppendsWithoutLosingTranslations() {
+        Project project;
+        project.writeActorsData();
+        QVERIFY(project.readActors().has_value());
+        project.write(u"actors"_s, u"<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nThe Brave<#>"_s);
+
+        // The game gets a new actor
+        writeFile(
+            project.projectSettings.sourcePath() + u"/Actors.json"_s,
+            R"([null,{"id":1,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"Harold","nickname":"The Brave","note":"","profile":"A hero"},{"id":2,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"Alice","nickname":"","note":"","profile":""}])"
+        );
+
+        const auto read = project.readActors(ReadMode::AppendForce);
+
+        QVERIFY2(read.has_value(), errorOf(read).constData());
+
+        const QString text = project.read(u"actors"_s);
+        QVERIFY(text.contains(u"Harold<#>Гарольд"_qsv));
+        QVERIFY(text.contains(u"Alice<#>"_qsv));
+    }
+
+    void readAndWriteReportTheFilesTheyCannotUse() {
+        Project project;
+
+        // There is no game here
+        const auto read = project.readActors();
+        QVERIFY(!read.has_value());
+        QVERIFY(!ffitostr(read.error()).isEmpty());
+
+        const auto written = project.worker.write(onlyFiles(FileFlags_Actors));
+        QVERIFY(!written.has_value());
+        QVERIFY(!ffitostr(written.error()).isEmpty());
+    }
+
+    void purgeDropsEntriesNeverFilledIn() {
+        Project project;
+        project.writeActorsData();
+        QVERIFY(project.readActors().has_value());
+        project.write(
+            u"actors"_s,
+            u"<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nThe Brave<#>\nGhost<#>Призрак"_s
+        );
+
+        const auto purged = project.worker.purge(onlyFiles(FileFlags_Actors), false);
+
+        QVERIFY2(purged.has_value(), errorOf(purged).constData());
+
+        // Entries that were never filled in are dropped
+        const QString text = project.read(u"actors"_s);
+        QVERIFY(text.contains(u"Harold<#>Гарольд"_qsv));
+        QVERIFY(!text.contains(u"The Brave"_qsv));
     }
 
     // Statistics
