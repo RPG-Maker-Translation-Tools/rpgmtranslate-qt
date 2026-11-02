@@ -173,6 +173,107 @@ class TestTaskWorker final : public QObject {
         QVERIFY((*search)->interrupted());
         QVERIFY((*lint)->interrupted());
     }
+
+    void glossaryKeepsOnlyUsableTerms() {
+        Term complete;
+        complete.term = u"HP"_s;
+        complete.translation = u"Health"_s;
+
+        Term disabled = complete;
+        disabled.enabled = false;
+
+        Term noTerm = complete;
+        noTerm.term.clear();
+
+        // A row that was added and never filled in
+        Term noTranslation = complete;
+        noTranslation.translation.clear();
+
+        Term second = complete;
+        second.term = u"\u9B54\u529B"_s;
+        second.translation = u"MP"_s;
+
+        const Glossary glossary{ complete, disabled, noTerm, noTranslation, second };
+        const PreparedGlossary prepared = prepareGlossary(glossary);
+
+        QCOMPARE(prepared.size(), usize{ 2 });
+        QVERIFY(prepared[0].term == &glossary[0]);
+        QCOMPARE(prepared[0].termUtf8, QByteArray("HP"));
+        QCOMPARE(prepared[0].translationUtf8, QByteArray("Health"));
+        QVERIFY(prepared[1].term == &glossary[4]);
+        QCOMPARE(prepared[1].termUtf8, u"\u9B54\u529B"_s.toUtf8());
+
+        QVERIFY(prepareGlossary(Glossary{}).empty());
+    }
+
+    void noCustomLintsGiveAnEmptyMatcher() {
+        TaskWorker worker;
+        Settings settings;
+        worker.init(&settings, nullptr, nullptr);
+
+        const CustomLintMatcher matcher = worker.customLintMatcher();
+
+        QVERIFY(matcher.indices.empty());
+        QVERIFY(matcher.regexp.pattern().isEmpty());
+    }
+
+    void customLintMatcherSkipsDisabledLints() {
+        TaskWorker worker;
+        Settings settings;
+        settings.translation.customLints = { CustomLint{ .sequence = u"foo"_s },
+                                             CustomLint{ .sequence = u"bar"_s, .disabled = true },
+                                             CustomLint{ .sequence = u"baz"_s } };
+        worker.init(&settings, nullptr, nullptr);
+
+        const CustomLintMatcher matcher = worker.customLintMatcher();
+
+        QCOMPARE(matcher.indices, (vector<i32>{ 0, 2 }));
+        QVERIFY2(matcher.regexp.isValid(), qPrintable(matcher.regexp.errorString()));
+
+        // Capture group N + 1 belongs to the lint at `indices[N]`
+        const QRegularExpressionMatch foo = matcher.regexp.match(u"a foo"_s);
+        QVERIFY(foo.hasMatch());
+        QVERIFY(foo.hasCaptured(1));
+        QVERIFY(!foo.hasCaptured(2));
+
+        const QRegularExpressionMatch baz = matcher.regexp.match(u"a baz"_s);
+        QVERIFY(baz.hasCaptured(2));
+
+        QVERIFY(!matcher.regexp.match(u"a bar"_s).hasMatch());
+    }
+
+    // The groups a user writes in a sequence must not shift the numbering of the lints
+    void customLintMatcherIgnoresTheUsersOwnGroups() {
+        TaskWorker worker;
+        Settings settings;
+        settings.translation.customLints = { CustomLint{ .sequence = u"(a|b)c"_s }, CustomLint{ .sequence = u"(x)(y)z"_s } };
+        worker.init(&settings, nullptr, nullptr);
+
+        const CustomLintMatcher matcher = worker.customLintMatcher();
+        QVERIFY2(matcher.regexp.isValid(), qPrintable(matcher.regexp.errorString()));
+
+        const QRegularExpressionMatch second = matcher.regexp.match(u"xyz"_s);
+        QVERIFY(second.hasCaptured(2));
+        QVERIFY(!second.hasCaptured(1));
+        QVERIFY(!second.hasCaptured(3));
+    }
+
+    void customLintMatcherHonoursCaseInsensitivity() {
+        TaskWorker worker;
+        Settings settings;
+        settings.translation.customLints = { CustomLint{ .sequence = u"exact"_s },
+                                             CustomLint{ .sequence = u"loose"_s, .caseInsensitive = true } };
+        worker.init(&settings, nullptr, nullptr);
+
+        const CustomLintMatcher matcher = worker.customLintMatcher();
+        QVERIFY2(matcher.regexp.isValid(), qPrintable(matcher.regexp.errorString()));
+
+        QVERIFY(matcher.regexp.match(u"LOOSE"_s).hasCaptured(2));
+        QVERIFY(matcher.regexp.match(u"Loose"_s).hasCaptured(2));
+        // The other lint is still case sensitive: the flag does not leak into it
+        QVERIFY(matcher.regexp.match(u"exact"_s).hasCaptured(1));
+        QVERIFY(!matcher.regexp.match(u"EXACT"_s).hasMatch());
+    }
 };
 
 QTEST_MAIN(TestTaskWorker)

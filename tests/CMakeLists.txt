@@ -98,6 +98,13 @@ add_app_test(tst_models
     ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
 )
 
+add_app_test(tst_utilsio
+    tst_utilsio.cpp
+    ${APP_SOURCE_DIR}/utilities/Utils.cpp
+    ${APP_SOURCE_DIR}/utilities/Notice.cpp
+    ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
+)
+
 add_app_test(tst_utils
     tst_utils.cpp
     ${APP_SOURCE_DIR}/utilities/Utils.cpp

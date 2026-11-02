@@ -1079,7 +1079,7 @@ auto TaskWorker::customLintMatcher() const -> CustomLintMatcher {
             continue;
         }
 
-        patternLength += customLint.sequence.size() + (customLint.caseInsensitive ? 13 : 10) + 1;
+        patternLength += customLint.sequence.size() + (customLint.caseInsensitive ? 17 : 10) + 1;
         matcher.indices.push_back(static_cast<i32>(idx));
     }
 
@@ -1100,11 +1100,17 @@ auto TaskWorker::customLintMatcher() const -> CustomLintMatcher {
         // Named, so these stay the only capturing groups (see `DontCaptureOption` below): group N is lint N - 1
         pattern += u"(?<l" % qsv(qitos(originalIdx)) % u'>';
 
+        // The flag needs a group of its own: `(?<l1>?i:` is not a pattern
         if (customLint.caseInsensitive) {
-            pattern += u"?i:";
+            pattern += u"(?i:";
         }
 
         pattern += customLint.sequence;
+
+        if (customLint.caseInsensitive) {
+            pattern += u')';
+        }
+
         pattern += u')';
     }
 
