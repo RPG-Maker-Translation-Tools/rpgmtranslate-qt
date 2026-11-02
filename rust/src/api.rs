@@ -797,4 +797,553 @@ mod tests {
     fn serde_xml_without_entries_is_refused() {
         assert!(serde_import(b"<open><unclosed>", SerdeFormat::Xml).is_err());
     }
+
+    fn scratch(name: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(format!("rpgmtranslate-test-api-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&path);
+        fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    fn block_on<F: std::future::Future>(future: F) -> F::Output {
+        tokio::runtime::Builder::new_current_thread()
+            .build()
+            .unwrap()
+            .block_on(future)
+    }
+
+    #[test]
+    fn endpoints_are_read_from_their_numbers() {
+        assert_eq!(TranslationEndpoint::from(0), TranslationEndpoint::Google);
+        assert_eq!(TranslationEndpoint::from(1), TranslationEndpoint::Yandex);
+        assert_eq!(TranslationEndpoint::from(2), TranslationEndpoint::DeepL);
+        assert_eq!(TranslationEndpoint::from(3), TranslationEndpoint::Script);
+        // Settings written by another version may hold a number that no endpoint has
+        assert_eq!(TranslationEndpoint::from(200), TranslationEndpoint::Google);
+        assert_eq!(TranslationEndpoint::default(), TranslationEndpoint::Google);
+        assert_eq!(
+            serde_json::from_str::<TranslationEndpoint>("2").unwrap(),
+            TranslationEndpoint::DeepL
+        );
+    }
+
+    #[test]
+    fn translating_needs_a_backend_the_core_has() {
+        let script = r#"{"apiKey":"","yandexFolderId":"","endpoint":3}"#;
+        let result = block_on(translate_single(script, "ja", "en", "text"));
+        assert!(matches!(result, Err(Error::ScriptEndpoint)));
+
+        let result = block_on(translate_single("not json", "ja", "en", "text"));
+        assert!(matches!(result, Err(Error::JSON(_))));
+
+        // A missing key is a malformed request, not a default
+        let result = block_on(translate_single(r#"{"endpoint":0}"#, "ja", "en", "text"));
+        assert!(matches!(result, Err(Error::JSON(_))));
+    }
+
+    #[cfg(not(feature = "google-translate"))]
+    #[test]
+    fn a_backend_that_was_not_compiled_is_named() {
+        let google = r#"{"apiKey":"","yandexFolderId":"","endpoint":0}"#;
+
+        match block_on(translate_single(google, "ja", "en", "text")) {
+            Err(Error::BackendNotCompiled(name)) => assert_eq!(name, "Google Translate"),
+            other => panic!("expected a missing backend, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn errors_tell_what_went_wrong() {
+        let missing = Error::Io(PathBuf::from("a/b.txt"), io::Error::new(io::ErrorKind::NotFound, "gone"));
+        assert_eq!(missing.to_string(), "a/b.txt: IO error occurred: gone");
+
+        assert!(Error::InvalidSave.to_string().contains("save file"));
+        assert!(Error::BackendNotCompiled("CSV").to_string().starts_with("CSV support"));
+        assert_eq!(
+            Error::TooManyValues(5, 3).to_string(),
+            "The entry has 5 values, but the caller reserved room for 3."
+        );
+        assert_eq!(Error::Serde("bad".to_owned()).to_string(), "bad");
+    }
+
+    // Searching needs a tokenizer, which only a crate feature provides: `snowball` is the one with no heavy dependencies
+    #[cfg(feature = "snowball")]
+    fn mode(case_sensitive: bool) -> MatchModeInfo {
+        MatchModeInfo {
+            mode: MatchMode::Exact,
+            case_sensitive,
+            permissive: false,
+        }
+    }
+
+    #[cfg(feature = "snowball")]
+    #[test]
+    fn matches_are_looked_for_in_the_translation_only_if_the_source_has_the_term() {
+        let found = find_all_matches(
+            "The HP is low",
+            "HP",
+            mode(true),
+            "Здоровье мало: HP",
+            "HP",
+            mode(true),
+            Algorithm::English,
+            Algorithm::English,
+        )
+        .unwrap();
+
+        let (source, translation) = found.unwrap();
+        assert_eq!(source.len(), 1);
+        assert_eq!(translation.len(), 1);
+
+        // No term in the source: there is nothing to compare, whatever the translation holds
+        let none = find_all_matches(
+            "Nothing here",
+            "HP",
+            mode(true),
+            "HP",
+            "HP",
+            mode(true),
+            Algorithm::English,
+            Algorithm::English,
+        )
+        .unwrap();
+        assert!(none.is_none());
+
+        // The term in the source but not in the translation: the source matches still come back
+        let (source, translation) = find_all_matches(
+            "HP and HP",
+            "HP",
+            mode(true),
+            "no term",
+            "HP",
+            mode(true),
+            Algorithm::English,
+            Algorithm::English,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(source.len(), 2);
+        assert!(translation.is_empty());
+    }
+
+    #[cfg(feature = "snowball")]
+    #[test]
+    fn matching_honours_case_of_each_side() {
+        let sensitive = |source: bool, translation: bool| {
+            let (s, t) = find_all_matches(
+                "the hp",
+                "HP",
+                mode(source),
+                "the hp",
+                "HP",
+                mode(translation),
+                Algorithm::English,
+                Algorithm::English,
+            )
+            .unwrap()
+            .unwrap_or_default();
+            (s.len(), t.len())
+        };
+
+        assert_eq!(sensitive(false, false), (1, 1));
+        assert_eq!(sensitive(false, true), (1, 0));
+        // The source side finds nothing, so the translation side is not looked at
+        assert_eq!(sensitive(true, false), (0, 0));
+    }
+
+    fn archive(entries: &[(&[u8], &[u8])], engine: rpgmad_lib::Engine) -> Vec<u8> {
+        let entries: Vec<rpgmad_lib::ArchiveEntry> = entries
+            .iter()
+            .map(|&(path, data)| rpgmad_lib::ArchiveEntry { path, data })
+            .collect();
+
+        let mut buffer = vec![0; rpgmad_lib::encrypted_buffer_size(&entries, engine)];
+        rpgmad_lib::encrypt(&entries, engine, &mut buffer).unwrap();
+        buffer
+    }
+
+    #[test]
+    fn archive_entries_keep_their_folders() {
+        for (name, engine) in [("older", rpgmad_lib::Engine::Older), ("vxace", rpgmad_lib::Engine::Vxace)] {
+            let dir = scratch(&format!("archive-folders-{name}"));
+            let bytes = archive(
+                &[
+                    (b"Data\\Actors.rxdata", b"actors"),
+                    (b"Graphics/Pictures/face.png", b"png"),
+                    (b"Scripts.rxdata", b""),
+                ],
+                engine,
+            );
+            let archive_path = dir.join("Game.rgssad");
+            fs::write(&archive_path, bytes).unwrap();
+
+            let out = dir.join("out");
+            extract_archive(&archive_path, &out, None).unwrap();
+
+            assert_eq!(fs::read(out.join("Data/Actors.rxdata")).unwrap(), b"actors");
+            assert_eq!(fs::read(out.join("Graphics/Pictures/face.png")).unwrap(), b"png");
+            assert_eq!(fs::read(out.join("Scripts.rxdata")).unwrap(), b"");
+
+            let _ = fs::remove_dir_all(dir);
+        }
+    }
+
+    // The archive comes with a game that is not trusted
+    #[test]
+    fn archive_entries_cannot_leave_the_output_folder() {
+        let dir = scratch("archive-traversal");
+        let bytes = archive(
+            &[
+                (b"..\\evil.txt", b"x"),
+                (b"a/../../evil2.txt", b"x"),
+                (b"/absolute.txt", b"x"),
+                (b"safe.txt", b"safe"),
+            ],
+            rpgmad_lib::Engine::Older,
+        );
+        let archive_path = dir.join("Game.rgssad");
+        fs::write(&archive_path, bytes).unwrap();
+
+        let out = dir.join("out");
+        extract_archive(&archive_path, &out, None).unwrap();
+
+        assert_eq!(fs::read(out.join("safe.txt")).unwrap(), b"safe");
+        assert!(!dir.join("evil.txt").exists());
+        assert!(!dir.join("evil2.txt").exists());
+        assert!(!out.join("absolute.txt").exists());
+        assert!(!Path::new("/absolute.txt").exists());
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    // In Shift_JIS the second byte of 表 is 0x5C, a backslash: splitting the raw bytes would cut the name there
+    #[test]
+    fn archive_names_are_decoded_before_the_separators_are_read() {
+        let dir = scratch("archive-sjis");
+        let bytes = archive(
+            &[(&[0x95, 0x5C, b'.', b't', b'x', b't'], b"one"), (b"Data\\\x95\x5C.bin", b"two")],
+            rpgmad_lib::Engine::Older,
+        );
+        let archive_path = dir.join("Game.rgssad");
+        fs::write(&archive_path, bytes).unwrap();
+
+        let out = dir.join("out");
+        extract_archive(&archive_path, &out, Some(encoding_rs::SHIFT_JIS)).unwrap();
+
+        assert_eq!(fs::read(out.join("表.txt")).unwrap(), b"one");
+        assert_eq!(fs::read(out.join("Data").join("表.bin")).unwrap(), b"two");
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn archive_that_cannot_be_read_is_an_error() {
+        let dir = scratch("archive-errors");
+
+        let missing = extract_archive(&dir.join("missing.rgssad"), &dir.join("out"), None);
+        assert!(matches!(missing, Err(Error::Io(..))));
+
+        let garbage = dir.join("garbage.rgssad");
+        fs::write(&garbage, b"this is not an archive at all").unwrap();
+        assert!(matches!(extract_archive(&garbage, &dir.join("out"), None), Err(Error::Extract(_))));
+
+        let truncated = archive(&[(b"a.txt", b"some content")], rpgmad_lib::Engine::Older);
+        let cut = dir.join("cut.rgssad");
+        fs::write(&cut, &truncated[..truncated.len() - 4]).unwrap();
+        assert!(extract_archive(&cut, &dir.join("out"), None).is_err());
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    fn png() -> Vec<u8> {
+        let mut png = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13, b'I', b'H', b'D', b'R'];
+        // 4x4, 8 bits, RGBA, no compression, filter or interlace
+        png.extend([0, 0, 0, 4, 0, 0, 0, 4, 8, 6, 0, 0, 0]);
+        png.extend([1, 2, 3, 4, 5, 6, 7, 8]);
+        png
+    }
+
+    #[test]
+    fn assets_are_decrypted_by_their_extension() {
+        let dir = scratch("assets");
+        let plain = png();
+        let key = "d41d8cd98f00b204e9800998ecf8427e";
+        let encrypted = rpgm_asset_decrypter_lib::encrypt(&plain, rpgm_asset_decrypter_lib::FileType::Png, key).unwrap();
+
+        for extension in ["rpgmvp", "png_", "RPGMVP", "unknown"] {
+            let path = dir.join(format!("picture.{extension}"));
+            fs::write(&path, &encrypted).unwrap();
+
+            // Decrypted in place: the fake header stays in front, and the callers skip it
+            let decrypted = decrypt_asset(&path).unwrap();
+            assert_eq!(&decrypted[..5], b"RPGMV", "{extension}");
+            assert_eq!(&decrypted[16..], plain, "{extension}");
+        }
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn assets_that_cannot_be_decrypted_are_errors() {
+        let dir = scratch("assets-errors");
+
+        assert!(matches!(decrypt_asset(&dir.join("missing.rpgmvp")), Err(Error::Io(..))));
+
+        // The type is told by the extension, so a file without one cannot be handled
+        let bare = dir.join("noextension");
+        fs::write(&bare, b"data").unwrap();
+        assert!(matches!(decrypt_asset(&bare), Err(Error::Io(..))));
+
+        let garbage = dir.join("garbage.rpgmvp");
+        fs::write(&garbage, b"not an encrypted picture").unwrap();
+        assert!(matches!(decrypt_asset(&garbage), Err(Error::AssetDecrypt(_))));
+
+        let empty = dir.join("empty.ogg_");
+        fs::write(&empty, b"").unwrap();
+        assert!(matches!(decrypt_asset(&empty), Err(Error::AssetDecrypt(_))));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn save_files_are_shown_as_json() {
+        let save = rvpacker_txt_rs_lib::save::dump(r#"{"gold":120,"party":["Harold"]}"#);
+
+        let shown = generate_json(save.as_bytes(), "file1.rpgsave").unwrap();
+        let value: serde_json::Value = serde_json::from_str(&shown).unwrap();
+
+        assert_eq!(value["gold"], 120);
+        assert_eq!(value["party"][0], "Harold");
+        // Pretty printed, for a person to read
+        assert!(shown.contains('\n'));
+    }
+
+    #[test]
+    fn broken_save_files_are_refused() {
+        assert!(matches!(generate_json(&[0xFF, 0xFE], "file1.rpgsave"), Err(Error::InvalidSave)));
+        assert!(matches!(generate_json(b"not compressed json", "file1.rpgsave"), Err(Error::InvalidSave)));
+
+        // Compressed, but not JSON
+        let not_json = rvpacker_txt_rs_lib::save::dump("{ not json");
+        assert!(matches!(generate_json(not_json.as_bytes(), "file1.rpgsave"), Err(Error::JSON(_))));
+    }
+
+    #[test]
+    fn rm2k_files_are_picked_by_their_extension() {
+        for name in ["Map0001.lmu", "RPG_RT.ldb", "RPG_RT.lmt", "Save01.lsd"] {
+            assert!(generate_json(b"definitely not an RPG Maker file", name).is_err(), "{name}");
+        }
+    }
+
+    #[cfg(feature = "json-highlighting")]
+    #[test]
+    fn highlighted_code_is_html_with_the_markup_escaped() {
+        let html = highlight_code(r#"{"text": "<b>bold</b>"}"#, HighlightLanguage::JSON).unwrap();
+
+        assert!(html.contains("<span"));
+        assert!(!html.contains("<b>"));
+        assert!(html.contains("&lt;b&gt;"));
+        assert!(highlight_code("", HighlightLanguage::JSON).unwrap().len() < html.len());
+    }
+
+    #[cfg(feature = "js-formatting")]
+    #[test]
+    fn javascript_is_formatted() {
+        assert_eq!(format_src("var a=1", HighlightLanguage::JS).unwrap(), "var a = 1;\n");
+        assert!(format_src("var = = ;", HighlightLanguage::JS).is_err());
+    }
+
+    #[cfg(feature = "ruby-formatting")]
+    #[test]
+    fn ruby_is_formatted() {
+        let formatted = format_src("def hello;puts 'hi';end", HighlightLanguage::Ruby).unwrap();
+
+        assert!(formatted.starts_with("def hello\n"));
+        assert!(format_src("def (", HighlightLanguage::Ruby).is_err());
+    }
+
+    // A minimal MV/MZ game with two actors
+    fn mv_game(name: &str) -> (PathBuf, PathBuf, PathBuf) {
+        let dir = scratch(name);
+        let source = dir.join("data");
+        fs::create_dir_all(&source).unwrap();
+
+        let actor = |id: u32, name: &str, nickname: &str| {
+            format!(
+                r#"{{"id":{id},"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"{name}","nickname":"{nickname}","note":"","profile":"A hero"}}"#
+            )
+        };
+        fs::write(source.join("Actors.json"), format!("[null,{}]", actor(1, "Harold", "The Brave"))).unwrap();
+
+        (dir.clone(), source, dir.join("translation"))
+    }
+
+    /// Everything but the actors, which is what a read, write or purge of them leaves out
+    fn all_but_actors() -> FileFlags {
+        FileFlags::all().difference(FileFlags::Actors)
+    }
+
+    fn read_actors(source: &Path, translation: &Path, mode: Mode, hashes: HashMap<String, u64>) -> Result<HashMap<String, u64>, Error> {
+        read(
+            source,
+            translation,
+            mode,
+            EngineType::MVMZ,
+            DuplicateMode::Allow,
+            all_but_actors(),
+            BaseFlags::empty(),
+            false,
+            hashes,
+            "Test Game",
+            None,
+        )
+    }
+
+    const DEFAULT: Mode = Mode::Read { append: false, force: false };
+    const FORCE: Mode = Mode::Read { append: false, force: true };
+    const APPEND: Mode = Mode::Read { append: true, force: false };
+
+    #[test]
+    fn reading_extracts_the_text_and_reports_a_hash_per_file() {
+        let (dir, source, translation) = mv_game("read");
+
+        let hashes = read_actors(&source, &translation, DEFAULT, HashMap::default()).unwrap();
+
+        assert_eq!(hashes.len(), 1);
+        assert!(hashes.contains_key("actors"));
+        assert_eq!(
+            fs::read_to_string(translation.join("actors.txt")).unwrap(),
+            "<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>\nThe Brave<#>"
+        );
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn reading_keeps_a_translation_file_unless_forced() {
+        let (dir, source, translation) = mv_game("read-force");
+        read_actors(&source, &translation, DEFAULT, HashMap::default()).unwrap();
+
+        let file = translation.join("actors.txt");
+        fs::write(&file, "mine").unwrap();
+
+        read_actors(&source, &translation, DEFAULT, HashMap::default()).unwrap();
+        assert_eq!(fs::read_to_string(&file).unwrap(), "mine");
+
+        read_actors(&source, &translation, FORCE, HashMap::default()).unwrap();
+        assert!(fs::read_to_string(&file).unwrap().contains("Harold<#>"));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn appending_adds_new_text_and_keeps_translations() {
+        let (dir, source, translation) = mv_game("read-append");
+        let hashes = read_actors(&source, &translation, DEFAULT, HashMap::default()).unwrap();
+
+        let file = translation.join("actors.txt");
+        fs::write(&file, "<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nThe Brave<#>").unwrap();
+
+        // Nothing changed in the game
+        read_actors(&source, &translation, APPEND, hashes.clone()).unwrap();
+        assert!(fs::read_to_string(&file).unwrap().contains("Harold<#>Гарольд"));
+
+        // The game got a second actor
+        let actor = r#"{"id":2,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"Alice","nickname":"","note":"","profile":""}"#;
+        let first = fs::read_to_string(source.join("Actors.json")).unwrap();
+        fs::write(source.join("Actors.json"), first.replace("}]", &format!("}},{actor}]"))).unwrap();
+
+        let new_hashes = read_actors(&source, &translation, APPEND, hashes.clone()).unwrap();
+        let text = fs::read_to_string(&file).unwrap();
+        assert!(text.contains("Harold<#>Гарольд"), "{text}");
+        assert!(text.contains("Alice<#>"), "{text}");
+        // The file changed, so its hash did
+        assert_ne!(new_hashes["actors"], hashes["actors"]);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn reading_a_game_that_is_not_there_is_an_error() {
+        let dir = scratch("read-missing");
+
+        let error = read_actors(&dir.join("data"), &dir.join("translation"), DEFAULT, HashMap::default()).unwrap_err();
+
+        assert!(error.to_string().contains("data"), "{error}");
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn writing_puts_translations_into_a_copy_of_the_game() {
+        let (dir, source, translation) = mv_game("write");
+        read_actors(&source, &translation, DEFAULT, HashMap::default()).unwrap();
+        fs::write(
+            translation.join("actors.txt"),
+            "<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nThe Brave<#>Храбрый",
+        )
+        .unwrap();
+
+        let output = dir.join("output");
+        let write_actors = |skip: FileFlags| {
+            write(
+                &source,
+                &translation,
+                &output,
+                EngineType::MVMZ,
+                DuplicateMode::Allow,
+                BaseFlags::empty(),
+                skip,
+                None,
+                None,
+            )
+        };
+
+        let elapsed = write_actors(all_but_actors()).unwrap();
+        assert!(elapsed >= 0.0);
+
+        let written = fs::read_to_string(output.join("data/Actors.json")).unwrap();
+        assert!(written.contains("Гарольд") && written.contains("Храбрый"));
+        // What is not translated stays as it was
+        assert!(written.contains("A hero"));
+        assert!(!written.contains("Harold"));
+        // The game itself is not touched
+        assert!(fs::read_to_string(source.join("Actors.json")).unwrap().contains("Harold"));
+
+        // The actors are among the files to leave out: nothing is written for them
+        fs::remove_dir_all(&output).unwrap();
+        write_actors(FileFlags::all()).unwrap();
+        assert!(!output.join("data/Actors.json").exists());
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn purging_drops_the_entries_never_filled_in() {
+        let (dir, source, translation) = mv_game("purge");
+        read_actors(&source, &translation, DEFAULT, HashMap::default()).unwrap();
+        fs::write(
+            translation.join("actors.txt"),
+            "<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nThe Brave<#>",
+        )
+        .unwrap();
+
+        purge(
+            &source,
+            &translation,
+            EngineType::MVMZ,
+            DuplicateMode::Allow,
+            BaseFlags::empty(),
+            all_but_actors(),
+            None,
+            None,
+        )
+        .unwrap();
+
+        let text = fs::read_to_string(translation.join("actors.txt")).unwrap();
+        assert!(text.contains("Harold<#>Гарольд"), "{text}");
+        assert!(!text.contains("The Brave"), "{text}");
+
+        let _ = fs::remove_dir_all(dir);
+    }
 }
