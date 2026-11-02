@@ -1510,6 +1510,7 @@ mod tests {
     // The error message is process-wide, so everything that sets or reads it is one test: the others would race it.
     #[test]
     fn failures_are_reported_through_rpgm_error() {
+        let _guard = error_guard();
         let dir = TempDir::new("error");
         let project = dir.0.to_str().unwrap();
         let mut out = ByteBuffer::null();
@@ -1537,6 +1538,8 @@ mod tests {
 
     #[test]
     fn entity_file_cache_follows_the_path_and_the_modification_time() {
+        // The cache holds one file for the whole process, so the tests that read entities cannot overlap
+        let _guard = error_guard();
         let dir = TempDir::new("entity");
         let first = dir.0.join("Actors.json");
         let second = dir.0.join("Items.json");
@@ -1570,5 +1573,646 @@ mod tests {
         assert_eq!(read_entity_file(first_path).unwrap().as_slice(), b"two!");
 
         assert!(read_entity_file(dir.0.join("Missing.json").to_str().unwrap()).is_err());
+    }
+
+    // Helpers for calling the exported functions as C++ does
+
+    /// The error message is process-wide: whoever asserts on it holds this for the call and the read.
+    fn error_guard() -> std::sync::MutexGuard<'static, ()> {
+        static GUARD: Mutex<()> = Mutex::new(());
+        GUARD.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    fn last_error() -> String {
+        unsafe { ffi_to_str(rpgm_error()) }.to_owned()
+    }
+
+    fn view_bytes(bytes: &[u8]) -> ByteBuffer {
+        if bytes.is_empty() {
+            return ByteBuffer::null();
+        }
+
+        ByteBuffer {
+            ptr: bytes.as_ptr(),
+            len: bytes.len() as u32,
+            cap: 0,
+        }
+    }
+
+    /// Copies a string Rust handed out and gives it back, as C++ does.
+    fn take_string(string: FFIString) -> String {
+        let copy = unsafe { ffi_to_str(string) }.to_owned();
+        unsafe { rpgm_string_free(string) };
+        copy
+    }
+
+    fn take_bytes(buffer: ByteBuffer) -> Vec<u8> {
+        let copy = if buffer.len == 0 {
+            Vec::new()
+        } else {
+            unsafe { slice::from_raw_parts(buffer.ptr, buffer.len as usize) }.to_vec()
+        };
+        unsafe { rpgm_buffer_free(buffer) };
+        copy
+    }
+
+    /// The files to leave out, which is what read, write and purge take.
+    fn leaving_out(flags: FileFlags) -> Selected {
+        Selected {
+            map_indices: Bitset2048 { data: [0; 256] },
+            valid_indices: Bitset2048 { data: [0; 256] },
+            map_count: 0,
+            file_flags: flags,
+            padding: 0,
+        }
+    }
+
+    fn all_but_actors() -> Selected {
+        leaving_out(FileFlags::all().difference(FileFlags::Actors))
+    }
+
+    /// A game with one actor; returns its data folder.
+    fn mv_game(dir: &TempDir) -> PathBuf {
+        let source = dir.0.join("data");
+        fs::create_dir_all(&source).unwrap();
+        fs::write(
+            source.join("Actors.json"),
+            r#"[null,{"id":1,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"Harold","nickname":"The Brave","note":"","profile":"A hero"}]"#,
+        )
+        .unwrap();
+        source
+    }
+
+    fn read_game(source: &Path, translation: &Path, mode: ReadMode, hashes: ByteBuffer) -> (bool, ByteBuffer) {
+        let (source, translation) = (source.to_str().unwrap(), translation.to_str().unwrap());
+        let mut out = ByteBuffer::null();
+
+        let ok = unsafe {
+            rpgm_read(
+                view(source),
+                view(translation),
+                mode,
+                EngineType::MVMZ,
+                DuplicateMode::Allow,
+                all_but_actors(),
+                BaseFlags::empty(),
+                false,
+                hashes,
+                view("Test Game"),
+                FFIString::null(),
+                &mut out,
+            )
+        };
+
+        (ok, out)
+    }
+
+    #[test]
+    fn text_arriving_from_cpp_is_read_as_it_is_sent() {
+        let empty = FFIString { ptr: ptr::null(), len: 0, cap: 0 };
+
+        unsafe {
+            assert_eq!(ffi_to_str(empty), "");
+            assert_eq!(ffi_to_str(view("日本語")), "日本語");
+
+            assert_eq!(ffi_opt_string(empty), None);
+            assert_eq!(ffi_opt_string(view("key")), Some("key".to_owned()));
+
+            assert_eq!(ffi_opt_list(empty), None);
+            assert_eq!(ffi_opt_list(view("a,b,,c")), Some(vec!["a".into(), "b".into(), "".into(), "c".into()]));
+            assert_eq!(ffi_opt_list(view("single")), Some(vec!["single".to_owned()]));
+
+            assert!(ffi_encoding(empty).is_none());
+            assert_eq!(ffi_encoding(view("shift_jis")), Some(encoding_rs::SHIFT_JIS));
+            assert_eq!(ffi_encoding(view("windows-1252")), Some(encoding_rs::WINDOWS_1252));
+            // A label that no encoding has reads as UTF-8, like no label at all
+            assert!(ffi_encoding(view("not-an-encoding")).is_none());
+        }
+    }
+
+    #[test]
+    fn rust_strings_go_to_cpp_with_their_capacity() {
+        let owned = String::from("handed over");
+        let ffi = str_to_ffi(&owned);
+
+        assert_eq!(ffi.len as usize, owned.len());
+        assert_eq!(ffi.cap as usize, owned.capacity());
+        assert_eq!(ffi.ptr.cast::<u8>(), owned.as_ptr());
+
+        // Ownership goes with the value: it is freed by whoever holds it last
+        mem::forget(owned);
+        assert_eq!(take_string(ffi), "handed over");
+    }
+
+    #[test]
+    fn the_four_read_modes_differ_in_what_they_keep() {
+        let dir = TempDir::new("read-modes");
+        let source = mv_game(&dir);
+        let translation = dir.0.join("translation");
+        let file = translation.join("actors.txt");
+
+        let (ok, hashes) = read_game(&source, &translation, ReadMode::Default, ByteBuffer::null());
+        assert!(ok);
+        let hashes = take_bytes(hashes);
+        // A count, then a record of a 16-byte NUL-padded name and an 8-byte hash
+        assert_eq!(hashes.len(), 4 + 16 + 8);
+        assert_eq!(u32::from_le_bytes(hashes[..4].try_into().unwrap()), 1);
+        assert_eq!(&hashes[4..10], b"actors");
+        assert!(hashes[10..20].iter().all(|&byte| byte == 0));
+        assert_eq!(fs::read_to_string(&file).unwrap(), "<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>\nThe Brave<#>");
+
+        let mine = "<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nThe Brave<#>";
+
+        for (mode, kept) in [
+            (ReadMode::Default, true),
+            (ReadMode::DefaultForce, false),
+            (ReadMode::AppendDefault, true),
+            (ReadMode::AppendForce, true),
+        ] {
+            fs::write(&file, mine).unwrap();
+
+            let (ok, out) = read_game(&source, &translation, mode, ByteBuffer::null());
+            take_bytes(out);
+
+            assert!(ok, "{mode:?}");
+            assert_eq!(fs::read_to_string(&file).unwrap().contains("Harold<#>Гарольд"), kept, "{mode:?}");
+        }
+    }
+
+    #[test]
+    fn read_hashes_that_come_back_make_an_unchanged_file_be_skipped() {
+        let dir = TempDir::new("read-hashes");
+        let source = mv_game(&dir);
+        let translation = dir.0.join("translation");
+
+        let (ok, out) = read_game(&source, &translation, ReadMode::Default, ByteBuffer::null());
+        assert!(ok);
+        // What comes back is a count and then the records; what goes in is the records alone
+        let hashes = take_bytes(out);
+
+        // The game gets a second actor: with the old hashes the file is read again
+        let first = fs::read_to_string(source.join("Actors.json")).unwrap();
+        let actor = r#"{"id":2,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"Alice","nickname":"","note":"","profile":""}"#;
+        fs::write(source.join("Actors.json"), first.replace("}]", &format!("}},{actor}]"))).unwrap();
+
+        let (ok, out) = read_game(&source, &translation, ReadMode::AppendDefault, view_bytes(&hashes[4..]));
+        assert!(ok);
+        let new_hashes = take_bytes(out);
+
+        assert!(fs::read_to_string(translation.join("actors.txt")).unwrap().contains("Alice<#>"));
+        assert_ne!(hashes[20..28], new_hashes[20..28]);
+
+        // With the hashes it just returned, the file is unchanged since: nothing is read
+        fs::write(translation.join("actors.txt"), "kept as it is").unwrap();
+        let (ok, out) = read_game(&source, &translation, ReadMode::AppendDefault, view_bytes(&new_hashes[4..]));
+        assert!(ok);
+        assert_eq!(take_bytes(out), new_hashes);
+        assert_eq!(fs::read_to_string(translation.join("actors.txt")).unwrap(), "kept as it is");
+    }
+
+    #[test]
+    fn write_and_purge_work_through_the_ffi() {
+        let dir = TempDir::new("write-purge");
+        let source = mv_game(&dir);
+        let translation = dir.0.join("translation");
+        let output = dir.0.join("output");
+
+        let (ok, out) = read_game(&source, &translation, ReadMode::Default, ByteBuffer::null());
+        assert!(ok);
+        take_bytes(out);
+
+        fs::write(
+            translation.join("actors.txt"),
+            "<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nThe Brave<#>",
+        )
+        .unwrap();
+
+        let mut elapsed = -1.0f32;
+        let ok = unsafe {
+            rpgm_write(
+                view(source.to_str().unwrap()),
+                view(translation.to_str().unwrap()),
+                view(output.to_str().unwrap()),
+                EngineType::MVMZ,
+                DuplicateMode::Allow,
+                BaseFlags::empty(),
+                all_but_actors(),
+                FFIString::null(),
+                view("utf-8"),
+                &mut elapsed,
+            )
+        };
+
+        assert!(ok);
+        assert!(elapsed >= 0.0);
+        assert!(fs::read_to_string(output.join("data/Actors.json")).unwrap().contains("Гарольд"));
+
+        let ok = unsafe {
+            rpgm_purge(
+                view(source.to_str().unwrap()),
+                view(translation.to_str().unwrap()),
+                EngineType::MVMZ,
+                DuplicateMode::Allow,
+                BaseFlags::empty(),
+                all_but_actors(),
+                FFIString::null(),
+                FFIString::null(),
+            )
+        };
+
+        assert!(ok);
+        let purged = fs::read_to_string(translation.join("actors.txt")).unwrap();
+        assert!(purged.contains("Harold<#>Гарольд") && !purged.contains("The Brave"), "{purged}");
+    }
+
+    #[test]
+    fn read_write_and_purge_report_what_went_wrong() {
+        let _guard = error_guard();
+        let dir = TempDir::new("failures");
+        let missing = dir.0.join("data");
+        let translation = dir.0.join("translation");
+
+        let (ok, _) = read_game(&missing, &translation, ReadMode::Default, ByteBuffer::null());
+        assert!(!ok);
+        assert!(last_error().contains("data"), "{}", last_error());
+
+        let mut elapsed = 0.0f32;
+        let ok = unsafe {
+            rpgm_write(
+                view(missing.to_str().unwrap()),
+                view(translation.to_str().unwrap()),
+                view(dir.0.join("output").to_str().unwrap()),
+                EngineType::MVMZ,
+                DuplicateMode::Allow,
+                BaseFlags::empty(),
+                all_but_actors(),
+                FFIString::null(),
+                FFIString::null(),
+                &mut elapsed,
+            )
+        };
+        assert!(!ok);
+        assert!(!last_error().is_empty());
+
+        let ok = unsafe {
+            rpgm_purge(
+                view(missing.to_str().unwrap()),
+                view(translation.to_str().unwrap()),
+                EngineType::MVMZ,
+                DuplicateMode::Allow,
+                BaseFlags::empty(),
+                all_but_actors(),
+                FFIString::null(),
+                FFIString::null(),
+            )
+        };
+        assert!(!ok);
+        assert!(last_error().contains("data"), "{}", last_error());
+    }
+
+    #[test]
+    fn archives_are_extracted_through_the_ffi() {
+        let _guard = error_guard();
+        let dir = TempDir::new("archive");
+
+        let entries = [rpgmad_lib::ArchiveEntry { path: b"Data\\Actors.rxdata", data: b"actors" }];
+        let mut bytes = vec![0; rpgmad_lib::encrypted_buffer_size(&entries, rpgmad_lib::Engine::Older)];
+        rpgmad_lib::encrypt(&entries, rpgmad_lib::Engine::Older, &mut bytes).unwrap();
+
+        let archive = dir.0.join("Game.rgssad");
+        fs::write(&archive, &bytes).unwrap();
+        let out = dir.0.join("out");
+
+        let ok = unsafe { rpgm_extract_archive(view(archive.to_str().unwrap()), view(out.to_str().unwrap()), view("shift_jis")) };
+        assert!(ok);
+        assert_eq!(fs::read(out.join("Data/Actors.rxdata")).unwrap(), b"actors");
+
+        let garbage = dir.0.join("garbage.rgssad");
+        fs::write(&garbage, b"nothing like an archive").unwrap();
+        let ok = unsafe { rpgm_extract_archive(view(garbage.to_str().unwrap()), view(out.to_str().unwrap()), FFIString::null()) };
+        assert!(!ok);
+        assert!(!last_error().is_empty());
+    }
+
+    #[test]
+    fn translating_is_refused_for_script_endpoints() {
+        let _guard = error_guard();
+        let mut out = FFIString::null();
+
+        let ok = unsafe {
+            rpgm_translate_single(
+                view(r#"{"apiKey":"","yandexFolderId":"","endpoint":3}"#),
+                view("ja"),
+                view("en"),
+                view("text"),
+                &mut out,
+            )
+        };
+
+        assert!(!ok);
+        assert!(last_error().contains("Script endpoints"), "{}", last_error());
+        assert!(out.ptr.is_null());
+
+        let ok = unsafe { rpgm_translate_single(view("{"), view("ja"), view("en"), view("text"), &mut out) };
+        assert!(!ok);
+    }
+
+    #[test]
+    fn assets_are_decrypted_through_the_ffi() {
+        let _guard = error_guard();
+        let dir = TempDir::new("asset");
+
+        let mut png = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13, b'I', b'H', b'D', b'R'];
+        png.extend([0, 0, 0, 4, 0, 0, 0, 4, 8, 6, 0, 0, 0, 9, 9, 9, 9]);
+        let encrypted = rpgm_asset_decrypter_lib::encrypt(&png, rpgm_asset_decrypter_lib::FileType::Png, "d41d8cd98f00b204e9800998ecf8427e").unwrap();
+
+        let path = dir.0.join("picture.rpgmvp");
+        fs::write(&path, encrypted).unwrap();
+
+        let mut out = ByteBuffer::null();
+        assert!(unsafe { rpgm_decrypt_asset(view(path.to_str().unwrap()), &mut out) });
+
+        // The fake header stays in front, and C++ skips it
+        let decrypted = take_bytes(out);
+        assert_eq!(&decrypted[16..], png);
+
+        assert!(!unsafe { rpgm_decrypt_asset(view(dir.0.join("missing.rpgmvp").to_str().unwrap()), &mut out) });
+        assert!(!last_error().is_empty());
+    }
+
+    #[test]
+    fn game_files_are_shown_as_json_through_the_ffi() {
+        let _guard = error_guard();
+        let save = rvpacker_txt_rs_lib::save::dump(r#"{"gold":5}"#);
+        let mut out = FFIString::null();
+
+        assert!(unsafe { rpgm_generate_json(view(&save), view("file1.rpgsave"), &mut out) });
+        let json: serde_json::Value = serde_json::from_str(&take_string(out)).unwrap();
+        assert_eq!(json["gold"], 5);
+
+        // Empty content has a null pointer from C++
+        let mut out = FFIString::null();
+        assert!(!unsafe { rpgm_generate_json(FFIString::null(), view("file1.rpgsave"), &mut out) });
+        assert!(!unsafe { rpgm_generate_json(view("garbage"), view("Map0001.lmu"), &mut out) });
+        assert!(!last_error().is_empty());
+    }
+
+    #[test]
+    fn translation_files_are_exported_and_imported_through_the_ffi() {
+        let _guard = error_guard();
+        let text = "<!>ID<#>1\nHarold<#>Гарольд\nBob<#>";
+
+        let mut exported = ByteBuffer::null();
+        assert!(unsafe { rpgm_serde_export(view(text), SerdeFormat::Json, &mut exported) });
+        let bytes = take_bytes(exported);
+        assert!(String::from_utf8(bytes.clone()).unwrap().contains("Гарольд"));
+
+        let mut imported = FFIString::null();
+        assert!(unsafe { rpgm_serde_import(view_bytes(&bytes), SerdeFormat::Json, &mut imported) });
+        assert_eq!(take_string(imported), text);
+
+        // An empty file has a null pointer from C++: exported as no entries
+        let mut empty = ByteBuffer::null();
+        assert!(unsafe { rpgm_serde_export(FFIString::null(), SerdeFormat::Json, &mut empty) });
+        assert_eq!(take_bytes(empty), b"[]");
+
+        // Text that is not UTF-8 is refused, and so is an import with no entries
+        let bad = [0xFFu8, 0xFE];
+        let mut out = ByteBuffer::null();
+        let invalid = FFIString { ptr: bad.as_ptr().cast::<c_char>(), len: 2, cap: 0 };
+        assert!(!unsafe { rpgm_serde_export(invalid, SerdeFormat::Json, &mut out) });
+        assert!(!last_error().is_empty());
+
+        let mut out = FFIString::null();
+        assert!(!unsafe { rpgm_serde_import(view_bytes(b"[]"), SerdeFormat::Json, &mut out) });
+        assert!(last_error().contains("no entries"), "{}", last_error());
+    }
+
+    #[test]
+    fn the_title_of_a_game_comes_from_its_ini() {
+        let _guard = error_guard();
+        let dir = TempDir::new("ini");
+        let project = dir.0.to_str().unwrap();
+
+        fs::write(dir.0.join("Game.ini"), "[Game]\nTitle=My Game\n").unwrap();
+        let mut out = ByteBuffer::null();
+        let mut is_rm2k = true;
+        assert!(unsafe { rpgm_get_ini_title(view(project), &mut out, &mut is_rm2k) });
+        assert_eq!(take_bytes(out), b"My Game");
+        assert!(!is_rm2k);
+
+        fs::remove_file(dir.0.join("Game.ini")).unwrap();
+        fs::write(dir.0.join("RPG_RT.ini"), "[RPG_RT]\nGameTitle=Old Game\n").unwrap();
+        let mut out = ByteBuffer::null();
+        assert!(unsafe { rpgm_get_ini_title(view(project), &mut out, &mut is_rm2k) });
+        assert_eq!(take_bytes(out), b"Old Game");
+        assert!(is_rm2k);
+    }
+
+    #[test]
+    fn entity_data_is_read_by_path() {
+        let _guard = error_guard();
+        let dir = TempDir::new("entity-data");
+        let source = mv_game(&dir);
+        let path = source.join("Actors.json");
+        let path = path.to_str().unwrap();
+
+        let read = |paths: &str, capacity: u32| -> (bool, Vec<String>) {
+            let mut out = [FFIString::null(); 4];
+            let ok = unsafe {
+                rpgm_get_entity_data(
+                    view(path),
+                    EngineType::MVMZ,
+                    RPGMFileType::Actors,
+                    view(paths),
+                    FFIString::null(),
+                    out.as_mut_ptr(),
+                    capacity,
+                )
+            };
+
+            let values = out.into_iter().filter(|value| !value.ptr.is_null()).map(take_string).collect();
+            (ok, values)
+        };
+
+        // The entry at index 1, then its name
+        assert_eq!(read("\x031\x04\x01name", 4), (true, vec!["Harold".to_owned()]));
+        // Several keys of the last segment come out in order
+        assert_eq!(
+            read("\x031\x04\x01name\x02nickname", 4),
+            (true, vec!["Harold".to_owned(), "The Brave".to_owned()])
+        );
+
+        // More values than the caller made room for
+        let (ok, values) = read("\x031\x04\x01name\x02nickname", 1);
+        assert!(!ok && values.is_empty());
+        assert!(last_error().contains("2 values"), "{}", last_error());
+
+        // A segment of a type that does not exist, and a list of keys before the last segment
+        let (ok, _) = read("\x09junk", 4);
+        assert!(!ok);
+        assert!(last_error().contains("Actors.json"), "{}", last_error());
+        let (ok, _) = read("\x01name\x02nickname\x04\x01name", 4);
+        assert!(!ok);
+
+        // The file is gone
+        fs::remove_file(path).unwrap();
+        let (ok, _) = read("\x031\x04\x01name", 4);
+        assert!(!ok);
+    }
+
+    #[test]
+    fn rm2k_databases_that_are_not_there_or_not_databases_are_errors() {
+        let _guard = error_guard();
+        let dir = TempDir::new("rm2k");
+        let path = dir.0.join("RPG_RT.ldb");
+        let mut out = FFIString::null();
+
+        assert!(!unsafe { rpgm_get_rm2k_entity_name(view(path.to_str().unwrap()), Rm2kEntity::Actors, 1, FFIString::null(), &mut out) });
+        assert!(!unsafe { rpgm_get_rm2k_system_graphic_name(view(path.to_str().unwrap()), FFIString::null(), &mut out) });
+
+        fs::write(&path, b"not a database").unwrap();
+        assert!(!unsafe { rpgm_get_rm2k_entity_name(view(path.to_str().unwrap()), Rm2kEntity::Actors, 1, FFIString::null(), &mut out) });
+        assert!(!unsafe { rpgm_get_rm2k_system_graphic_name(view(path.to_str().unwrap()), view("shift_jis"), &mut out) });
+        assert!(!last_error().is_empty());
+    }
+
+    #[test]
+    fn save_summaries_are_given_as_json() {
+        let _guard = error_guard();
+        let dir = TempDir::new("save");
+        let path = dir.0.join("file1.rpgsave");
+
+        let save = rvpacker_txt_rs_lib::save::dump(
+            r#"{"system":{"_framesOnSave":7200},"map":{"_mapId":3},"party":{"_gold":250,"_actors":[1],"_items":{"2":5}},"actors":{"_data":[null,{"_actorId":1,"_name":"Harold","_nickname":"The Brave","_classId":2,"_level":4,"_hp":30,"_mp":8,"_tp":1}]},"switches":{"_data":[null,true,false]},"variables":{"_data":[null,0,42]}}"#,
+        );
+        fs::write(&path, save).unwrap();
+
+        let mut out = FFIString::null();
+        assert!(unsafe { rpgm_get_save_summary(view(path.to_str().unwrap()), EngineType::MVMZ, FFIString::null(), &mut out) });
+
+        let summary: serde_json::Value = serde_json::from_str(&take_string(out)).unwrap();
+        assert_eq!(summary["frames"], 7200);
+        assert_eq!(summary["mapId"], 3);
+        assert_eq!(summary["gold"], 250);
+        assert_eq!(summary["party"], serde_json::json!([1]));
+        assert_eq!(summary["actors"][0]["name"], "Harold");
+        assert_eq!(summary["actors"][0]["level"], 4);
+        assert_eq!(summary["items"][0], serde_json::json!({"id": 2, "count": 5}));
+        assert_eq!(summary["switches"], serde_json::json!([false, true, false]));
+        assert_eq!(summary["variables"], serde_json::json!([0, 0, 42]));
+
+        fs::write(&path, b"not a save").unwrap();
+        let mut out = FFIString::null();
+        assert!(!unsafe { rpgm_get_save_summary(view(path.to_str().unwrap()), EngineType::MVMZ, FFIString::null(), &mut out) });
+        assert!(!unsafe { rpgm_get_save_summary(view(dir.0.join("missing").to_str().unwrap()), EngineType::VXAce, FFIString::null(), &mut out) });
+        assert!(!last_error().is_empty());
+    }
+
+    #[test]
+    fn credentials_that_were_never_stored_are_not_found() {
+        let account = format!("rpgmtranslate-test-never-stored-{}", std::process::id());
+        let mut out = FFIString { ptr: ptr::NonNull::dangling().as_ptr(), len: 1, cap: 0 };
+
+        // Neither a missing entry nor a machine without a keyring is a secret
+        assert!(!unsafe { rpgm_get_credential(view(&account), &mut out) });
+        assert!(out.ptr.is_null());
+    }
+
+    #[test]
+    fn hashing_bytes_is_stable_and_accepts_nothing() {
+        let hash = |bytes: &[u8]| unsafe { gxhash(if bytes.is_empty() { ptr::null() } else { bytes.as_ptr().cast() }, bytes.len()) };
+
+        assert_eq!(hash(b"same"), hash(b"same"));
+        assert_ne!(hash(b"same"), hash(b"other"));
+        // Empty input has a null pointer from C++
+        assert_eq!(hash(b""), hash(b""));
+
+        #[cfg(feature = "gxhash")]
+        assert_eq!(hash(b"abc"), gxhash::gxhash64(b"abc", 0));
+    }
+
+    #[test]
+    fn text_is_counted_through_the_ffi() {
+        let counts = unsafe { rpgm_count_text(view("Hello world")) };
+        assert_eq!(counts.words, 2);
+
+        let none = unsafe { rpgm_count_text(FFIString::null()) };
+        assert_eq!((none.words, none.characters), (0, 0));
+    }
+
+    #[test]
+    fn dictionaries_that_are_not_installed_are_not_an_error() {
+        let dir = TempDir::new("lindera");
+
+        // Nothing to find under the root: nothing is set, nothing fails
+        unsafe { init_lindera_dictionaries(view(dir.0.to_str().unwrap())) };
+        unsafe { init_lindera_dictionaries(FFIString::null()) };
+    }
+
+    static LOGGED: Mutex<Vec<(u8, String)>> = Mutex::new(Vec::new());
+
+    extern "C" fn record(level: u8, text: FFIString) {
+        LOGGED
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .push((level, unsafe { ffi_to_str(text) }.to_owned()));
+    }
+
+    extern "C" fn record_elsewhere(_: u8, _: FFIString) {
+        panic!("a second callback must not replace the first");
+    }
+
+    #[test]
+    fn log_records_reach_the_callback_with_the_cpp_levels() {
+        init_rust_logger(record);
+        // Only the first callback counts
+        init_rust_logger(record_elsewhere);
+
+        log::error!(target: "ffi-test", "e");
+        log::warn!(target: "ffi-test", "w");
+        log::info!(target: "ffi-test", "i");
+        log::debug!(target: "ffi-test", "d");
+        log::trace!(target: "ffi-test", "t");
+
+        let logged = LOGGED.lock().unwrap_or_else(PoisonError::into_inner);
+        let ours: Vec<_> = logged.iter().filter(|(_, text)| text.starts_with("[ffi-test] ")).cloned().collect();
+
+        // The C++ levels count from 0 (Error), the `log` ones from 1
+        let mut expected = vec![
+            (0, "[ffi-test] e".to_owned()),
+            (1, "[ffi-test] w".to_owned()),
+            (2, "[ffi-test] i".to_owned()),
+            (3, "[ffi-test] d".to_owned()),
+        ];
+
+        // Some dependencies cap the level at compile time, which removes the trace calls of this crate too
+        if log::STATIC_MAX_LEVEL >= log::LevelFilter::Trace {
+            expected.push((4, "[ffi-test] t".to_owned()));
+        }
+
+        assert_eq!(ours, expected);
+    }
+
+    #[cfg(feature = "json-highlighting")]
+    #[test]
+    fn code_is_highlighted_through_the_ffi() {
+        let mut out = FFIString::null();
+
+        assert!(unsafe { rpgm_highlight_code(view(r#"{"a": 1}"#), HighlightLanguage::JSON, &mut out) });
+        assert!(take_string(out).contains("<span"));
+    }
+
+    #[cfg(feature = "js-formatting")]
+    #[test]
+    fn source_is_formatted_through_the_ffi() {
+        let _guard = error_guard();
+        let mut out = FFIString::null();
+
+        assert!(unsafe { rpgm_format_src(view("var a=1"), HighlightLanguage::JS, &mut out) });
+        assert_eq!(take_string(out), "var a = 1;\n");
+
+        assert!(!unsafe { rpgm_format_src(view("var = ;"), HighlightLanguage::JS, &mut out) });
+        assert!(!last_error().is_empty());
     }
 }

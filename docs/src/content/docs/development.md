@@ -258,7 +258,7 @@ cmake --build build --target coverage
 - `lcov.info` - for editors and CI services.
 - `untested-sources.txt` - the `.cpp` files no test compiles. The table cannot show those, as a file that was never built has no coverage data, so this list is where the real zeroes are.
 
-The Rust half is measured separately, with `cargo llvm-cov --lib --features snowball` from `rust/` (`cargo install cargo-llvm-cov` and `rustup component add llvm-tools-preview` first).
+The Rust half is measured separately, with `cargo llvm-cov --lib --features snowball` from `rust/` (`cargo install cargo-llvm-cov` and `rustup component add llvm-tools-preview` first). Its table counts the lines of the `mod tests` blocks too, so the real figure for the application code is lower. Add `serde-csv,serde-xml,serde-xlsx,serde-yaml,json-highlighting,js-highlighting,ruby-highlighting,js-formatting,ruby-formatting` to `--features` to also run the tests of those backends.
 
 ## Updating translations
 
