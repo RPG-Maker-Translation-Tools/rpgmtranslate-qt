@@ -216,7 +216,12 @@ auto qstringToJS(JSContext* const ctx, const QStringView qsv) -> JSValue {
 }
 
 auto qstringToJS(JSContext* const ctx, const QLatin1StringView qsv) -> JSValue {
-    return JS_NewStringLen(ctx, qsv.constData(), qsv.size());
+    // JS takes UTF-8, and a Latin-1 byte above 0x7F is not valid UTF-8 on its own, so only ASCII can be passed as it is
+    if (ranges::all_of(qsv, [](const char chr) -> bool { return static_cast<u8>(chr) < 0x80; })) {
+        return JS_NewStringLen(ctx, qsv.constData(), qsv.size());
+    }
+
+    return qstringToJS(ctx, QStringView(QString::fromLatin1(qsv)));
 }
 
 auto jsToQString(JSContext* const ctx, const JSValueConst val) -> QString {
