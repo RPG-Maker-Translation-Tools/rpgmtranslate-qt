@@ -674,8 +674,9 @@ pub(crate) fn format_src(src: &str, lang: HighlightLanguage) -> Result<String, E
             use dprint_plugin_typescript::{configuration::*, *};
             let config = ConfigurationBuilder::new().build();
 
+            // The path is how dprint finds the language and the file's specifier: an empty one is refused
             let result = format_text(FormatTextOptions {
-                path: Path::new(""),
+                path: Path::new("script.js"),
                 extension: None,
                 text: src.into(),
                 config: &config,
