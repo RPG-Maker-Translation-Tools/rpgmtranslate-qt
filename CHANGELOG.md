@@ -15,6 +15,11 @@ Versions may carry a codename alongside the semver number.
 - Translation files with Windows line endings are read as they are and are no longer rewritten when a project opens. Files the app saves use `\n` line endings.
 - Wayland support is an optional build flag (`ENABLE_WAYLAND`, on by default) instead of being tied to Linux, so FreeBSD builds can use it too and builds against a Qt without WaylandClient no longer fail.
 
+### Fixed
+
+- A custom lint marked case-insensitive made the pattern of every custom lint invalid, so none of them reported anything while it was enabled.
+- Scripts that were handed accented text from a fixed Latin-1 string received a replacement character instead of the letter.
+
 ### Planned for 1.3 (November)
 
 - Finishing built-in git client.
