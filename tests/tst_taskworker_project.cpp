@@ -118,6 +118,10 @@ auto withText(QString text, const QString& from, const QString& with) -> QString
     return text.replace(from, with);
 }
 
+// Comments, a line break, an empty translation and a second translation column
+const QString SERDE_ACTORS =
+    u"<!>ID<#>1\n<!>NAME<#>Harold\nHarold<#>Гарольд\nLine1\\#Line2<#>Строка1\\#Строка2\nBob<#>\nTwo<#>Один<#>Два"_s;
+
 const QString ACTORS = u"Harold<#>Гарольд\nAlice<#>Алиса\nLine1\\#Line2<#>Строка1\\#Строка2\nBob<#>"_s;
 }  // namespace
 
@@ -977,6 +981,201 @@ class TestTaskWorkerProject final : public QObject {
         const QString text = project.read(u"actors"_s);
         QVERIFY(text.contains(u"Harold<#>Гарольд"_qsv));
         QVERIFY(!text.contains(u"The Brave"_qsv));
+    }
+
+    // Serde: the translation files as CSV, XLSX, XML, JSON and YAML
+    void serdeRoundTripsEveryFormat_data() {
+        QTest::addColumn<SerdeFormat>("format");
+        QTest::addColumn<QString>("extension");
+
+        QTest::newRow("csv") << SerdeFormat::Csv << u".csv"_s;
+        QTest::newRow("xlsx") << SerdeFormat::Xlsx << u".xlsx"_s;
+        QTest::newRow("xml") << SerdeFormat::Xml << u".xml"_s;
+        QTest::newRow("json") << SerdeFormat::Json << u".json"_s;
+        QTest::newRow("yaml") << SerdeFormat::Yaml << u".yaml"_s;
+    }
+
+    void serdeRoundTripsEveryFormat() {
+        QFETCH(const SerdeFormat, format);
+        QFETCH(const QString, extension);
+
+        Project project;
+        const QString text = SERDE_ACTORS;
+        project.write(u"actors"_s, text);
+
+        QTemporaryDir exportDir;
+        QVERIFY(exportDir.isValid());
+
+        vector<FilenameArray> filenames{ filenameOf("actors") };
+        const auto exported = project.worker.serdeExport(project.task(TaskKind::SerdeExport), filenames, exportDir.path(), format);
+
+        QVERIFY2(exported.has_value(), errorOf(exported).constData());
+        QCOMPARE(exported->skippedCount, u32{ 0 });
+        QVERIFY(QFile::exists(exportDir.filePath(u"actors"_s + extension)));
+        QVERIFY(QFileInfo(exportDir.filePath(u"actors"_s + extension)).size() > 0);
+
+        // The file is replaced by what the export held
+        project.write(u"actors"_s, u"Other<#>text"_s);
+
+        filenames = { filenameOf("actors") };
+        const auto imported = project.worker.serdeImport(project.task(TaskKind::SerdeImport), filenames, exportDir.path(), format);
+
+        QVERIFY2(imported.has_value(), errorOf(imported).constData());
+        QCOMPARE(imported->skippedCount, u32{ 0 });
+        QCOMPARE(project.read(u"actors"_s), text);
+    }
+
+    void serdeImportTakesHandEditedFiles() {
+        Project project;
+        project.write(u"actors"_s, SERDE_ACTORS);
+
+        QTemporaryDir exportDir;
+        QVERIFY(exportDir.isValid());
+
+        vector<FilenameArray> filenames{ filenameOf("actors") };
+        QVERIFY(project.worker.serdeExport(project.task(TaskKind::SerdeExport), filenames, exportDir.path(), SerdeFormat::Json).has_value());
+
+        const QString path = exportDir.filePath(u"actors.json"_s);
+        QByteArray json = readFile(path);
+        QVERIFY(json.contains("Гарольд"));
+        json.replace("Гарольд", "Хэл");
+        writeFile(path, json);
+
+        filenames = { filenameOf("actors") };
+        QVERIFY(project.worker.serdeImport(project.task(TaskKind::SerdeImport), filenames, exportDir.path(), SerdeFormat::Json).has_value());
+
+        QCOMPARE(project.read(u"actors"_s), withText(SERDE_ACTORS, u"Гарольд"_s, u"Хэл"_s));
+    }
+
+    void serdeExportsWithLineFeedsOnly() {
+        Project project;
+        project.write(u"actors"_s, QString(SERDE_ACTORS).replace(u'\n', u"\r\n"_s));
+
+        QTemporaryDir exportDir;
+        QVERIFY(exportDir.isValid());
+
+        vector<FilenameArray> filenames{ filenameOf("actors") };
+        QVERIFY(project.worker.serdeExport(project.task(TaskKind::SerdeExport), filenames, exportDir.path(), SerdeFormat::Json).has_value());
+
+        // A `\r` would show in the JSON as an escape of its own
+        QVERIFY(!readFile(exportDir.filePath(u"actors.json"_s)).contains("\\r"));
+
+        project.write(u"actors"_s, u"Other<#>text"_s);
+        filenames = { filenameOf("actors") };
+        QVERIFY(project.worker.serdeImport(project.task(TaskKind::SerdeImport), filenames, exportDir.path(), SerdeFormat::Json).has_value());
+        QCOMPARE(project.read(u"actors"_s), SERDE_ACTORS);
+    }
+
+    void serdeExportSkipsFilesItCannotRead() {
+        Project project;
+        project.write(u"actors"_s, SERDE_ACTORS);
+
+        QTemporaryDir exportDir;
+        QVERIFY(exportDir.isValid());
+
+        vector<FilenameArray> filenames{ filenameOf("actors"), filenameOf("items") };
+        QTest::ignoreMessage(QtWarningMsg, QRegularExpression(u"Failed to open file"_s));
+        const auto exported = project.worker.serdeExport(project.task(TaskKind::SerdeExport), filenames, exportDir.path(), SerdeFormat::Csv);
+
+        QVERIFY(exported.has_value());
+        QCOMPARE(exported->skippedCount, u32{ 1 });
+        // The skipped ones come first
+        QCOMPARE(exported->filenames.front(), filenameOf("items"));
+        QVERIFY(QFile::exists(exportDir.filePath(u"actors.csv"_s)));
+        QVERIFY(!QFile::exists(exportDir.filePath(u"items.csv"_s)));
+    }
+
+    void serdeExportToAMissingFolderSkipsTheFile() {
+        Project project;
+        project.write(u"actors"_s, SERDE_ACTORS);
+
+        QTemporaryDir exportDir;
+        QVERIFY(exportDir.isValid());
+
+        vector<FilenameArray> filenames{ filenameOf("actors") };
+        const auto exported = project.worker.serdeExport(
+            project.task(TaskKind::SerdeExport),
+            filenames,
+            exportDir.filePath(u"no/such/folder"_s),
+            SerdeFormat::Json
+        );
+
+        QVERIFY(exported.has_value());
+        QCOMPARE(exported->skippedCount, u32{ 1 });
+    }
+
+    void serdeImportSkipsMissingAndBrokenFiles_data() {
+        QTest::addColumn<SerdeFormat>("format");
+        QTest::addColumn<QByteArray>("content");
+
+        QTest::newRow("csv without the columns") << SerdeFormat::Csv << QByteArray("not,a,translation\n1,2,3\n");
+        QTest::newRow("json that is not json") << SerdeFormat::Json << QByteArray("{ this is not json");
+        QTest::newRow("json of another shape") << SerdeFormat::Json << QByteArray(R"({"unexpected":true})");
+        QTest::newRow("xml that is not xml") << SerdeFormat::Xml << QByteArray("<open><unclosed>");
+        QTest::newRow("xlsx that is not a workbook") << SerdeFormat::Xlsx << QByteArray("PK nope");
+        QTest::newRow("yaml that is not a list") << SerdeFormat::Yaml << QByteArray("key: [unclosed");
+    }
+
+    void serdeImportSkipsMissingAndBrokenFiles() {
+        QFETCH(const SerdeFormat, format);
+        QFETCH(const QByteArray, content);
+
+        Project project;
+        project.write(u"actors"_s, SERDE_ACTORS);
+        project.write(u"items"_s, u"I<#>i"_s);
+
+        QTemporaryDir inputDir;
+        QVERIFY(inputDir.isValid());
+        writeFile(inputDir.filePath(u"actors"_s + QString::fromUtf8(QByteArray(serdeFormatExtension(format).toUtf8()))), content);
+        // There is no file for `items` at all
+
+        vector<FilenameArray> filenames{ filenameOf("actors"), filenameOf("items") };
+        const auto imported = project.worker.serdeImport(project.task(TaskKind::SerdeImport), filenames, inputDir.path(), format);
+
+        QVERIFY(imported.has_value());
+        QCOMPARE(imported->skippedCount, u32{ 2 });
+        // Nothing was replaced
+        QCOMPARE(project.read(u"actors"_s), SERDE_ACTORS);
+        QCOMPARE(project.read(u"items"_s), u"I<#>i"_s);
+    }
+
+    void serdeWorksOnTheMapsInMemory() {
+        Project project;
+        project.mapSections.emplace(1, u"Hello<#>Salut\nBye<#>"_s);
+
+        QTemporaryDir exportDir;
+        QVERIFY(exportDir.isValid());
+
+        vector<FilenameArray> filenames{ filenameOf("map1") };
+        QVERIFY(project.worker.serdeExport(project.task(TaskKind::SerdeExport), filenames, exportDir.path(), SerdeFormat::Json).has_value());
+        QVERIFY(QFile::exists(exportDir.filePath(u"map1.json"_s)));
+
+        project.mapSections[1] = u"Changed<#>x"_s;
+
+        filenames = { filenameOf("map1") };
+        const auto imported = project.worker.serdeImport(project.task(TaskKind::SerdeImport), filenames, exportDir.path(), SerdeFormat::Json);
+
+        QVERIFY(imported.has_value());
+        QCOMPARE(imported->skippedCount, u32{ 0 });
+        QCOMPARE(project.mapSections[1], u"Hello<#>Salut\nBye<#>"_s);
+        QVERIFY(!QFile::exists(project.path(u"map1"_s)));
+    }
+
+    void serdeStopsWhenInterrupted() {
+        Project project;
+        project.write(u"actors"_s, SERDE_ACTORS);
+
+        QTemporaryDir exportDir;
+        QVERIFY(exportDir.isValid());
+
+        const TaskToken task = project.task(TaskKind::SerdeExport);
+        task->interrupt();
+
+        vector<FilenameArray> filenames{ filenameOf("actors") };
+        const auto exported = project.worker.serdeExport(task, filenames, exportDir.path(), SerdeFormat::Json);
+
+        QVERIFY(exported.has_value());
+        QVERIFY(!QFile::exists(exportDir.filePath(u"actors.json"_s)));
     }
 
     // Statistics

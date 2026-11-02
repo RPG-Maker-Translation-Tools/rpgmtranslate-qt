@@ -515,7 +515,33 @@ pub(crate) fn serde_export(content: &str, format: SerdeFormat) -> Result<Vec<u8>
     .map_err(|err| Error::Serde(err.to_string()))
 }
 
+/// The translation text of an exported file.
+///
+/// The importers of the library read what they are given as far as they can: a CSV of other columns, or an XML that
+/// never closes, gives some text or none. That replaces a translation file, so a file that holds no entries is refused,
+/// and so is a CSV that does not start with the header the export writes.
 pub(crate) fn serde_import(bytes: &[u8], format: SerdeFormat) -> Result<String, Error> {
+    #[cfg(feature = "serde-csv")]
+    if let SerdeFormat::Csv = format {
+        let text = std::str::from_utf8(bytes).map_err(|err| Error::Serde(err.to_string()))?;
+
+        if !text.trim_start_matches('\u{feff}').starts_with("type,source,translation_count") {
+            return Err(Error::Serde(
+                "the first row is not the header `type,source,translation_count,...` of an exported file".to_owned(),
+            ));
+        }
+    }
+
+    let imported = import_entries(bytes, format)?;
+
+    if imported.trim().is_empty() {
+        return Err(Error::Serde("the file holds no entries".to_owned()));
+    }
+
+    Ok(imported)
+}
+
+fn import_entries(bytes: &[u8], format: SerdeFormat) -> Result<String, Error> {
     #[cfg(feature = "serde-csv")]
     use rvpacker_txt_rs_lib::serde::import_csv;
     use rvpacker_txt_rs_lib::serde::import_json;
@@ -728,5 +754,47 @@ mod tests {
         assert!(matches!(get_ini_title(dir.to_str().unwrap()), Err(Error::Rvpacker(_))));
 
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn serde_json_round_trips_a_translation_file() {
+        let text = "<!>ID<#>1\nHarold<#>Гарольд\nLine1\\#Line2<#>a<#>b\nBob<#>";
+        let exported = serde_export(text, SerdeFormat::Json).unwrap();
+
+        assert_eq!(serde_import(&exported, SerdeFormat::Json).unwrap(), text);
+    }
+
+    #[test]
+    fn serde_import_refuses_a_file_without_entries() {
+        // It would replace a translation file with nothing
+        assert!(serde_import(b"[]", SerdeFormat::Json).is_err());
+        assert!(serde_import(b"", SerdeFormat::Json).is_err());
+        assert!(serde_import(b"  \n", SerdeFormat::Json).is_err());
+    }
+
+    #[test]
+    fn serde_import_refuses_text_that_is_not_utf8() {
+        assert!(serde_import(&[0xFF, 0xFE, 0x00], SerdeFormat::Json).is_err());
+    }
+
+    #[cfg(feature = "serde-csv")]
+    #[test]
+    fn serde_csv_needs_the_header_of_an_export() {
+        let exported = serde_export("A<#>b", SerdeFormat::Csv).unwrap();
+        assert_eq!(serde_import(&exported, SerdeFormat::Csv).unwrap(), "A<#>b");
+
+        // A spreadsheet adds a byte order mark when it saves a file as UTF-8
+        let mut with_mark = "\u{feff}".as_bytes().to_vec();
+        with_mark.extend(&exported);
+        assert_eq!(serde_import(&with_mark, SerdeFormat::Csv).unwrap(), "A<#>b");
+
+        assert!(serde_import(b"not,a,translation\n1,2,3\n", SerdeFormat::Csv).is_err());
+        assert!(serde_import(b"type,source,translation_count\n", SerdeFormat::Csv).is_err());
+    }
+
+    #[cfg(feature = "serde-xml")]
+    #[test]
+    fn serde_xml_without_entries_is_refused() {
+        assert!(serde_import(b"<open><unclosed>", SerdeFormat::Xml).is_err());
     }
 }
