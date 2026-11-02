@@ -89,6 +89,15 @@ add_app_test(tst_scripthost
     ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
 )
 
+add_app_test(tst_models
+    tst_models.cpp
+    ${APP_SOURCE_DIR}/TabPanel/TabListModel.cpp
+    ${APP_SOURCE_DIR}/TranslationTable/TranslationTableModel.cpp
+    ${APP_SOURCE_DIR}/utilities/Utils.cpp
+    ${APP_SOURCE_DIR}/utilities/Notice.cpp
+    ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
+)
+
 add_app_test(tst_utils
     tst_utils.cpp
     ${APP_SOURCE_DIR}/utilities/Utils.cpp
