@@ -39,6 +39,29 @@ add_app_test(tst_lints
     tst_lints.cpp
 )
 
+add_app_test(tst_strings
+    tst_strings.cpp
+    ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
+)
+
+add_app_test(tst_packedbits
+    tst_packedbits.cpp
+)
+
+add_app_test(tst_projectsettings
+    tst_projectsettings.cpp
+    ${APP_SOURCE_DIR}/utilities/Utils.cpp
+    ${APP_SOURCE_DIR}/utilities/Notice.cpp
+    ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
+)
+
+add_app_test(tst_notice
+    tst_notice.cpp
+    ${APP_SOURCE_DIR}/utilities/Notice.cpp
+    ${APP_SOURCE_DIR}/utilities/Utils.cpp
+    ${APP_SOURCE_DIR}/utilities/QtStrings.cpp
+)
+
 add_app_test(tst_utils
     tst_utils.cpp
     ${APP_SOURCE_DIR}/utilities/Utils.cpp
