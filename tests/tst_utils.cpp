@@ -59,7 +59,7 @@ class TestUtils final : public QObject {
         const QString line = u"src<#>first<#>second<#>"_s;
         const QSVList parts = ::lineParts(line, 1, u"f"_s);
 
-        const Translation translation = getTranslation(parts);
+        const struct Translation translation = getTranslation(parts);
 
         QCOMPARE(translation.getTranslation().toString(), u"second"_s);
         // Counted from the source column, which is 0
@@ -70,7 +70,7 @@ class TestUtils final : public QObject {
         const QString line = u"src<#><#>"_s;
         const QSVList parts = ::lineParts(line, 1, u"f"_s);
 
-        const Translation translation = getTranslation(parts);
+        const struct Translation translation = getTranslation(parts);
 
         QVERIFY(translation.getTranslation().isEmpty());
         QCOMPARE(translation.getIndex(), u8{ 0 });
@@ -311,7 +311,7 @@ class TestUtils final : public QObject {
 
     void taggedTranslationKeepsTheViewAndTheIndex() {
         const QString text = u"translated text"_s;
-        Translation translation(text, 3);
+        struct Translation translation(text, 3);
 
         QCOMPARE(translation.getIndex(), u8{ 3 });
         QCOMPARE(translation.getTranslation().data(), text.constData());

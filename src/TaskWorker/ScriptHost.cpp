@@ -311,7 +311,7 @@ ScriptRuntime::ScriptRuntime(const QDeadlineTimer deadline, const Task* const ta
     JS_SetMemoryLimit(rt_, SCRIPT_MEMORY_LIMIT);
     JS_SetMaxStackSize(rt_, SCRIPT_MAX_STACK_SIZE);
     // Also stops when the task is aborted, so a script stuck in a loop doesn't outlive the Abort button by the timeout
-    JS_SetInterruptHandler(rt_, [](JSRuntime*, auto* opaque) -> i32 {
+    JS_SetInterruptHandler(rt_, [](auto*, auto* opaque) -> i32 {
         const auto* const state = static_cast<const HostState*>(opaque);
         return state->deadline->hasExpired() || (state->task != nullptr && state->task->interrupted()) ? 1 : 0;
     }, &host);

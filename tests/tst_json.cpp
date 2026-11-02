@@ -6,13 +6,14 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
-namespace {
+// Not in the anonymous namespace: glaze's reflection can't name a type without external linkage
 struct Sample {
     i32 count = 5;
     string name = "default";
     vector<i32> list;
 };
 
+namespace {
 auto filenameOf(const string_view name) -> FilenameArray {
     FilenameArray filename{};
     std::copy_n(name.data(), name.size(), filename.data());
@@ -88,9 +89,9 @@ class TestJson final : public QObject {
 
     // A name that does not fit a `FilenameArray` would be copied past its end: the file is refused instead
     void hashesRefuseNamesThatDoNotFit() {
-        QVERIFY(!readLenient<HashMap<FilenameArray, u64>>(R"({"a_much_too_long_filename.json":1})").has_value());
-        QVERIFY(!readLenient<HashMap<FilenameArray, u64>>(R"({"ab":1})").has_value());
-        QVERIFY(readLenient<HashMap<FilenameArray, u64>>("{}").has_value());
+        QVERIFY(!(readLenient<HashMap<FilenameArray, u64>>(R"({"a_much_too_long_filename.json":1})").has_value()));
+        QVERIFY(!(readLenient<HashMap<FilenameArray, u64>>(R"({"ab":1})").has_value()));
+        QVERIFY((readLenient<HashMap<FilenameArray, u64>>("{}").has_value()));
     }
 
     void jsonFileIsReadFromItsPath() {

@@ -61,7 +61,7 @@ class TestStrings final : public QObject {
         QCOMPARE(joinQSVList(QSVList{ u""_qsv, u""_qsv, u""_qsv }, u'|'), u"||"_s);
     }
 
-    void lastPathComponent_data() {
+    void lastComponent_data() {
         QTest::addColumn<QString>("path");
         QTest::addColumn<QString>("expected");
 
@@ -74,7 +74,7 @@ class TestStrings final : public QObject {
         QTest::newRow("empty") << QString() << QString();
     }
 
-    void lastPathComponent_() {
+    void lastComponent() {
         QFETCH(const QString, path);
         QFETCH(const QString, expected);
 
@@ -111,10 +111,10 @@ class TestStrings final : public QObject {
     }
 
     void builderNumbers() {
-        QCOMPARE(QString::fromStdString(string("n=" % 42)), u"n=42"_s);
-        QCOMPARE(QString::fromStdString(string("n=" % -7 % ";")), u"n=-7;"_s);
-        QCOMPARE(QString::fromStdString(string("n=" % 0)), u"n=0"_s);
-        QCOMPARE(QString::fromStdString(string("n=" % u64{ 18446744073709551615ULL })), u"n=18446744073709551615"_s);
+        QCOMPARE(QString::fromStdString(string(string_view("n=") % 42)), u"n=42"_s);
+        QCOMPARE(QString::fromStdString(string(string_view("n=") % -7 % ";")), u"n=-7;"_s);
+        QCOMPARE(QString::fromStdString(string(string_view("n=") % 0)), u"n=0"_s);
+        QCOMPARE(QString::fromStdString(string(string_view("n=") % u64{ 18446744073709551615ULL })), u"n=18446744073709551615"_s);
         QCOMPARE(QString::fromStdString(string(7 % string_view("th"))), u"7th"_s);
     }
 
