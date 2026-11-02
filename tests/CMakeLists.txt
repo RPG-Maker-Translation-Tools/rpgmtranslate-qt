@@ -4,6 +4,15 @@
 
 set(APP_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src")
 
+# `cmake --build <dir> --target coverage` runs the tests and reports how much of the application they execute
+option(ENABLE_COVERAGE "Instrument the tests with Clang's source-based coverage and add a `coverage` target" OFF)
+
+set(COVERAGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/coverage")
+
+if (ENABLE_COVERAGE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "ENABLE_COVERAGE needs Clang: the report is made by llvm-cov")
+endif()
+
 # Builds the Qt Test executable `name` from `ARGN`, which lists the test's own sources first and then the application
 # sources it needs. There is no application library yet, so a test compiles just the files it exercises.
 function(add_app_test name)
@@ -27,8 +36,18 @@ function(add_app_test name)
     # The generated headers the sources include
     add_dependencies(${name} rust_header scripts_header)
 
+    set(test_environment "QT_QPA_PLATFORM=offscreen")
+
+    if (ENABLE_COVERAGE)
+        target_compile_options(${name} PRIVATE -fprofile-instr-generate -fcoverage-mapping)
+        target_link_options(${name} PRIVATE -fprofile-instr-generate)
+        # %p keeps the processes of one test from overwriting each other's profile
+        list(APPEND test_environment "LLVM_PROFILE_FILE=${COVERAGE_DIR}/${name}-%p.profraw")
+        set_property(GLOBAL APPEND PROPERTY COVERAGE_TESTS ${name})
+    endif()
+
     add_test(NAME ${name} COMMAND ${name})
-    set_tests_properties(${name} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    set_tests_properties(${name} PROPERTIES ENVIRONMENT "${test_environment}")
 endfunction()
 
 add_app_test(tst_task
@@ -107,4 +126,29 @@ if (CARGO_EXECUTABLE)
     set_tests_properties(rust PROPERTIES ENVIRONMENT "CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/rust")
 else()
     message(WARNING "cargo not found, the Rust tests are not registered")
+endif()
+
+if (ENABLE_COVERAGE)
+    get_property(_coverage_tests GLOBAL PROPERTY COVERAGE_TESTS)
+
+    set(_coverage_binaries)
+    foreach (_test IN LISTS _coverage_tests)
+        list(APPEND _coverage_binaries "$<TARGET_FILE:${_test}>")
+    endforeach()
+    list(JOIN _coverage_binaries "|" _coverage_binaries)
+
+    # The Rust half is covered by `cargo llvm-cov`, which is not part of this report
+    add_custom_target(coverage
+        COMMAND "${CMAKE_COMMAND}" -E rm -rf "${COVERAGE_DIR}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${COVERAGE_DIR}"
+        COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}" --output-on-failure -E "^rust$"
+        COMMAND "${CMAKE_COMMAND}"
+            "-DCOVERAGE_DIR=${COVERAGE_DIR}"
+            "-DBINARIES=${_coverage_binaries}"
+            "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
+            "-DLLVM_VERSION=${CMAKE_CXX_COMPILER_VERSION}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/Coverage.cmake"
+        DEPENDS ${_coverage_tests}
+        VERBATIM
+    )
 endif()
