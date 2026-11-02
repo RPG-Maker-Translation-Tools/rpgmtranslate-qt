@@ -216,7 +216,12 @@ auto qstringToJS(JSContext* const ctx, const QStringView qsv) -> JSValue {
 }
 
 auto qstringToJS(JSContext* const ctx, const QLatin1StringView qsv) -> JSValue {
-    return JS_NewStringLen(ctx, qsv.constData(), qsv.size());
+    // JS takes UTF-8, and a Latin-1 byte above 0x7F is not valid UTF-8 on its own, so only ASCII can be passed as it is
+    if (ranges::all_of(qsv, [](const char chr) -> bool { return static_cast<u8>(chr) < 0x80; })) {
+        return JS_NewStringLen(ctx, qsv.constData(), qsv.size());
+    }
+
+    return qstringToJS(ctx, QStringView(QString::fromLatin1(qsv)));
 }
 
 auto jsToQString(JSContext* const ctx, const JSValueConst val) -> QString {
@@ -311,7 +316,7 @@ ScriptRuntime::ScriptRuntime(const QDeadlineTimer deadline, const Task* const ta
     JS_SetMemoryLimit(rt_, SCRIPT_MEMORY_LIMIT);
     JS_SetMaxStackSize(rt_, SCRIPT_MAX_STACK_SIZE);
     // Also stops when the task is aborted, so a script stuck in a loop doesn't outlive the Abort button by the timeout
-    JS_SetInterruptHandler(rt_, [](JSRuntime*, auto* opaque) -> i32 {
+    JS_SetInterruptHandler(rt_, [](auto*, auto* opaque) -> i32 {
         const auto* const state = static_cast<const HostState*>(opaque);
         return state->deadline->hasExpired() || (state->task != nullptr && state->task->interrupted()) ? 1 : 0;
     }, &host);

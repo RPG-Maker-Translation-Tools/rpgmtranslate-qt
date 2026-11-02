@@ -598,7 +598,11 @@ auto TaskWorker::search(
                     continue;
                 }
 
-                for (i32 idx = 0; idx < match.lastCapturedIndex() + 1; idx++) {
+                // Not `lastCapturedIndex`: it stops at the last group that took part, so a trailing optional group would be
+                // missing and `\2` in a replacement would stay as it is
+                const i32 groupCount = match.regularExpression().captureCount() + 1;
+
+                for (i32 idx = 0; idx < groupCount; idx++) {
                     // A group that took no part in the match is kept empty, so the numbers of the groups after it hold
                     if (match.capturedStart(idx) < 0) {
                         foundMatches.emplace_back(0, 0, true);
@@ -1079,7 +1083,7 @@ auto TaskWorker::customLintMatcher() const -> CustomLintMatcher {
             continue;
         }
 
-        patternLength += customLint.sequence.size() + (customLint.caseInsensitive ? 13 : 10) + 1;
+        patternLength += customLint.sequence.size() + (customLint.caseInsensitive ? 17 : 10) + 1;
         matcher.indices.push_back(static_cast<i32>(idx));
     }
 
@@ -1100,11 +1104,17 @@ auto TaskWorker::customLintMatcher() const -> CustomLintMatcher {
         // Named, so these stay the only capturing groups (see `DontCaptureOption` below): group N is lint N - 1
         pattern += u"(?<l" % qsv(qitos(originalIdx)) % u'>';
 
+        // The flag needs a group of its own: `(?<l1>?i:` is not a pattern
         if (customLint.caseInsensitive) {
-            pattern += u"?i:";
+            pattern += u"(?i:";
         }
 
         pattern += customLint.sequence;
+
+        if (customLint.caseInsensitive) {
+            pattern += u')';
+        }
+
         pattern += u')';
     }
 

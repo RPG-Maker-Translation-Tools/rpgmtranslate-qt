@@ -5,12 +5,13 @@
 
 TranslationTableModel::TranslationTableModel(QObject* const parent) : QAbstractTableModel(parent) {}
 
-auto TranslationTableModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
-    return static_cast<i32>(editableColumns.size());
+// A table has no children: a cell has no rows or columns of its own
+auto TranslationTableModel::rowCount(const QModelIndex& parent) const -> i32 {
+    return parent.isValid() ? 0 : static_cast<i32>(editableColumns.size());
 }
 
-auto TranslationTableModel::columnCount(const QModelIndex& /* parent */) const -> i32 {
-    return colCount;
+auto TranslationTableModel::columnCount(const QModelIndex& parent) const -> i32 {
+    return parent.isValid() ? 0 : colCount;
 }
 
 auto TranslationTableModel::data(const QModelIndex& index, const i32 role) const -> QVariant {
