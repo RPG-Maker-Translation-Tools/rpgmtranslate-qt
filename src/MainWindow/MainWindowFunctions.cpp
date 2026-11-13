@@ -12,11 +12,11 @@
 #include "Notice.hpp"
 #include "PurgeMenu.hpp"
 #include "ReadMenu.hpp"
+#include "ScrollableMessageBox.hpp"
 #include "SearchMenu.hpp"
 #include "SearchPanelDock.hpp"
 #include "SerdeMenu.hpp"
 #include "SettingsWindow.hpp"
-#include "ScrollableMessageBox.hpp"
 #include "StatisticsDialog.hpp"
 #include "TabListModel.hpp"
 #include "TranslationTable.hpp"
@@ -32,16 +32,12 @@
 
 #include <QDir>
 #include <QMessageBox>
-#include <QProcess>
 #include <QProgressDialog>
-#include <QSaveFile>
 #include <QSignalBlocker>
 #include <QVersionNumber>
 #include <QtConcurrent>
 #include <cstring>
 #ifdef ENABLE_UPDATER
-#include <archive.h>
-#include <archive_entry.h>
 #endif
 
 namespace {
@@ -62,7 +58,7 @@ constexpr i32 MAX_RECENT_PROJECTS = 10;
     const QStringView stem = filename.sliced(0, max<isize>(filename.lastIndexOf(u'.'), 0));
 
     // The stem has to fit a FilenameArray with its terminator.
-    if (stem.size() >= scast<isize>(sizeof(FilenameArray))) {
+    if (stem.size() >= static_cast<isize>(sizeof(FilenameArray))) {
         return false;
     }
 
@@ -81,7 +77,7 @@ constexpr i32 MAX_RECENT_PROJECTS = 10;
 // The tab and worker APIs address a file by its name as a `FilenameArray` of Latin-1 characters, so a longer name or
 // one with other characters would point at another file.
 [[nodiscard]] auto isUsableTabName(const QStringView basename) -> bool {
-    return basename.size() < scast<isize>(sizeof(FilenameArray)) &&
+    return basename.size() < static_cast<isize>(sizeof(FilenameArray)) &&
            ranges::all_of(basename, [](const QChar chr) -> bool { return chr.unicode() <= 0x7F; });
 }
 
@@ -210,204 +206,16 @@ void MainWindow::checkForUpdates(const bool manual) {
 
         const QString appImage = AutoUpdater::appImagePath();
         const auto installTarget = QFileInfo(appImage.isEmpty() ? qApp->applicationFilePath() : appImage);
-        const QString appDir = installTarget.absolutePath();
 
-#ifdef Q_OS_WINDOWS
-        const QString exePath = installTarget.absoluteFilePath();
-        const QString oldExePath = appDir + u"/rpgmtranslate-old.exe";
-
-        // Leftover from a previous update; QFile::rename refuses to overwrite it
-        QFile::remove(oldExePath);
-
-        if (!QFile::rename(exePath, oldExePath)) {
-            present(this, NOTICE("Failed to prepare the update: could not rename %1.", Warning, Modal, exePath));
+        if (const auto installed = AutoUpdater::install(archiveData, installTarget, !appImage.isEmpty()); !installed) {
+            present(this, installed.error());
             return;
         }
-
-        const auto restoreExe = [&exePath, &oldExePath] -> void {
-            // Drop whatever was partially extracted, rename can't overwrite
-            QFile::remove(exePath);
-            QFile::rename(oldExePath, exePath);
-        };
-#else
-        const auto restoreExe = [] -> void {};
-#endif
-
-        archive* const archive_ = archive_read_new();
-        archive* const disk = archive_write_disk_new();
-
-        const auto cleanup = [archive_, disk] -> void {
-            archive_read_close(archive_);
-            archive_read_free(archive_);
-            archive_write_close(disk);
-            archive_write_free(disk);
-        };
-
-#ifdef Q_OS_WINDOWS
-        archive_read_support_format_7zip(archive_);
-        archive_read_support_filter_none(archive_);
-#elifdef Q_OS_LINUX
-        archive_read_support_format_tar(archive_);
-        archive_read_support_filter_xz(archive_);
-        archive_read_support_filter_lzma(archive_);
-#elifdef Q_OS_MACOS
-        archive_read_support_format_zip(archive_);
-#endif
-
-        // UNLINK: an existing license file is replaced instead of being written into
-        archive_write_disk_set_options(
-            disk,
-            ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_SECURE_NODOTDOT | ARCHIVE_EXTRACT_UNLINK
-        );
-
-        if (archive_read_open_memory(archive_, archiveData.constData(), scast<usize>(archiveData.size())) !=
-            ARCHIVE_OK) {
-            qWarning().noquote() << u"libarchive failed to open archive: %1"_qsv.arg(
-                svtostr(QUtf8SV(archive_error_string(archive_)))
-            );
-
-            present(this, NOTICE("Failed to open update archive.", Warning, Modal));
-
-            cleanup();
-            restoreExe();
-            return;
-        }
-
-#ifdef Q_OS_WINDOWS
-        static constexpr string_view targetEntry = "rpgmtranslate.exe";
-#else
-        const string_view targetEntry = appImage.isEmpty() ? "rpgmtranslate" : "RPGMTranslate-x86_64.AppImage";
-#endif
-#ifdef Q_OS_WINDOWS
-        // The running executable was renamed away above, so its path is free
-        const QByteArray outputPath = installTarget.absoluteFilePath().toUtf8();
-#else
-        // Written next to the target and renamed over it afterwards, so a failed extraction never leaves a broken
-        // executable behind
-        const QByteArray outputPath = installTarget.absoluteFilePath().toUtf8() + ".new";
-#endif
-        const QByteArray appDirUtf8 = appDir.toUtf8();
-
-        // Writes the entry the reader is positioned on to the path already set on it
-        const auto extractEntry = [archive_, disk](archive_entry* const entry) -> bool {
-            if (archive_write_header(disk, entry) != ARCHIVE_OK) {
-                qWarning().noquote() << u"libarchive write_header failed: %1"_qsv.arg(
-                    svtostr(QUtf8SV(archive_error_string(disk)))
-                );
-                return false;
-            }
-
-            const void* buffer;
-            usize size;
-            i64 offset;
-            bool success = true;
-
-            while (true) {
-                const i32 read = archive_read_data_block(archive_, &buffer, &size, &offset);
-
-                if (read == ARCHIVE_EOF) {
-                    break;
-                }
-
-                if (read != ARCHIVE_OK) {
-                    qWarning().noquote() << u"libarchive read_data_block failed: %1"_qsv.arg(
-                        svtostr(QUtf8SV(archive_error_string(archive_)))
-                    );
-                    success = false;
-                    break;
-                }
-
-                if (archive_write_data_block(disk, buffer, size, offset) != ARCHIVE_OK) {
-                    qWarning().noquote() << u"libarchive write_data_block failed: %1"_qsv.arg(
-                        svtostr(QUtf8SV(archive_error_string(disk)))
-                    );
-                    success = false;
-                    break;
-                }
-            }
-
-            archive_write_finish_entry(disk);
-            return success;
-        };
-
-        bool extracted = false;
-        archive_entry* entry;
-
-        while (archive_read_next_header(archive_, &entry) == ARCHIVE_OK) {
-            const char* const rawName = archive_entry_pathname_utf8(entry);
-            const u32 type = archive_entry_filetype(entry);
-
-            // Only the executable, notice and licenses are installed. Names are joined to the install directory by
-            // hand, so an entry that could climb out of it, or is not a plain file or directory, is never written.
-            // A link entry would be installed as a link to anywhere
-            const bool isPlain = archive_entry_symlink(entry) == nullptr && archive_entry_hardlink(entry) == nullptr;
-            const bool isExecutable =
-                rawName != nullptr && isPlain && type == AE_IFREG && string_view(rawName) == targetEntry;
-            const bool isDocument =
-                rawName != nullptr && isPlain && !string_view(rawName).contains("..") &&
-                (type == AE_IFREG || type == AE_IFDIR) &&
-                (string_view(rawName) == "THIRD-PARTY-NOTICE.md" || string_view(rawName).starts_with("licenses/"));
-
-            if (!isExecutable && !isDocument) {
-                archive_read_data_skip(archive_);
-                continue;
-            }
-
-            if (isExecutable) {
-                archive_entry_set_pathname_utf8(entry, outputPath.constData());
-                extracted = extractEntry(entry);
-
-                if (!extracted) {
-                    break;
-                }
-            } else {
-                // The licenses are not worth failing an update that already installed the executable
-                const QByteArray documentPath = appDirUtf8 % '/' % rawName;
-                archive_entry_set_pathname_utf8(entry, documentPath.constData());
-                extractEntry(entry);
-            }
-        }
-
-        cleanup();
-
-        if (!extracted) {
-            restoreExe();
-            present(this, NOTICE("Failed to extract update archive.", Warning, Modal));
-            return;
-        }
-
-#ifndef _WIN32
-        const QString extractedPath = QString::fromUtf8(outputPath);
-
-        QFile::setPermissions(
-            extractedPath,
-            QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner | QFileDevice::ReadGroup |
-                QFileDevice::ExeGroup | QFileDevice::ReadOther | QFileDevice::ExeOther
-        );
-
-        // rename(2) replaces the target atomically, also while it is running
-        error_code renameError;
-        fs::rename(extractedPath.toStdString(), installTarget.absoluteFilePath().toStdString(), renameError);
-
-        if (renameError) {
-            QFile::remove(extractedPath);
-            present(
-                this,
-                NOTICE(
-                    "Failed to install the update: %1",
-                    Warning,
-                    Modal,
-                    QString::fromStdString(renameError.message())
-                )
-            );
-            return;
-        }
-#endif
 
         // Starting the new instance has to wait for the old one to give up the single-instance lock, which main()
         // releases in its own aboutToQuit slot. That slot was connected first, so it has run by the time this does.
-        connect(qApp, &QApplication::aboutToQuit, qApp, [restartPath = installTarget.absoluteFilePath()] -> void {
-            QProcess::startDetached(restartPath, QStringList());
+        connect(qApp, &QApplication::aboutToQuit, qApp, [launcher = restartLauncher, restartPath = installTarget.absoluteFilePath()] -> void {
+            launcher(restartPath);
         }, Qt::SingleShotConnection);
 
         qApp->quit();
@@ -530,7 +338,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
         return;
     }
 
-    auto tempProjectSettings = make_shared<ProjectSettings>();
+    const auto tempProjectSettings = make_shared<ProjectSettings>();
     tempProjectSettings->projectPath = folder;
 
     const QString rootTranslationPath = folder + TRANSLATION_DIRECTORY;
@@ -585,7 +393,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
         tempProjectSettings->readEncoding = QString::fromLatin1(metadata.readEncoding.value_or(""));
 
         if (metadata.duplicateMode) {
-            tempProjectSettings->duplicateMode = scast<DuplicateMode>(*metadata.duplicateMode);
+            tempProjectSettings->duplicateMode = static_cast<DuplicateMode>(*metadata.duplicateMode);
         }
     };
 
@@ -639,7 +447,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                         "project-settings.json is unusable and the engine of the project could not be detected "
                         "from its files.";
 
-                    return Err(FFIString{ .ptr = message.data(), .len = scast<u32>(message.size()), .cap = 0 });
+                    return Err(FFIString{ .ptr = message.data(), .len = static_cast<u32>(message.size()), .cap = 0 });
                 }
 
                 auto metadataFile = QFile(tempProjectSettings->translationPath() + RVPACKER_METADATA_FILE);
@@ -648,7 +456,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                     const QByteArray content = metadataFile.readAll();
                     auto metadata = readLenient<Metadata>(string_view(content.data(), content.size()));
 
-                    if (metadata && metadata->duplicateMode <= scast<u8>(DuplicateMode::Remove)) {
+                    if (metadata && metadata->duplicateMode <= static_cast<u8>(DuplicateMode::Remove)) {
                         applyMetadata(std::move(metadata.value()));
                     }
                 }
@@ -690,29 +498,12 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                 continue;
             }
 
-            QByteArray normalized = file.readAll();
+            const QString content = QString::fromUtf8(file.readAll());
             file.close();
-
-            // Rewrite only files with carriage returns, atomically, so a crash can't truncate a translation. A failed
-            // rewrite is not fatal: the normalized content is still parsed.
-            if (const isize sizeBefore = normalized.size();
-                normalized.removeIf([](const char byte) -> bool { return byte == '\r'; }).size() != sizeBefore) {
-                auto normalizedFile = QSaveFile(fileInfo.filePath());
-                normalizedFile.setDirectWriteFallback(true);
-
-                if (!normalizedFile.open(QFile::WriteOnly) || normalizedFile.write(normalized) != normalized.size() ||
-                    !normalizedFile.commit()) {
-                    qWarning().noquote() << u"Failed to normalize line endings of %1: %2"_qsv.arg(
-                        fileInfo.filePath(),
-                        normalizedFile.errorString()
-                    );
-                }
-            }
 
             QString basename = fileInfo.baseName();
             const bool isMap = basename.startsWith(u"map");
 
-            const QString content = QString::fromUtf8(normalized);
             const auto contentView = QStringView(content);
             const u32 size = contentView.size();
 
@@ -721,8 +512,8 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
             const isize titleMarker = basename.startsWith(u"system") || basename.startsWith(u"terms")
                                           ? contentView.lastIndexOf(GAME_TITLE_MARKER)
                                           : -1;
-            const bool holdsTitle =
-                titleMarker != -1 && titleMarker + GAME_TITLE_MARKER.size() + 1 < contentView.size();
+            const auto titleLine = gameTitleLine(contentView, titleMarker);
+            const bool holdsTitle = titleLine.has_value();
 
             u32 pos = 0;
             u32 lineIndex = 0;
@@ -738,12 +529,11 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                 const u32 lineStart = pos;
                 u32 newlinePos = contentView.indexOf(u'\n', pos);
 
-                if (newlinePos == scast<u32>(-1)) {
+                if (newlinePos == static_cast<u32>(-1)) {
                     newlinePos = size;
                 }
 
-                // No carriage returns here: they were removed above
-                const QStringView line = contentView.sliced(lineStart, newlinePos - lineStart);
+                const QStringView line = chopCarriageReturn(contentView.sliced(lineStart, newlinePos - lineStart));
                 pos = newlinePos + 1;
 
                 if (holdsTitle && pos >= size) {
@@ -755,7 +545,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                 }
 
                 // The table holds `MAX_COLUMNS` of them; a line with more parts is kept by it as it is
-                columnCount = scast<u8>(
+                columnCount = static_cast<u8>(
                     max<i64>(columnCount, min<i64>(line.count(SEPARATOR) + 1, TranslationTableModel::MAX_COLUMNS))
                 );
 
@@ -865,8 +655,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
             );
 
             if (holdsTitle) {
-                const QStringView titleLine = contentView.sliced(titleMarker + GAME_TITLE_MARKER.size() + 1);
-                const QSVList parts = lineParts(titleLine, 0, basename);
+                const QSVList parts = lineParts(*titleLine, 0, basename);
 
                 if (parts.isEmpty()) {
                     continue;
@@ -1009,12 +798,18 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
             error_code error;
             fs::create_directory(baselineDataStd, error);
 
-            // Stops at the first failure
-            for (auto entry = fs::directory_iterator(baselinePath.toStdString(), error);
-                 !error && entry != fs::directory_iterator();
-                 entry.increment(error)) {
-                if (entry->is_regular_file(error)) {
-                    fs::rename(entry->path(), baselineDataStd / entry->path().filename(), error);
+            // Stops at the first failure. Every call sets or clears `error`, so a failure must not be followed by
+            // a call that succeeds: no data folder would leave the iterator below to clear the error of creating it.
+            if (!error) {
+                for (auto entry = fs::directory_iterator(baselinePath.toStdString(), error);
+                     !error && entry != fs::directory_iterator();) {
+                    if (entry->is_regular_file(error)) {
+                        fs::rename(entry->path(), baselineDataStd / entry->path().filename(), error);
+                    }
+
+                    if (!error) {
+                        entry.increment(error);
+                    }
                 }
             }
 
@@ -1149,7 +944,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                             ));
                         }
 
-                        if (metadata->duplicateMode > scast<u8>(DuplicateMode::Remove)) {
+                        if (metadata->duplicateMode > static_cast<u8>(DuplicateMode::Remove)) {
                             return Err(NOTICE(
                                 "The .rvpacker-metadata file has an unknown duplicate mode: %1",
                                 Critical,
@@ -1187,7 +982,7 @@ void MainWindow::openProject(QString folder, const bool newProject, const bool t
                     return Err(archive.error());
                 }
 
-                const QString archivePath = archive.value();
+                const QString& archivePath = archive.value();
                 const bool systemExists = archivePath.isEmpty();
 
                 firstReadPending = true;
@@ -1617,8 +1412,8 @@ void MainWindow::checkHashes() {
         }
 
         const QByteArray content = file.readAll();
-        const ByteBuffer contentBuffer{ .ptr = rcast<const u8*>(content.data()),
-                                        .len = scast<u32>(content.size()),
+        const ByteBuffer contentBuffer{ .ptr = reinterpret_cast<const u8*>(content.data()),
+                                        .len = static_cast<u32>(content.size()),
                                         .cap = 0 };
 
         u64 newHash;
@@ -1630,7 +1425,7 @@ void MainWindow::checkHashes() {
         FilenameArray filenameArray{};
 
         for (const auto [idx, chr] : views::enumerate(slicedFilename)) {
-            filenameArray[idx] = scast<char>(tolower(chr));
+            filenameArray[idx] = static_cast<char>(tolower(chr));
         }
 
         const auto entry = projectSettings->hashes.find(filenameArray);
@@ -1661,7 +1456,7 @@ void MainWindow::checkHashes() {
 
         const auto addSection = [&sections](const QString& heading, const vector<FilenameArray>& files) -> void {
             QStringList lines;
-            lines.reserve(files.size() + 1);
+            lines.reserve(static_cast<isize>(files.size() + 1));
             lines.append(heading);
 
             for (const auto& file : files) {

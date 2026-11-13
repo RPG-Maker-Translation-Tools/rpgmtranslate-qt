@@ -1,5 +1,7 @@
 #include "ScrollableMessageBox.hpp"
 
+#include "Aliases.hpp"
+
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
@@ -21,9 +23,7 @@ auto askWithDetails(QWidget* const parent, const QString& title, const QString& 
 
     auto* const iconLabel = new QLabel(&dialog);
     const i32 iconSize = dialog.style()->pixelMetric(QStyle::PM_MessageBoxIconSize);
-    iconLabel->setPixmap(
-        dialog.style()->standardIcon(QStyle::SP_MessageBoxQuestion).pixmap(QSize(iconSize, iconSize))
-    );
+    iconLabel->setPixmap(dialog.style()->standardIcon(QStyle::SP_MessageBoxQuestion).pixmap(QSize(iconSize, iconSize)));
     iconLabel->setAlignment(Qt::AlignTop);
 
     auto* const textLabel = new QLabel(text, &dialog);

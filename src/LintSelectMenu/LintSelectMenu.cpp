@@ -95,7 +95,7 @@ void LintSelectMenu::clearLayout(QVBoxLayout* const layout) {
 
 auto LintSelectMenu::entryBoxes(const QGroupBox* const group, const QCheckBox* const toggleAll) -> QList<QCheckBox*> {
     QList<QCheckBox*> boxes = group->findChildren<QCheckBox*>();
-    boxes.removeOne(ccast<QCheckBox*>(toggleAll));
+    boxes.removeOne(const_cast<QCheckBox*>(toggleAll));
     return boxes;
 }
 
@@ -288,7 +288,7 @@ void LintSelectMenu::buildTerms() {
         box->setToolTip(term.note);
 
         connect(box, &QCheckBox::toggled, this, [this, idx](const bool checked) -> void {
-            glossaryMenu->setTermEnabled(scast<u32>(idx), checked);
+            glossaryMenu->setTermEnabled(static_cast<u32>(idx), checked);
         });
 
         groupLayout->addWidget(box);

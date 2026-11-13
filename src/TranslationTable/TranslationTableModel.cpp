@@ -5,12 +5,13 @@
 
 TranslationTableModel::TranslationTableModel(QObject* const parent) : QAbstractTableModel(parent) {}
 
-auto TranslationTableModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
-    return scast<i32>(editableColumns.size());
+// A table has no children: a cell has no rows or columns of its own
+auto TranslationTableModel::rowCount(const QModelIndex& parent) const -> i32 {
+    return parent.isValid() ? 0 : static_cast<i32>(editableColumns.size());
 }
 
-auto TranslationTableModel::columnCount(const QModelIndex& /* parent */) const -> i32 {
-    return colCount;
+auto TranslationTableModel::columnCount(const QModelIndex& parent) const -> i32 {
+    return parent.isValid() ? 0 : colCount;
 }
 
 auto TranslationTableModel::data(const QModelIndex& index, const i32 role) const -> QVariant {
@@ -23,7 +24,7 @@ auto TranslationTableModel::data(const QModelIndex& index, const i32 role) const
         case Qt::EditRole:
             return cell(index.row(), index.column());
         case Qt::TextAlignmentRole:
-            return scast<i32>(Qt::AlignLeft | Qt::AlignTop);
+            return static_cast<i32>(Qt::AlignLeft | Qt::AlignTop);
         default:
             return {};
     }
@@ -66,7 +67,7 @@ auto TranslationTableModel::flags(const QModelIndex& index) const -> Qt::ItemFla
 
     flags.setFlag(Qt::ItemIsEnabled);
 
-    if (index.column() != 0 && isEditable(index.row(), scast<u8>(index.column()))) {
+    if (index.column() != 0 && isEditable(index.row(), static_cast<u8>(index.column()))) {
         flags.setFlag(Qt::ItemIsEditable);
         flags.setFlag(Qt::ItemIsSelectable);
     }
@@ -107,13 +108,13 @@ auto TranslationTableModel::setData(const QModelIndex& index, const QVariant& va
 }
 
 void TranslationTableModel::restride(const u8 newCount) {
-    const usize rowCount = scast<usize>(editableColumns.size());
+    const auto rowCount = static_cast<usize>(editableColumns.size());
     const u8 keptCount = min(colCount, newCount);
 
     QList<QString> resized;
-    resized.resize(scast<isize>(rowCount * newCount));
+    resized.resize(static_cast<isize>(rowCount * newCount));
 
-    for (usize row = 0; row < rowCount; row++) {
+    for (u32 row = 0; row < rowCount; row++) {
         for (u8 column = 0; column < keptCount; column++) {
             resized[(row * newCount) + column] = std::move(cell(row, column));
         }
@@ -131,9 +132,9 @@ void TranslationTableModel::fill(std::span<QStringView> lines, const QString& fi
     texts = {};
     editableColumns = {};
     colCount = 0;
-    editableColumns.reserve(scast<isize>(lines.size()));
+    editableColumns.reserve(static_cast<isize>(lines.size()));
     // Two columns is the smallest table; a wider one is widened below
-    texts.reserve(scast<isize>(lines.size()) * 2);
+    texts.reserve(static_cast<isize>(lines.size()) * 2);
 
     // Appends a row of `cols` columns; the cells are left empty for the caller to fill
     const auto appendRow = [this](const u8 cols, const u16 editable) -> isize {
@@ -176,8 +177,8 @@ void TranslationTableModel::fill(std::span<QStringView> lines, const QString& fi
             continue;
         }
 
-        const u8 cols = scast<u8>(1 + translations.size());
-        const isize base = appendRow(cols, scast<u16>(((1 << cols) - 1) & ~1));
+        const u8 cols = static_cast<u8>(1 + translations.size());
+        const isize base = appendRow(cols, static_cast<u16>(((1 << cols) - 1) & ~1));
 
         texts[base] = qsvReplace(source, NEW_LINE, LINE_FEED);
 
@@ -187,7 +188,7 @@ void TranslationTableModel::fill(std::span<QStringView> lines, const QString& fi
     }
 
     // A row with fewer parts than the table has columns can still be translated in the others
-    const u16 allColumns = scast<u16>(((1 << colCount) - 1) & ~1);
+    const u16 allColumns = static_cast<u16>(((1 << colCount) - 1) & ~1);
 
     for (u16& editable : editableColumns) {
         if ((editable & (1 << 1)) != 0) {
@@ -211,7 +212,7 @@ void TranslationTableModel::clear() {
 
 void TranslationTableModel::setHeaderLabels(QStringList labels) {
     for (const auto& [idx, label] : views::enumerate(labels)) {
-        setHeaderData(scast<i32>(idx), Qt::Horizontal, label);
+        setHeaderData(static_cast<i32>(idx), Qt::Horizontal, label);
     }
 };
 
@@ -232,7 +233,7 @@ void TranslationTableModel::appendColumn(QStringList cells) {
 
         // Comments and kept lines get no editable cell
         if (isEditable(row, 1)) {
-            editableColumns[row] |= scast<u16>(1 << col);
+            editableColumns[row] |= static_cast<u16>(1 << col);
         }
     }
 
@@ -241,16 +242,16 @@ void TranslationTableModel::appendColumn(QStringList cells) {
 
 // Only bookmarks are inserted, so the table already has the two columns of a comment row
 void TranslationTableModel::insertRow(const u32 row, QStringList cells) {
-    beginInsertRows({}, scast<i32>(row), scast<i32>(row));
+    beginInsertRows({}, static_cast<i32>(row), static_cast<i32>(row));
 
-    texts.insert(scast<isize>(row) * colCount, colCount, QString());
+    texts.insert(static_cast<isize>(row) * colCount, colCount, QString());
 
-    for (i32 col = 0; col < min<i32>(cells.size(), colCount); col++) {
+    for (i32 col = 0; col < min<i32>(static_cast<i32>(cells.size()), colCount); col++) {
         cell(row, col) = std::move(cells[col]);
     }
 
     // Their cells are editable in every column, as when loaded
-    editableColumns.insert(row, scast<u16>(((1 << colCount) - 1) & ~1));
+    editableColumns.insert(row, static_cast<u16>(((1 << colCount) - 1) & ~1));
     endInsertRows();
 }
 
@@ -260,7 +261,7 @@ auto TranslationTableModel::removeRows(const i32 row, const i32 count, const QMo
     }
 
     beginRemoveRows(parent, row, row + count - 1);
-    texts.remove(scast<isize>(row) * colCount, scast<isize>(count) * colCount);
+    texts.remove(static_cast<isize>(row) * colCount, static_cast<isize>(count) * colCount);
     editableColumns.remove(row, count);
     endRemoveRows();
 

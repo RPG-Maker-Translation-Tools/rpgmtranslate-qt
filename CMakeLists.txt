@@ -5,7 +5,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 set(PROJECT_NAME rpgmtranslate)
-set(PROJECT_VERSION 1.2.0)
+set(PROJECT_VERSION 1.2.1)
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -147,25 +147,27 @@ option(ENABLE_COUNTING_LSTM
     ON
 )
 
-set(MSVC_RUNTIME
-    "MT"
-    CACHE
-    STRING
-    "MT (static) / MD (dynamic) / MTd (static debug) / MDd (dynamic debug). Don't use debug versions if you use Clang with MSVC target with enabled ASan."
-)
+if (MSVC OR (CMAKE_C_SIMULATE_ID STREQUAL "MSVC"))
+    set(MSVC_RUNTIME
+        "MT"
+        CACHE
+        STRING
+        "MT (static) / MD (dynamic) / MTd (static debug) / MDd (dynamic debug). Don't use debug versions if you use Clang with MSVC target with enabled ASan."
+    )
 
-set(_valid_runtimes MT MD MTd MDd)
+    set(_valid_runtimes MT MD MTd MDd)
 
-if(NOT MSVC_RUNTIME IN_LIST _valid_runtimes)
-    message(FATAL_ERROR
-        "MSVC_RUNTIME must be one of: ${_valid_runtimes}. "
-        "Got: '${MSVC_RUNTIME}'")
+    if(NOT MSVC_RUNTIME IN_LIST _valid_runtimes)
+        message(FATAL_ERROR
+            "MSVC_RUNTIME must be one of: ${_valid_runtimes}. "
+            "Got: '${MSVC_RUNTIME}'")
+    endif()
+
+    set(_msvc_runtime_names MT MD MTd MDd)
+    set(_msvc_runtime_values MultiThreaded MultiThreadedDLL MultiThreadedDebug MultiThreadedDebugDLL)
+    list(FIND _msvc_runtime_names "${MSVC_RUNTIME}" _msvc_runtime_index)
+    list(GET _msvc_runtime_values ${_msvc_runtime_index} CMAKE_MSVC_RUNTIME_LIBRARY)
 endif()
-
-set(_msvc_runtime_names MT MD MTd MDd)
-set(_msvc_runtime_values MultiThreaded MultiThreadedDLL MultiThreadedDebug MultiThreadedDebugDLL)
-list(FIND _msvc_runtime_names "${MSVC_RUNTIME}" _msvc_runtime_index)
-list(GET _msvc_runtime_values ${_msvc_runtime_index} CMAKE_MSVC_RUNTIME_LIBRARY)
 
 set(RUST_PROFILE "" CACHE STRING "Rust profile to build the project.")
 
@@ -175,13 +177,23 @@ if (ENABLE_PIC)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
+option(ENABLE_WAYLAND "Link Qt's Wayland client when available" ON)
+
 set(_qt_components Widgets Concurrent Gui Svg Network LinguistTools)
 
-if (LINUX)
-    list(APPEND _qt_components WaylandClient)
+find_package(Qt6 6.8 REQUIRED COMPONENTS ${_qt_components})
+
+# Qt has no Wayland client on Windows and macOS, so only probe where it can exist.
+set(_wayland_found FALSE)
+if (ENABLE_WAYLAND AND UNIX AND NOT APPLE)
+    find_package(Qt6 6.8 QUIET COMPONENTS WaylandClient)
+    if (Qt6WaylandClient_FOUND)
+        set(_wayland_found TRUE)
+    else()
+        message(WARNING "Qt6 WaylandClient not found, building without Wayland support")
+    endif()
 endif()
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS ${_qt_components})
 qt_standard_project_setup(REQUIRES 6.8)
 find_package(glaze REQUIRED)
 
@@ -212,7 +224,7 @@ if (ENABLE_MIMALLOC)
     find_package(mimalloc 3 REQUIRED)
 endif()
 
-if (LINUX)
+if (UNIX AND NOT APPLE)
     find_package(OpenSSL REQUIRED)
 endif()
 
@@ -432,6 +444,7 @@ set(HEADERS
 
     src/utilities/Aliases.hpp
     src/utilities/Constants.hpp
+    src/utilities/CredentialStore.hpp
     src/utilities/Enums.hpp
     src/utilities/FWD.hpp
     src/utilities/Hasher.hpp
@@ -787,9 +800,21 @@ if (ENABLE_MIMALLOC)
     target_include_directories(${PROJECT_NAME} PRIVATE "${MIMALLOC_INCLUDE_DIR}")
 endif()
 
-if (LINUX)
+if (_wayland_found)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::WaylandClient)
+endif()
+
+if (UNIX AND NOT APPLE)
     corrosion_link_libraries(${PROJECT_NAME}_rs OpenSSL::Crypto OpenSSL::SSL)
+endif()
+
+option(ENABLE_TESTS "Build the test suite (run it with ctest)." OFF)
+
+# Added last, as the tests borrow the include directories, definitions and libraries the application target ended up with
+if (ENABLE_TESTS)
+    enable_testing()
+    find_package(Qt6 6.8 REQUIRED COMPONENTS Test)
+    add_subdirectory(tests)
 endif()
 
 function(summary_row label value)
@@ -826,7 +851,7 @@ else()
 endif()
 summary_row("Compiler" "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 summary_row("Install prefix" "${CMAKE_INSTALL_PREFIX}")
-if (WIN32)
+if (MSVC OR (CMAKE_C_SIMULATE_ID STREQUAL "MSVC"))
     summary_row("MSVC runtime" "${MSVC_RUNTIME} (${CMAKE_MSVC_RUNTIME_LIBRARY})")
 endif()
 if (RUST_PROFILE)
@@ -868,5 +893,6 @@ summary_options(
     ENABLE_TOKENIZER_SOUTHEAST_ASIAN
     ENABLE_COUNTING_DICTIONARY
     ENABLE_COUNTING_LSTM
+    ENABLE_TESTS
 )
 message(STATUS "=======================================================")

@@ -1,0 +1,6 @@
+If:
+  PathMatch: src/3rdparty/.*
+Index:
+  Background: Skip
+Diagnostics:
+  Suppress: "*"

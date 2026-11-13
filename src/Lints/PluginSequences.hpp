@@ -33,13 +33,13 @@ consteval auto joinedPatternSize(
 
     for (const auto& part : parts) {
         if (needle.isEmpty()) {
-            len += scast<usize>(part.size());
+            len += static_cast<usize>(part.size());
             continue;
         }
 
         for (isize idx = 0; idx < part.size();) {
             if (matchesAt(part, idx, needle)) {
-                len += scast<usize>(replacement.size());
+                len += static_cast<usize>(replacement.size());
                 idx += needle.size();
             } else {
                 len++;

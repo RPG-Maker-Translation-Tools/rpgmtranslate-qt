@@ -37,7 +37,7 @@ ReadMenu::ReadMenu(QWidget* const parent) :
 
                 break;
             case ReadMode::DefaultForce:
-                ui->duplicateModeSelect->setCurrentIndex(scast<i32>(DuplicateMode::Allow));
+                ui->duplicateModeSelect->setCurrentIndex(static_cast<i32>(DuplicateMode::Allow));
                 ui->duplicateModeSelect->setEnabled(true);
                 // Unlike the append cases, `projectSettings` may be unset here (a new project via `exec()`), so this
                 // resets to UTF-8 instead of reading `projectSettings->readEncoding`.
@@ -45,7 +45,7 @@ ReadMenu::ReadMenu(QWidget* const parent) :
                 ui->encodingSelect->setEnabled(true);
                 break;
             case ReadMode::AppendDefault:
-                ui->duplicateModeSelect->setCurrentIndex(scast<i32>(projectSettings->duplicateMode));
+                ui->duplicateModeSelect->setCurrentIndex(static_cast<i32>(projectSettings->duplicateMode));
                 ui->duplicateModeSelect->setEnabled(false);
                 // A stored "" (older versions' UTF-8) matches no item: fall back to the first one, UTF-8
                 ui->encodingSelect->setCurrentIndex(
@@ -54,7 +54,7 @@ ReadMenu::ReadMenu(QWidget* const parent) :
                 ui->encodingSelect->setEnabled(false);
                 break;
             case ReadMode::AppendForce:
-                ui->duplicateModeSelect->setCurrentIndex(scast<i32>(projectSettings->duplicateMode));
+                ui->duplicateModeSelect->setCurrentIndex(static_cast<i32>(projectSettings->duplicateMode));
                 ui->duplicateModeSelect->setEnabled(false);
                 // A stored "" (older versions' UTF-8) matches no item: fall back to the first one, UTF-8
                 ui->encodingSelect->setCurrentIndex(
@@ -89,7 +89,7 @@ ReadMenu::ReadMenu(QWidget* const parent) :
             bool isRm2k = false;
 
             const bool success = rpgm_get_ini_title(
-                FFIString{ .ptr = projectPath.data(), .len = scast<u32>(projectPath.size()) },
+                FFIString{ .ptr = projectPath.data(), .len = static_cast<u32>(projectPath.size()) },
                 &title_,
                 &isRm2k
             );
@@ -152,7 +152,7 @@ ReadMenu::ReadMenu(QWidget* const parent) :
     });
 
     ui->readModeSelect->setCurrentIndex(0);
-    ui->duplicateModeSelect->setCurrentIndex(scast<i32>(DuplicateMode::Allow));
+    ui->duplicateModeSelect->setCurrentIndex(static_cast<i32>(DuplicateMode::Allow));
 };
 
 ReadMenu::~ReadMenu() {
@@ -267,7 +267,7 @@ void ReadMenu::clear() {
     ui->useIniTitleCheckbox->setChecked(false);
 
     ui->readModeSelect->setCurrentIndex(0);
-    ui->duplicateModeSelect->setCurrentIndex(scast<i32>(DuplicateMode::Allow));
+    ui->duplicateModeSelect->setCurrentIndex(static_cast<i32>(DuplicateMode::Allow));
     ui->encodingSelect->setCurrentIndex(0);
     ui->archiveEncodingSelect->setCurrentIndex(0);
 
@@ -357,7 +357,7 @@ auto ReadMenu::archiveReadEncoding() const -> QString {
 };
 
 auto ReadMenu::flags() const -> BaseFlags {
-    auto flags = scast<BaseFlags>(0);
+    auto flags = static_cast<BaseFlags>(0);
 
     if (ui->ignoreCheckbox->isChecked()) {
         flags |= BaseFlags_Ignore;

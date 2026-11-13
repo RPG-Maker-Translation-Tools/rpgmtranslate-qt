@@ -71,7 +71,7 @@ void CodeViewer::lineNumberAreaPaintEvent(QPaintEvent* const event) {
             painter.setPen(palette().color(QPalette::PlaceholderText));
             painter.drawText(
                 0,
-                scast<i32>(top),
+                static_cast<i32>(top),
                 lineNumberArea->width() - 4,
                 fontMetrics().height(),
                 Qt::AlignRight | Qt::AlignVCenter,

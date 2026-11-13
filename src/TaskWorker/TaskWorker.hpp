@@ -60,7 +60,7 @@ using PreparedGlossary = vector<PreparedTerm>;
 // and the settings window can change them meanwhile.
 struct TranslateContext {
     vector<EndpointSettings> endpoints;
-    QStringList approvedScripts;
+    QStringList approvedScriptsSha;
     QString sourceLang;
     QString translationLang;
 };
@@ -77,6 +77,9 @@ class TaskWorker final : public QObject {
     [[nodiscard]] auto runningTask(TaskKind kind) const -> TaskToken;
 
     [[nodiscard]] auto idle() const -> bool { return runningTasks.empty(); }
+
+    // Test seam: called first thing in `write()`, so a test can make the task's thread throw.
+    function<void()> writeHook;
 
     // Whether a task of this kind would be refused to start now (see `startTask`).
     [[nodiscard]] auto blocks(TaskKind kind) const -> bool;

@@ -36,7 +36,6 @@ using Dir = SettingsWindow::Direction;
 constexpr i32 TRANSLATION_TABLE_FONT_SIZE_MIN = 8;
 constexpr i32 TRANSLATION_TABLE_FONT_SIZE_MAX = 96;
 constexpr i32 MAX_LINE_LENGTH_HINT = 255;
-constexpr i32 LANGUAGETOOL_CONNECTION_TIMEOUT_MS = 20000;
 
 constexpr i32 SEQUENCE_USE_COLOR_COLUMN = 2;
 constexpr i32 SEQUENCE_COLOR_COLUMN = 3;
@@ -76,7 +75,7 @@ void sync(const Dir dir, QLineEdit* const edit, T& value) {
     using Wide = std::conditional_t<std::is_signed_v<T>, i64, u64>;
 
     if (dir == Dir::Save) {
-        value = scast<T>(stoa<Wide>(edit->text()).value_or(0));
+        value = static_cast<T>(stoa<Wide>(edit->text()).value_or(0));
     } else {
         edit->setText(QString(qsv(qitos(value))));
     }
@@ -126,9 +125,9 @@ template <typename E>
     requires std::is_enum_v<E>
 void sync(const Dir dir, QComboBox* const box, E& value) {
     if (dir == Dir::Save) {
-        value = scast<E>(box->currentIndex());
+        value = static_cast<E>(box->currentIndex());
     } else {
-        box->setCurrentIndex(scast<i32>(value));
+        box->setCurrentIndex(static_cast<i32>(value));
     }
 }
 
@@ -144,9 +143,9 @@ template <typename T>
     requires std::is_integral_v<T>
 void sync(const Dir dir, CBSLIWidget* const widget, T& value) {
     if (dir == Dir::Save) {
-        value = scast<T>(widget->value());
+        value = static_cast<T>(widget->value());
     } else {
-        widget->setValue(scast<i32>(value));
+        widget->setValue(static_cast<i32>(value));
     }
 }
 
@@ -169,7 +168,7 @@ void sync(const Dir dir, QLineEdit* const edit, vector<u32>& value) {
         }
     } else {
         QStringList parts;
-        parts.reserve(scast<isize>(value.size()));
+        parts.reserve(static_cast<isize>(value.size()));
 
         for (const u32 codePoint : value) {
             parts.append(u"U+%1"_qsv.arg(qsv(qhtos(codePoint, 4, true))));
@@ -297,6 +296,9 @@ SettingsWindow::SettingsWindow(
     initialSettings(*settings_),
 
     ui(setupUi()) {
+    setAttribute(Qt::WA_DeleteOnClose);
+    setWindowModality(Qt::WindowModal);
+
     for (const auto endpoint : enchantum::names<TranslationEndpoint>) {
         ui->typeSelect->addItem(QString::fromLatin1(endpoint));
     }
@@ -316,7 +318,7 @@ SettingsWindow::SettingsWindow(
     const QList<pair<QString, QString>> languageTags = listLanguageTags();
 
     for (const auto& [iidx, pair] : views::enumerate(languageTags)) {
-        const i32 idx = scast<i32>(iidx);
+        const i32 idx = static_cast<i32>(iidx);
         ui->sourceLanguageSelect->addItem(pair.first);
         ui->sourceLanguageSelect->setItemData(idx, pair.second);
         ui->translationLanguageSelect->addItem(pair.first);
@@ -326,7 +328,7 @@ SettingsWindow::SettingsWindow(
     }
 
     QStringList endpointNames;
-    endpointNames.reserve(scast<isize>(settings->translation.endpoints.size()));
+    endpointNames.reserve(static_cast<isize>(settings->translation.endpoints.size()));
 
     for (const auto& endpoint : settings->translation.endpoints) {
         endpointNames.append(endpoint.name);
@@ -361,7 +363,7 @@ SettingsWindow::SettingsWindow(
     contentColumn->setContentsMargins(0, 0, 0, 0);
     contentColumn->addWidget(ui->stackedWidget, 1);
     contentColumn->addWidget(buttons);
-    scast<QBoxLayout*>(layout())->addLayout(contentColumn, 1);
+    static_cast<QBoxLayout*>(layout())->addLayout(contentColumn, 1);
 
     connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -451,7 +453,7 @@ SettingsWindow::SettingsWindow(
         [this](const QModelIndex& current, const QModelIndex& previous) -> void {
         auto& endpoints = settings->translation.endpoints;
         const auto inRange = [&endpoints](const QModelIndex& index) -> bool {
-            return index.isValid() && index.row() < scast<i32>(endpoints.size());
+            return index.isValid() && index.row() < static_cast<i32>(endpoints.size());
         };
 
         if (inRange(previous)) {
@@ -612,7 +614,7 @@ auto SettingsWindow::eventFilter(QObject* const watched, QEvent* const event) ->
         if (event->type() == QEvent::MouseButtonPress) {
             refreshSpellcheckDictionarySelect();
         } else if (event->type() == QEvent::KeyPress) {
-            const auto* const keyEvent = scast<QKeyEvent*>(event);
+            const auto* const keyEvent = static_cast<QKeyEvent*>(event);
             const bool popupPressed =
                 keyEvent->key() == Qt::Key_F4 ||
                 (keyEvent->key() == Qt::Key_Down && keyEvent->modifiers().testFlag(Qt::AltModifier));
@@ -678,9 +680,9 @@ void SettingsWindow::done(const i32 result) {
     syncAll(Direction::Save);
 
     for (const QString& endpointId : removedEndpointIds) {
-        if (!rpgm_delete_credential(strtoffi(endpointId.toUtf8()))) {
+        if (!credentials->remove(endpointId.toUtf8())) {
             qWarning().noquote() << u"Failed to delete the API key of a removed endpoint: %1"_qsv.arg(
-                svtostr(ffitostr(rpgm_error()))
+                credentials->error()
             );
         }
     }
@@ -698,7 +700,7 @@ void SettingsWindow::done(const i32 result) {
         }
 
         // Declining just leaves the script unapproved; translating with it then reports that.
-        confirmScriptAccess(this, settings->core.approvedScripts, endpoint.name, QString::fromUtf8(file.readAll()));
+        confirmScriptAccess(this, settings->core.approvedScriptsSha, endpoint.name, QString::fromUtf8(file.readAll()));
     }
 
     QDialog::done(result);
@@ -768,14 +770,14 @@ auto SettingsWindow::validate() -> bool {
 
     for (const auto [idx, endpoint] : views::enumerate(settings->translation.endpoints)) {
         // The selected endpoint is still in the form, not yet in `settings`
-        const bool isShown = shownEndpoint.isValid() && shownEndpoint.row() == scast<i32>(idx);
-        const bool isScript = isShown ? ui->typeSelect->currentIndex() == scast<i32>(TranslationEndpoint::Script)
+        const bool isShown = shownEndpoint.isValid() && shownEndpoint.row() == static_cast<i32>(idx);
+        const bool isScript = isShown ? ui->typeSelect->currentIndex() == static_cast<i32>(TranslationEndpoint::Script)
                                       : endpoint.endpoint == TranslationEndpoint::Script;
         const bool hasPath = isShown ? !ui->scriptPathInput->text().isEmpty() : !endpoint.scriptPath.isEmpty();
 
         if (isScript && !hasPath) {
             present(this, NOTICE("The Script endpoint \"%1\" needs a script file.", Warning, Modal, endpoint.name));
-            ui->endpointList->setCurrentIndex(ui->endpointList->model()->index(scast<i32>(idx), 0));
+            ui->endpointList->setCurrentIndex(ui->endpointList->model()->index(static_cast<i32>(idx), 0));
             ui->scriptPathInput->setFocus();
             return false;
         }
@@ -861,8 +863,8 @@ void SettingsWindow::syncAll(const Direction direction) {
     auto& translation = settings->translation;
 
     if (direction == Direction::Load) {
-        core.backup.period = scast<u16>(clamp<i32>(core.backup.period, MIN_BACKUP_PERIOD, MAX_BACKUP_PERIOD));
-        core.backup.max = scast<u8>(clamp<i32>(core.backup.max, 1, MAX_BACKUPS));
+        core.backup.period = static_cast<u16>(clamp<i32>(core.backup.period, MIN_BACKUP_PERIOD, MAX_BACKUP_PERIOD));
+        core.backup.max = static_cast<u8>(clamp<i32>(core.backup.max, 1, MAX_BACKUPS));
     }
 
     // Core
@@ -883,7 +885,7 @@ void SettingsWindow::syncAll(const Direction direction) {
 
         // `pointSize()` is -1 for a font given in pixels, `QFontInfo` always has a point size
         if (appearance.translationTableFontSize == 0) {
-            appearance.translationTableFontSize = scast<u8>(QFontInfo(qApp->font()).pointSize());
+            appearance.translationTableFontSize = static_cast<u8>(QFontInfo(qApp->font()).pointSize());
         }
 
         // With no style set the application runs in its default one. The select would show its first, and saving
@@ -946,7 +948,7 @@ void SettingsWindow::syncAll(const Direction direction) {
     if (direction == Direction::Save) {
         const QModelIndex endpointIndex = ui->endpointList->currentIndex();
 
-        if (endpointIndex.isValid() && endpointIndex.row() < scast<i32>(translation.endpoints.size())) {
+        if (endpointIndex.isValid() && endpointIndex.row() < static_cast<i32>(translation.endpoints.size())) {
             syncEndpoint(direction, translation.endpoints[endpointIndex.row()]);
         }
     }
@@ -1001,25 +1003,25 @@ void SettingsWindow::buildSequenceTables() {
     for (const auto& [tableIdx, entry] : views::enumerate(tables)) {
         const auto& [patterns, table] = entry;
 
-        table->setRowCount(scast<i32>(patterns.size()));
+        table->setRowCount(static_cast<i32>(patterns.size()));
 
         for (const auto& [idx, pattern] : views::enumerate(patterns)) {
-            const i32 row = scast<i32>(idx);
+            const i32 row = static_cast<i32>(idx);
 
             QStringView category;
 
             switch (tableIdx) {
                 case 0:
-                    category = TextCodes::category(scast<u32>(idx));
+                    category = TextCodes::category(static_cast<u32>(idx));
                     break;
                 case 1:
-                    category = Notetags::category(scast<u32>(idx));
+                    category = Notetags::category(static_cast<u32>(idx));
                     break;
                 case 2:
-                    category = PluginCommands::category(scast<u32>(idx));
+                    category = PluginCommands::category(static_cast<u32>(idx));
                     break;
                 case 3:
-                    category = CommentTags::category(scast<u32>(idx));
+                    category = CommentTags::category(static_cast<u32>(idx));
                     break;
                 default:
                     std::unreachable();
@@ -1051,7 +1053,7 @@ void SettingsWindow::syncSequenceTable(
     const span<SequenceSettings> sequences
 ) {
     for (const auto& [idx, sequence] : views::enumerate(sequences)) {
-        const i32 row = scast<i32>(idx);
+        const i32 row = static_cast<i32>(idx);
 
         syncColorCells(
             direction,
@@ -1096,7 +1098,7 @@ void SettingsWindow::syncCustomLints(const Direction direction) {
     }
 
     vector<CustomLint> lints;
-    lints.reserve(scast<usize>(ui->customLintsTable->rowCount()));
+    lints.reserve(static_cast<usize>(ui->customLintsTable->rowCount()));
 
     for (i32 row = 0; row < ui->customLintsTable->rowCount(); row++) {
         const QString sequence = ui->customLintsTable->item(row, 0)->text();
@@ -1139,11 +1141,11 @@ void SettingsWindow::syncCustomLints(const Direction direction) {
 
 void SettingsWindow::syncReplacements(const Direction direction) {
     if (direction == Direction::Load) {
-        ui->replacementsTable->setRowCount(scast<i32>(settings->translation.replacements.size()));
+        ui->replacementsTable->setRowCount(static_cast<i32>(settings->translation.replacements.size()));
 
         for (const auto& [idx, entry] : views::enumerate(settings->translation.replacements)) {
             const auto& [source, replacement, enabled] = entry;
-            const i32 row = scast<i32>(idx);
+            const i32 row = static_cast<i32>(idx);
 
             auto* const checkboxItem = new QTableWidgetItem();
             checkboxItem->setCheckState(enabled ? Qt::Checked : Qt::Unchecked);
@@ -1157,7 +1159,7 @@ void SettingsWindow::syncReplacements(const Direction direction) {
     }
 
     vector<Replacement> replacements;
-    replacements.reserve(scast<usize>(ui->replacementsTable->rowCount()));
+    replacements.reserve(static_cast<usize>(ui->replacementsTable->rowCount()));
 
     for (i32 row = 0; row < ui->replacementsTable->rowCount(); row++) {
         QString source = ui->replacementsTable->item(row, 0)->text();
@@ -1205,7 +1207,7 @@ void SettingsWindow::exportCustomLints() {
     auto file = QSaveFile(path);
     file.setDirectWriteFallback(true);
 
-    const i64 size = scast<i64>(json.value().size());
+    const i64 size = static_cast<i64>(json.value().size());
 
     if (!file.open(QFile::WriteOnly) || file.write(json.value().data(), size) != size || !file.commit()) {
         present(this, NOTICE("Writing %1 failed: %2", Warning, Modal, path, file.errorString()));
@@ -1271,6 +1273,12 @@ void SettingsWindow::checkKey() {
     EndpointSettings endpoint;
     syncEndpoint(Direction::Save, endpoint);
 
+    // Not in the form, so it comes from the endpoint that is shown
+    const QModelIndex shown = ui->endpointList->currentIndex();
+    if (shown.isValid() && shown.row() < static_cast<i32>(settings->translation.endpoints.size())) {
+        endpoint.yandexBaseUrl = settings->translation.endpoints[shown.row()].yandexBaseUrl;
+    }
+
     const auto endpointJson = glz::write_json(endpoint);
     const QByteArray sourceLang = QByteArrayLiteral("en");
     const QByteArray translationLang = QByteArrayLiteral("de");
@@ -1312,7 +1320,7 @@ void SettingsWindow::checkLanguageToolConnection() {
     }
 
     auto request = QNetworkRequest(QUrl(baseUrl + u"/v2"_qsv));
-    request.setTransferTimeout(LANGUAGETOOL_CONNECTION_TIMEOUT_MS);
+    request.setTransferTimeout(languageToolTimeoutMs);
 
     // One connection per reply: a check started while another is running must not take the other's `finished`
     QNetworkReply* const pending = languageToolNetworkManager.get(request);

@@ -354,6 +354,11 @@ class Repository final {
     }
 
     [[nodiscard]] auto commitHistory(const usize limit = 0) const -> Result<vector<CommitInfo>> {
+        // A repository with no commits has no history, and no HEAD to walk from
+        if (git_repository_head_unborn(repo.get()) == 1) {
+            return vector<CommitInfo>{};
+        }
+
         detail::RevwalkHandle walker;
 
         {
@@ -1570,7 +1575,7 @@ class Repository final {
         const u32 allowedTypes,
         void* const payload
     ) -> i32 {
-        auto* const self = static_cast<Repository*>(payload);
+        auto const* const self = static_cast<Repository*>(payload);
 
         if (self->credentialsCallback == nullptr) {
             return GIT_PASSTHROUGH;
@@ -1580,7 +1585,7 @@ class Repository final {
     }
 
     static auto transferProgressTrampoline(const git_indexer_progress* const stats, void* const payload) -> i32 {
-        auto* const self = static_cast<Repository*>(payload);
+        auto const* const self = static_cast<Repository*>(payload);
 
         if (self->transferProgressCallback == nullptr) {
             return 0;
@@ -1591,7 +1596,7 @@ class Repository final {
 
     static auto pushProgressTrampoline(const u32 current, const u32 total, const usize bytes, void* const payload)
         -> i32 {
-        auto* const self = static_cast<Repository*>(payload);
+        auto const* const self = static_cast<Repository*>(payload);
 
         if (self->pushProgressCallback == nullptr) {
             return 0;
@@ -1749,6 +1754,7 @@ class Repository final {
         return idx;
     }
 
+   public:
     [[nodiscard]] auto currentBranch() const -> Result<string> {
         detail::RefHandle headRef;
         {
@@ -1771,6 +1777,8 @@ class Repository final {
 
         return string(branchCstr);
     }
+
+   private:
 
     [[nodiscard]] auto getHeadRef() const -> Result<detail::RefHandle> {
         git_reference* raw = nullptr;

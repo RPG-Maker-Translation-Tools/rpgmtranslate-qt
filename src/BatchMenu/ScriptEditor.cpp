@@ -37,7 +37,7 @@ class ScriptHighlighter final : public QSyntaxHighlighter {
             return;
         }
 
-        reference.setHtml(QString::fromUtf8(html.ptr, scast<isize>(html.len)));
+        reference.setHtml(QString::fromUtf8(html.ptr, static_cast<isize>(html.len)));
         rpgm_string_free(html);
 
         highlighted = source;

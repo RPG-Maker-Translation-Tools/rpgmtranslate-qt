@@ -27,10 +27,9 @@ constexpr i32 DIALOG_HEIGHT = 480;
 }
 }  // namespace
 
-StatisticsDialog::StatisticsDialog(QWidget* const parent) :
-    QDialog(parent),
-    table(new QTableWidget(this)) {
+StatisticsDialog::StatisticsDialog(QWidget* const parent) : QDialog(parent), table(new QTableWidget(this)) {
     resize(DIALOG_WIDTH, DIALOG_HEIGHT);
+    setAttribute(Qt::WA_DeleteOnClose);
 
     table->setColumnCount(COLUMN_COUNT);
     retranslate();
@@ -47,7 +46,11 @@ StatisticsDialog::StatisticsDialog(QWidget* const parent) :
 void StatisticsDialog::retranslate() {
     setWindowTitle(tr("Project Statistics"));
     table->setHorizontalHeaderLabels(
-        { tr("File"), tr("Source words"), tr("Source characters"), tr("Translation words"), tr("Translation characters") }
+        { tr("File"),
+          tr("Source words"),
+          tr("Source characters"),
+          tr("Translation words"),
+          tr("Translation characters") }
     );
 
     // The totals are the last row, once the dialog is filled
@@ -65,7 +68,7 @@ void StatisticsDialog::changeEvent(QEvent* const event) {
 }
 
 void StatisticsDialog::fill(const vector<FileStatistics>& files) const {
-    table->setRowCount(scast<i32>(files.size()) + 1);
+    table->setRowCount(static_cast<i32>(files.size()) + 1);
 
     u64 sourceWords = 0;
     u64 sourceCharacters = 0;
@@ -73,11 +76,11 @@ void StatisticsDialog::fill(const vector<FileStatistics>& files) const {
     u64 translationCharacters = 0;
 
     for (const auto [row, file] : views::enumerate(files)) {
-        table->setItem(scast<i32>(row), 0, new QTableWidgetItem(QString::fromLatin1(file.filename.data())));
-        table->setItem(scast<i32>(row), 1, numberItem(file.source.words, false));
-        table->setItem(scast<i32>(row), 2, numberItem(file.source.characters, false));
-        table->setItem(scast<i32>(row), 3, numberItem(file.translation.words, false));
-        table->setItem(scast<i32>(row), 4, numberItem(file.translation.characters, false));
+        table->setItem(static_cast<i32>(row), 0, new QTableWidgetItem(QString::fromLatin1(file.filename.data())));
+        table->setItem(static_cast<i32>(row), 1, numberItem(file.source.words, false));
+        table->setItem(static_cast<i32>(row), 2, numberItem(file.source.characters, false));
+        table->setItem(static_cast<i32>(row), 3, numberItem(file.translation.words, false));
+        table->setItem(static_cast<i32>(row), 4, numberItem(file.translation.characters, false));
 
         sourceWords += file.source.words;
         sourceCharacters += file.source.characters;
@@ -85,7 +88,7 @@ void StatisticsDialog::fill(const vector<FileStatistics>& files) const {
         translationCharacters += file.translation.characters;
     }
 
-    const i32 totalRow = scast<i32>(files.size());
+    const i32 totalRow = static_cast<i32>(files.size());
     auto* const totalLabel = new QTableWidgetItem(tr("Total"));
     QFont font = totalLabel->font();
     font.setBold(true);

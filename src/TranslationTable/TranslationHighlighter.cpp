@@ -28,7 +28,7 @@ void TranslationHighlighter::highlightBlock(const QString& text) {
     };
 
     const i32 blockStart = currentBlock().position();
-    const i32 blockLen = scast<i32>(text.length());
+    const i32 blockLen = static_cast<i32>(text.length());
 
     if (blockStart + blockLen > size) {
         return;

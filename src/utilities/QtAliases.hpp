@@ -1,9 +1,5 @@
 #pragma once
 
-// Qt side of the aliases. Included by a Qt project's own Aliases.hpp, after the Qt-free base (cpp-headers/Aliases.hpp).
-//
-// Requires: "Aliases.hpp" (cpp-headers), Qt Core.
-
 #include "Aliases.hpp"
 
 #include <QList>
@@ -17,11 +13,13 @@ using QL1SV = QLatin1StringView;
 using QSVList = QList<QStringView>;
 
 [[nodiscard]] constexpr auto operator""_qsv(const char16_t* const ptr, const usize len) -> QStringView {
-    return { ptr, scast<isize>(len) };
+    return { ptr, static_cast<isize>(len) };
 }
 
-// Qt < 6.9 (Debian stable) `arg` takes no string view, so a narrow view becomes a QString first. On 6.9+ this is the
-// identity. Never use it for an owning QString; use `.toString()` instead.
+// Targeting Debian stable, so Qt may be older than 6.9: `arg` takes a string
+// view only from 6.9, before that a narrow view has to become a QString first.
+// On 6.9+ this is the identity and returns the view unchanged. Never rely on it
+// for an owning QString - use `.toString()` where ownership is needed.
 #if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
 [[nodiscard]] inline auto svtostr(const QAnyStringView view) -> QString {
     return view.toString();

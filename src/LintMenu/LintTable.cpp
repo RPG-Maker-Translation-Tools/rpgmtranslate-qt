@@ -55,9 +55,9 @@ auto layoutWrappedText(QTextLayout& layout, const i32 width) -> f32 {
             break;
         }
 
-        line.setLineWidth(scast<f32>(width));
+        line.setLineWidth(static_cast<f32>(width));
         line.setPosition(QPointF(0.0F, yPos));
-        yPos += scast<f32>(line.height());
+        yPos += static_cast<f32>(line.height());
     }
 
     layout.endLayout();
@@ -112,7 +112,7 @@ void MatchTableDelegate::paint(
 
     if (highlightColumn) {
         QList<QTextLayout::FormatRange> formatRanges;
-        formatRanges.reserve(scast<isize>(spans.size()));
+        formatRanges.reserve(static_cast<isize>(spans.size()));
         for (const auto span : spans) {
             formatRanges.emplace_back(span.start, span.len, highlightedFormat);
         }
@@ -141,13 +141,13 @@ void MatchTableDelegate::paint(
     auto textLayout = QTextLayout(text, opt.font);
     const f32 height = layoutWrappedText(textLayout, columnWidth > 0 ? columnWidth : MAX_WRAPPED_COLUMN_WIDTH);
 
-    const i32 naturalWidth = scast<i32>(ceil(textLayout.maximumWidth()));
+    const i32 naturalWidth = static_cast<i32>(ceil(textLayout.maximumWidth()));
 
-    return { min(naturalWidth, MAX_WRAPPED_COLUMN_WIDTH) + (PAD_X * 2), scast<i32>(height) + (PAD_Y * 2) };
+    return { min(naturalWidth, MAX_WRAPPED_COLUMN_WIDTH) + (PAD_X * 2), static_cast<i32>(height) + (PAD_Y * 2) };
 }
 
-[[nodiscard]] auto LintTableModel::columnCount(const QModelIndex& /* parent */) const -> i32 {
-    return ColumnCount;
+[[nodiscard]] auto LintTableModel::columnCount(const QModelIndex& parent) const -> i32 {
+    return parent.isValid() ? 0 : ColumnCount;
 }
 
 [[nodiscard]] auto LintTableModel::flags(const QModelIndex& index) const -> Qt::ItemFlags {
@@ -181,7 +181,7 @@ void MatchTableDelegate::paint(
                 return {};
         }
     } else if (role == Qt::TextAlignmentRole) {
-        return scast<i32>(Qt::AlignTop | Qt::AlignLeft);
+        return static_cast<i32>(Qt::AlignTop | Qt::AlignLeft);
     }
 
     return {};
@@ -211,7 +211,7 @@ LintTableModel::headerData(const i32 section, const Qt::Orientation /* orientati
 }
 
 void LintTableModel::appendRow(Row row) {
-    const i32 newRow = scast<i32>(rows.size());
+    const i32 newRow = static_cast<i32>(rows.size());
     beginInsertRows(QModelIndex(), newRow, newRow);
     rows.push_back(std::move(row));
     endInsertRows();
@@ -223,8 +223,8 @@ void LintTableModel::appendRows(vector<Row> newRows) {
         return;
     }
 
-    const i32 first = scast<i32>(rows.size());
-    beginInsertRows(QModelIndex(), first, first + scast<i32>(newRows.size()) - 1);
+    const i32 first = static_cast<i32>(rows.size());
+    beginInsertRows(QModelIndex(), first, first + static_cast<i32>(newRows.size()) - 1);
     rows.insert(rows.end(), std::make_move_iterator(newRows.begin()), std::make_move_iterator(newRows.end()));
     endInsertRows();
 }

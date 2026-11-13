@@ -28,13 +28,13 @@ void CBSLIWidget::setRange(const i32 minimum, const i32 maximum) {
     slider_->setRange(minimum, maximum);
 
     lineEdit_->setValidator(new QIntValidator(minimum, maximum, lineEdit_));
-    lineEdit_->setMaxLength(scast<i32>(itos(maximum).size()));
+    lineEdit_->setMaxLength(static_cast<i32>(itos(maximum).size()));
 
     setValue(value());
 }
 
 void CBSLIWidget::setValue(i32 value) {
-    value = clamp(slider_->minimum(), value, slider_->maximum());
+    value = clamp(value, slider_->minimum(), slider_->maximum());
 
     {
         const QSignalBlocker blocker(slider_);

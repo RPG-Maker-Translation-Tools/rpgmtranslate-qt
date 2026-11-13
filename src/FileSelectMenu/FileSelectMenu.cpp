@@ -12,14 +12,14 @@ FileSelectMenu::FileSelectMenu(QWidget* const parent) : PersistentMenu(parent), 
 
     connect(ui->selectAllButton, &QPushButton::clicked, this, [this] -> void {
         for (auto* const widget : views::drop(ui->gridWidget->children(), 1)) {
-            auto* const checkbox = scast<QCheckBox*>(widget);
+            auto* const checkbox = static_cast<QCheckBox*>(widget);
             checkbox->setChecked(true);
         }
     });
 
     connect(ui->deselectAllButton, &QPushButton::clicked, this, [this] -> void {
         for (auto* const widget : views::drop(ui->gridWidget->children(), 1)) {
-            auto* const checkbox = scast<QCheckBox*>(widget);
+            auto* const checkbox = static_cast<QCheckBox*>(widget);
             checkbox->setChecked(false);
         }
     });
@@ -74,7 +74,7 @@ auto FileSelectMenu::selected(const bool skipped) -> Selected {
     Selected selected;
 
     for (i32 idx = 0; idx < ui->gridLayout->count(); idx++) {
-        const auto* const checkbox = scast<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
+        const auto* const checkbox = static_cast<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
 
         if (checkbox->isChecked() ^ skipped) {
             const QString file = checkbox->text();
@@ -125,7 +125,7 @@ auto FileSelectMenu::selectedCount() const -> u16 {
     u16 count = 0;
 
     for (i32 idx = 0; idx < ui->gridLayout->count(); idx++) {
-        const auto* const checkbox = scast<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
+        const auto* const checkbox = static_cast<const QCheckBox*>(ui->gridLayout->itemAt(idx)->widget());
 
         if (checkbox->isChecked()) {
             count++;
@@ -145,7 +145,7 @@ auto FileSelectMenu::eventFilter(QObject* const obj, QEvent* const event) -> boo
     if (checkbox != nullptr) {
         switch (event->type()) {
             case QEvent::MouseButtonPress: {
-                const auto* const mouseEvent = scast<const QMouseEvent*>(event);
+                const auto* const mouseEvent = static_cast<const QMouseEvent*>(event);
 
                 if (mouseEvent->button() == Qt::LeftButton) {
                     leftButtonDown = true;
@@ -163,7 +163,7 @@ auto FileSelectMenu::eventFilter(QObject* const obj, QEvent* const event) -> boo
     }
 
     if (obj == this && event->type() == QEvent::MouseMove && leftButtonDown) {
-        const auto* const mouseEvent = scast<const QMouseEvent*>(event);
+        const auto* const mouseEvent = static_cast<const QMouseEvent*>(event);
         QWidget* const widgetUnderMouse = childAt(mouseEvent->pos());
         auto* const hoveredCheckbox = qobject_cast<QCheckBox*>(widgetUnderMouse);
 
@@ -174,7 +174,7 @@ auto FileSelectMenu::eventFilter(QObject* const obj, QEvent* const event) -> boo
     }
 
     if (event->type() == QEvent::MouseButtonRelease) {
-        const auto* const mouseEvent = scast<const QMouseEvent*>(event);
+        const auto* const mouseEvent = static_cast<const QMouseEvent*>(event);
 
         if (mouseEvent->button() == Qt::LeftButton) {
             leftButtonDown = false;

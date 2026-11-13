@@ -111,7 +111,7 @@ void SearchMenu::requestAction(const bool replace) {
         searchText,
         replaceText,
         SearchLocation(ui->searchLocationSelect->currentIndex() == 0 ? 3 : ui->searchLocationSelect->currentIndex()),
-        scast<i8>(ui->searchColumnSelect->currentIndex() - 1),
+        static_cast<i8>(ui->searchColumnSelect->currentIndex() - 1),
         searchFlags
     );
 }

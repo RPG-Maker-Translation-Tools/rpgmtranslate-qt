@@ -4,6 +4,11 @@ namespace {
 template <typename Needle, typename Replacement>
 [[nodiscard]] auto replaceAll(const QStringView input, const Needle& needle, const Replacement& replacement)
     -> QString {
+    // indexOf finds an empty needle at every position, so the loop below would never advance
+    if (needle.isEmpty()) {
+        return input.toString();
+    }
+
     isize hit = input.indexOf(needle);
 
     if (hit == -1) {
@@ -27,15 +32,11 @@ template <typename Needle, typename Replacement>
     return result;
 }
 
-[[nodiscard]] constexpr auto separatorSize(const QChar) -> isize {
+[[nodiscard]] constexpr auto separatorSize([[maybe_unused]] const QChar separator) -> isize {
     return 1;
 }
 
 [[nodiscard]] constexpr auto separatorSize(const QStringView separator) -> isize {
-    return separator.size();
-}
-
-[[nodiscard]] constexpr auto separatorSize(const QL1SV separator) -> isize {
     return separator.size();
 }
 
@@ -65,18 +66,6 @@ template <typename Separator>
 }
 }  // namespace
 
-auto qsvReplace(const QStringView input, const QL1SV needle, const QStringView replacement) -> QString {
-    return replaceAll(input, needle, replacement);
-}
-
-auto qsvReplace(const QStringView input, const QStringView needle, const QL1SV replacement) -> QString {
-    return replaceAll(input, needle, replacement);
-}
-
-auto qsvReplace(const QStringView input, const QL1SV needle, const QL1SV replacement) -> QString {
-    return replaceAll(input, needle, replacement);
-}
-
 auto qsvReplace(const QStringView input, const QStringView needle, const QStringView replacement) -> QString {
     return replaceAll(input, needle, replacement);
 }
@@ -86,10 +75,6 @@ auto qsvReplace(const QStringView input, const QChar needle, const QChar replace
     result.replace(needle, replacement);
 
     return result;
-}
-
-auto joinQSVList(const QSVList& list, const QL1SV separator) -> QString {
-    return joinAll(list, separator);
 }
 
 auto joinQSVList(const QSVList& list, const QChar separator) -> QString {

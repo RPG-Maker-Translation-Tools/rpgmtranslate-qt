@@ -1,3 +1,4 @@
+#include "BackupArchive.hpp"
 #include "BatchMenu.hpp"
 #include "BookmarkMenu.hpp"
 #include "Constants.hpp"
@@ -24,12 +25,14 @@ constexpr QStringView SETTINGS_PATH = u"/settings.json";
 
 // LanguageTool has one shared API key (not per-endpoint), so it gets a fixed keyring account.
 constexpr QByteArrayView LANGUAGETOOL_CREDENTIAL_ACCOUNT = "languagetool";
+}  // namespace
 
 // Compresses on a worker thread; level 6 is much lighter on memory than 9 for a size that differs little on text.
-// Written under a temporary name and renamed at the end, so a failed or interrupted write never leaves a broken
-// archive among the backups.
-[[nodiscard]] auto writeBackupArchive(const QString& archivePath, const vector<pair<QString, QByteArray>>& files)
-    -> bool {
+auto writeBackupArchive(
+    const QString& archivePath,
+    const vector<pair<QString, QByteArray>>& files,
+    const ArchiveWriter& writer
+) -> bool {
     const QString partPath = archivePath + u".part"_qsv;
 
     struct archive* arch = archive_write_new();
@@ -64,10 +67,10 @@ constexpr QByteArrayView LANGUAGETOOL_CREDENTIAL_ACCOUNT = "languagetool";
         archive_entry_set_perm(aentry, ARCHIVE_ENTRY_PERM);
         archive_entry_set_size(aentry, buffer.size());
 
-        if (archive_write_header(arch, aentry) != ARCHIVE_OK) {
+        if (writer.writeHeader(arch, aentry) != ARCHIVE_OK) {
             qWarning().noquote() << u"Failed to write archive header of %1"_qsv.arg(name);
             success = false;
-        } else if (archive_write_data(arch, buffer.constData(), buffer.size()) != buffer.size()) {
+        } else if (writer.writeData(arch, buffer.constData(), buffer.size()) != buffer.size()) {
             qWarning().noquote() << u"Failed to write %1 to the backup"_qsv.arg(name);
             success = false;
         }
@@ -80,7 +83,7 @@ constexpr QByteArrayView LANGUAGETOOL_CREDENTIAL_ACCOUNT = "languagetool";
     }
 
     // Closing flushes the compressor, which is where a full disk shows up
-    success = archive_write_close(arch) == ARCHIVE_OK && success;
+    success = writer.close(arch) == ARCHIVE_OK && success;
     archive_write_free(arch);
 
     if (success) {
@@ -94,7 +97,6 @@ constexpr QByteArrayView LANGUAGETOOL_CREDENTIAL_ACCOUNT = "languagetool";
 
     return success;
 }
-}  // namespace
 
 auto MainWindow::saveCurrentTab(QString tabName) -> bool {
     if (tabName.isEmpty()) {
@@ -134,7 +136,7 @@ auto MainWindow::saveCurrentTab(QString tabName) -> bool {
         stream = make_unique<QTextStream>(&mapText);
     }
 
-    TranslationTableModel* const model = ui->translationTable->model();
+    const TranslationTableModel* const model = ui->translationTable->model();
 
     for (i32 row = 0; row < model->rowCount(); row++) {
         if ((model->flags(model->index(row, 1)) & Qt::ItemIsEditable) == 0) {
@@ -200,7 +202,7 @@ auto MainWindow::saveMaps() -> bool {
         return false;
     }
 
-    auto mapsFile = std::move(opened.value());
+    const auto mapsFile = std::move(opened.value());
 
     if (mapsFile == nullptr) {
         return true;
@@ -215,6 +217,7 @@ auto MainWindow::saveMaps() -> bool {
         ranges::sort(keys);
 
         for (const auto key : keys) {
+            mapSections[key].remove(u'\r');
             stream << mapSections[key];
         }
     }
@@ -267,7 +270,7 @@ void MainWindow::saveBackup() {
     // The files are read here, as they are not touched by anything meanwhile; compressing them is what takes time
     vector<pair<QString, QByteArray>> files;
 
-    auto listing =
+    const auto listing =
         QDirListing(projectSettings->translationPath(), { u"*.txt"_s }, QDirListing::IteratorFlag::FilesOnly);
 
     for (const auto& entry : listing) {
@@ -323,7 +326,7 @@ auto MainWindow::saveSettings() -> bool {
         return false;
     }
 
-    auto settingsFile = std::move(opened.value());
+    const auto settingsFile = std::move(opened.value());
 
     if (settingsFile == nullptr) {
         return true;
@@ -338,13 +341,13 @@ auto MainWindow::saveSettings() -> bool {
     for (auto& endpoint : redacted.translation.endpoints) {
         // A key the user cleared must not come back from the store at the next start
         if (endpoint.apiKey.isEmpty()) {
-            if (!rpgm_delete_credential(strtoffi(endpoint.id.toUtf8()))) {
+            if (!credentials->remove(endpoint.id.toUtf8())) {
                 deleteFailed = true;
             }
             continue;
         }
 
-        if (rpgm_store_credential(strtoffi(endpoint.id.toUtf8()), strtoffi(endpoint.apiKey.toUtf8()))) {
+        if (credentials->store(endpoint.id.toUtf8(), endpoint.apiKey.toUtf8())) {
             endpoint.apiKey.clear();
         } else {
             storeFailed = true;
@@ -352,14 +355,11 @@ auto MainWindow::saveSettings() -> bool {
     }
 
     if (redacted.translation.languageTool.apiKey.isEmpty()) {
-        if (!rpgm_delete_credential(strtoffi(LANGUAGETOOL_CREDENTIAL_ACCOUNT))) {
+        if (!credentials->remove(LANGUAGETOOL_CREDENTIAL_ACCOUNT)) {
             deleteFailed = true;
         }
     } else {
-        if (rpgm_store_credential(
-                strtoffi(LANGUAGETOOL_CREDENTIAL_ACCOUNT),
-                strtoffi(redacted.translation.languageTool.apiKey.toUtf8())
-            )) {
+        if (credentials->store(LANGUAGETOOL_CREDENTIAL_ACCOUNT, redacted.translation.languageTool.apiKey.toUtf8())) {
             redacted.translation.languageTool.apiKey.clear();
         } else {
             storeFailed = true;
@@ -373,7 +373,7 @@ auto MainWindow::saveSettings() -> bool {
                 "The system credential store refused the API keys: %1. They are saved in settings.json instead.",
                 Warning,
                 Status,
-                ffitostr(rpgm_error())
+                credentials->error()
             )
         );
     }
@@ -385,7 +385,7 @@ auto MainWindow::saveSettings() -> bool {
                 "The system credential store refused to delete an API key: %1. The key may come back at the next start.",
                 Warning,
                 Status,
-                ffitostr(rpgm_error())
+                credentials->error()
             )
         );
     }
@@ -406,7 +406,7 @@ auto MainWindow::saveSettings() -> bool {
     }
 
     keepBackup(path);
-    settingsFile->write(result->data(), scast<i64>(result->size()));
+    settingsFile->write(result->data(), static_cast<i64>(result->size()));
     return commitFile(this, *settingsFile);
 }
 
@@ -419,7 +419,7 @@ auto MainWindow::saveGlossary() -> bool {
         return false;
     }
 
-    auto glossaryFile = std::move(opened.value());
+    const auto glossaryFile = std::move(opened.value());
 
     if (glossaryFile == nullptr) {
         return true;
@@ -441,7 +441,7 @@ auto MainWindow::saveGlossary() -> bool {
     }
 
     keepBackup(path);
-    glossaryFile->write(result->data(), scast<i64>(result->size()));
+    glossaryFile->write(result->data(), static_cast<i64>(result->size()));
     return commitFile(this, *glossaryFile);
 }
 
@@ -471,7 +471,7 @@ auto MainWindow::saveProjectSettings() -> bool {
         }
 
         keepBackup(path);
-        projectSettingsFile->write(result->data(), scast<i64>(result->size()));
+        projectSettingsFile->write(result->data(), static_cast<i64>(result->size()));
 
         if (!commitFile(this, *projectSettingsFile)) {
             return false;
@@ -486,14 +486,14 @@ auto MainWindow::saveProjectSettings() -> bool {
         return false;
     }
 
-    auto metadataFile = std::move(openedMetadata.value());
+    const auto metadataFile = std::move(openedMetadata.value());
 
     if (metadataFile == nullptr) {
         return true;
     }
 
     auto metadata =
-        Metadata{ .hashes = projectSettings->hashes, .duplicateMode = scast<u8>(projectSettings->duplicateMode) };
+        Metadata{ .hashes = projectSettings->hashes, .duplicateMode = static_cast<u8>(projectSettings->duplicateMode) };
 
     if (!projectSettings->readEncoding.isEmpty()) {
         metadata.readEncoding = projectSettings->readEncoding.toStdString();
@@ -506,7 +506,7 @@ auto MainWindow::saveProjectSettings() -> bool {
         return false;
     }
 
-    metadataFile->write(json.data(), scast<qint64>(json.size()));
+    metadataFile->write(json.data(), static_cast<qint64>(json.size()));
 
     return commitFile(this, *metadataFile);
 }
@@ -709,14 +709,14 @@ void MainWindow::initializeSettings() {
     // reuses one of those indices but always has a path, so a pathless one is a leftover as well.
     const usize endpointCount = settings->translation.endpoints.size();
 
-    std::erase_if(settings->translation.endpoints, [](const EndpointSettings& endpoint) -> bool {
+    std::erase_if(settings->translation.endpoints, [this](const EndpointSettings& endpoint) -> bool {
         const bool unsupported = endpoint.endpoint > TranslationEndpoint::Script ||
                                  (endpoint.endpoint == TranslationEndpoint::Script && endpoint.scriptPath.isEmpty());
 
         // Its API key would stay in the credential store with nothing left to use or delete it
-        if (unsupported && !endpoint.id.isEmpty() && !rpgm_delete_credential(strtoffi(endpoint.id.toUtf8()))) {
+        if (unsupported && !endpoint.id.isEmpty() && !credentials->remove(endpoint.id.toUtf8())) {
             qWarning().noquote() << u"Failed to delete the API key of an unsupported endpoint: %1"_qsv.arg(
-                svtostr(ffitostr(rpgm_error()))
+                credentials->error()
             );
         }
 

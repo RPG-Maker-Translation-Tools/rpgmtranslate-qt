@@ -7,6 +7,7 @@
 
 namespace {
 constexpr i32 ADD_BUTTON_EXTRA_WIDTH = 32;
+constexpr i32 ADD_BUTTON_SIZE = 16;
 }  // namespace
 
 TranslationTableHeader::TranslationTableHeader(QWidget* const parent) : QHeaderView(Qt::Horizontal, parent) {
@@ -29,7 +30,7 @@ void TranslationTableHeader::paintEvent(QPaintEvent* const event) {
         buttonOpt.rect = buttonRect;
         static const auto addIcon = QIcon(u":/icons/add.svg"_s);
         buttonOpt.icon = addIcon;
-        buttonOpt.iconSize = QSize(16, 16);
+        buttonOpt.iconSize = QSize(ADD_BUTTON_SIZE, ADD_BUTTON_SIZE);
 
         buttonOpt.state = QStyle::State_Enabled;
 
@@ -78,21 +79,23 @@ void TranslationTableHeader::mouseReleaseEvent(QMouseEvent* const event) {
 }
 
 void TranslationTableHeader::mouseMoveEvent(QMouseEvent* const event) {
-    const QRect buttonRect = getButtonRect();
-    const bool nowHovered = buttonRect.contains(event->pos());
+    // The base handler sets the cursor of the viewport on every move, so the hand goes after it
+    QHeaderView::mouseMoveEvent(event);
+
+    const bool nowHovered = getButtonRect().contains(event->pos());
 
     if (nowHovered != addButtonHovered) {
         addButtonHovered = nowHovered;
         viewport()->update();
 
-        if (addButtonHovered) {
-            setCursor(Qt::PointingHandCursor);
-        } else {
-            unsetCursor();
+        if (!addButtonHovered) {
+            viewport()->unsetCursor();
         }
     }
 
-    QHeaderView::mouseMoveEvent(event);
+    if (addButtonHovered) {
+        viewport()->setCursor(Qt::PointingHandCursor);
+    }
 }
 
 void TranslationTableHeader::mouseDoubleClickEvent(QMouseEvent* const event) {
@@ -120,7 +123,7 @@ void TranslationTableHeader::leaveEvent(QEvent* const event) {
     if (addButtonHovered) {
         addButtonHovered = false;
         viewport()->update();
-        unsetCursor();
+        viewport()->unsetCursor();
     }
 
     QHeaderView::leaveEvent(event);

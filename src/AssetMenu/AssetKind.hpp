@@ -22,29 +22,35 @@ struct AssetExtension {
 };
 
 // Lowercase, without the dot. Includes the encrypted MV/MZ variants.
-static constexpr auto ASSET_EXTENSIONS = std::to_array<AssetExtension>({
-    { "png_"_L1, AssetKind::Image },   { "rpgmvp"_L1, AssetKind::Image }, { "png"_L1, AssetKind::Image },
-    { "jpg"_L1, AssetKind::Image },    { "bmp"_L1, AssetKind::Image },
+static constexpr auto ASSET_EXTENSIONS = std::to_array<AssetExtension>(
+    { { .extension = "png_"_L1, .kind = AssetKind::Image },   { .extension = "rpgmvp"_L1, .kind = AssetKind::Image },
+      { .extension = "png"_L1, .kind = AssetKind::Image },    { .extension = "jpg"_L1, .kind = AssetKind::Image },
+      { .extension = "bmp"_L1, .kind = AssetKind::Image },
 
-    { "ttf"_L1, AssetKind::Font },     { "otf"_L1, AssetKind::Font },
+      { .extension = "ttf"_L1, .kind = AssetKind::Font },     { .extension = "otf"_L1, .kind = AssetKind::Font },
 
-    { "ogg_"_L1, AssetKind::Audio },   { "m4a_"_L1, AssetKind::Audio },   { "rpgmvo"_L1, AssetKind::Audio },
-    { "rpgmvm"_L1, AssetKind::Audio }, { "ogg"_L1, AssetKind::Audio },    { "m4a"_L1, AssetKind::Audio },
-    { "wav"_L1, AssetKind::Audio },    { "wma"_L1, AssetKind::Audio },    { "mp3"_L1, AssetKind::Audio },
-    { "mid"_L1, AssetKind::Audio },    { "midi"_L1, AssetKind::Audio },
+      { .extension = "ogg_"_L1, .kind = AssetKind::Audio },   { .extension = "m4a_"_L1, .kind = AssetKind::Audio },
+      { .extension = "rpgmvo"_L1, .kind = AssetKind::Audio }, { .extension = "rpgmvm"_L1, .kind = AssetKind::Audio },
+      { .extension = "ogg"_L1, .kind = AssetKind::Audio },    { .extension = "m4a"_L1, .kind = AssetKind::Audio },
+      { .extension = "wav"_L1, .kind = AssetKind::Audio },    { .extension = "wma"_L1, .kind = AssetKind::Audio },
+      { .extension = "mp3"_L1, .kind = AssetKind::Audio },    { .extension = "mid"_L1, .kind = AssetKind::Audio },
+      { .extension = "midi"_L1, .kind = AssetKind::Audio },
 
-    { "webm"_L1, AssetKind::Video },   { "mp4"_L1, AssetKind::Video },    { "avi"_L1, AssetKind::Video },
-    { "mpg"_L1, AssetKind::Video },    { "mpeg"_L1, AssetKind::Video },   { "wmv"_L1, AssetKind::Video },
-    { "ogv"_L1, AssetKind::Video },
+      { .extension = "webm"_L1, .kind = AssetKind::Video },   { .extension = "mp4"_L1, .kind = AssetKind::Video },
+      { .extension = "avi"_L1, .kind = AssetKind::Video },    { .extension = "mpg"_L1, .kind = AssetKind::Video },
+      { .extension = "mpeg"_L1, .kind = AssetKind::Video },   { .extension = "wmv"_L1, .kind = AssetKind::Video },
+      { .extension = "ogv"_L1, .kind = AssetKind::Video },
 
-    { "json"_L1, AssetKind::Data },    { "rxdata"_L1, AssetKind::Data },  { "rvdata"_L1, AssetKind::Data },
-    { "rvdata2"_L1, AssetKind::Data }, { "lmu"_L1, AssetKind::Data },     { "lmt"_L1, AssetKind::Data },
-    { "ldb"_L1, AssetKind::Data },
+      { .extension = "json"_L1, .kind = AssetKind::Data },    { .extension = "rxdata"_L1, .kind = AssetKind::Data },
+      { .extension = "rvdata"_L1, .kind = AssetKind::Data },  { .extension = "rvdata2"_L1, .kind = AssetKind::Data },
+      { .extension = "lmu"_L1, .kind = AssetKind::Data },     { .extension = "lmt"_L1, .kind = AssetKind::Data },
+      { .extension = "ldb"_L1, .kind = AssetKind::Data },
 
-    { "js"_L1, AssetKind::Script },
+      { .extension = "js"_L1, .kind = AssetKind::Script },
 
-    { "lsd"_L1, AssetKind::Save },     { "rpgsave"_L1, AssetKind::Save },
-});
+      { .extension = "lsd"_L1, .kind = AssetKind::Save },     { .extension = "rpgsave"_L1, .kind = AssetKind::Save },
+      { .extension = "rmmzsave"_L1, .kind = AssetKind::Save } }
+);
 
 // `extension` must be lowercase.
 [[nodiscard]] inline auto assetKind(const QStringView extension) -> AssetKind {

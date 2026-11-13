@@ -25,7 +25,7 @@ constexpr isize SCRIPT_LOG_LIMIT = 30;
 constexpr isize MAX_APPROVED_SCRIPTS = 256;
 
 [[nodiscard]] auto hostState(JSContext* const ctx) -> ScriptRuntime::HostState* {
-    return scast<ScriptRuntime::HostState*>(JS_GetContextOpaque(ctx));
+    return static_cast<ScriptRuntime::HostState*>(JS_GetContextOpaque(ctx));
 }
 
 // A blocking native call must not eat the JS execution budget, otherwise the interrupt handler would
@@ -70,7 +70,7 @@ auto hostReadFile(JSContext* const ctx, JSValueConst /* thisVal */, const i32 ar
     }
 
     const QByteArray content = file.readAll();
-    return JS_NewStringLen(ctx, content.constData(), scast<usize>(content.size()));
+    return JS_NewStringLen(ctx, content.constData(), static_cast<usize>(content.size()));
 }
 
 auto hostWriteFile(JSContext* const ctx, JSValueConst /* thisVal */, const i32 argc, JSValueConst* const argv)
@@ -186,8 +186,8 @@ auto hostExec(JSContext* const ctx, JSValueConst /* thisVal */, const i32 argc, 
 
     const QByteArray out = process.readAllStandardOutput();
     const QByteArray err = process.readAllStandardError();
-    JS_SetPropertyStr(ctx, result, "stdout", JS_NewStringLen(ctx, out.constData(), scast<usize>(out.size())));
-    JS_SetPropertyStr(ctx, result, "stderr", JS_NewStringLen(ctx, err.constData(), scast<usize>(err.size())));
+    JS_SetPropertyStr(ctx, result, "stdout", JS_NewStringLen(ctx, out.constData(), static_cast<usize>(out.size())));
+    JS_SetPropertyStr(ctx, result, "stderr", JS_NewStringLen(ctx, err.constData(), static_cast<usize>(err.size())));
 
     return result;
 }
@@ -216,7 +216,12 @@ auto qstringToJS(JSContext* const ctx, const QStringView qsv) -> JSValue {
 }
 
 auto qstringToJS(JSContext* const ctx, const QLatin1StringView qsv) -> JSValue {
-    return JS_NewStringLen(ctx, qsv.constData(), qsv.size());
+    // JS takes UTF-8, and a Latin-1 byte above 0x7F is not valid UTF-8 on its own, so only ASCII can be passed as it is
+    if (ranges::all_of(qsv, [](const char chr) -> bool { return static_cast<u8>(chr) < 0x80; })) {
+        return JS_NewStringLen(ctx, qsv.constData(), qsv.size());
+    }
+
+    return qstringToJS(ctx, QStringView(QString::fromLatin1(qsv)));
 }
 
 auto jsToQString(JSContext* const ctx, const JSValueConst val) -> QString {
@@ -227,7 +232,7 @@ auto jsToQString(JSContext* const ctx, const JSValueConst val) -> QString {
         return {};
     }
 
-    QString result = QString::fromUtf8(buf, scast<isize>(len));
+    QString result = QString::fromUtf8(buf, static_cast<isize>(len));
     JS_FreeCString(ctx, buf);
     return result;
 }
@@ -311,8 +316,8 @@ ScriptRuntime::ScriptRuntime(const QDeadlineTimer deadline, const Task* const ta
     JS_SetMemoryLimit(rt_, SCRIPT_MEMORY_LIMIT);
     JS_SetMaxStackSize(rt_, SCRIPT_MAX_STACK_SIZE);
     // Also stops when the task is aborted, so a script stuck in a loop doesn't outlive the Abort button by the timeout
-    JS_SetInterruptHandler(rt_, [](JSRuntime*, auto* opaque) -> i32 {
-        const auto* const state = scast<const HostState*>(opaque);
+    JS_SetInterruptHandler(rt_, [](auto*, auto* opaque) -> i32 {
+        const auto* const state = static_cast<const HostState*>(opaque);
         return state->deadline->hasExpired() || (state->task != nullptr && state->task->interrupted()) ? 1 : 0;
     }, &host);
     ctx = JS_NewContext(rt_);
@@ -410,7 +415,7 @@ auto runTranslateScript(
     runtime.deadline_ = QDeadlineTimer(SCRIPT_TIMEOUT);
     const auto ret = JSValueGuard(ctx, JS_Call(ctx, callback, JS_UNDEFINED, args.size(), args.data()));
 
-    for (auto& arg : args) {
+    for (const auto& arg : args) {
         JS_FreeValue(ctx, arg);
     }
 
@@ -474,7 +479,7 @@ auto runCellScript(
     runtime.deadline_ = QDeadlineTimer(SCRIPT_TIMEOUT);
     const auto ret = JSValueGuard(ctx, JS_Call(ctx, callback, JS_UNDEFINED, args.size(), args.data()));
 
-    for (auto& arg : args) {
+    for (const auto& arg : args) {
         JS_FreeValue(ctx, arg);
     }
 

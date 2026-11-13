@@ -57,7 +57,7 @@ struct ProjectSettings {
     u8 hintFontSize = 0;
 
     DuplicateMode duplicateMode = DuplicateMode::Allow;
-    BaseFlags flags = scast<BaseFlags>(0);
+    BaseFlags flags = static_cast<BaseFlags>(0);
 
     SourceDirectory sourceDirectory = SourceDirectory::None;
     EngineType engineType = EngineType::MVMZ;
@@ -101,7 +101,7 @@ struct ProjectSettings {
     [[nodiscard]] auto rm2kDatabasePath() const -> QString { return actualSourcePath() + u"/RPG_RT.ldb"_qsv; }
 
     [[nodiscard]] auto actualSourcePath() const -> QString {
-        QString path = baselinePath();
+        const QString path = baselinePath();
 
         if (QFile::exists(path)) {
             return path + u"/data"_qsv;

@@ -32,6 +32,7 @@ class GitCommitModel : public QAbstractListModel {
 
     void prependCommit(GitCommit commit);
     void appendCommit(GitCommit commit);
+    void removeFirst();
     void clear();
 
     [[nodiscard]] auto commitAt(i32 row) const -> const GitCommit&;

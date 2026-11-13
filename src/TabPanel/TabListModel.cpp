@@ -5,7 +5,7 @@
 TabListModel::TabListModel(QObject* const parent) : QAbstractListModel(parent) {}
 
 auto TabListModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
-    return scast<i32>(tabs.size());
+    return static_cast<i32>(tabs.size());
 }
 
 auto TabListModel::data(const QModelIndex& /* index */, const i32 /* role */) const -> QVariant {
@@ -18,14 +18,6 @@ auto TabListModel::flags(const QModelIndex& index) const -> Qt::ItemFlags {
     }
 
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-}
-
-auto TabListModel::tab(const u32 index) const -> const TabListItem& {
-    return tabs[index];
-}
-
-auto TabListModel::tab(const u32 index) -> TabListItem& {
-    return tabs[index];
 }
 
 void TabListModel::clear() {

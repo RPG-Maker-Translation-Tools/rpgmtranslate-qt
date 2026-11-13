@@ -76,7 +76,7 @@ void AssetMenu::changeEvent(QEvent* const event) {
         const QStringList categories = { tr("Audio"), tr("Data"),  tr("Images"), tr("Icons"),
                                          tr("Fonts"), tr("Saves"), tr("Movies") };
 
-        for (i32 idx = 0; idx < min<i32>(categories.size(), tree->topLevelItemCount()); idx++) {
+        for (i32 idx = 0; idx < min<i32>(static_cast<i32>(categories.size()), tree->topLevelItemCount()); idx++) {
             tree->topLevelItem(idx)->setText(0, categories[idx]);
         }
     }
@@ -195,7 +195,7 @@ void AssetMenu::refresh() {
             const AssetKind kind = assetKind(name.sliced(name.lastIndexOf(u'.') + 1).toLower());
             const auto found = ranges::find(targets, kind, &Target::kind);
 
-            return found == targets.end() ? 0 : scast<usize>(found - targets.begin());
+            return found == targets.end() ? 0 : static_cast<usize>(found - targets.begin());
         };
 
         const auto collect = [&](const QString& root, const QDirListing::IteratorFlags flags) -> void {

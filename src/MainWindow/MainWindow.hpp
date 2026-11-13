@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aliases.hpp"
+#include "CredentialStore.hpp"
 #include "Enums.hpp"
 #include "FFILogger.hpp"
 #include "FWD.hpp"
@@ -14,8 +15,10 @@
 #include <QLocale>
 #include <QMainWindow>
 #include <QPointer>
+#include <QProcess>
 #include <QProgressDialog>
 #include <QTimer>
+#include <functional>
 
 namespace Ui {
 class MainWindow;
@@ -25,8 +28,17 @@ class MainWindow final : public QMainWindow {
     Q_OBJECT
 
    public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    // `store` is where the API keys go; the settings migration in the constructor already uses it. Only the tests pass one.
+    explicit MainWindow(QWidget* parent = nullptr, unique_ptr<CredentialStore> store = make_unique<CredentialStore>());
     ~MainWindow() override;
+
+    // Where the API keys go when the settings are saved. Only the tests replace it.
+    void setCredentialStore(unique_ptr<CredentialStore> store) { credentials = std::move(store); }
+
+    // Starts the installed program once the old one has quit after an update; tests replace it
+    std::function<void(const QString&)> restartLauncher = [](const QString& path) -> void {
+        QProcess::startDetached(path, QStringList());
+    };
 
    protected:
     void closeEvent(QCloseEvent* event) override;
@@ -54,7 +66,7 @@ class MainWindow final : public QMainWindow {
 
     // False if the project stays open (a task can't be stopped, or saving failed). The user is told why.
     // `translationsRewritten`: see `openProject()`.
-    bool closeProject(bool translationsRewritten = false);
+    auto closeProject(bool translationsRewritten = false) -> bool;
 
     // Stops the running tasks and waits for them. False, with a message, if one can't be stopped.
     [[nodiscard]] auto stopTasks() -> bool;
@@ -185,6 +197,7 @@ class MainWindow final : public QMainWindow {
     // The tab whose last line is the game title, which `gameTitleInput` edits. Empty if there is none.
     QString gameTitleTab;
 
+    unique_ptr<CredentialStore> credentials = make_unique<CredentialStore>();
     unique_ptr<Settings> settings;
     unique_ptr<ProjectSettings> projectSettings;
 

@@ -25,7 +25,7 @@ constexpr i32 HOVER_DELAY_MS = 600;
 GitCommitModel::GitCommitModel(QObject* const parent) : QAbstractListModel(parent) {}
 
 auto GitCommitModel::rowCount(const QModelIndex& /* parent */) const -> i32 {
-    return scast<i32>(commits.size());
+    return static_cast<i32>(commits.size());
 }
 
 auto GitCommitModel::data(const QModelIndex& index, i32 role) const -> QVariant {
@@ -57,10 +57,16 @@ void GitCommitModel::prependCommit(GitCommit commit) {
 }
 
 void GitCommitModel::appendCommit(GitCommit commit) {
-    const i32 row = scast<i32>(commits.size());
+    const i32 row = static_cast<i32>(commits.size());
     beginInsertRows({}, row, row);
     commits.push_back(std::move(commit));
     endInsertRows();
+}
+
+void GitCommitModel::removeFirst() {
+    beginRemoveRows({}, 0, 0);
+    commits.pop_front();
+    endRemoveRows();
 }
 
 void GitCommitModel::clear() {

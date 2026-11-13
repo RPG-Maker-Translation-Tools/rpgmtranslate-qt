@@ -29,7 +29,7 @@ constexpr i32 STATUS_BAR_MARGIN = 8;
 constexpr i32 STATUS_BAR_SPACING = 8;
 }  // namespace
 
-MainWindow::MainWindow(QWidget* const parent) :
+MainWindow::MainWindow(QWidget* const parent, unique_ptr<CredentialStore> store) :
     QMainWindow(parent),
 
     ui(setupUi()),
@@ -59,6 +59,8 @@ MainWindow::MainWindow(QWidget* const parent) :
 
     ffiLogger(FFILogger::instance()),
     taskWorker(new TaskWorker(this)) {
+    credentials = std::move(store);
+
     retranslateActions();
 
     actionSave->setShortcut(QKeySequence::Save);
@@ -199,7 +201,7 @@ void MainWindow::changeEvent(QEvent* const event) {
         }
 
         retranslateActions();
-        updateTaskButton(taskPanel->taskCount());
+        updateTaskButton(static_cast<i32>(taskPanel->taskCount()));
         updateStatusLabels();
         updateCounts();
     }

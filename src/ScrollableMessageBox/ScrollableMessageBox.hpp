@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Aliases.hpp"
-
-#include <QString>
 #include <QWidget>
 
 // A Yes/No question like QMessageBox::question, whose `details` sit in a scrollable box instead of growing the dialog

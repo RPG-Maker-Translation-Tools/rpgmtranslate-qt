@@ -82,12 +82,12 @@ struct LTMatch {
     pieces.push_back(translation.sliced(cursor).toUtf8());
 
     QByteArray buffer;
-    const u32 count = scast<u32>(pieces.size());
-    buffer.append(rcast<const char*>(&count), sizeof(u32));
+    const u32 count = static_cast<u32>(pieces.size());
+    buffer.append(reinterpret_cast<const char*>(&count), sizeof(u32));
 
     for (const auto& piece : pieces) {
-        const u32 len = scast<u32>(piece.size());
-        buffer.append(rcast<const char*>(&len), sizeof(u32));
+        const u32 len = static_cast<u32>(piece.size());
+        buffer.append(reinterpret_cast<const char*>(&len), sizeof(u32));
         buffer.append(piece);
     }
 
@@ -243,6 +243,33 @@ void TaskWorker::interruptAll() const {
     }
 }
 
+namespace {
+// The lines of `text`, split by `\n` with the blank ones left out. A `\r\n` line ends with its `\r` left out too.
+[[nodiscard]] auto splitLines(const QStringView text) -> QSVList {
+    const isize size = text.size();
+
+    QSVList lines;
+    lines.reserve(text.count(u'\n') + 1);
+
+    for (isize lineStart = 0; lineStart < size;) {
+        isize lineEnd = text.indexOf(u'\n', lineStart);
+
+        if (lineEnd == -1) {
+            lineEnd = size;
+        }
+
+        const QStringView line = chopCarriageReturn(text.sliced(lineStart, lineEnd - lineStart));
+        lineStart = lineEnd + 1;
+
+        if (!line.isEmpty()) {
+            lines.append(line);
+        }
+    }
+
+    return lines;
+}
+}  // namespace
+
 auto fileLines(
     const QL1SV filename,
     const HashMap<u16, QString>& mapSections,
@@ -259,7 +286,7 @@ auto fileLines(
             content = mapSections[mapNumber];
         }
 
-        lines = QStringView(content).split(u'\n', Qt::SkipEmptyParts);
+        lines = splitLines(content);
     } else {
         const QString path = projectSettings->translationPath() % u'/' % filename % u".txt"_qsv;
 
@@ -271,7 +298,7 @@ auto fileLines(
         }
 
         content = QString::fromUtf8(file.readAll());
-        lines = QStringView(content).split(u'\n', Qt::SkipEmptyParts);
+        lines = splitLines(content);
     }
 
     return FileLines{ .content = content, .lines = lines };
@@ -298,7 +325,7 @@ auto modifyFile(
         }
 
         // `content` stays empty for a map, as it is not a file that can be compared with the result
-        lines = QStringView(mapContent).split(u'\n', Qt::SkipEmptyParts);
+        lines = splitLines(mapContent);
     } else {
         path = projectSettings->translationPath() % u'/' % filename % u".txt"_qsv;
 
@@ -312,19 +339,33 @@ auto modifyFile(
         }
 
         content = QString::fromUtf8(file.readAll());
-        lines = QStringView(content).split(u'\n', Qt::SkipEmptyParts);
+        lines = splitLines(content);
     }
 
     QString result = func(content, lines);
 
     if (filename.startsWith("map"_L1)) {
         const u16 mapNumber = stoa<u16>(filename.sliced(3)).value_or(0);
+        // Sections are joined as they are when maps are saved: a section that lost its last newline merges with the next
+        if (mapContent.endsWith(u'\n') && !result.endsWith(u'\n')) {
+            result += u'\n';
+        }
+
         const std::scoped_lock lock(mapSectionsMutex);
         mapSections.find(mapNumber)->second = std::move(result);
         return true;
     }
 
-    // Nothing to write if the callback left the content as is
+    // Written with `\n` only: a `\r` is left out of both sides, so a file that differs from the result only by its line
+    // endings is not rewritten. `lines` view `content`, which is not read after this.
+    content.remove(u'\r');
+    result.remove(u'\r');
+
+    // Closures join their lines without the last newline, which every file written by a save has
+    if (!result.isEmpty() && !result.endsWith(u'\n')) {
+        result += u'\n';
+    }
+
     if (result == content) {
         return true;
     }
@@ -366,14 +407,15 @@ auto TaskWorker::read(
     hashesArray.reserve(hashesArraySize);
 
     for (const auto [filename, hash] : hashes) {
-        const char* const hashBytes = rcast<const char*>(&hash);
+        const char* const hashBytes = reinterpret_cast<const char*>(&hash);
 
         hashesArray.append(filename);
         hashesArray.append(hashBytes, sizeof(u64));
     }
 
-    const ByteBuffer hashesBuf =
-        ByteBuffer{ .ptr = rcast<const u8*>(hashesArray.data()), .len = scast<u32>(hashesArray.size()), .cap = 0 };
+    const ByteBuffer hashesBuf = ByteBuffer{ .ptr = reinterpret_cast<const u8*>(hashesArray.data()),
+                                             .len = static_cast<u32>(hashesArray.size()),
+                                             .cap = 0 };
 
     const QByteArray readEncodingUtf8 = readEncoding.toUtf8();
 
@@ -396,6 +438,10 @@ auto TaskWorker::read(
 }
 
 auto TaskWorker::write(const Selected selected) -> WriteResult {
+    if (writeHook) {
+        writeHook();
+    }
+
     const QByteArray sourcePathUtf8 = projectSettings->actualSourcePath().toUtf8();
     const QByteArray translationPathUtf8 = projectSettings->translationPath().toUtf8();
     const QByteArray outputPathUtf8 = projectSettings->outputPath().toUtf8();
@@ -566,7 +612,11 @@ auto TaskWorker::search(
                     continue;
                 }
 
-                for (i32 idx = 0; idx < match.lastCapturedIndex() + 1; idx++) {
+                // Not `lastCapturedIndex`: it stops at the last group that took part, so a trailing optional group would be
+                // missing and `\2` in a replacement would stay as it is
+                const i32 groupCount = match.regularExpression().captureCount() + 1;
+
+                for (i32 idx = 0; idx < groupCount; idx++) {
                     // A group that took no part in the match is kept empty, so the numbers of the groups after it hold
                     if (match.capturedStart(idx) < 0) {
                         foundMatches.emplace_back(0, 0, true);
@@ -683,7 +733,12 @@ auto TaskWorker::search(
 
             // Every emit queues an event for the GUI thread, so report in batches rather than per row.
             if ((++done % PROGRESS_STEP) == 0) {
-                emit taskProgress(task->id(), svtostr(QL1SV(filenameArray.data())), done, scast<u32>(lines.size()));
+                emit taskProgress(
+                    task->id(),
+                    svtostr(QL1SV(filenameArray.data())),
+                    done,
+                    static_cast<u32>(lines.size())
+                );
             }
         }
 
@@ -724,7 +779,7 @@ auto TaskWorker::lintFiles(const TaskToken& task, const Selected selected, const
         rowRefs.reserve(rowRefs.size() + result.value().lines.size());
 
         for (u32 line = 0; line < result.value().lines.size(); line++) {
-            rowRefs.emplace_back(scast<u32>(files.size()), line);
+            rowRefs.emplace_back(static_cast<u32>(files.size()), line);
         }
 
         files.push_back({ .content = std::move(result.value()), .name = filename.toString() });
@@ -736,7 +791,7 @@ auto TaskWorker::lintFiles(const TaskToken& task, const Selected selected, const
     vector<vector<LintRow>> outcomes(rowRefs.size());
 
     atomicU32 linted = 0;
-    const u32 totalRows = scast<u32>(rowRefs.size());
+    const u32 totalRows = static_cast<u32>(rowRefs.size());
 
     // Each slot is written by exactly one call, and its position in `outcomes` is the row's index in `rowRefs`.
     const auto lintRow = [&](vector<LintRow>& slot) -> void {
@@ -745,7 +800,7 @@ auto TaskWorker::lintFiles(const TaskToken& task, const Selected selected, const
             return;
         }
 
-        const usize idx = scast<usize>(&slot - outcomes.data());
+        const auto idx = static_cast<usize>(&slot - outcomes.data());
         const auto [fileIdx, lineIdx] = rowRefs[idx];
         const LintFile& file = files[fileIdx];
 
@@ -803,7 +858,7 @@ auto TaskWorker::lintFiles(const TaskToken& task, const Selected selected, const
 }
 
 auto TaskWorker::projectStatistics(const TaskToken& task, const vector<FilenameArray>& filenames) -> StatisticsResult {
-    const u32 total = scast<u32>(filenames.size());
+    const u32 total = static_cast<u32>(filenames.size());
     atomicU32 done = 0;
 
     // Files are independent, so they are counted in parallel; the segmentation data is shared and read-only.
@@ -859,7 +914,7 @@ auto TaskWorker::projectStatistics(const TaskToken& task, const vector<FilenameA
 
     // Each slot is written by exactly one call, and its position in `outcomes` is the file's index in `filenames`.
     QtConcurrent::blockingMap(outcomes, [&](optional<FileStatistics>& slot) -> void {
-        slot = statisticsOf(filenames[scast<usize>(&slot - outcomes.data())]);
+        slot = statisticsOf(filenames[static_cast<usize>(&slot - outcomes.data())]);
     });
 
     StatisticsResult result;
@@ -915,16 +970,16 @@ auto TaskWorker::matchGlossaryTerm(
 
     const u8* ptr = matches.ptr;
 
-    const u32 sourceCount = *rcast<const u32*>(ptr);
+    const u32 sourceCount = *reinterpret_cast<const u32*>(ptr);
     ptr += sizeof(u32);
 
-    const auto sourceMatches = span(rcast<const SearchMatch*>(ptr), sourceCount);
+    const auto sourceMatches = span(reinterpret_cast<const SearchMatch*>(ptr), sourceCount);
     ptr += sourceCount * sizeof(SearchMatch);
 
-    const u32 translationCount = *rcast<const u32*>(ptr);
+    const u32 translationCount = *reinterpret_cast<const u32*>(ptr);
     ptr += sizeof(u32);
 
-    const auto translationMatches = span(rcast<const SearchMatch*>(ptr), translationCount);
+    const auto translationMatches = span(reinterpret_cast<const SearchMatch*>(ptr), translationCount);
 
     QStringList sourceMatchDescs;
     vector<Span> sourceHighlights;
@@ -941,9 +996,9 @@ auto TaskWorker::matchGlossaryTerm(
         const auto offsetOf = [text](u32 charCount) -> u32 {
             u32 pos = 0;
 
-            for (; charCount > 0 && pos < scast<u32>(text.size()); charCount--) {
-                const bool pair =
-                    text[pos].isHighSurrogate() && pos + 1 < scast<u32>(text.size()) && text[pos + 1].isLowSurrogate();
+            for (; charCount > 0 && pos < static_cast<u32>(text.size()); charCount--) {
+                const bool pair = text[pos].isHighSurrogate() && pos + 1 < static_cast<u32>(text.size()) &&
+                                  text[pos + 1].isLowSurrogate();
                 pos += pair ? 2 : 1;
             }
 
@@ -986,10 +1041,10 @@ auto TaskWorker::matchGlossaryTerm(
     }
 
     info += u'\n';
-    info += tr("Term: %1, %n occurrence(s): %2", nullptr, scast<i32>(sourceCount))
+    info += tr("Term: %1, %n occurrence(s): %2", nullptr, static_cast<i32>(sourceCount))
                 .arg(term.term, sourceMatchDescs.join(u", "));
     info += u'\n';
-    info += tr("Translation: %1, %n occurrence(s): %2", nullptr, scast<i32>(translationCount))
+    info += tr("Translation: %1, %n occurrence(s): %2", nullptr, static_cast<i32>(translationCount))
                 .arg(term.translation, translationMatchDescs.join(u", "));
 
     auto row = LintRow{
@@ -1042,8 +1097,8 @@ auto TaskWorker::customLintMatcher() const -> CustomLintMatcher {
             continue;
         }
 
-        patternLength += customLint.sequence.size() + (customLint.caseInsensitive ? 13 : 10) + 1;
-        matcher.indices.push_back(scast<i32>(idx));
+        patternLength += customLint.sequence.size() + (customLint.caseInsensitive ? 17 : 10) + 1;
+        matcher.indices.push_back(static_cast<i32>(idx));
     }
 
     if (matcher.indices.empty()) {
@@ -1063,11 +1118,17 @@ auto TaskWorker::customLintMatcher() const -> CustomLintMatcher {
         // Named, so these stay the only capturing groups (see `DontCaptureOption` below): group N is lint N - 1
         pattern += u"(?<l" % qsv(qitos(originalIdx)) % u'>';
 
+        // The flag needs a group of its own: `(?<l1>?i:` is not a pattern
         if (customLint.caseInsensitive) {
-            pattern += u"?i:";
+            pattern += u"(?i:";
         }
 
         pattern += customLint.sequence;
+
+        if (customLint.caseInsensitive) {
+            pattern += u')';
+        }
+
         pattern += u')';
     }
 
@@ -1086,7 +1147,7 @@ auto TaskWorker::lint(
     const CustomLintMatcher& customLints,
     const bool highlight
 ) -> LintOutcome {
-    const i32 size = scast<i32>(translation.size());
+    const i32 size = static_cast<i32>(translation.size());
 
     vector<LintRow> rows;
 
@@ -1126,8 +1187,8 @@ auto TaskWorker::lint(
                     if (match.capturedLength(idx) > 0) {
                         tags.emplace_back(match.captured(idx));
                         highlights.emplace_back(
-                            scast<i32>(match.capturedStart(idx)),
-                            scast<i32>(match.capturedLength(idx))
+                            static_cast<i32>(match.capturedStart(idx)),
+                            static_cast<i32>(match.capturedLength(idx))
                         );
                         break;
                     }
@@ -1233,8 +1294,8 @@ auto TaskWorker::lint(
             const bool misspelled = !dictionary->spell(string_view(utf8Word.data(), utf8Word.size()));
 
             if (misspelled) {
-                const i32 start = scast<i32>(match.capturedStart());
-                const i32 len = scast<i32>(match.capturedLength());
+                const i32 start = static_cast<i32>(match.capturedStart());
+                const i32 len = static_cast<i32>(match.capturedLength());
 
                 // Slow, and only shown for the cell being edited: a lint of files has no use for them
                 QStringList qsuggestions;
@@ -1243,7 +1304,7 @@ auto TaskWorker::lint(
                     vector<string> suggestions;
                     dictionary->suggest(string_view(utf8Word.data(), utf8Word.size()), suggestions);
 
-                    qsuggestions.reserve(scast<isize>(suggestions.size()));
+                    qsuggestions.reserve(static_cast<isize>(suggestions.size()));
                     for (const auto& suggestion : suggestions) {
                         qsuggestions.emplace_back(QString::fromUtf8(suggestion));
                     }
@@ -1474,8 +1535,8 @@ auto TaskWorker::lint(
                         break;
                     }
 
-                    const i32 start = scast<i32>(match.capturedStart(idx));
-                    const i32 len = scast<i32>(match.capturedLength(idx));
+                    const i32 start = static_cast<i32>(match.capturedStart(idx));
+                    const i32 len = static_cast<i32>(match.capturedLength(idx));
 
                     setForeground(
                         start,
@@ -1484,7 +1545,7 @@ auto TaskWorker::lint(
                     );
 
 #ifdef ENABLE_LANGUAGETOOL
-                    capturedMatches.emplace_back(scast<u32>(start), scast<u32>(len));
+                    capturedMatches.emplace_back(static_cast<u32>(start), static_cast<u32>(len));
 #endif
 
                     const QString captured = match.captured(idx);
@@ -1620,8 +1681,8 @@ auto TaskWorker::lint(
 
                 const i32 originalIdx = customLints.indices[idx - 1];
                 const auto& customLint = settings->translation.customLints[originalIdx];
-                const i32 start = scast<i32>(match.capturedStart(idx));
-                const i32 len = scast<i32>(match.capturedLength(idx));
+                const i32 start = static_cast<i32>(match.capturedStart(idx));
+                const i32 len = static_cast<i32>(match.capturedLength(idx));
 
                 if (customLint.useCustomColor) {
                     setForeground(start, len, QColor::fromRgba(customLint.customColor));
@@ -1691,11 +1752,11 @@ auto TaskWorker::lint(
                 );
             } else {
                 for (const auto& ltMatch : matches) {
-                    const i32 start = scast<i32>(ltMatch.offset);
-                    const i32 len = scast<i32>(ltMatch.length);
+                    const i32 start = static_cast<i32>(ltMatch.offset);
+                    const i32 len = static_cast<i32>(ltMatch.length);
 
                     QStringList suggestions;
-                    suggestions.reserve(scast<isize>(ltMatch.replacements.size()));
+                    suggestions.reserve(static_cast<isize>(ltMatch.replacements.size()));
                     for (const auto& replacement : ltMatch.replacements) {
                         suggestions.push_back(replacement.value);
                     }
@@ -1744,7 +1805,7 @@ auto TaskWorker::runBatchScript(
     const BatchVariant& variant,
     const Glossary& glossary
 ) -> ScriptResult {
-    auto deadline = QDeadlineTimer(SCRIPT_TIMEOUT);
+    const auto deadline = QDeadlineTimer(SCRIPT_TIMEOUT);
     auto runtime = ScriptRuntime(deadline, task.get(), script.hostApi);
     JSContext* const ctx = runtime.ctx;
 
@@ -1826,14 +1887,19 @@ auto TaskWorker::runBatchScript(
         const auto filename = QL1SV(filenameArray.data());
         u32 done = 0;
 
-        auto closure = [&, ctx, columnIndex, filename](const QString& content, const QSVList& lines) -> QString {
+        const auto closure = [&, ctx, columnIndex, filename](const QString& content, const QSVList& lines) -> QString {
             QString joined;
             joined.reserve(content.size() * 2);
 
             // Every emit queues an event for the GUI thread, so report in batches rather than per row.
             const auto reportRow = [&] -> void {
                 if ((++done % PROGRESS_STEP) == 0) {
-                    emit taskProgress(task->id(), svtostr(QL1SV(filenameArray.data())), done, scast<u32>(lines.size()));
+                    emit taskProgress(
+                        task->id(),
+                        svtostr(QL1SV(filenameArray.data())),
+                        done,
+                        static_cast<u32>(lines.size())
+                    );
                 }
             };
 
@@ -1871,14 +1937,14 @@ auto TaskWorker::runBatchScript(
 
                 array<JSValue, SCRIPT_CALLBACK_ARG_COUNT> args = {
                     qstringToJS(ctx, sourceText), translations,
-                    qstringToJS(ctx, filename),   JS_NewInt32(ctx, scast<i32>(lineIdx)),
+                    qstringToJS(ctx, filename),   JS_NewInt32(ctx, static_cast<i32>(lineIdx)),
                     JS_DupValue(ctx, options),
                 };
 
                 runtime.deadline_ = QDeadlineTimer(SCRIPT_TIMEOUT);
                 const JSValue ret = JS_Call(ctx, callback, JS_UNDEFINED, SCRIPT_CALLBACK_ARG_COUNT, args.data());
 
-                for (auto& arg : args) {
+                for (const auto& arg : args) {
                     JS_FreeValue(ctx, arg);
                 }
 
@@ -1887,7 +1953,7 @@ auto TaskWorker::runBatchScript(
 
                     scriptError = ScriptError{ .message = jsGetExceptionText(ctx),
                                                .filename = filenameArray,
-                                               .lineNumber = scast<u32>(lineIdx) + 1 };
+                                               .lineNumber = static_cast<u32>(lineIdx) + 1 };
 
                     return joinQSVList(lines, u'\n');
                 }
@@ -1922,8 +1988,8 @@ auto TaskWorker::runBatchScript(
             emit taskProgress(
                 task->id(),
                 svtostr(QL1SV(filenameArray.data())),
-                scast<u32>(lines.size()),
-                scast<u32>(lines.size())
+                static_cast<u32>(lines.size()),
+                static_cast<u32>(lines.size())
             );
 
             return joined;
@@ -1931,7 +1997,7 @@ auto TaskWorker::runBatchScript(
 
         // One call per file. The returned array has one entry per row: null/undefined leaves the row unchanged,
         // otherwise a translations array as in rpgmLineCallback. Comment rows are visible but never rewritten.
-        auto fileClosure = [&, ctx, filename](const QString& content, const QSVList& lines) -> QString {
+        const auto fileClosure = [&, ctx, filename](const QString& content, const QSVList& lines) -> QString {
             if (task->interrupted()) {
                 return joinQSVList(lines, u'\n');
             }
@@ -1950,14 +2016,14 @@ auto TaskWorker::runBatchScript(
                 const JSValue row = JS_NewObject(ctx);
                 JS_SetPropertyStr(ctx, row, "source", qstringToJS(ctx, parts.isEmpty() ? line : parts[0]));
                 JS_SetPropertyStr(ctx, row, "translations", translations);
-                JS_SetPropertyStr(ctx, row, "lineNumber", JS_NewInt32(ctx, scast<i32>(lineIdx)));
+                JS_SetPropertyStr(ctx, row, "lineNumber", JS_NewInt32(ctx, static_cast<i32>(lineIdx)));
                 JS_SetPropertyStr(
                     ctx,
                     row,
                     "isComment",
                     JS_NewBool(ctx, parts.isEmpty() || isProtectedComment(parts[0]))
                 );
-                JS_SetPropertyUint32(ctx, rows, scast<u32>(lineIdx), row);
+                JS_SetPropertyUint32(ctx, rows, static_cast<u32>(lineIdx), row);
             }
 
             array<JSValue, 3> args = { qstringToJS(ctx, filename), JS_DupValue(ctx, rows), JS_DupValue(ctx, options) };
@@ -1965,7 +2031,7 @@ auto TaskWorker::runBatchScript(
             runtime.deadline_ = QDeadlineTimer(SCRIPT_TIMEOUT);
             const auto ret = JSValueGuard(ctx, JS_Call(ctx, fileCallback, JS_UNDEFINED, args.size(), args.data()));
 
-            for (auto& arg : args) {
+            for (const auto& arg : args) {
                 JS_FreeValue(ctx, arg);
             }
 
@@ -1983,7 +2049,7 @@ auto TaskWorker::runBatchScript(
                 QStringList ownedParts;
 
                 if (!parts.isEmpty() && !isProtectedComment(parts[0]) && JS_IsArray(ret)) {
-                    const auto element = JSValueGuard(ctx, JS_GetPropertyUint32(ctx, ret, scast<u32>(lineIdx)));
+                    const auto element = JSValueGuard(ctx, JS_GetPropertyUint32(ctx, ret, static_cast<u32>(lineIdx)));
                     applyTranslations(parts, ownedParts, element);
                 }
 
@@ -2003,8 +2069,8 @@ auto TaskWorker::runBatchScript(
             emit taskProgress(
                 task->id(),
                 svtostr(QL1SV(filenameArray.data())),
-                scast<u32>(lines.size()),
-                scast<u32>(lines.size())
+                static_cast<u32>(lines.size()),
+                static_cast<u32>(lines.size())
             );
 
             return joined;
@@ -2038,7 +2104,7 @@ auto TaskWorker::serdeExport(
     const SerdeFormat format
 ) -> SerdeResult {
     u32 done = 0;
-    const u32 total = scast<u32>(filenames.size());
+    const u32 total = static_cast<u32>(filenames.size());
 
     const u32 skippedCount = processFilesTrackingSkips(task, filenames, [&](const FilenameArray filenameArray) -> bool {
         const auto filename = QL1SV(filenameArray.data());
@@ -2050,7 +2116,9 @@ auto TaskWorker::serdeExport(
             return false;
         }
 
-        const QByteArray contentUtf8 = result.value().content.toUtf8();
+        QByteArray contentUtf8 = result.value().content.toUtf8();
+        // Exported with `\n` only, as the translation files are written
+        contentUtf8.removeIf([](const char byte) -> bool { return byte == '\r'; });
         ByteBuffer exported;
 
         if (!rpgm_serde_export(strtoffi(contentUtf8), format, &exported)) {
@@ -2063,7 +2131,7 @@ auto TaskWorker::serdeExport(
         outFile.setDirectWriteFallback(true);
 
         const bool valid = outFile.open(QFile::WriteOnly) &&
-                           outFile.write(rcast<const char*>(exported.ptr), exported.len) == exported.len &&
+                           outFile.write(reinterpret_cast<const char*>(exported.ptr), exported.len) == exported.len &&
                            outFile.commit();
 
         rpgm_buffer_free(exported);
@@ -2081,7 +2149,7 @@ auto TaskWorker::serdeImport(
     const SerdeFormat format
 ) -> SerdeResult {
     u32 done = 0;
-    const u32 total = scast<u32>(filenames.size());
+    const u32 total = static_cast<u32>(filenames.size());
 
     const u32 skippedCount = processFilesTrackingSkips(task, filenames, [&](const FilenameArray filenameArray) -> bool {
         const auto filename = QL1SV(filenameArray.data());
@@ -2095,8 +2163,8 @@ auto TaskWorker::serdeImport(
         }
 
         const QByteArray raw = inFile.readAll();
-        const ByteBuffer rawBuffer = { .ptr = rcast<const u8*>(raw.constData()),
-                                       .len = scast<u32>(raw.size()),
+        const ByteBuffer rawBuffer = { .ptr = reinterpret_cast<const u8*>(raw.constData()),
+                                       .len = static_cast<u32>(raw.size()),
                                        .cap = 0 };
 
         FFIString imported;
@@ -2105,7 +2173,7 @@ auto TaskWorker::serdeImport(
             return false;
         }
 
-        QString importedContent = QString::fromUtf8(imported.ptr, scast<isize>(imported.len));
+        QString importedContent = QString::fromUtf8(imported.ptr, static_cast<isize>(imported.len));
         rpgm_string_free(imported);
 
         return runLockedModify(filename, [&](const QString&, const QSVList&) -> QString { return importedContent; });
@@ -2129,7 +2197,7 @@ namespace {
     vector<TextMatch>* const newMatches
 ) -> optional<QString> {
     for (const TextMatch& match : matchSpan) {
-        if (scast<usize>(match.get<"start">()) + match.get<"len">() > scast<usize>(part.size())) {
+        if (static_cast<usize>(match.get<"start">()) + match.get<"len">() > static_cast<usize>(part.size())) {
             return nullopt;
         }
     }
@@ -2178,7 +2246,7 @@ namespace {
 
                 if (cidx + 2 < replaceText.size() && replaceText[cidx + 2].isDigit()) {
                     const i32 twoDigit = (next.digitValue() * 10) + replaceText[cidx + 2].digitValue();
-                    const u32 idx = capturedBegin + scast<u32>(twoDigit - 1);
+                    const u32 idx = capturedBegin + static_cast<u32>(twoDigit - 1);
                     if (idx < capturedEnd && matchSpan[idx].get<"capture">()) {
                         result.append(part.sliced(matchSpan[idx].get<"start">(), matchSpan[idx].get<"len">()));
                         cidx += 2;
@@ -2188,7 +2256,7 @@ namespace {
 
                 if (!handled) {
                     const i32 oneDigit = next.digitValue();
-                    const u32 idx = capturedBegin + scast<u32>(oneDigit - 1);
+                    const u32 idx = capturedBegin + static_cast<u32>(oneDigit - 1);
                     if (idx < capturedEnd && matchSpan[idx].get<"capture">()) {
                         result.append(part.sliced(matchSpan[idx].get<"start">(), matchSpan[idx].get<"len">()));
                         cidx += 1;
@@ -2214,7 +2282,7 @@ namespace {
 
     u32 start = 0;
 
-    for (u32 idx = 0; idx < scast<u32>(matchSpan.size());) {
+    for (u32 idx = 0; idx < static_cast<u32>(matchSpan.size());) {
         const TextMatch& match = matchSpan[idx];
 
         if (match.get<"capture">()) {
@@ -2228,7 +2296,7 @@ namespace {
         }
 
         u32 jIdx = idx + 1;
-        while (jIdx < scast<u32>(matchSpan.size()) && matchSpan[jIdx].get<"capture">()) {
+        while (jIdx < static_cast<u32>(matchSpan.size()) && matchSpan[jIdx].get<"capture">()) {
             ++jIdx;
         }
 
@@ -2237,7 +2305,7 @@ namespace {
         const QString substitution = substitute(match, idx + 1, jIdx);
 
         if (newMatches != nullptr) {
-            newMatches->emplace_back(scast<u32>(replaced.size()), scast<u32>(substitution.size()), false);
+            newMatches->emplace_back(static_cast<u32>(replaced.size()), static_cast<u32>(substitution.size()), false);
         }
 
         replaced.append(substitution);
@@ -2272,13 +2340,13 @@ auto TaskWorker::replace(
             break;
         }
 
-        auto closure = [&, action, filename](const QString& /* content */, const QSVList& lines) -> QString {
+        const auto closure = [&, action, filename](const QString& /* content */, const QSVList& lines) -> QString {
             QStringList ownedLines;
-            ownedLines.reserve(scast<isize>(matches.size()));
+            ownedLines.reserve(static_cast<isize>(matches.size()));
 
             // The cells that are replaced, kept for as long as the rows are joined
             QStringList ownedCells;
-            ownedCells.reserve(scast<isize>(matches.size()));
+            ownedCells.reserve(static_cast<isize>(matches.size()));
 
             QSVList newLines;
             newLines.reserve(lines.size());
@@ -2313,7 +2381,7 @@ auto TaskWorker::replace(
 
                     // A row can lack the column that the text is put in
                     if (!parts.isEmpty() && action != SearchAction::Replace && column >= parts.size() &&
-                        column < scast<i32>(projectSettings->columns.size())) {
+                        column < static_cast<i32>(projectSettings->columns.size())) {
                         parts.resize(column + 1);
                     }
 
@@ -2339,12 +2407,16 @@ auto TaskWorker::replace(
 
                     // Every emit queues an event for the GUI thread
                     if ((++done % PROGRESS_STEP) == 0) {
-                        emit
-                            taskProgress(task->id(), svtostr(QL1SV(filename.data())), done, scast<u32>(matches.size()));
+                        emit taskProgress(
+                            task->id(),
+                            svtostr(QL1SV(filename.data())),
+                            done,
+                            static_cast<u32>(matches.size())
+                        );
                     }
                 }
 
-                translatedDelta += scast<i32>(hasTranslation(parts)) - scast<i32>(translatedBefore);
+                translatedDelta += static_cast<i32>(hasTranslation(parts)) - static_cast<i32>(translatedBefore);
 
                 if (parts.isEmpty()) {
                     newLines.push_back(lines[row]);
@@ -2407,7 +2479,7 @@ auto TaskWorker::translateSingle(
             return { .text = ffitostr(rpgm_error()).toString(), .failed = true };
         }
 
-        QString translation = QString::fromUtf8(outString.ptr, scast<isize>(outString.len));
+        QString translation = QString::fromUtf8(outString.ptr, static_cast<isize>(outString.len));
         rpgm_string_free(outString);
 
         return { .text = std::move(translation), .failed = false };
@@ -2425,7 +2497,7 @@ auto TaskWorker::translateSingle(
 
         const QString source = QString::fromUtf8(file.readAll());
 
-        if (!context.approvedScripts.contains(scriptHash(source))) {
+        if (!context.approvedScriptsSha.contains(scriptHash(source))) {
             return { .text = tr("Script is not approved to run. Save the endpoint in Settings to review it."),
                      .failed = true };
         }
@@ -2451,7 +2523,7 @@ auto TaskWorker::translateSingle(
     TranslateSingleResult translations(context.endpoints.size());
 
     QtConcurrent::blockingMap(translations, [&](EndpointAnswer& slot) -> void {
-        const EndpointSettings& endpoint = context.endpoints[scast<usize>(&slot - translations.data())];
+        const EndpointSettings& endpoint = context.endpoints[static_cast<usize>(&slot - translations.data())];
 
         slot = endpoint.endpoint == TranslationEndpoint::Script ? scriptClosure(endpoint) : translateClosure(endpoint);
     });
@@ -2473,9 +2545,9 @@ auto TaskWorker::replaceSingle(
     // The file changed since the search found the cell, so the cell is not there to be replaced
     bool stale = false;
 
-    auto closure =
+    const auto closure =
         [&, action, rowIndex, columnIndex, matches](const QString& /* content */, QSVList& lines) -> QString {
-        if (rowIndex >= scast<u32>(lines.size())) {
+        if (rowIndex >= static_cast<u32>(lines.size())) {
             stale = true;
             return joinQSVList(lines, u'\n');
         }
@@ -2507,7 +2579,7 @@ auto TaskWorker::replaceSingle(
             cell = qsvReplace(replaceText, LINE_FEED, NEW_LINE);
 
             replacedData.text = qsvReplace(replaceText, u'\n', LINE_SEPARATOR);
-            replacedData.matches = { TextMatch(0, scast<u32>(replaceText.size()), false) };
+            replacedData.matches = { TextMatch(0, static_cast<u32>(replaceText.size()), false) };
         } else {
             // The positions are those of the text as the search saw it, with line feeds
             const QString cellText = qsvReplace(parts[columnIndex], NEW_LINE, LINE_FEED);
@@ -2535,7 +2607,7 @@ auto TaskWorker::replaceSingle(
         }
 
         parts[columnIndex] = QStringView(cell);
-        replacedData.translatedDelta = scast<i32>(hasTranslation(parts)) - scast<i32>(translatedBefore);
+        replacedData.translatedDelta = static_cast<i32>(hasTranslation(parts)) - static_cast<i32>(translatedBefore);
 
         const QString merged = joinQSVList(parts, SEPARATOR);
         lines[rowIndex] = QStringView(merged);
@@ -2572,8 +2644,8 @@ auto TaskWorker::languageToolLint(const QStringView text, const vector<Span>& se
     FFIString outJSON;
 
     const QByteArray segmentsBuffer = buildLanguageToolSegments(text, sequences);
-    const auto segments = ByteBuffer{ .ptr = rcast<const u8*>(segmentsBuffer.data()),
-                                      .len = scast<u32>(segmentsBuffer.size()),
+    const auto segments = ByteBuffer{ .ptr = reinterpret_cast<const u8*>(segmentsBuffer.data()),
+                                      .len = static_cast<u32>(segmentsBuffer.size()),
                                       .cap = 0 };
 
     const bool success = rpgm_language_tool_lint(

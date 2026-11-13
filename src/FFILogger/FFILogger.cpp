@@ -8,7 +8,7 @@ auto FFILogger::instance() -> FFILogger& {
 }
 
 void FFILogger::rustLogCallback(const u8 level, const FFIString str) {
-    QString message = QString::fromUtf8(str.ptr, scast<isize>(str.len));
+    QString message = QString::fromUtf8(str.ptr, static_cast<isize>(str.len));
 
     QMetaObject::invokeMethod(&instance(), [level, msg = std::move(message)] -> void {
         instance().dispatchLog(level, msg);

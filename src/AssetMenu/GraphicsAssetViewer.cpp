@@ -11,7 +11,7 @@ constexpr f32 MAX_SCALE_FACTOR = 10.0F;
 }  // namespace
 
 void GraphicsAssetViewer::wheelEvent(QWheelEvent* const event) {
-    u32 curScale = scast<u32>(roundf(currentScale() * SCALE_PERCENT_MULTIPLIER));
+    u32 curScale = static_cast<u32>(roundf(currentScale() * SCALE_PERCENT_MULTIPLIER));
     const bool zoomingIn = event->angleDelta().y() > 0;
 
     if (curScale <= 1 && !zoomingIn) {
@@ -28,7 +28,7 @@ void GraphicsAssetViewer::wheelEvent(QWheelEvent* const event) {
         scale(1.0F / SCALE_FACTOR, 1.0F / SCALE_FACTOR);
     }
 
-    curScale = scast<u32>(roundf(currentScale() * SCALE_PERCENT_MULTIPLIER));
+    curScale = static_cast<u32>(roundf(currentScale() * SCALE_PERCENT_MULTIPLIER));
 
     if (curScale <= 1 && !zoomingIn) {
         setScaleFactor(MIN_SCALE_FACTOR);
@@ -43,7 +43,7 @@ void GraphicsAssetViewer::wheelEvent(QWheelEvent* const event) {
 
 auto GraphicsAssetViewer::currentScale() const -> f32 {
     const QTransform trf = transform();
-    return scast<f32>(trf.m11());
+    return static_cast<f32>(trf.m11());
 }
 
 void GraphicsAssetViewer::setScaleFactor(const f32 factor) {

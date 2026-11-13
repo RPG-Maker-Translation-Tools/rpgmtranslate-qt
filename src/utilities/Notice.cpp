@@ -82,12 +82,12 @@ constexpr i32 MAX_PLACEHOLDER_DIGITS = 2;
     std::unreachable();
 }
 
-[[nodiscard]] auto statusBarOf(QWidget* const parent) -> QStatusBar* {
+[[nodiscard]] auto statusBarOf(const QWidget* const parent) -> QStatusBar* {
     if (parent == nullptr) {
         return nullptr;
     }
 
-    auto* const window = qobject_cast<QMainWindow*>(parent->window());
+    const auto* const window = qobject_cast<QMainWindow*>(parent->window());
     return window == nullptr ? nullptr : window->statusBar();
 }
 }  // namespace
@@ -106,13 +106,14 @@ Notice::Notice(
     severity_(severity),
     delivery_(delivery),
     n_(n) {
-    args_.reserve(scast<isize>(args.size()));
+    args_.reserve(static_cast<isize>(args.size()));
 
     for (const QAnyStringView arg : args) {
         args_.emplace_back(arg.toString());
     }
 
-    const auto logger = QMessageLogger(location.file_name(), scast<i32>(location.line()), location.function_name());
+    const auto logger =
+        QMessageLogger(location.file_name(), static_cast<i32>(location.line()), location.function_name());
     const QString message = english();
 
     switch (severity_) {

@@ -28,7 +28,7 @@ void TabListDelegate::paint(
     opt.text.clear();
 
     const auto fontMetrics = QFontMetrics(opt.font);
-    const auto* const model = rcast<const TabListModel*>(index.model());
+    const auto* const model = reinterpret_cast<const TabListModel*>(index.model());
 
     if (maxCachedNameWidth == 0 || maxCachedProgressWidth == 0) {
         for (i32 idx = 0; idx < model->rowCount(); idx++) {
@@ -81,15 +81,15 @@ void TabListDelegate::paint(
     progressBar.maximum = total;
     progressBar.progress = translated;
 
-    const auto* const list = scast<const TabList*>(option.widget);
+    const auto* const list = static_cast<const TabList*>(option.widget);
     const bool percentMode = list->progressDisplay();
 
     QString progressText;
 
     if (percentMode) {
         // A tab without text has nothing left to translate
-        const u32 percent =
-            total > 0 ? scast<u32>(scast<i64>(translated) * PERCENT_MULTIPLIER / total) : PERCENT_MULTIPLIER;
+        const u32 percent = total > 0 ? static_cast<u32>(static_cast<i64>(translated) * PERCENT_MULTIPLIER / total)
+                                      : PERCENT_MULTIPLIER;
 
         progressText = qsv(qitos(percent)) % u'%';
     } else {

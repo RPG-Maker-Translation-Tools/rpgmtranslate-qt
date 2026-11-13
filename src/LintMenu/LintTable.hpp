@@ -44,8 +44,9 @@ class LintTableModel final : public QAbstractTableModel {
 
     explicit LintTableModel(QObject* const parent = nullptr) : QAbstractTableModel(parent) {}
 
+    // A table has no children: a cell has no rows or columns of its own
     [[nodiscard]] auto rowCount(const QModelIndex& parent = QModelIndex()) const -> i32 override {
-        return scast<i32>(rows.size());
+        return parent.isValid() ? 0 : static_cast<i32>(rows.size());
     }
 
     [[nodiscard]] auto columnCount(const QModelIndex& parent = QModelIndex()) const -> i32 override;

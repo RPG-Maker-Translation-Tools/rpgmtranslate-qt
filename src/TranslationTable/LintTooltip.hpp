@@ -21,11 +21,11 @@ enum class SegmentType : u8 {
 };
 
 struct Segment {
-    Segment(const QL1SV l1sv) : l1sv(l1sv), type(SegmentType::String) {}
+    explicit Segment(const QL1SV l1sv) : l1sv(l1sv), type(SegmentType::String) {}
 
-    Segment(const QStringView qsv) : qsv(qsv), type(SegmentType::Index) {}
+    explicit Segment(const QStringView qsv) : qsv(qsv), type(SegmentType::Index) {}
 
-    Segment(const span<const QL1SV> keys) : keys(keys), type(SegmentType::Strings) {}
+    explicit Segment(const span<const QL1SV> keys) : keys(keys), type(SegmentType::Strings) {}
 
     union {
         QStringView qsv;

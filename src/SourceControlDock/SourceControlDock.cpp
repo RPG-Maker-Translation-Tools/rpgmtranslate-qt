@@ -10,6 +10,7 @@
 
 #include <QComboBox>
 #include <QDir>
+#include <QSignalBlocker>
 #include <QMenu>
 #include <QPushButton>
 #include <QToolButton>
@@ -95,11 +96,26 @@ void SourceControlDock::init(const Ui::MainWindow& ui_) {
         const QByteArray src = (workdir % u"/translation"_qsv).toUtf8();
         const QByteArray dest = (dir.path() % u"/translation"_qsv).toUtf8();
 
+        error_code error;
         fs::copy(
             path(string_view(src.data(), src.size())),
             path(string_view(dest.data(), dest.size())),
-            fs::copy_options::recursive | fs::copy_options::overwrite_existing
+            fs::copy_options::recursive | fs::copy_options::overwrite_existing,
+            error
         );
+
+        // Thrown out of a slot it would end the program
+        if (error) {
+            present(
+                this,
+                Notice(
+                    NOTICE_IN("SourceControlDock", "Failed to copy the translation: %1"),
+                    Severity::Warning,
+                    Delivery::Modal,
+                    { QString::fromStdString(error.message()) }
+                )
+            );
+        }
     });
 
     connect(refreshChangesButton, &QToolButton::pressed, this, [this] -> void {
@@ -134,11 +150,23 @@ void SourceControlDock::loadUI(const GitSettings& gitSettings) {
     const auto branches = repo.listBranches();
 
     if (branches) {
+        // Filling the list is not the user picking a branch: a switch would fail on a repository with no commits
+        // yet, and would check out whichever branch is first in the list on one that has them
+        const QSignalBlocker blocker(branchSelect);
+
         for (const auto& branch : branches.value()) {
             branchSelect->addItem(
                 QIcon(branch.type == GIT_BRANCH_LOCAL ? u":/icons/home.svg"_s : u":/icons/cloud.svg"_s),
                 QString::fromUtf8(branch.name)
             );
+        }
+
+        if (const auto current = repo.currentBranch()) {
+            const i32 index = branchSelect->findText(QString::fromStdString(current.value()));
+
+            if (index >= 0) {
+                branchSelect->setCurrentIndex(index);
+            }
         }
     } else {
         logErr(this, branches.error());
@@ -243,7 +271,7 @@ void SourceControlDock::commit(const bool amend, const bool force) {
     QString message = commitMessageInput->toPlainText();
 
     const auto items = fileList->selectedItems();
-    auto fileNames = ranges::to<vector>(views::transform(items, [](const auto& item) -> string {
+    auto const fileNames = ranges::to<vector>(views::transform(items, [](const auto& item) -> string {
         return item->filePath.toStdString();
     }));
 
@@ -255,6 +283,17 @@ void SourceControlDock::commit(const bool amend, const bool force) {
     }
 
     fileList->removeSelectedItems();
+
+    if (amend) {
+        // The amended commit replaces the latest one; an empty message keeps the one it had
+        auto* const model = commitList->model();
+
+        if (message.isEmpty()) {
+            message = model->commitAt(0).message;
+        }
+
+        model->removeFirst();
+    }
 
     const auto& hash = result.value();
 
@@ -275,7 +314,13 @@ void SourceControlDock::clear() {
     repo.close();
     commitList->clear();
     fileList->clear();
-    branchSelect->clear();
+
+    {
+        // Emptying the list is not a switch of the branch of the repository that was just closed
+        const QSignalBlocker blocker(branchSelect);
+        branchSelect->clear();
+    }
+
     commitMessageInput->clear();
 }
 #endif

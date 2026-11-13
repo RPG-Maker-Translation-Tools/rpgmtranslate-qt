@@ -34,7 +34,7 @@ namespace {
 
         line.setLineWidth(width);
         line.setPosition(QPointF(0.0, yPos));
-        yPos += scast<f32>(line.height());
+        yPos += static_cast<f32>(line.height());
     }
 
     textLayout.endLayout();
@@ -53,7 +53,7 @@ auto SearchResultListDelegate::computeHeight(
     const auto fontMetrics = QFontMetrics(option.font);
 
     auto textLayout = QTextLayout(title, option.font);
-    const i32 titleHeight = scast<i32>(std::ceil(layoutTitle(textLayout, contentWidth)));
+    const i32 titleHeight = static_cast<i32>(std::ceil(layoutTitle(textLayout, contentWidth)));
 
     const i32 subtitleHeigth =
         fontMetrics.boundingRect(QRect(0, 0, contentWidth, 1 << 30), Qt::TextWordWrap, subtitle).height();
@@ -108,10 +108,10 @@ void SearchResultListDelegate::paint(
     const auto spans = index.data(SearchResultListRole::SpansRole).value<span<const TextMatch>>();
 
     QList<QTextLayout::FormatRange> formatRanges;
-    formatRanges.reserve(scast<isize>(spans.size()));
+    formatRanges.reserve(static_cast<isize>(spans.size()));
     for (const TextMatch span : spans) {
         // A group is inside the full match, which is highlighted already; a range outside the text can't be
-        if (span.get<"capture">() || span.get<"start">() >= scast<u32>(title.size())) {
+        if (span.get<"capture">() || span.get<"start">() >= static_cast<u32>(title.size())) {
             continue;
         }
 
@@ -127,7 +127,7 @@ void SearchResultListDelegate::paint(
     painter->setFont(option.font);
     painter->setPen(subtitleColor);
 
-    const i32 subTop = rect.top() + scast<i32>(std::ceil(yPos)) + GAP;
+    const i32 subTop = rect.top() + static_cast<i32>(std::ceil(yPos)) + GAP;
     const QRect subRect(rect.left(), subTop, rect.width(), option.rect.bottom() - subTop - PAD_Y);
 
     painter->drawText(subRect, Qt::TextWordWrap | Qt::AlignLeft | Qt::AlignTop, subtitle);
@@ -204,7 +204,7 @@ void SearchResultListModel::setItems(vector<SearchResultListItem>&& items) {
 }
 
 [[nodiscard]] auto SearchResultListModel::data(const QModelIndex& idx, const i32 role) const -> QVariant {
-    if (!idx.isValid() || idx.row() >= scast<i32>(items.size())) {
+    if (!idx.isValid() || idx.row() >= static_cast<i32>(items.size())) {
         return {};
     }
 
@@ -223,5 +223,5 @@ void SearchResultListModel::setItems(vector<SearchResultListItem>&& items) {
 }
 
 [[nodiscard]] auto SearchResultListModel::rowCount(const QModelIndex& parent) const -> i32 {
-    return scast<i32>(parent.isValid() ? 0 : items.size());
+    return static_cast<i32>(parent.isValid() ? 0 : items.size());
 }

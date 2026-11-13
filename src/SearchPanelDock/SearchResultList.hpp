@@ -70,7 +70,7 @@ class SearchResultListModel final : public QAbstractListModel {
 
     // Tells the views that `changed`, an item of the list, was edited.
     void itemChanged(const SearchResultListItem& changed) {
-        const QModelIndex changedIndex = index(scast<i32>(&changed - items.data()), 0);
+        const QModelIndex changedIndex = index(static_cast<i32>(&changed - items.data()), 0);
         emit dataChanged(changedIndex, changedIndex);
     }
 
@@ -82,15 +82,15 @@ class SearchResultListModel final : public QAbstractListModel {
 
 class SearchResultListProxy final : public QSortFilterProxyModel {
    public:
-    using QSortFilterProxyModel::QSortFilterProxyModel;
     using QSortFilterProxyModel::invalidateFilter;
+    using QSortFilterProxyModel::QSortFilterProxyModel;
 
    protected:
     [[nodiscard]] auto filterAcceptsRow(
         const i32 row,
         const QModelIndex& /* parent */
     ) const -> bool override {
-        auto* const model = scast<SearchResultListModel*>(sourceModel());
+        auto* const model = static_cast<SearchResultListModel*>(sourceModel());
         const auto& item = model->item(row);
         return !item.hidden;
     }

@@ -185,13 +185,13 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
     connect(searchNextButton, &QPushButton::clicked, this, [this] -> void { navigateSearch(+1); });
 
     connect(scaleSlider, &QSlider::valueChanged, this, [this](const i32 scale) -> void {
-        graphicsViewer->setScaleFactor(scast<f32>(scale) / 100.0F);
+        graphicsViewer->setScaleFactor(static_cast<f32>(scale) / 100.0F);
 
         scaleLabel->setText(qsv(qitos(scale)) % u'%');
     });
 
     connect(graphicsViewer, &GraphicsAssetViewer::rescaled, this, [this] -> void {
-        const i32 scale = scast<i32>(roundf(graphicsViewer->currentScale() * 100));
+        const i32 scale = static_cast<i32>(roundf(graphicsViewer->currentScale() * 100));
         scaleSlider->setValue(scale);
 
         scaleLabel->setText(qsv(qitos(scale)) % u'%');
@@ -210,8 +210,8 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
                 // Prettifies straight from/to UTF-8, unlike Qt's QJsonDocument, which would round-trip
                 // through UTF-16 QString/QVariant internally.
                 const string prettified =
-                    glz::prettify_json(string_view(formatSource.constData(), scast<usize>(formatSource.size())));
-                formatted = QByteArray(prettified.data(), scast<isize>(prettified.size()));
+                    glz::prettify_json(string_view(formatSource.constData(), static_cast<usize>(formatSource.size())));
+                formatted = QByteArray(prettified.data(), static_cast<isize>(prettified.size()));
                 success = true;
                 break;
             }
@@ -221,7 +221,10 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
                 success = rpgm_format_src(strtoffi(formatSource), HighlightLanguage::JS, &formattedFFI);
 
                 if (success) {
-                    formatted = QByteArray(rcast<const char*>(formattedFFI.ptr), scast<isize>(formattedFFI.len));
+                    formatted = QByteArray(
+                        reinterpret_cast<const char*>(formattedFFI.ptr),
+                        static_cast<isize>(formattedFFI.len)
+                    );
                     rpgm_string_free(formattedFFI);
                 }
 #endif
@@ -233,7 +236,10 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
                 success = rpgm_format_src(strtoffi(formatSource), HighlightLanguage::Ruby, &formattedFFI);
 
                 if (success) {
-                    formatted = QByteArray(rcast<const char*>(formattedFFI.ptr), scast<isize>(formattedFFI.len));
+                    formatted = QByteArray(
+                        reinterpret_cast<const char*>(formattedFFI.ptr),
+                        static_cast<isize>(formattedFFI.len)
+                    );
                     rpgm_string_free(formattedFFI);
                 }
 #endif
@@ -251,7 +257,9 @@ AssetPreviewWidget::AssetPreviewWidget(QWidget* const parent) :
         FFIString highlightedHtml;
 
         if (rpgm_highlight_code(strtoffi(formatted), formatLanguage, &highlightedHtml)) {
-            codeViewer->setHighlightedHtml(QString::fromUtf8(highlightedHtml.ptr, scast<isize>(highlightedHtml.len)));
+            codeViewer->setHighlightedHtml(
+                QString::fromUtf8(highlightedHtml.ptr, static_cast<isize>(highlightedHtml.len))
+            );
             rpgm_string_free(highlightedHtml);
         } else {
             codeViewer->setPlainText(QString::fromUtf8(formatted));
@@ -291,7 +299,7 @@ void AssetPreviewWidget::changeEvent(QEvent* const event) {
         fontSizeInput->setSuffix(tr(" pt"));
 
 #ifndef ENABLE_ASSET_PLAYBACK
-        if (auto* const mediaPlaceholder = qobject_cast<QLabel*>(stack->widget(scast<i32>(Page::Media)))) {
+        if (auto* const mediaPlaceholder = qobject_cast<QLabel*>(stack->widget(static_cast<i32>(Page::Media)))) {
             mediaPlaceholder->setText(tr("Media playback not available"));
         }
 #endif
@@ -377,7 +385,7 @@ void AssetPreviewWidget::showPage(const Page page, const QString& error) {
         errorLabel->setText(error);
     }
 
-    stack->setCurrentIndex(scast<i32>(page));
+    stack->setCurrentIndex(static_cast<i32>(page));
 }
 
 void AssetPreviewWidget::loadGraphicsAsset(const QString& path, const QString& extension) {
@@ -431,7 +439,7 @@ void AssetPreviewWidget::loadGraphicsAsset(const QString& path, const QString& e
     QTimer::singleShot(0, this, [this] -> void {
         graphicsViewer->fitInView(graphicsScene->itemsBoundingRect(), Qt::KeepAspectRatio);
 
-        const i32 scale = scast<i32>(roundf(graphicsViewer->currentScale() * 100));
+        const i32 scale = static_cast<i32>(roundf(graphicsViewer->currentScale() * 100));
         scaleSlider->setValue(scale);
 
         scaleLabel->setText(qsv(qitos(scale)) % u'%');
@@ -574,7 +582,7 @@ void AssetPreviewWidget::loadFontAsset(const QString& path) {
 
     showPage(Page::Graphics);
 
-    const i32 scale = scast<i32>(roundf(graphicsViewer->currentScale() * 100));
+    const i32 scale = static_cast<i32>(roundf(graphicsViewer->currentScale() * 100));
     scaleSlider->setValue(scale);
 
     scaleLabel->setText(qsv(qitos(scale)) % u'%');
@@ -629,9 +637,9 @@ void AssetPreviewWidget::loadAudioAsset(const QString& path, const QString& exte
             return;
         }
 
-        const i64 audioSize = scast<i64>(decryptedData.len - HEADER_LENGTH);
+        const i64 audioSize = static_cast<i64>(decryptedData.len - HEADER_LENGTH);
         const bool written =
-            tempFile.write(rcast<const char*>(decryptedData.ptr + HEADER_LENGTH), audioSize) == audioSize;
+            tempFile.write(reinterpret_cast<const char*>(decryptedData.ptr + HEADER_LENGTH), audioSize) == audioSize;
         rpgm_buffer_free(decryptedData);
 
         if (!written) {
@@ -745,8 +753,8 @@ void AssetPreviewWidget::loadTextAsset(const QString& path, const QString& exten
             beautifyButton->show();
         }
 
-        code = QString::fromUtf8(json.ptr, scast<isize>(json.len));
-        formatSource = QByteArray(json.ptr, scast<isize>(json.len));
+        code = QString::fromUtf8(json.ptr, static_cast<isize>(json.len));
+        formatSource = QByteArray(json.ptr, static_cast<isize>(json.len));
 
         rpgm_string_free(json);
     } else {
@@ -785,7 +793,7 @@ void AssetPreviewWidget::loadTextAsset(const QString& path, const QString& exten
 
 #if defined(ENABLE_JSON_HIGHLIGHTING) || defined(ENABLE_JS_HIGHLIGHTING) || defined(ENABLE_RUBY_HIGHLIGHTING)
     if (highlighted) {
-        codeViewer->setHighlightedHtml(QString::fromUtf8(highlightedHtml.ptr, scast<isize>(highlightedHtml.len)));
+        codeViewer->setHighlightedHtml(QString::fromUtf8(highlightedHtml.ptr, static_cast<isize>(highlightedHtml.len)));
         rpgm_string_free(highlightedHtml);
     } else {
         codeViewer->setPlainText(code);
@@ -891,7 +899,7 @@ void AssetPreviewWidget::navigateSearch(const i32 delta) {
         return;
     }
 
-    currentSearchIndex = scast<i32>((currentSearchIndex + delta + searchResults.size()) % searchResults.size());
+    currentSearchIndex = static_cast<i32>((currentSearchIndex + delta + searchResults.size()) % searchResults.size());
 
     searchResultsLabel->setText(u"%1/%2%3"_qsv.arg(
         qsv(qitos(currentSearchIndex + 1)),
@@ -939,7 +947,7 @@ void AssetPreviewWidget::updateFontPreview() {
     QTimer::singleShot(0, this, [this] -> void {
         graphicsViewer->fitInView(graphicsScene->itemsBoundingRect(), Qt::KeepAspectRatio);
 
-        const i32 scale = scast<i32>(roundf(graphicsViewer->currentScale() * 100));
+        const i32 scale = static_cast<i32>(roundf(graphicsViewer->currentScale() * 100));
         scaleSlider->setValue(scale);
 
         scaleLabel->setText(qsv(qitos(scale)) % u'%');

@@ -61,7 +61,7 @@ void TranslationsMenu::showTranslations(const TranslateSingleResult& translation
 
     for (const auto& [idx, answer] : views::enumerate(translations)) {
         // The endpoints can have been removed since the request was made
-        if (idx >= scast<isize>(settings->translation.endpoints.size())) {
+        if (idx >= static_cast<isize>(settings->translation.endpoints.size())) {
             break;
         }
 

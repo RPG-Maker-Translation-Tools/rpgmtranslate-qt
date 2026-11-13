@@ -23,8 +23,7 @@ struct GitSettings {
 struct CoreSettings {
     GitSettings git;
     QStringList recentProjects;
-    // SHA-256 of every script the user allowed to run processes and read/write files.
-    QStringList approvedScripts;
+    QStringList approvedScriptsSha;
     QString projectPath;
     Backup backup;
     bool checkForAppUpdates = true;
@@ -50,6 +49,8 @@ struct EndpointSettings {
     QString name;
     QString apiKey;
     QString yandexFolderId;
+    // Where the Yandex API is reached when it is not at its own address; the tests point it at a local server
+    QString yandexBaseUrl;
     QString scriptPath;
 
     bool useGlossary = false;
@@ -126,7 +127,7 @@ struct TranslationSettings {
     };
     vector<u32> whitespaceCharacters;
 
-    LintFlags lintFlags = scast<LintFlags>(ranges::fold_left(enchantum::values<LintFlags>, 0, std::bit_or<>{})) &
+    LintFlags lintFlags = static_cast<LintFlags>(ranges::fold_left(enchantum::values<LintFlags>, 0, std::bit_or<>{})) &
                           ~LintFlags::LintingDisabled;
 
     bool displayWordsAndCharacters = false;
