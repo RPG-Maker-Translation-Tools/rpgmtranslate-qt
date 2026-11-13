@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aliases.hpp"
+#include "CredentialStore.hpp"
 #include "FWD.hpp"
 #include "Settings.hpp"
 #include "rpgmtranslate_rs.h"
@@ -25,6 +26,11 @@ class SettingsWindow final : public QDialog {
 
     explicit SettingsWindow(Settings* settings, ProjectSettings* projectSettings, QWidget* parent);
     ~SettingsWindow() override;
+
+    void setCredentialStore(unique_ptr<CredentialStore> store) { credentials = std::move(store); }
+
+    // How long the LanguageTool connection check waits for an answer; tests shorten it
+    i32 languageToolTimeoutMs = 20000;
 
    protected:
     void changeEvent(QEvent* event) override;
@@ -56,6 +62,7 @@ class SettingsWindow final : public QDialog {
 
     inline void onTypeChange(TranslationEndpoint endpoint);
 
+    unique_ptr<CredentialStore> credentials = make_unique<CredentialStore>();
     Settings initialSettings;
     // Their credentials are deleted only when the changes are saved.
     vector<QString> removedEndpointIds;

@@ -5,7 +5,7 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 set(PROJECT_NAME rpgmtranslate)
-set(PROJECT_VERSION 1.2.0)
+set(PROJECT_VERSION 1.2.1)
 project(${PROJECT_NAME} VERSION ${PROJECT_VERSION} LANGUAGES C CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -444,6 +444,7 @@ set(HEADERS
 
     src/utilities/Aliases.hpp
     src/utilities/Constants.hpp
+    src/utilities/CredentialStore.hpp
     src/utilities/Enums.hpp
     src/utilities/FWD.hpp
     src/utilities/Hasher.hpp
@@ -807,6 +808,15 @@ if (UNIX AND NOT APPLE)
     corrosion_link_libraries(${PROJECT_NAME}_rs OpenSSL::Crypto OpenSSL::SSL)
 endif()
 
+option(ENABLE_TESTS "Build the test suite (run it with ctest)." OFF)
+
+# Added last, as the tests borrow the include directories, definitions and libraries the application target ended up with
+if (ENABLE_TESTS)
+    enable_testing()
+    find_package(Qt6 6.8 REQUIRED COMPONENTS Test)
+    add_subdirectory(tests)
+endif()
+
 function(summary_row label value)
     string(LENGTH "${label}" _length)
     math(EXPR _padding "40 - ${_length}")
@@ -883,5 +893,6 @@ summary_options(
     ENABLE_TOKENIZER_SOUTHEAST_ASIAN
     ENABLE_COUNTING_DICTIONARY
     ENABLE_COUNTING_LSTM
+    ENABLE_TESTS
 )
 message(STATUS "=======================================================")

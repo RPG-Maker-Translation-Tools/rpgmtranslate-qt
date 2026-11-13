@@ -36,7 +36,6 @@ using Dir = SettingsWindow::Direction;
 constexpr i32 TRANSLATION_TABLE_FONT_SIZE_MIN = 8;
 constexpr i32 TRANSLATION_TABLE_FONT_SIZE_MAX = 96;
 constexpr i32 MAX_LINE_LENGTH_HINT = 255;
-constexpr i32 LANGUAGETOOL_CONNECTION_TIMEOUT_MS = 20000;
 
 constexpr i32 SEQUENCE_USE_COLOR_COLUMN = 2;
 constexpr i32 SEQUENCE_COLOR_COLUMN = 3;
@@ -681,9 +680,9 @@ void SettingsWindow::done(const i32 result) {
     syncAll(Direction::Save);
 
     for (const QString& endpointId : removedEndpointIds) {
-        if (!rpgm_delete_credential(strtoffi(endpointId.toUtf8()))) {
+        if (!credentials->remove(endpointId.toUtf8())) {
             qWarning().noquote() << u"Failed to delete the API key of a removed endpoint: %1"_qsv.arg(
-                svtostr(ffitostr(rpgm_error()))
+                credentials->error()
             );
         }
     }
@@ -1274,6 +1273,12 @@ void SettingsWindow::checkKey() {
     EndpointSettings endpoint;
     syncEndpoint(Direction::Save, endpoint);
 
+    // Not in the form, so it comes from the endpoint that is shown
+    const QModelIndex shown = ui->endpointList->currentIndex();
+    if (shown.isValid() && shown.row() < static_cast<i32>(settings->translation.endpoints.size())) {
+        endpoint.yandexBaseUrl = settings->translation.endpoints[shown.row()].yandexBaseUrl;
+    }
+
     const auto endpointJson = glz::write_json(endpoint);
     const QByteArray sourceLang = QByteArrayLiteral("en");
     const QByteArray translationLang = QByteArrayLiteral("de");
@@ -1315,7 +1320,7 @@ void SettingsWindow::checkLanguageToolConnection() {
     }
 
     auto request = QNetworkRequest(QUrl(baseUrl + u"/v2"_qsv));
-    request.setTransferTimeout(LANGUAGETOOL_CONNECTION_TIMEOUT_MS);
+    request.setTransferTimeout(languageToolTimeoutMs);
 
     // One connection per reply: a check started while another is running must not take the other's `finished`
     QNetworkReply* const pending = languageToolNetworkManager.get(request);

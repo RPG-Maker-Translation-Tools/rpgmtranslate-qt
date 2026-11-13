@@ -10,7 +10,6 @@
 #include <float.h>   // DBL_MANT_DIG, LDBL_MANT_DIG
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uint64_t
-#include <stdlib.h>  // malloc, free
 #include <string.h>  // memcpy
 
 #include <limits>       // std::numeric_limits
@@ -51,49 +50,6 @@
 
 namespace {
 
-#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-constexpr bool is_big_endian = true;
-#else
-constexpr bool is_big_endian = false;
-#endif
-
-inline auto bswap64(uint64_t x) noexcept -> uint64_t {
-#if ZMIJ_HAS_BUILTIN(__builtin_bswap64)
-  return __builtin_bswap64(x);
-#elif ZMIJ_MSC_VER
-  return _byteswap_uint64(x);
-#else
-  return ((x & 0xff00000000000000) >> 56) | ((x & 0x00ff000000000000) >> 40) |
-         ((x & 0x0000ff0000000000) >> 24) | ((x & 0x000000ff00000000) >> +8) |
-         ((x & 0x00000000ff000000) << +8) | ((x & 0x0000000000ff0000) << 24) |
-         ((x & 0x000000000000ff00) << 40) | ((x & 0x00000000000000ff) << 56);
-#endif
-}
-
-inline auto clz(uint64_t x) noexcept -> int {
-  assert(x != 0);
-#if ZMIJ_HAS_BUILTIN(__builtin_clzll)
-  return __builtin_clzll(x);
-#elif defined(_M_AMD64) && defined(__AVX2__)
-  // Use lzcnt only on AVX2-capable CPUs that have this BMI instruction.
-  return __lzcnt64(x);
-#elif defined(_M_AMD64) || defined(_M_ARM64)
-  unsigned long idx;
-  _BitScanReverse64(&idx, x);  // Fallback to the BSR instruction.
-  return 63 - idx;
-#elif ZMIJ_MSC_VER
-  // Fallback to the 32-bit BSR instruction.
-  unsigned long idx;
-  if (_BitScanReverse(&idx, uint32_t(x >> 32))) return 31 - idx;
-  _BitScanReverse(&idx, uint32_t(x));
-  return 63 - idx;
-#else
-  int n = 64;
-  for (; x > 0; x >>= 1) --n;
-  return n;
-#endif
-}
-
 inline auto ctz(uint64_t x) noexcept -> int {
   assert(x != 0);
 #if ZMIJ_HAS_BUILTIN(__builtin_ctzll)
@@ -127,13 +83,19 @@ ZMIJ_INLINE auto select(uint64_t condition, int64_t true_value,
   return false_value;
 }
 
+using zmij::detail::bigint;
+using zmij::detail::bswap64;
+using zmij::detail::clz;
 using zmij::detail::compute_dec_exp;
 using zmij::detail::compute_exp_shift;
 using zmij::detail::float_traits;
+using zmij::detail::is_big_endian;
 using zmij::detail::uint128;
 using zmij::detail::uint128_t;
 using zmij::detail::umul128;
 using zmij::detail::umul192_hi128;
+using zmij::detail::write2;
+using zmij::detail::write_digits;
 
 #if ZMIJ_USE_INT128 && defined(__APPLE__)
 constexpr bool use_umul128_hi64 = true;  // Use umul128_hi64 for division.
@@ -141,7 +103,7 @@ constexpr bool use_umul128_hi64 = true;  // Use umul128_hi64 for division.
 constexpr bool use_umul128_hi64 = false;
 #endif
 
-constexpr auto umul128_hi64(uint64_t x, uint64_t y) noexcept -> uint64_t {
+ZMIJ_CONSTEXPR auto umul128_hi64(uint64_t x, uint64_t y) noexcept -> uint64_t {
   return uint64_t(umul128(x, y) >> 64);
 }
 
@@ -615,14 +577,6 @@ inline auto digits2(size_t value) noexcept -> const char* {
   return &data[value * 2];
 }
 
-// Writes chars `a` and `b` to `out` and returns the position after them.
-ZMIJ_INLINE auto write2(char* out, char a, char b) noexcept -> char* {
-  uint16_t v = uint16_t(uint8_t(a) | uint8_t(b) << 8);
-  if (is_big_endian) v = uint16_t(v << 8 | v >> 8);
-  memcpy(out, &v, 2);
-  return out + 2;
-}
-
 constexpr int div10k_exp = 40;
 constexpr uint32_t div10k_sig = uint32_t((1ull << div10k_exp) / 10000 + 1);
 constexpr uint32_t neg10k = uint32_t((1ull << 32) - 10000);
@@ -1020,47 +974,6 @@ ZMIJ_INLINE auto write_float_simd(char*, const dec_digits<64>&, int, bool, bool,
   return nullptr;
 }
 
-// Writes "inf"/"nan" with one 4-byte store, so the buffer must hold 4 bytes.
-auto write_inf_nan(char* buffer, bool is_nan) noexcept -> char* {
-  return memcpy(buffer, is_nan ? "nan" : "inf", 4), buffer + 3;
-}
-
-// An output sink that appends to `out`, discarding anything past `end`.
-struct writer {
-  char* out;
-  char* end;
-  size_t count;  // total chars, including any dropped past `end`
-
-  // The write functions return `count`, the running total of requested chars.
-  ZMIJ_INLINE auto write(char c) noexcept -> size_t {
-    if (out < end) *out++ = c;
-    return ++count;
-  }
-  // Copies at most `end - out` chars of `s[0..n)`; `n` must be non-negative.
-  ZMIJ_INLINE auto write(const char* s, int n) noexcept -> size_t {
-    assert(n >= 0);
-    size_t take = n < end - out ? size_t(n) : size_t(end - out);
-    memcpy(out, s, take);
-    out += take;
-    return count += size_t(n);
-  }
-  // Writes at most `end - out` copies of '0'; `n` must be non-negative.
-  ZMIJ_INLINE auto write_zeros(int n) noexcept -> size_t {
-    assert(n >= 0);
-    size_t take = n < end - out ? size_t(n) : size_t(end - out);
-    memset(out, '0', take);
-    out += take;
-    return count += size_t(n);
-  }
-};
-
-// Returns true if any character in [first, last) is not '0'.
-auto any_nonzero(const char* first, const char* last) noexcept -> bool {
-  for (; first < last; ++first)
-    if (*first != '0') return true;
-  return false;
-}
-
 // Writes zero in fixed notation, e.g. "0.000" (or "0" when precision is 0).
 ZMIJ_INLINE auto write_zero(char* buffer, int precision) noexcept -> char* {
   *buffer++ = '0';
@@ -1085,39 +998,6 @@ ZMIJ_INLINE auto write_exp(char* buffer, int dec_exp) noexcept -> char* {
   }
   memcpy(buffer, digits2(abs_exp), 2);
   return buffer + 2;
-}
-
-// Writes the binary exponent as 'p', a sign and at least one digit (e.g. p+3).
-auto write_hex_exp(char* buffer, int bin_exp) noexcept -> char* {
-  buffer = write2(buffer, 'p', bin_exp < 0 ? '-' : '+');
-  unsigned abs_exp = unsigned(bin_exp < 0 ? -bin_exp : bin_exp);
-  char digits[8];
-  char* p = digits + sizeof(digits);
-  do {
-    *--p = char('0' + abs_exp % 10);
-    abs_exp /= 10;
-  } while (abs_exp != 0);
-  size_t n = size_t(digits + sizeof(digits) - p);
-  memcpy(buffer, p, n);
-  return buffer + n;
-}
-
-template <typename Float, typename UInt>
-ZMIJ_INLINE void normalize(UInt& bin_sig, int64_t& bin_exp) noexcept {
-  // clz counts from the top of its operand, so measure from that width.
-  int lz, width;
-  if (sizeof(UInt) > 8) {
-    uint128_t v = bin_sig;
-    uint64_t hi = uint64_t(v >> 64);
-    lz = hi != 0 ? clz(hi) : 64 + clz(uint64_t(v));
-    width = 128;
-  } else {
-    lz = clz(uint64_t(bin_sig));
-    width = 64;
-  }
-  int shift = lz - (width - 1 - float_traits<Float>::num_sig_bits);
-  bin_sig = bin_sig << shift;
-  bin_exp = 1 - shift;
 }
 
 // Writes num_digits significant digits in scientific form, d[.ddd]e±EE
@@ -1155,23 +1035,31 @@ ZMIJ_INLINE auto to_decimal(UInt bin_sig, int64_t raw_exp, bool regular,
   constexpr int extra_shift = exp_shift_table::extra_shift;
 
   if (!regular) [[ZMIJ_UNLIKELY]] {
+    assert(bin_sig == traits::implicit_bit);
     int dec_exp = compute_dec_exp(bin_exp, false);
-    unsigned char shift = compute_exp_shift(bin_exp, dec_exp + 1) + extra_shift;
+    signed char exp_shift = compute_exp_shift(bin_exp, dec_exp + 1);  // [-3, 1]
     uint128 pow10 = d.pow10_significands[-dec_exp - 1];
-    // Cast to 64 bits: for float, bin_sig << shift can exceed 32 bits.
-    uint128 p = umul192_hi128(pow10.hi, pow10.lo, uint64_t(bin_sig) << shift);
+    // The significand only contains the implicit bit, so the product
+    // pow10 * bin_sig reduces to a single shift and we can extract
+    // the integral and fractional parts directly.
+    unsigned char frac_shift = exp_shift + traits::num_sig_bits;
+    uint64_t fractional = pow10.hi << frac_shift;
+    // For float, pow10.hi alone gives fractional 40+ bits, enough for all
+    // powers of two.
+    if (num_bits == 64) fractional |= pow10.lo >> (64 - frac_shift);
 
-    uint64_t integral = p.hi >> extra_shift;
-    uint64_t fractional = p.hi << (64 - extra_shift) | p.lo >> extra_shift;
-
-    uint64_t half_ulp = pow10.hi >> (extra_shift + 1 - shift);
+    uint64_t half_ulp = pow10.hi >> (1 - exp_shift);
+    // The value is 2**(num_sig_bits + 1) half ulps.
+    uint64_t integral = half_ulp >> (63 - traits::num_sig_bits);
     bool round_up = half_ulp > ~uint64_t(0) - fractional;
     bool round_down = (half_ulp >> 1) > fractional;
     integral += round_up;
 
     int digit = int(umul128_add_hi64(fractional, 10, (uint64_t(1) << 63) - 1));
-    int lo =
-        int(umul128_add_hi64(fractional - (half_ulp >> 1), 10, ~uint64_t(0)));
+    // ceil(y * 10 / 2**64) for y = fractional - half_ulp / 2: y * 10 is a
+    // multiple of 2**64 only for y = 0 or 2**63, which no power of two hits,
+    // so we can round up always.
+    int lo = int(umul128_hi64(fractional - (half_ulp >> 1), 10)) + 1;
     if (digit < lo) digit = lo;
     return {integral, dec_exp, digit, (round_up + round_down) == 0};
   }
@@ -1306,106 +1194,6 @@ ZMIJ_INLINE auto to_decimal(uint64_t bin_sig, int bin_exp,
   return {dec_sig * pow10s[18 - precision], dec_exp + precision - 1};
 }
 
-// A minimal binary big integer (little-endian base-2**32 limbs) over caller-
-// provided storage.
-struct bigint {
-  uint32_t* limbs;
-  int num_limbs;  // Significant limbs; 0 represents zero.
-  int max_limbs;  // Available limbs in `limbs`.
-
-  // Callers must size `max_limbs` for the largest value the number will reach.
-  bigint(uint128_t value, uint32_t* buffer, int max_limbs) noexcept
-      : limbs(buffer), max_limbs(max_limbs) {
-    uint64_t lo = uint64_t(value), hi = uint64_t(value >> 64);
-    limbs[0] = uint32_t(lo);
-    limbs[1] = uint32_t(lo >> 32);
-    limbs[2] = uint32_t(hi);
-    limbs[3] = uint32_t(hi >> 32);
-    num_limbs = 4;
-    trim();
-  }
-
-  void trim() noexcept {
-    while (num_limbs > 0 && limbs[num_limbs - 1] == 0) --num_limbs;
-  }
-
-  // Shifts left by `n`.
-  void shl(int n) noexcept {
-    assert(n >= 0);
-    if (num_limbs == 0) return;
-    int limb_shift = n >> 5, bit_shift = n & 31;
-    assert(num_limbs + limb_shift + (bit_shift != 0) <= max_limbs);
-    if (bit_shift == 0) {
-      for (int i = num_limbs - 1; i >= 0; --i) limbs[i + limb_shift] = limbs[i];
-      num_limbs += limb_shift;
-    } else {
-      limbs[num_limbs + limb_shift] = limbs[num_limbs - 1] >> (32 - bit_shift);
-      for (int i = num_limbs - 1; i > 0; --i) {
-        limbs[i + limb_shift] =
-            limbs[i] << bit_shift | limbs[i - 1] >> (32 - bit_shift);
-      }
-      limbs[limb_shift] = limbs[0] << bit_shift;
-      num_limbs += limb_shift + 1;
-    }
-    for (int i = 0; i < limb_shift; ++i) limbs[i] = 0;
-    trim();
-  }
-
-  // Divides by 10**9 in place and returns the remainder.
-  auto divmod_1e9() noexcept -> uint32_t {
-    uint64_t rem = 0;
-    for (int i = num_limbs - 1; i >= 0; --i) {
-      uint64_t div = rem << 32 | limbs[i];
-      limbs[i] = uint32_t(div / 1000000000u);
-      rem = div % 1000000000u;
-    }
-    trim();
-    return uint32_t(rem);
-  }
-
-  // Multiplies in place by a nonzero `factor`.
-  void mul(uint32_t factor) noexcept {
-    assert(factor != 0);
-    uint64_t carry = 0;
-    for (int i = 0; i < num_limbs; ++i) {
-      uint64_t product = uint64_t(limbs[i]) * factor + carry;
-      limbs[i] = uint32_t(product);
-      carry = product >> 32;
-    }
-    if (carry == 0) return;
-    assert(num_limbs < max_limbs);
-    limbs[num_limbs++] = uint32_t(carry);
-  }
-
-  // Multiplies in place by 5**n.
-  void mul_pow5(int n) noexcept {
-    assert(n >= 0);
-    static constexpr uint32_t pow5[] = {
-        1,     5,      25,      125,     625,      3125,     15625,
-        78125, 390625, 1953125, 9765625, 48828125, 244140625};
-    while (n >= 13) {  // 5**13 is the largest power of five below 2**32.
-      mul(1220703125u);
-      n -= 13;
-    }
-    if (n != 0) mul(pow5[n]);
-  }
-};
-
-// Emits n's decimal digits (most significant first) ending at `end`, consuming
-// n, and returns a pointer to the first (most significant) digit.
-auto write_digits(bigint n, char* end) noexcept -> char* {
-  char* p = end;
-  uint32_t group = n.divmod_1e9();
-  while (n.num_limbs != 0) {  // Lower groups keep all 9 digits.
-    for (int k = 0; k < 9; ++k, group /= 10) *--p = char('0' + group % 10);
-    group = n.divmod_1e9();
-  }
-  do {  // The most significant group drops its leading zeros.
-    *--p = char('0' + group % 10);
-  } while ((group /= 10) != 0);
-  return p;
-}
-
 // Writes bin_sig * 2**bin_exp in fixed notation with `precision` fractional
 // digits, correctly rounded (ties to even) via exact big-integer arithmetic.
 auto write_fixed_big(char* buffer, uint64_t bin_sig, int bin_exp,
@@ -1438,131 +1226,9 @@ auto write_fixed_big(char* buffer, uint64_t bin_sig, int bin_exp,
   return buffer + 2 + lead_zeros + num_digits;
 }
 
-// Emits the digit run digits[0..num_digits) with the decimal point placed per
-// lead_exp, in fixed or scientific notation. Fixed pads to decimal_places
-// fractional digits; scientific appends num_tail_zeros to the fraction.
-auto write_number(writer& w, const char* digits, int num_digits, int lead_exp,
-                  bool fixed, int decimal_places, int num_tail_zeros) noexcept
-    -> size_t {
-  if (!fixed) {
-    // Emit scientific notation d.ddde±XX.
-    w.write(digits[0]);
-    // Emit a point only when fractional digits follow it.
-    if (num_digits - 1 + num_tail_zeros > 0) {
-      w.write('.');
-      w.write(digits + 1, num_digits - 1);
-      w.write_zeros(num_tail_zeros);  // pad the fraction to precision
-    }
-    char exp[8];
-    char* end = zmij::detail::write_big_exp(exp, lead_exp);
-    return w.write(exp, int(end - exp));
-  }
-
-  // Emit fixed notation.
-  int point_pos = lead_exp + 1;
-  int num_int_digits = 0;  // significant digits before the point
-  if (point_pos <= 0) {    // |value| < 1, e.g. 0.00123
-    w.write('0');
-  } else {
-    num_int_digits = point_pos < num_digits ? point_pos : num_digits;
-    w.write(digits, num_int_digits);
-    w.write_zeros(point_pos - num_int_digits);  // integer zeros, e.g. 12300
-  }
-  if (decimal_places <= 0) return w.count;
-  w.write('.');
-  int num_lead_zeros = point_pos < 0 ? -point_pos : 0;
-  w.write_zeros(num_lead_zeros);  // 0.00...
-  int num_frac_digits = num_digits - num_int_digits;
-  w.write(digits + num_int_digits, num_frac_digits);
-  return w.write_zeros(decimal_places - num_lead_zeros - num_frac_digits);
-}
-
-auto write_big(writer& w, bigint num, int bin_exp, int precision, char* digits,
-               int digits_size, zmij::format fmt) noexcept -> size_t {
-  bool general = fmt == zmij::format::general;
-  bool fixed = fmt == zmij::format::fixed;
-  assert(precision >= general);
-
-  digits[0] = '0';
-  char* p = digits;
-  int num_digits = 1;
-  int lead_exp = 0;  // exponent of the leading digit
-
-  if (num.num_limbs != 0) {
-    // Represent the value exactly as an integer num times a power of ten:
-    // value = sig * 2**bin_exp = num * 10**base_exp, so its decimal digits are
-    // num's. For bin_exp < 0 the identity 2**bin_exp = 5**-bin_exp *
-    // 10**bin_exp keeps num integral via a power-of-five multiply.
-    int base_exp = 0;
-    if (bin_exp >= 0) {
-      num.shl(bin_exp);
-    } else {
-      num.mul_pow5(-bin_exp);
-      base_exp = bin_exp;
-    }
-
-    p = write_digits(num, digits + digits_size);
-    num_digits = int(digits + digits_size - p);
-    lead_exp = num_digits - 1 + base_exp;
-
-    // Significant digits to keep: precision for %g. For %e/%f it counts
-    // fractional digits, so add one leading digit; %f adds lead_exp more.
-    int max_digits = precision + !general + (fixed ? lead_exp : 0);
-    // Round to max_digits significant digits, ties to even.
-    if (max_digits < 1) {
-      // |value| < 10**-precision: rounds to 0, or up to 10**-precision when the
-      // discarded part exceeds half a unit (a tie rounds to even, i.e. 0).
-      bool round_up = false;
-      if (max_digits == 0) {
-        round_up =
-            p[0] > '5' || (p[0] == '5' && any_nonzero(p + 1, p + num_digits));
-      }
-      digits[0] = char('0' + round_up);
-      p = digits;
-      num_digits = 1;
-      lead_exp = round_up ? -precision : 0;
-    } else if (num_digits > max_digits) {
-      char dropped = p[max_digits];
-      bool round_up = dropped > '5';
-      // A dropped 5 ties to even unless a lower nonzero digit rounds up.
-      if (dropped == '5') {
-        round_up = ((p[max_digits - 1] - '0') & 1) ||
-                   any_nonzero(p + max_digits + 1, p + num_digits);
-      }
-      num_digits = max_digits;
-      if (round_up) {
-        char* q = p + max_digits - 1;
-        // Propagate the carry over trailing nines.
-        while (*q == '9') *q-- = '0';
-        // 999.. rolling over to 1000.. adds a significant digit.
-        if (q < p) {
-          *--p = '1';
-          ++lead_exp;
-        } else {
-          ++*q;
-        }
-      }
-    }
-  }
-
-  int decimal_places = precision;  // fractional digit positions to emit
-  if (general) {
-    // Drop trailing zeros and pick fixed or scientific.
-    while (num_digits > 1 && p[num_digits - 1] == '0') --num_digits;
-    fixed = lead_exp >= -4 && lead_exp < precision;
-    decimal_places = num_digits - lead_exp - 1;
-  }
-
-  // %e pads the fraction to `precision` digits; %g and shortest emit none.
-  int num_tail_zeros = general ? 0 : precision - num_digits + 1;
-  return write_number(w, p, num_digits, lead_exp, fixed, decimal_places,
-                      num_tail_zeros);
-}
-
 }  // namespace
 
 namespace zmij {
-
 namespace detail {
 
 template <typename Float> auto to_decimal(Float value) noexcept -> dec_fp<> {
@@ -1581,18 +1247,6 @@ template <typename Float> auto to_decimal(Float value) noexcept -> dec_fp<> {
                                  bin_sig != 0, static_data);
   auto last_digit = -dec.has_last_digit & dec.last_digit;
   return {dec.sig * 10 + last_digit, dec.exp, negative};
-}
-
-auto write_big_exp(char* buffer, int dec_exp) noexcept -> char* {
-  buffer = write2(buffer, 'e', dec_exp >= 0 ? '+' : '-');
-  uint32_t abs_exp = dec_exp >= 0 ? uint32_t(dec_exp) : uint32_t(-dec_exp);
-  uint32_t hi = (abs_exp * div100_sig) >> div100_exp;  // abs_exp / 100
-  *buffer = char('0' + hi / 10);
-  buffer += hi >= 10;
-  *buffer = char('0' + hi % 10);
-  buffer += abs_exp >= 100;
-  memcpy(buffer, digits2(abs_exp - hi * 100), 2);
-  return buffer + 2;
 }
 
 // It is slightly faster to return a pointer to the end than the size.
@@ -1824,45 +1478,6 @@ auto write_big(char* out, size_t n, Float value) noexcept -> size_t {
 }
 
 template <typename Float>
-auto write_big(char* out, size_t n, Float value, int precision,
-               format fmt) noexcept -> size_t {
-  using traits = float_traits<Float>;
-  auto bits = traits::to_bits(value);
-  auto bin_exp = traits::get_exp(bits);
-  auto bin_sig = traits::get_sig(bits);
-
-  writer w = {out, out + n, 0};
-  if (traits::is_negative(bits)) w.write('-');
-
-  if (!traits::is_normal(bin_exp)) [[ZMIJ_UNLIKELY]] {
-    if (bin_exp != 0)  // inf or nan
-      return w.write(bin_sig != 0 ? "nan" : "inf", 3);
-    if (bin_sig != 0) normalize<Float>(bin_sig, bin_exp);
-    bin_sig = bin_sig ^ traits::implicit_bit;
-  }
-  bin_sig = bin_sig ^ traits::implicit_bit;
-
-  // One scratch block holds the big integer's limbs followed by the decimal
-  // digits. It stays on the stack except for the extended long double case,
-  // which is too large (~11.6 KB).
-  constexpr int digit_words = (traits::big_digits + 3) / 4;
-  constexpr int scratch_words = traits::big_limbs + digit_words;
-  constexpr bool use_heap =
-      traits::big_digits > float_traits<double>::big_digits;
-  uint32_t stack_scratch[use_heap ? 1 : scratch_words];
-  uint32_t* scratch =
-      use_heap ? static_cast<uint32_t*>(malloc(size_t(scratch_words) * 4))
-               : stack_scratch;
-  if (!scratch) return 0;
-  bigint num(bin_sig, scratch, traits::big_limbs);
-  char* digits = reinterpret_cast<char*>(scratch + traits::big_limbs);
-  size_t size = ::write_big(w, num, int(bin_exp - traits::exp_offset),
-                            precision, digits, traits::big_digits, fmt);
-  if (use_heap) free(scratch);
-  return size;
-}
-
-template <typename Float>
 auto write_scientific(char* buffer, Float value, int precision) noexcept
     -> char* {
   assert(precision >= 1 && precision <= 18);
@@ -2030,43 +1645,6 @@ auto write_fixed(char* buffer, Float value, int precision) noexcept -> char* {
   memmove(buffer + num_int_digits + 1, buffer + num_int_digits, precision);
   buffer[num_int_digits] = '.';
   return buffer + total + 1;
-}
-
-template <typename Float>
-auto write_hex(char* buffer, Float value, bool prefix) noexcept -> char* {
-  using traits = float_traits<Float>;
-  auto bits = traits::to_bits(value);
-  auto bin_exp = traits::get_exp(bits);
-  auto bin_sig = traits::get_sig(bits);
-
-  *buffer = '-';
-  buffer += traits::is_negative(bits);
-
-  bool zero = false;
-  if (!traits::is_normal(bin_exp)) [[ZMIJ_UNLIKELY]] {
-    if (bin_exp != 0) return write_inf_nan(buffer, bin_sig != 0);
-    zero = bin_sig == 0;
-    if (zero)
-      bin_exp = traits::exp_bias;  // This cancels to 0 below.
-    else
-      normalize<Float>(bin_sig, bin_exp);
-  }
-  bin_exp -= traits::exp_bias;
-
-  if (prefix) buffer = write2(buffer, '0', 'x');
-  *buffer++ = char('0' + !zero);
-
-  constexpr int width = int(sizeof(bin_sig)) * 8;
-  bin_sig = bin_sig << (width - traits::num_sig_bits);
-  if (bin_sig != 0) {
-    *buffer++ = '.';
-    do {
-      *buffer++ = "0123456789abcdef"[uint64_t(bin_sig >> (width - 4))];
-      bin_sig = bin_sig << 4;
-    } while (bin_sig != 0);
-  }
-
-  return write_hex_exp(buffer, bin_exp);
 }
 
 template <typename Float>

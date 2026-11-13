@@ -105,6 +105,8 @@ All of these default to `ON`, except the ICU-based tokenizers (`ENABLE_TOKENIZER
 - `MSVC_RUNTIME` (`MT`) - the MSVC runtime library: `MT`, `MD`, `MTd` or `MDd`.
 - `RUST_PROFILE` - the Cargo profile the Rust half is built with.
 - `LUA_EXECUTABLE` - the Lua used by the pre-build scripts. A Lua binary for Linux and Windows is shipped in the repository; set this to use your own.
+- `ENABLE_TESTS` (`OFF`) - builds the test suite. See [Running tests](#running-tests).
+- `ENABLE_COVERAGE` (`OFF`) - instruments the tests and adds the `coverage` target. Needs `ENABLE_TESTS` and Clang. See [Test coverage](#test-coverage).
 
 ### Getting development headers on Linux
 
@@ -229,6 +231,34 @@ cmake --build build
 ```
 
 Output lands in `build/target/bin/`.
+
+## Running tests
+
+Tests are opt-in. Configure with `-DENABLE_TESTS=ON` (this also needs Qt's `Test` module), build, and run `ctest`. The tests that make the credential store refuse use GMock and are built only when CMake finds `GTest::gmock` (`libgmock-dev` on Debian and Ubuntu, `mingw-w64-clang-x86_64-gtest` on MSYS2); without it they are left out:
+
+```bash
+cmake -B build -DENABLE_TESTS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+- The C++ tests live in `tests/` and use Qt Test. Each `tst_*.cpp` is its own executable, registered with `add_app_test()` in `tests/CMakeLists.txt`, which lists the application sources that test needs.
+- The Rust tests are inline `#[cfg(test)]` modules in `rust/src/`. `ctest` runs them as the `rust` test; to run them alone: `cargo test --lib --features snowball` from `rust/`. The search tests need a tokenizer, and `snowball` is the one with no heavy dependencies.
+
+### Test coverage
+
+Configure with `-DENABLE_TESTS=ON -DENABLE_COVERAGE=ON` using Clang (the report is made by `llvm-cov`, whose major version has to match the compiler's - `llvm-cov-20` for Clang 20 - and the compiler's profile runtime, `libclang-rt-<N>-dev` on Debian/Ubuntu, has to be installed), then build the `coverage` target. It runs the C++ tests and writes the report to `<build>/tests/coverage/`:
+
+```bash
+cmake --build build --target coverage
+```
+
+- `report.txt` - the per-file table, also printed by the target.
+- `html/index.html` - the same by line, with each line's hit count.
+- `lcov.info` - for editors and CI services.
+- `untested-sources.txt` - the `.cpp` files no test compiles. The table cannot show those, as a file that was never built has no coverage data, so this list is where the real zeroes are.
+
+The Rust half is measured separately, with `cargo llvm-cov --lib --features snowball,languagetool,yandex-translate` from `rust/` (`cargo install cargo-llvm-cov` and `rustup component add llvm-tools-preview` first). Its table counts the lines of the `mod tests` blocks too, so the real figure for the application code is lower. Add `serde-csv,serde-xml,serde-xlsx,serde-yaml,json-highlighting,js-highlighting,ruby-highlighting,js-formatting,ruby-formatting` to `--features` to also run the tests of those backends.
 
 ## Updating translations
 

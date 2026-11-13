@@ -34,7 +34,7 @@ void CBSLIWidget::setRange(const i32 minimum, const i32 maximum) {
 }
 
 void CBSLIWidget::setValue(i32 value) {
-    value = clamp(slider_->minimum(), value, slider_->maximum());
+    value = clamp(value, slider_->minimum(), slider_->maximum());
 
     {
         const QSignalBlocker blocker(slider_);

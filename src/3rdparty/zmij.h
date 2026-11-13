@@ -1,4 +1,4 @@
-#define ZMIJ_COMMIT_OID "55ddf6a"
+#define ZMIJ_COMMIT_OID "4a9737d"
 // A double-to-string conversion library: https://github.com/vitaut/zmij/
 //
 // Copyright (c) 2025 - present, Victor Zverovich
@@ -12,6 +12,7 @@
 #include <float.h>   // DBL_MANT_DIG, LDBL_MANT_DIG
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uint64_t
+#include <stdlib.h>  // malloc, free
 #include <string.h>  // memcpy
 
 #include <limits>       // std::numeric_limits
@@ -53,12 +54,6 @@
 #  define ZMIJ_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
-#ifdef __cpp_lib_is_constant_evaluated
-#  define ZMIJ_CONSTEXPR20 constexpr
-#else
-#  define ZMIJ_CONSTEXPR20
-#endif
-
 #ifdef ZMIJ_USE_IS_CONSTANT_EVALUATED
 // Use the provided definition.
 #elif defined(__cpp_lib_is_constant_evaluated) ||                    \
@@ -83,6 +78,12 @@
 #  define ZMIJ_DEFAULT(...)
 #endif
 
+#if defined(__cpp_lib_is_constant_evaluated) && ZMIJ_USE_CONSTEXPR
+#  define ZMIJ_CONSTEXPR20 constexpr
+#else
+#  define ZMIJ_CONSTEXPR20
+#endif
+
 #ifdef __x86_64__
 #  define ZMIJ_X86_64 1
 #else
@@ -95,7 +96,8 @@
 
 #ifdef ZMIJ_USE_NEON
 // Use the provided definition.
-#elif defined(__ARM_NEON) || defined(_M_ARM64)
+#elif (defined(__ARM_NEON) && defined(__aarch64__)) || defined(_M_ARM64)
+// The NEON code uses AArch64-only intrinsics such as vqtbl1q_u8.
 #  define ZMIJ_USE_NEON ZMIJ_USE_SIMD
 #else
 #  define ZMIJ_USE_NEON 0
@@ -114,8 +116,10 @@
 #ifdef ZMIJ_USE_SSE4_1
 // Use the provided definition.
 static_assert(!ZMIJ_USE_SSE4_1 || ZMIJ_USE_SSE, "SSE4.1 requires SSE");
-#elif defined(__SSE4_1__) || defined(__AVX__)
+#elif (defined(__SSE4_1__) || defined(__AVX__)) && \
+    (defined(__x86_64__) || defined(_M_X64))
 // On MSVC there's no way to check for SSE4.1 specifically so check __AVX__.
+// The SSE4.1 code uses x86-64-only intrinsics such as _mm_insert_epi64.
 #  define ZMIJ_USE_SSE4_1 ZMIJ_USE_SSE
 #else
 #  define ZMIJ_USE_SSE4_1 0
@@ -135,6 +139,14 @@ static_assert(!ZMIJ_USE_SSE4_1 || ZMIJ_USE_SSE, "SSE4.1 requires SSE");
 #  define ZMIJ_INLINE __forceinline
 #else
 #  define ZMIJ_INLINE inline
+#endif
+
+#if ZMIJ_HAS_ATTRIBUTE(noinline)
+#  define ZMIJ_NOINLINE __attribute__((noinline))
+#elif ZMIJ_MSC_VER
+#  define ZMIJ_NOINLINE __declspec(noinline)
+#else
+#  define ZMIJ_NOINLINE
 #endif
 
 #if ZMIJ_HAS_CPP_ATTRIBUTE(likely) && ZMIJ_HAS_CPP_ATTRIBUTE(unlikely)
@@ -221,6 +233,49 @@ constexpr auto is_constant_evaluated() noexcept -> bool {
 #else
   return false;
 #endif
+}
+
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+constexpr bool is_big_endian = true;
+#else
+constexpr bool is_big_endian = false;
+#endif
+
+inline auto bswap64(uint64_t x) noexcept -> uint64_t {
+#if ZMIJ_HAS_BUILTIN(__builtin_bswap64)
+  return __builtin_bswap64(x);
+#elif ZMIJ_MSC_VER
+  return _byteswap_uint64(x);
+#else
+  return ((x & 0xff00000000000000) >> 56) | ((x & 0x00ff000000000000) >> 40) |
+         ((x & 0x0000ff0000000000) >> 24) | ((x & 0x000000ff00000000) >> +8) |
+         ((x & 0x00000000ff000000) << +8) | ((x & 0x0000000000ff0000) << 24) |
+         ((x & 0x000000000000ff00) << 40) | ((x & 0x00000000000000ff) << 56);
+#endif
+}
+
+inline ZMIJ_CONSTEXPR20 auto clz(uint64_t x) noexcept -> int {
+  assert(x != 0);
+  if (!is_constant_evaluated()) {
+#if ZMIJ_HAS_BUILTIN(__builtin_clzll)
+    return __builtin_clzll(x);
+#elif defined(_M_AMD64) && defined(__AVX2__)
+    // Use lzcnt only on AVX2-capable CPUs that have this BMI instruction.
+    return __lzcnt64(x);
+#elif defined(_M_AMD64) || defined(_M_ARM64)
+    unsigned long idx;
+    _BitScanReverse64(&idx, x);
+    return 63 - idx;
+#elif ZMIJ_MSC_VER
+    unsigned long idx;
+    if (_BitScanReverse(&idx, uint32_t(x >> 32))) return 31 - idx;
+    _BitScanReverse(&idx, uint32_t(x));
+    return 63 - idx;
+#endif
+  }
+  int n = 64;
+  for (; x > 0; x >>= 1) --n;
+  return n;
 }
 
 struct uint128 {
@@ -345,10 +400,12 @@ inline ZMIJ_CONSTEXPR auto umul192_hi128(uint64_t x_hi, uint64_t x_lo,
 // floor(log10(3/4 * 2**bin_exp)) otherwise, without branching.
 constexpr auto compute_dec_exp(int bin_exp, bool regular = true) noexcept
     -> int {
+#if ZMIJ_USE_CONSTEXPR  // In C++11, GCC rejects assert in noexcept constexpr.
+  assert(bin_exp >= -1334 && bin_exp <= 2620);
+#endif
   // 315653 is round(log10(2) * 2**20) and 131072 is -log10(3/4) * 2**20
   // rounded to a power of two.
-  return assert(bin_exp >= -1334 && bin_exp <= 2620),
-         (bin_exp * 315653 - !regular * 131072) >> 20;
+  return (bin_exp * 315653 - !regular * 131072) >> 20;
 }
 
 constexpr auto ilog2(int n) noexcept -> int {
@@ -421,7 +478,7 @@ constexpr
     typename float_traits<Float>::sig_type float_traits<Float>::implicit_bit;
 #endif
 
-// Compressed 128-bit significands of powers of 10.
+// Compressed 128-bit significands of powers of 10, and powers of 5 below 5**13.
 template <typename = void> struct pow10_data {
   static constexpr uint64_t minor[28] = {
       0x8000000000000000, 0xa000000000000000, 0xc800000000000000,
@@ -467,12 +524,16 @@ template <typename = void> struct pow10_data {
       0x04e00300, 0x3807e0b2, 0x3d83d793, 0x0006f5cc, 0x00000000, 0xffff0000,
       0x8076337d, 0x4ff45ba0, 0x09405033, 0x034376d9, 0x09000000, 0x4e100501,
       0x076d14dc, 0xf964f45e, 0x0000003d};
+  static constexpr uint32_t pow5[13] = {
+      1,     5,      25,      125,     625,      3125,     15625,
+      78125, 390625, 1953125, 9765625, 48828125, 244140625};
 };
 
 #ifndef __cpp_inline_variables
 template <typename T> constexpr uint64_t pow10_data<T>::minor[];
 template <typename T> constexpr uint128 pow10_data<T>::major[];
 template <typename T> constexpr uint32_t pow10_data<T>::fixups[];
+template <typename T> constexpr uint32_t pow10_data<T>::pow5[];
 #endif
 
 // Computes the 128-bit significand of 10**exp rounded down using method by
@@ -566,72 +627,6 @@ inline ZMIJ_CONSTEXPR20 auto copy_n(char* out, const char* in,
   return out;
 }
 
-template <typename Float>
-inline ZMIJ_CONSTEXPR20 auto write_constexpr(char* out, Float value) noexcept
-    -> char* {
-  using traits = float_traits<Float>;
-  auto bits = traits::to_bits(value);
-  auto raw_exp = int(traits::get_exp(bits));
-  auto bin_sig = uint64_t(traits::get_sig(bits));
-
-  if (traits::is_negative(bits)) *out++ = '-';
-  if (raw_exp == traits::exp_mask)
-    return copy_n(out, bin_sig != 0 ? "nan" : "inf", 3);
-  if (raw_exp == 0 && bin_sig == 0) {
-    *out++ = '0';
-    return out;
-  }
-
-  int bin_exp = (raw_exp == 0 ? 1 : raw_exp) - traits::exp_offset;
-  if (raw_exp != 0) bin_sig |= traits::implicit_bit;
-  dec_fp<> dec = to_decimal<Float>(bin_sig, bin_exp);
-  while (dec.sig % 10 == 0) {
-    dec.sig /= 10;
-    ++dec.exp;
-  }
-
-  char digits[traits::max_digits10] = {};
-  char* first = digits + sizeof(digits);
-  do {
-    *--first = char('0' + dec.sig % 10);
-    dec.sig /= 10;
-  } while (dec.sig != 0);
-  int num_digits = int(digits + sizeof(digits) - first);
-  int lead_exp = dec.exp + num_digits - 1;
-
-  if (lead_exp >= traits::min_fixed_dec_exp &&
-      lead_exp <= traits::max_fixed_dec_exp) {
-    int point_pos = lead_exp + 1;
-    if (point_pos <= 0) {
-      *out++ = '0';
-      *out++ = '.';
-      for (int i = point_pos; i < 0; ++i) *out++ = '0';
-    }
-    for (int i = 0; i < num_digits; ++i) {
-      if (point_pos > 0 && i == point_pos) *out++ = '.';
-      *out++ = first[i];
-    }
-    for (int i = num_digits; i < point_pos; ++i) *out++ = '0';
-    return out;
-  }
-
-  *out++ = first[0];
-  if (num_digits > 1) {
-    *out++ = '.';
-    out = copy_n(out, first + 1, size_t(num_digits - 1));
-  }
-  *out++ = 'e';
-  *out++ = lead_exp >= 0 ? '+' : '-';
-  unsigned abs_exp = unsigned(lead_exp >= 0 ? lead_exp : -lead_exp);
-  if (abs_exp >= 100) {
-    *out++ = char('0' + abs_exp / 100);
-    abs_exp %= 100;
-  }
-  *out++ = char('0' + abs_exp / 10);
-  *out++ = char('0' + abs_exp % 10);
-  return out;
-}
-
 // Divides x by 10 in place and returns the remainder.
 inline auto divmod10(uint128_t& x) noexcept -> uint64_t {
 #if ZMIJ_USE_INT128
@@ -647,6 +642,113 @@ inline auto divmod10(uint128_t& x) noexcept -> uint64_t {
   };
   return div(x.lo, div(x.hi, 0));
 #endif
+}
+
+// A minimal binary big integer (little-endian base-2**32 limbs) over caller-
+// provided storage.
+struct bigint {
+  uint32_t* limbs;
+  int num_limbs = 0;  // Significant limbs; 0 represents zero.
+  int max_limbs;      // Available limbs in `limbs`.
+
+  // Callers must size `max_limbs` for the largest value the number will reach.
+  ZMIJ_CONSTEXPR bigint(uint128_t value, uint32_t* buffer,
+                        int max_limbs) noexcept
+      : limbs(buffer), max_limbs(max_limbs) {
+    uint64_t lo = uint64_t(value), hi = uint64_t(value >> 64);
+    limbs[0] = uint32_t(lo);
+    limbs[1] = uint32_t(lo >> 32);
+    limbs[2] = uint32_t(hi);
+    limbs[3] = uint32_t(hi >> 32);
+    // Keep after the limb stores: setting it first worsens write_fixed_big.
+    num_limbs = 4;
+    trim();
+  }
+
+  ZMIJ_CONSTEXPR void trim() noexcept {
+    while (num_limbs > 0 && limbs[num_limbs - 1] == 0) --num_limbs;
+  }
+
+  // Shifts left by `n`.
+  ZMIJ_CONSTEXPR void shl(int n) noexcept {
+    assert(n >= 0);
+    if (num_limbs == 0) return;
+    int limb_shift = n >> 5, bit_shift = n & 31;
+    assert(num_limbs + limb_shift + (bit_shift != 0) <= max_limbs);
+    if (bit_shift == 0) {
+      for (int i = num_limbs - 1; i >= 0; --i) limbs[i + limb_shift] = limbs[i];
+      num_limbs += limb_shift;
+    } else {
+      limbs[num_limbs + limb_shift] = limbs[num_limbs - 1] >> (32 - bit_shift);
+      for (int i = num_limbs - 1; i > 0; --i) {
+        limbs[i + limb_shift] =
+            limbs[i] << bit_shift | limbs[i - 1] >> (32 - bit_shift);
+      }
+      limbs[limb_shift] = limbs[0] << bit_shift;
+      num_limbs += limb_shift + 1;
+    }
+    for (int i = 0; i < limb_shift; ++i) limbs[i] = 0;
+    trim();
+  }
+
+  // Divides by 10**9 in place and returns the remainder.
+  ZMIJ_CONSTEXPR auto divmod_1e9() noexcept -> uint32_t {
+    uint64_t rem = 0;
+    for (int i = num_limbs - 1; i >= 0; --i) {
+      uint64_t div = rem << 32 | limbs[i];
+      limbs[i] = uint32_t(div / 1000000000u);
+      rem = div % 1000000000u;
+    }
+    trim();
+    return uint32_t(rem);
+  }
+
+  // Multiplies in place by a nonzero `factor`.
+  ZMIJ_CONSTEXPR void mul(uint32_t factor) noexcept {
+    assert(factor != 0);
+    uint64_t carry = 0;
+    for (int i = 0; i < num_limbs; ++i) {
+      uint64_t product = uint64_t(limbs[i]) * factor + carry;
+      limbs[i] = uint32_t(product);
+      carry = product >> 32;
+    }
+    if (carry == 0) return;
+    assert(num_limbs < max_limbs);
+    limbs[num_limbs++] = uint32_t(carry);
+  }
+
+  // Multiplies in place by 5**n.
+  ZMIJ_CONSTEXPR void mul_pow5(int n) noexcept {
+    assert(n >= 0);
+    while (n >= 13) {  // 5**13 is the largest power of five below 2**32.
+      mul(1220703125u);
+      n -= 13;
+    }
+    if (n != 0) mul(pow10_data<>::pow5[n]);
+  }
+};
+
+// Emits n's decimal digits (most significant first) ending at `end`, consuming
+// n, and returns a pointer to the first (most significant) digit.
+inline ZMIJ_CONSTEXPR auto write_digits(bigint n, char* end) noexcept -> char* {
+  char* p = end;
+  uint32_t group = n.divmod_1e9();
+  while (n.num_limbs != 0) {  // Lower groups keep all 9 digits.
+    for (int k = 0; k < 9; ++k, group /= 10) *--p = char('0' + group % 10);
+    group = n.divmod_1e9();
+  }
+  do {  // The most significant group drops its leading zeros.
+    *--p = char('0' + group % 10);
+  } while ((group /= 10) != 0);
+  return p;
+}
+
+// Returns true if any character in [first, last) is not '0'.
+inline ZMIJ_CONSTEXPR auto any_nonzero(const char* first,
+                                       const char* last) noexcept -> bool {
+  for (; first < last; ++first)
+    if (*first != '0') return true;
+  return false;
 }
 
 // `buffer` params require at least buffer_sizes<Float> capacity;
@@ -675,8 +777,8 @@ auto write_big(char* out, size_t n, Float value) noexcept -> size_t;
 // the first `n` chars, and 0 on allocation failure (only possible for long
 // double).
 template <typename Float>
-auto write_big(char* out, size_t n, Float value, int precision,
-               format fmt) noexcept -> size_t;
+ZMIJ_CONSTEXPR20 auto write_big(char* out, size_t n, Float value, int precision,
+                                format fmt) noexcept -> size_t;
 template <>
 inline auto write_big(char* out, size_t n, float value, int precision,
                       format fmt) noexcept -> size_t {
@@ -695,13 +797,390 @@ auto write_fixed(char* buffer, Float value, int precision) noexcept -> char*;
 
 // Writes the decimal exponent as 'e', a sign and at least two digits, up to
 // four (e.g. e+05 or e+4932, enough for extended long double).
-auto write_big_exp(char* buffer, int dec_exp) noexcept -> char*;
+inline ZMIJ_CONSTEXPR auto write_big_exp(char* buffer, int dec_exp) noexcept
+    -> char* {
+  *buffer++ = 'e';
+  *buffer++ = dec_exp >= 0 ? '+' : '-';
+  uint32_t abs_exp = dec_exp >= 0 ? uint32_t(dec_exp) : uint32_t(-dec_exp);
+  uint32_t hi = abs_exp / 100;
+  *buffer = char('0' + hi / 10);
+  buffer += hi >= 10;
+  *buffer = char('0' + hi % 10);
+  buffer += abs_exp >= 100;
+  uint32_t lo = abs_exp - hi * 100;
+  buffer[0] = char('0' + lo / 10);
+  buffer[1] = char('0' + lo % 10);
+  return buffer + 2;
+}
+
+// An output sink that appends to `out`, discarding anything past `end`.
+struct writer {
+  char* out;
+  char* end;
+  size_t count;  // total chars, including any dropped past `end`
+
+  // The write functions return `count`, the running total of requested chars.
+  ZMIJ_INLINE ZMIJ_CONSTEXPR auto write(char c) noexcept -> size_t {
+    if (out < end) *out++ = c;
+    return ++count;
+  }
+  // Copies s[0..n), or n zeros if `s` is null, during constant evaluation.
+  // Compares with `end` rather than subtracting: GCC rejects `end - out` when
+  // `out` is a row of a 2D array.
+  ZMIJ_CONSTEXPR20 void put(const char* s, int n) noexcept {
+    for (int i = 0; i < n && out < end; ++i) *out++ = s ? s[i] : '0';
+  }
+  // Copies at most `end - out` chars of `s[0..n)`; `n` must be non-negative.
+  ZMIJ_INLINE ZMIJ_CONSTEXPR20 auto write(const char* s, int n) noexcept
+      -> size_t {
+    assert(n >= 0);
+    if (zmij::detail::is_constant_evaluated()) {
+      put(s, n);
+    } else {
+      size_t take = n < end - out ? size_t(n) : size_t(end - out);
+      memcpy(out, s, take);
+      out += take;
+    }
+    return count += size_t(n);
+  }
+  // Writes at most `end - out` copies of '0'; `n` must be non-negative.
+  ZMIJ_INLINE ZMIJ_CONSTEXPR20 auto write_zeros(int n) noexcept -> size_t {
+    assert(n >= 0);
+    if (zmij::detail::is_constant_evaluated()) {
+      put(nullptr, n);
+    } else {
+      size_t take = n < end - out ? size_t(n) : size_t(end - out);
+      memset(out, '0', take);
+      out += take;
+    }
+    return count += size_t(n);
+  }
+};
+
+// Emits the digit run digits[0..num_digits) with the decimal point placed per
+// lead_exp, in fixed or scientific notation. Fixed pads to decimal_places
+// fractional digits; scientific appends num_tail_zeros to the fraction.
+inline ZMIJ_CONSTEXPR20 auto write_number(writer& w, const char* digits,
+                                          int num_digits, int lead_exp,
+                                          bool fixed, int decimal_places,
+                                          int num_tail_zeros) noexcept
+    -> size_t {
+  if (!fixed) {
+    // Emit scientific notation d.ddde±XX.
+    w.write(digits[0]);
+    // Emit a point only when fractional digits follow it.
+    if (num_digits - 1 + num_tail_zeros > 0) {
+      w.write('.');
+      w.write(digits + 1, num_digits - 1);
+      w.write_zeros(num_tail_zeros);  // pad the fraction to precision
+    }
+    char exp[8];
+    char* end = zmij::detail::write_big_exp(exp, lead_exp);
+    return w.write(exp, int(end - exp));
+  }
+
+  // Emit fixed notation.
+  int point_pos = lead_exp + 1;
+  int num_int_digits = 0;  // significant digits before the point
+  if (point_pos <= 0) {    // |value| < 1, e.g. 0.00123
+    w.write('0');
+  } else {
+    num_int_digits = point_pos < num_digits ? point_pos : num_digits;
+    w.write(digits, num_int_digits);
+    w.write_zeros(point_pos - num_int_digits);  // integer zeros, e.g. 12300
+  }
+  if (decimal_places <= 0) return w.count;
+  w.write('.');
+  int num_lead_zeros = point_pos < 0 ? -point_pos : 0;
+  w.write_zeros(num_lead_zeros);  // 0.00...
+  int num_frac_digits = num_digits - num_int_digits;
+  w.write(digits + num_int_digits, num_frac_digits);
+  return w.write_zeros(decimal_places - num_lead_zeros - num_frac_digits);
+}
+
+// Writes the shortest representation of `value` like `write`, for constant
+// evaluation, into `out`, truncating after `n` chars. Returns the total length
+// the result would need.
+template <typename Float>
+inline ZMIJ_CONSTEXPR20 auto write_constexpr(char* out, size_t n,
+                                             Float value) noexcept -> size_t {
+  using traits = float_traits<Float>;
+  auto bits = traits::to_bits(value);
+  auto raw_exp = int(traits::get_exp(bits));
+  auto bin_sig = uint64_t(traits::get_sig(bits));
+
+  writer w = {out, out + n, 0};
+  if (traits::is_negative(bits)) w.write('-');
+  if (raw_exp == traits::exp_mask)
+    return w.write(bin_sig != 0 ? "nan" : "inf", 3);
+  if (raw_exp == 0 && bin_sig == 0) return w.write('0');
+
+  int bin_exp = (raw_exp == 0 ? 1 : raw_exp) - traits::exp_offset;
+  if (raw_exp != 0) bin_sig |= traits::implicit_bit;
+  dec_fp<> dec = to_decimal<Float>(bin_sig, bin_exp);
+  while (dec.sig % 10 == 0) {
+    dec.sig /= 10;
+    ++dec.exp;
+  }
+
+  char digits[traits::max_digits10] = {};
+  char* first = digits + sizeof(digits);
+  do {
+    *--first = char('0' + dec.sig % 10);
+    dec.sig /= 10;
+  } while (dec.sig != 0);
+  int num_digits = int(digits + sizeof(digits) - first);
+  int lead_exp = dec.exp + num_digits - 1;
+  bool fixed = lead_exp >= traits::min_fixed_dec_exp &&
+               lead_exp <= traits::max_fixed_dec_exp;
+  return write_number(w, first, num_digits, lead_exp, fixed,
+                      num_digits - lead_exp - 1, 0);
+}
+
+inline ZMIJ_CONSTEXPR20 auto write_big(writer& w, bigint num, int bin_exp,
+                                       int precision, char* digits,
+                                       int digits_size,
+                                       zmij::format fmt) noexcept -> size_t {
+  bool general = fmt == zmij::format::general;
+  bool fixed = fmt == zmij::format::fixed;
+  assert(precision >= general);
+
+  digits[0] = '0';
+  char* p = digits;
+  int num_digits = 1;
+  int lead_exp = 0;  // exponent of the leading digit
+
+  if (num.num_limbs != 0) {
+    // Represent the value exactly as an integer num times a power of ten:
+    // value = sig * 2**bin_exp = num * 10**base_exp, so its decimal digits are
+    // num's. For bin_exp < 0 the identity 2**bin_exp = 5**-bin_exp *
+    // 10**bin_exp keeps num integral via a power-of-five multiply.
+    int base_exp = 0;
+    if (bin_exp >= 0) {
+      num.shl(bin_exp);
+    } else {
+      num.mul_pow5(-bin_exp);
+      base_exp = bin_exp;
+    }
+
+    p = write_digits(num, digits + digits_size);
+    num_digits = int(digits + digits_size - p);
+    lead_exp = num_digits - 1 + base_exp;
+
+    // Significant digits to keep: precision for %g. For %e/%f it counts
+    // fractional digits, so add one leading digit; %f adds lead_exp more.
+    int max_digits = precision + !general + (fixed ? lead_exp : 0);
+    // Round to max_digits significant digits, ties to even.
+    if (max_digits < 1) {
+      // |value| < 10**-precision: rounds to 0, or up to 10**-precision when the
+      // discarded part exceeds half a unit (a tie rounds to even, i.e. 0).
+      bool round_up = false;
+      if (max_digits == 0) {
+        round_up =
+            p[0] > '5' || (p[0] == '5' && any_nonzero(p + 1, p + num_digits));
+      }
+      digits[0] = char('0' + round_up);
+      p = digits;
+      num_digits = 1;
+      lead_exp = round_up ? -precision : 0;
+    } else if (num_digits > max_digits) {
+      char dropped = p[max_digits];
+      bool round_up = dropped > '5';
+      // A dropped 5 ties to even unless a lower nonzero digit rounds up.
+      if (dropped == '5') {
+        round_up = ((p[max_digits - 1] - '0') & 1) ||
+                   any_nonzero(p + max_digits + 1, p + num_digits);
+      }
+      num_digits = max_digits;
+      if (round_up) {
+        char* q = p + max_digits - 1;
+        // Propagate the carry over trailing nines.
+        while (q >= p && *q == '9') *q-- = '0';
+        // 999.. rolling over to 1000.. adds a significant digit.
+        if (q < p) {
+          *--p = '1';
+          ++lead_exp;
+        } else {
+          ++*q;
+        }
+      }
+    }
+  }
+
+  int decimal_places = precision;  // fractional digit positions to emit
+  if (general) {
+    // Drop trailing zeros and pick fixed or scientific.
+    while (num_digits > 1 && p[num_digits - 1] == '0') --num_digits;
+    fixed = lead_exp >= -4 && lead_exp < precision;
+    decimal_places = num_digits - lead_exp - 1;
+  }
+
+  // %e pads the fraction to `precision` digits; %g and shortest emit none.
+  int num_tail_zeros = general ? 0 : precision - num_digits + 1;
+  return write_number(w, p, num_digits, lead_exp, fixed, decimal_places,
+                      num_tail_zeros);
+}
+
+template <typename Float>
+ZMIJ_CONSTEXPR20 auto write_big(char* out, size_t n, Float value, int precision,
+                                format fmt) noexcept -> size_t {
+  using traits = float_traits<Float>;
+  auto bits = traits::to_bits(value);
+  auto bin_exp = traits::get_exp(bits);
+  auto bin_sig = traits::get_sig(bits);
+
+  writer w = {out, out + n, 0};
+  if (traits::is_negative(bits)) w.write('-');
+
+  if (!traits::is_normal(bin_exp)) [[ZMIJ_UNLIKELY]] {
+    if (bin_exp != 0)  // inf or nan
+      return w.write(bin_sig != 0 ? "nan" : "inf", 3);
+    bin_exp = 1;  // subnormal or zero
+    bin_sig = bin_sig ^ traits::implicit_bit;
+  }
+  bin_sig = bin_sig ^ traits::implicit_bit;
+
+  // The big integer's limbs and the decimal digits stay on the stack except for
+  // the extended long double case, which is too large (~11.6 KB) and puts both
+  // in one heap block.
+  constexpr bool use_heap =
+      traits::big_digits > float_traits<double>::big_digits;
+  uint32_t stack_limbs[use_heap ? 1 : traits::big_limbs];
+  char stack_digits[use_heap ? 1 : traits::big_digits];
+  uint32_t* limbs = stack_limbs;
+  char* digits = stack_digits;
+  if (use_heap) {
+    constexpr int digit_words = (traits::big_digits + 3) / 4;
+    limbs = static_cast<uint32_t*>(
+        malloc(size_t(traits::big_limbs + digit_words) * 4));
+    if (!limbs) return 0;
+    digits = reinterpret_cast<char*>(limbs + traits::big_limbs);
+  }
+  bigint num(bin_sig, limbs, traits::big_limbs);
+  size_t size = write_big(w, num, int(bin_exp - traits::exp_offset), precision,
+                          digits, traits::big_digits, fmt);
+  if (use_heap) free(limbs);
+  return size;
+}
+
+// Not inlined, so that callers use the instantiations in zmij.cc. On the
+// template itself, noinline makes GCC warn since constexpr implies inline.
+extern template ZMIJ_NOINLINE auto write_big(char* out, size_t n, double value,
+                                             int precision, format fmt) noexcept
+    -> size_t;
+#if LDBL_MANT_DIG != DBL_MANT_DIG && ZMIJ_USE_LONG_DOUBLE
+extern template ZMIJ_NOINLINE auto write_big(char* out, size_t n,
+                                             long double value, int precision,
+                                             format fmt) noexcept -> size_t;
+#endif
+
+// Writes chars `a` and `b` to `out` and returns the position after them.
+ZMIJ_INLINE ZMIJ_CONSTEXPR20 auto write2(char* out, char a, char b) noexcept
+    -> char* {
+  if (zmij::detail::is_constant_evaluated()) {
+    out[0] = a;
+    out[1] = b;
+    return out + 2;
+  }
+  uint16_t v = uint16_t(uint8_t(a) | uint8_t(b) << 8);
+  if (is_big_endian) v = uint16_t(v << 8 | v >> 8);
+  memcpy(out, &v, 2);
+  return out + 2;
+}
+
+// Writes "inf"/"nan" with one 4-byte store, so the buffer must hold 4 bytes.
+inline ZMIJ_CONSTEXPR20 auto write_inf_nan(char* buffer, bool is_nan) noexcept
+    -> char* {
+  if (zmij::detail::is_constant_evaluated())
+    return zmij::detail::copy_n(buffer, is_nan ? "nan" : "inf", 3);
+  return memcpy(buffer, is_nan ? "nan" : "inf", 4), buffer + 3;
+}
+
+// Writes the binary exponent as 'p', a sign and at least one digit (e.g. p+3).
+inline ZMIJ_CONSTEXPR20 auto write_hex_exp(char* buffer, int bin_exp) noexcept
+    -> char* {
+  buffer = write2(buffer, 'p', bin_exp < 0 ? '-' : '+');
+  unsigned abs_exp = unsigned(bin_exp < 0 ? -bin_exp : bin_exp);
+  char digits[8];
+  char* p = digits + sizeof(digits);
+  do {
+    *--p = char('0' + abs_exp % 10);
+    abs_exp /= 10;
+  } while (abs_exp != 0);
+  size_t n = size_t(digits + sizeof(digits) - p);
+  if (zmij::detail::is_constant_evaluated())
+    return zmij::detail::copy_n(buffer, p, n);
+  memcpy(buffer, p, n);
+  return buffer + n;
+}
+
+template <typename Float, typename UInt>
+ZMIJ_INLINE ZMIJ_CONSTEXPR20 void normalize(UInt& bin_sig,
+                                            int64_t& bin_exp) noexcept {
+  // clz counts from the top of its operand, so measure from that width.
+  int lz, width;
+  if (sizeof(UInt) > 8) {
+    uint128_t v = bin_sig;
+    uint64_t hi = uint64_t(v >> 64);
+    lz = hi != 0 ? clz(hi) : 64 + clz(uint64_t(v));
+    width = 128;
+  } else {
+    lz = clz(uint64_t(bin_sig));
+    width = 64;
+  }
+  int shift = lz - (width - 1 - float_traits<Float>::num_sig_bits);
+  bin_sig = bin_sig << shift;
+  bin_exp = 1 - shift;
+}
 
 // Writes `value` in hexadecimal floating-point notation (like printf's %a) in
 // its shortest form, e.g. -0x1.8p+1. If `prefix` is false the leading "0x" is
 // omitted (e.g. -1.8p+1).
 template <typename Float>
-auto write_hex(char* buffer, Float value, bool prefix = true) noexcept -> char*;
+ZMIJ_CONSTEXPR20 auto write_hex(char* buffer, Float value,
+                                bool prefix = true) noexcept -> char* {
+  using traits = float_traits<Float>;
+  auto bits = traits::to_bits(value);
+  auto bin_exp = traits::get_exp(bits);
+  auto bin_sig = traits::get_sig(bits);
+
+  *buffer = '-';
+  buffer += traits::is_negative(bits);
+
+  bool zero = false;
+  if (!traits::is_normal(bin_exp)) [[ZMIJ_UNLIKELY]] {
+    if (bin_exp != 0) return write_inf_nan(buffer, bin_sig != 0);
+    zero = bin_sig == 0;
+    if (zero)
+      bin_exp = traits::exp_bias;  // This cancels to 0 below.
+    else
+      normalize<Float>(bin_sig, bin_exp);
+  }
+  bin_exp -= traits::exp_bias;
+
+  if (prefix) buffer = write2(buffer, '0', 'x');
+  *buffer++ = char('0' + !zero);
+
+  constexpr int width = int(sizeof(bin_sig)) * 8;
+  bin_sig = bin_sig << (width - traits::num_sig_bits);
+  if (bin_sig != 0) {
+    *buffer++ = '.';
+    do {
+      *buffer++ = "0123456789abcdef"[uint64_t(bin_sig >> (width - 4))];
+      bin_sig = bin_sig << 4;
+    } while (bin_sig != 0);
+  }
+
+  return write_hex_exp(buffer, int(bin_exp));
+}
+
+// Not inlined, so that callers use the instantiations in zmij.cc.
+extern template ZMIJ_NOINLINE auto write_hex(char* buffer, double value,
+                                             bool prefix) noexcept -> char*;
+#if LDBL_MANT_DIG != DBL_MANT_DIG && ZMIJ_USE_LONG_DOUBLE
+extern template ZMIJ_NOINLINE auto write_hex(char* buffer, long double value,
+                                             bool prefix) noexcept -> char*;
+#endif
 
 // Writes `value` in hexadecimal floating-point notation with `precision` hex
 // digits after the point, correctly rounded (ties to even), e.g. -0x1.80p+1,
@@ -746,7 +1225,7 @@ inline auto write_hex(char* out, size_t n, long_double value, int precision,
 #endif  // LDBL_MANT_DIG == DBL_MANT_DIG || !ZMIJ_USE_LONG_DOUBLE
 
 // Returns the past-the-end pointer after writing min(size, n) chars to `out`.
-inline auto clamp_end(char* out, size_t size, size_t n) noexcept -> char* {
+constexpr auto clamp_end(char* out, size_t size, size_t n) noexcept -> char* {
   return out + (size < n ? size : n);
 }
 
@@ -761,13 +1240,15 @@ inline ZMIJ_CONSTEXPR20 auto copy_clamped(char* out, size_t n,
   return clamp_end(out, size, n);
 }
 
-// Writes an unsigned integer's decimal representation to `out` and returns its
-// logical end. Whole-block stores may extend past that pointer but never past
-// the corresponding *_buffer_size capacity.
-template <typename UInt> auto itoa(char* out, UInt value) noexcept -> char*;
+// Writes the decimal representation of unsigned value to out and returns one
+// past the last digit. Stores may run past that, up to the type's
+// *_buffer_size.
+template <typename UInt>
+auto write_unsigned(char* out, UInt value) noexcept -> char*;
 
+// Like write_unsigned for a signed value, with a '-' before negatives.
 template <typename Int>
-auto itoa_signed(char* out, Int value) noexcept -> char*;
+auto write_signed(char* out, Int value) noexcept -> char*;
 
 }  // namespace detail
 
@@ -820,11 +1301,8 @@ template <> struct buffer_sizes<long_double> {
 /// exceeds `n` characters, only the first `n` are written.
 inline ZMIJ_CONSTEXPR20 auto write(char* out, size_t n, double value) noexcept
     -> char* {
-  if (detail::is_constant_evaluated()) {
-    char buffer[double_buffer_size] = {};
-    return detail::copy_clamped(out, n, buffer,
-                                detail::write_constexpr(buffer, value));
-  }
+  if (detail::is_constant_evaluated())
+    return detail::clamp_end(out, detail::write_constexpr(out, n, value), n);
   char buffer[double_buffer_size];
   if (n >= sizeof(buffer)) return detail::write(out, value);
   return detail::copy_clamped(out, n, buffer, detail::write(buffer, value));
@@ -832,11 +1310,8 @@ inline ZMIJ_CONSTEXPR20 auto write(char* out, size_t n, double value) noexcept
 
 inline ZMIJ_CONSTEXPR20 auto write(char* out, size_t n, float value) noexcept
     -> char* {
-  if (detail::is_constant_evaluated()) {
-    char buffer[float_buffer_size] = {};
-    return detail::copy_clamped(out, n, buffer,
-                                detail::write_constexpr(buffer, value));
-  }
+  if (detail::is_constant_evaluated())
+    return detail::clamp_end(out, detail::write_constexpr(out, n, value), n);
   char buffer[float_buffer_size];
   if (n >= sizeof(buffer)) return detail::write(out, value);
   return detail::copy_clamped(out, n, buffer, detail::write(buffer, value));
@@ -852,31 +1327,31 @@ inline auto write(char* out, size_t n, long_double value) noexcept -> char* {
 /// representation exceeds `n` characters, only the first `n` are written.
 inline auto write(char* out, size_t n, int value) noexcept -> char* {
   char buffer[int32_buffer_size];
-  if (n >= sizeof(buffer)) return detail::itoa_signed(out, int32_t(value));
+  if (n >= sizeof(buffer)) return detail::write_signed(out, int32_t(value));
   return detail::copy_clamped(out, n, buffer,
-                              detail::itoa_signed(buffer, int32_t(value)));
+                              detail::write_signed(buffer, int32_t(value)));
 }
 
 inline auto write(char* out, size_t n, unsigned value) noexcept -> char* {
   char buffer[uint32_buffer_size];
-  if (n >= sizeof(buffer)) return detail::itoa(out, uint32_t(value));
+  if (n >= sizeof(buffer)) return detail::write_unsigned(out, uint32_t(value));
   return detail::copy_clamped(out, n, buffer,
-                              detail::itoa(buffer, uint32_t(value)));
+                              detail::write_unsigned(buffer, uint32_t(value)));
 }
 
 inline auto write(char* out, size_t n, long long value) noexcept -> char* {
   char buffer[int64_buffer_size];
-  if (n >= sizeof(buffer)) return detail::itoa_signed(out, int64_t(value));
+  if (n >= sizeof(buffer)) return detail::write_signed(out, int64_t(value));
   return detail::copy_clamped(out, n, buffer,
-                              detail::itoa_signed(buffer, int64_t(value)));
+                              detail::write_signed(buffer, int64_t(value)));
 }
 
 inline auto write(char* out, size_t n, unsigned long long value) noexcept
     -> char* {
   char buffer[uint64_buffer_size];
-  if (n >= sizeof(buffer)) return detail::itoa(out, uint64_t(value));
+  if (n >= sizeof(buffer)) return detail::write_unsigned(out, uint64_t(value));
   return detail::copy_clamped(out, n, buffer,
-                              detail::itoa(buffer, uint64_t(value)));
+                              detail::write_unsigned(buffer, uint64_t(value)));
 }
 
 inline auto write(char* out, size_t n, long value) noexcept -> char* {
@@ -893,16 +1368,17 @@ inline auto write(char* out, size_t n, unsigned long value) noexcept -> char* {
 #if ZMIJ_USE_INT128
 inline auto write(char* out, size_t n, __int128 value) noexcept -> char* {
   char buffer[int128_buffer_size];
-  if (n >= sizeof(buffer)) return detail::itoa_signed(out, value);
+  if (n >= sizeof(buffer)) return detail::write_signed(out, value);
   return detail::copy_clamped(out, n, buffer,
-                              detail::itoa_signed(buffer, value));
+                              detail::write_signed(buffer, value));
 }
 
 inline auto write(char* out, size_t n, unsigned __int128 value) noexcept
     -> char* {
   char buffer[uint128_buffer_size];
-  if (n >= sizeof(buffer)) return detail::itoa(out, value);
-  return detail::copy_clamped(out, n, buffer, detail::itoa(buffer, value));
+  if (n >= sizeof(buffer)) return detail::write_unsigned(out, value);
+  return detail::copy_clamped(out, n, buffer,
+                              detail::write_unsigned(buffer, value));
 }
 #endif  // ZMIJ_USE_INT128
 
@@ -913,10 +1389,10 @@ inline auto write(char* out, size_t n, unsigned __int128 value) noexcept
 /// Returns a pointer past the last character written; if the representation
 /// exceeds `n` characters, only the first `n` are written. The `long double`
 /// overload returns nullptr on allocation failure.
-inline auto write_scientific(char* out, size_t n, double value,
-                             int precision) noexcept -> char* {
+inline ZMIJ_CONSTEXPR20 auto write_scientific(char* out, size_t n, double value,
+                                              int precision) noexcept -> char* {
   if (precision < 0) precision = 6;
-  if (precision >= 18) {
+  if (precision >= 18 || detail::is_constant_evaluated()) {
     auto size = detail::write_big(out, n, value, precision, format::scientific);
     return detail::clamp_end(out, size, n);
   }
@@ -927,11 +1403,12 @@ inline auto write_scientific(char* out, size_t n, double value,
       out, n, buffer, detail::write_scientific(buffer, value, precision + 1));
 }
 
-inline auto write_scientific(char* out, size_t n, float value,
-                             int precision) noexcept -> char* {
+inline ZMIJ_CONSTEXPR20 auto write_scientific(char* out, size_t n, float value,
+                                              int precision) noexcept -> char* {
   if (precision < 0) precision = 6;
-  if (precision >= 18) {
-    auto size = detail::write_big(out, n, value, precision, format::scientific);
+  if (precision >= 18 || detail::is_constant_evaluated()) {
+    auto size =
+        detail::write_big(out, n, double(value), precision, format::scientific);
     return detail::clamp_end(out, size, n);
   }
   char buffer[buffer_sizes<float>::scientific];
@@ -959,10 +1436,10 @@ inline auto write_scientific(char* out, size_t n, long_double value,
 /// Returns a pointer past the last character written; if the representation
 /// exceeds `n` characters, only the first `n` are written. The `long double`
 /// overload returns nullptr on allocation failure.
-inline auto write_general(char* out, size_t n, double value,
-                          int precision) noexcept -> char* {
+inline ZMIJ_CONSTEXPR20 auto write_general(char* out, size_t n, double value,
+                                           int precision) noexcept -> char* {
   if (precision <= 1) precision = precision < 0 ? 6 : 1;
-  if (precision > 18) {
+  if (precision > 18 || detail::is_constant_evaluated()) {
     auto size = detail::write_big(out, n, value, precision, format::general);
     return detail::clamp_end(out, size, n);
   }
@@ -972,11 +1449,12 @@ inline auto write_general(char* out, size_t n, double value,
                               detail::write_general(buffer, value, precision));
 }
 
-inline auto write_general(char* out, size_t n, float value,
-                          int precision) noexcept -> char* {
+inline ZMIJ_CONSTEXPR20 auto write_general(char* out, size_t n, float value,
+                                           int precision) noexcept -> char* {
   if (precision <= 1) precision = precision < 0 ? 6 : 1;
-  if (precision > 18) {
-    auto size = detail::write_big(out, n, value, precision, format::general);
+  if (precision > 18 || detail::is_constant_evaluated()) {
+    auto size =
+        detail::write_big(out, n, double(value), precision, format::general);
     return detail::clamp_end(out, size, n);
   }
   char buffer[buffer_sizes<float>::scientific];
@@ -1002,10 +1480,10 @@ inline auto write_general(char* out, size_t n, long_double value,
 /// Returns a pointer past the last character written; if the representation
 /// exceeds `n` characters, only the first `n` are written. The `long double`
 /// overload returns nullptr on allocation failure.
-inline auto write_fixed(char* out, size_t n, double value,
-                        int precision) noexcept -> char* {
+inline ZMIJ_CONSTEXPR20 auto write_fixed(char* out, size_t n, double value,
+                                         int precision) noexcept -> char* {
   if (precision < 0) precision = 6;
-  if (precision > 18) {
+  if (precision > 18 || detail::is_constant_evaluated()) {
     auto size = detail::write_big(out, n, value, precision, format::fixed);
     return detail::clamp_end(out, size, n);
   }
@@ -1015,11 +1493,12 @@ inline auto write_fixed(char* out, size_t n, double value,
                               detail::write_fixed(buffer, value, precision));
 }
 
-inline auto write_fixed(char* out, size_t n, float value,
-                        int precision) noexcept -> char* {
+inline ZMIJ_CONSTEXPR20 auto write_fixed(char* out, size_t n, float value,
+                                         int precision) noexcept -> char* {
   if (precision < 0) precision = 6;
-  if (precision > 18) {
-    auto size = detail::write_big(out, n, value, precision, format::fixed);
+  if (precision > 18 || detail::is_constant_evaluated()) {
+    auto size =
+        detail::write_big(out, n, double(value), precision, format::fixed);
     return detail::clamp_end(out, size, n);
   }
   char buffer[buffer_sizes<float>::fixed];
@@ -1042,13 +1521,15 @@ inline auto write_fixed(char* out, size_t n, long_double value,
 ///
 /// Returns a pointer past the last character written; if the representation
 /// exceeds `n` characters, only the first `n` are written.
-inline auto write_hex(char* out, size_t n, double value) noexcept -> char* {
+inline ZMIJ_CONSTEXPR20 auto write_hex(char* out, size_t n,
+                                       double value) noexcept -> char* {
   char buffer[buffer_sizes<double>::hex];
   if (n >= sizeof(buffer)) return detail::write_hex(out, value);
   return detail::copy_clamped(out, n, buffer, detail::write_hex(buffer, value));
 }
 
-inline auto write_hex(char* out, size_t n, float value) noexcept -> char* {
+inline ZMIJ_CONSTEXPR20 auto write_hex(char* out, size_t n,
+                                       float value) noexcept -> char* {
   return write_hex(out, n, double(value));
 }
 

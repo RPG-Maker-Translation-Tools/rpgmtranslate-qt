@@ -431,13 +431,16 @@ void TranslationInput::leaveEvent(QEvent* const event) {
     QPlainTextEdit::leaveEvent(event);
 }
 
+auto isWebLink(const QUrl& url) -> bool {
+    return url.scheme() == u"http" || url.scheme() == u"https";
+}
+
 void TranslationInput::showPendingTooltip() {
     if (tooltip == nullptr) {
         tooltip = make_unique<LintTooltip>();
 
-        // A tooltip shows text of the game and of custom lints as Markdown, guard against non-website links.
         connect(tooltip.get(), &LintTooltip::linkActivated, this, [](const QUrl& url) -> void {
-            if (url.scheme() == u"http" || url.scheme() == u"https") {
+            if (isWebLink(url)) {
                 QDesktopServices::openUrl(url);
             }
         });

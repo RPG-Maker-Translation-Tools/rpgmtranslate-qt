@@ -297,8 +297,11 @@
               <property name="buttonSymbols">
                <enum>QAbstractSpinBox::ButtonSymbols::UpDownArrows</enum>
               </property>
+              <property name="minimum">
+               <number>20</number>
+              </property>
               <property name="maximum">
-               <number>300</number>
+               <number>255</number>
               </property>
              </widget>
             </item>

@@ -15,6 +15,28 @@ Versions may carry a codename alongside the semver number.
 - Translation files with Windows line endings are read as they are and are no longer rewritten when a project opens. Files the app saves use `\n` line endings.
 - Wayland support is an optional build flag (`ENABLE_WAYLAND`, on by default) instead of being tied to Linux, so FreeBSD builds can use it too and builds against a Qt without WaylandClient no longer fail.
 
+### Fixed
+
+- A custom lint marked case-insensitive made the pattern of every custom lint invalid, so none of them reported anything while it was enabled.
+- Importing a CSV with other columns, or an XML that never ends, overwrote the translation file with garbage or with nothing. Such a file, and any import that holds no entries, is refused now and the translation file is left as it was.
+- Formatting JavaScript failed for every script in builds with JavaScript formatting enabled.
+- The tooltip of `\an[n]` showed the name of the actor instead of the nickname.
+- Lint tooltips of RPG Maker MV/MZ projects never showed the icons of items, weapons, armors, skills and states, the currency of `\G` or the class of `\ac[n]` (`\ii[n]`, `\iw[n]`, ... and the note tags that list them failed to fetch data).
+- Replacing with a back-reference to a trailing optional group that did not take part in the match (`(a)(b)?` with `\2`) left the text `\2` in the cell instead of nothing.
+- A baseline of an old project that could not be moved into its `data` folder was not logged, and the move went on after the first failure.
+- A script that rewrote map text dropped the last newline of each map, so the next save of the maps joined the end of one map with the first line of the next in `maps.txt`.
+- Scripts that were handed accented text from a fixed Latin-1 string received a replacement character instead of the letter.
+- The icon shown for `\I[n]` in a tooltip came from the wrong place of the icon sheet for every icon after the first row (and an index just past the sheet was not reported as out of range).
+- The batch trim action did the wrong trim: "Leading" trimmed both ends, "Trailing" trimmed the start and "Leading + Trailing" trimmed the end.
+- The batch wrap length accepted values from 0 to 300 although only 20 to 255 can be used, and a value above 255 wrapped at a wrong length.
+- A script or a replace that changed nothing still rewrote the translation file without its last newline. Files are written with it now, and are left alone when nothing changed.
+- Amending a commit in the source control dock listed the amended commit as a new one beside the old one, and an amend with an empty message listed an empty message.
+- "Copy translation" in the source control panel ended the program when the translation folder was missing. It reports the error now.
+- The project that was open at the last exit failed to open at the next start, and a project did not reopen after loading a backup: closing the previous project cleared the folder to open.
+- On Linux and macOS, an update that failed while unpacking the program left a half-written `.new` file next to it.
+- Creating a source control repository for a project showed errors about a missing branch and history, and opening a repository switched it to whichever branch came first in the list instead of staying on the current one.
+- The program closed itself when the glossary check ran with a project language that has no tokenizer. The term is skipped and the problem is logged.
+
 ### Planned for 1.3 (November)
 
 - Finishing built-in git client.

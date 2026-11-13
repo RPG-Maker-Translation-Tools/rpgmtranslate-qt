@@ -7,6 +7,10 @@
 
 #include <QPlainTextEdit>
 #include <QTimer>
+#include <QUrl>
+
+// Tooltip links show text of the game and of custom lints: only website links are safe to open
+[[nodiscard]] auto isWebLink(const QUrl& url) -> bool;
 
 class TranslationInput final : public QPlainTextEdit {
     Q_OBJECT

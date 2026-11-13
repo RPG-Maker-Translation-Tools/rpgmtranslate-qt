@@ -60,13 +60,13 @@ BatchMenu::BatchMenu(QWidget* const parent) :
             case BatchAction::Trim:
                 switch (ui->trimSelect->currentIndex()) {
                     case 0:
-                        variant = LintFlags::LeadingWhitespace | LintFlags::TrailingWhitespace;
-                        break;
-                    case 1:
                         variant = LintFlags::LeadingWhitespace;
                         break;
-                    case 2:
+                    case 1:
                         variant = LintFlags::TrailingWhitespace;
+                        break;
+                    case 2:
+                        variant = LintFlags::LeadingWhitespace | LintFlags::TrailingWhitespace;
                         break;
                     default:
                         std::unreachable();

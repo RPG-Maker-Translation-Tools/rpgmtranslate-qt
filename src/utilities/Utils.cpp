@@ -484,14 +484,12 @@ auto getIcon(const i32 iconIndex, const ProjectSettings* const sets) -> Result<Q
         return Err(iconset.error());
     }
 
-    // 64-bit, so that a big index can't overflow. Icons fill the sheet left to right, so the icon starts at pixel
-    // (`column`, `row`).
-    const i64 offset = i64{ iconSize } * iconIndex;
-    const i64 sheetWidth = iconset->width();
-    const i64 row = offset / sheetWidth;
-    const i64 column = offset % sheetWidth;
+    // Icons fill the sheet left to right, `ICONSET_ROW_ICON_COUNT` to a row, so the icon starts at pixel (`column`,
+    // `row`). 64-bit, so that a big index can't overflow.
+    const i64 row = i64{ iconIndex / ICONSET_ROW_ICON_COUNT } * iconSize;
+    const i64 column = i64{ iconIndex % ICONSET_ROW_ICON_COUNT } * iconSize;
 
-    if (offset < 0 || row + iconSize > iconset->height() || column + iconSize > sheetWidth) {
+    if (iconIndex < 0 || row + iconSize > iconset->height() || column + iconSize > iconset->width()) {
         return Err(Notice(
             NOTICE_IN("Utils", "Icon index %1 out of bounds for the icon set"),
             Severity::Warning,

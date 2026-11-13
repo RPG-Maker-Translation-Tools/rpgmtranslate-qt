@@ -346,6 +346,11 @@ auto modifyFile(
 
     if (filename.startsWith("map"_L1)) {
         const u16 mapNumber = stoa<u16>(filename.sliced(3)).value_or(0);
+        // Sections are joined as they are when maps are saved: a section that lost its last newline merges with the next
+        if (mapContent.endsWith(u'\n') && !result.endsWith(u'\n')) {
+            result += u'\n';
+        }
+
         const std::scoped_lock lock(mapSectionsMutex);
         mapSections.find(mapNumber)->second = std::move(result);
         return true;
@@ -355,6 +360,11 @@ auto modifyFile(
     // endings is not rewritten. `lines` view `content`, which is not read after this.
     content.remove(u'\r');
     result.remove(u'\r');
+
+    // Closures join their lines without the last newline, which every file written by a save has
+    if (!result.isEmpty() && !result.endsWith(u'\n')) {
+        result += u'\n';
+    }
 
     if (result == content) {
         return true;
@@ -428,6 +438,10 @@ auto TaskWorker::read(
 }
 
 auto TaskWorker::write(const Selected selected) -> WriteResult {
+    if (writeHook) {
+        writeHook();
+    }
+
     const QByteArray sourcePathUtf8 = projectSettings->actualSourcePath().toUtf8();
     const QByteArray translationPathUtf8 = projectSettings->translationPath().toUtf8();
     const QByteArray outputPathUtf8 = projectSettings->outputPath().toUtf8();
@@ -598,7 +612,11 @@ auto TaskWorker::search(
                     continue;
                 }
 
-                for (i32 idx = 0; idx < match.lastCapturedIndex() + 1; idx++) {
+                // Not `lastCapturedIndex`: it stops at the last group that took part, so a trailing optional group would be
+                // missing and `\2` in a replacement would stay as it is
+                const i32 groupCount = match.regularExpression().captureCount() + 1;
+
+                for (i32 idx = 0; idx < groupCount; idx++) {
                     // A group that took no part in the match is kept empty, so the numbers of the groups after it hold
                     if (match.capturedStart(idx) < 0) {
                         foundMatches.emplace_back(0, 0, true);
@@ -1079,7 +1097,7 @@ auto TaskWorker::customLintMatcher() const -> CustomLintMatcher {
             continue;
         }
 
-        patternLength += customLint.sequence.size() + (customLint.caseInsensitive ? 13 : 10) + 1;
+        patternLength += customLint.sequence.size() + (customLint.caseInsensitive ? 17 : 10) + 1;
         matcher.indices.push_back(static_cast<i32>(idx));
     }
 
@@ -1100,11 +1118,17 @@ auto TaskWorker::customLintMatcher() const -> CustomLintMatcher {
         // Named, so these stay the only capturing groups (see `DontCaptureOption` below): group N is lint N - 1
         pattern += u"(?<l" % qsv(qitos(originalIdx)) % u'>';
 
+        // The flag needs a group of its own: `(?<l1>?i:` is not a pattern
         if (customLint.caseInsensitive) {
-            pattern += u"?i:";
+            pattern += u"(?i:";
         }
 
         pattern += customLint.sequence;
+
+        if (customLint.caseInsensitive) {
+            pattern += u')';
+        }
+
         pattern += u')';
     }
 

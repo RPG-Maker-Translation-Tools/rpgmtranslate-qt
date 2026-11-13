@@ -124,6 +124,19 @@ suggestionLinksMarkdown(const QStringList& suggestions, const LintType type, con
     return (sets->actualSourcePath() % u'/' % filename % u'.' % sets->engineExtension()).toUtf8();
 }
 
+// MV/MZ data is JSON with camelCase fields; the Marshal data of the other engines is looked up by snake_case.
+[[nodiscard]] constexpr auto iconKey(const ProjectSettings* const sets) -> QL1SV {
+    return sets->engineType == EngineType::MVMZ ? "iconIndex"_L1 : "icon_index"_L1;
+}
+
+[[nodiscard]] constexpr auto classIdKey(const ProjectSettings* const sets) -> QL1SV {
+    return sets->engineType == EngineType::MVMZ ? "classId"_L1 : "class_id"_L1;
+}
+
+[[nodiscard]] constexpr auto currencyKey(const ProjectSettings* const sets) -> QL1SV {
+    return sets->engineType == EngineType::MVMZ ? "currencyUnit"_L1 : "currency_unit"_L1;
+}
+
 // A code whose first number is given by a variable code - `\N[\V[3]]`, `\C[\V[\V[1]]]`. The group holds the variable
 // when it is a plain number; deeper nesting has none.
 const QRegularExpression NESTED_NUMBER_REGEXP =
@@ -724,7 +737,7 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
             break;
         }
         case 30: {
-            const FFIString keyUtf8 = buildPath(Segment("currency_unit"_L1));
+            const FFIString keyUtf8 = buildPath(Segment(currencyKey(sets)));
             if (!fetchEntity(u"System", RPGMFileType::System, keyUtf8)) {
                 break;
             }
@@ -761,18 +774,16 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
             break;
         }
         case 58: {
-            const FFIString keyUtf8 =
-                buildPath(parseCaptured(lint.captured, 4, 1), Segment("name"_L1), Segment("class_id"_L1));
+            const FFIString keyUtf8 = buildPath(parseCaptured(lint.captured, 4, 1), Segment(classIdKey(sets)));
 
             if (!fetchEntity(u"Actors", RPGMFileType::Actors, keyUtf8)) {
                 break;
             }
 
-            if (!fetchEntity(
-                    u"Classes",
-                    RPGMFileType::Classes,
-                    buildPath(Segment(QL1SV(out[1].ptr, out[1].len)), Segment("name"_L1), Segment("1"_L1))
-                )) {
+            // The next fetch frees `out`, so the class number is copied first.
+            const QString classId = ffitostr(out[0]).toString();
+
+            if (!fetchEntity(u"Classes", RPGMFileType::Classes, buildPath(Segment(QStringView(classId)), Segment("name"_L1)))) {
                 break;
             }
 
@@ -786,8 +797,8 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
                 break;
             }
 
-            markdownSource +=
-                tr("This pattern will be replaced with: %2").arg(svtostr(ffitostr(out[0])), svtostr(ffitostr(out[1])));
+            // A multi-argument `arg` fills the placeholders that exist in order, so the nickname is passed alone.
+            markdownSource += tr("This pattern will be replaced with: %2").arg(svtostr(ffitostr(out[1])));
             break;
         }
         case 63:
@@ -813,7 +824,7 @@ void LintTooltip::processTextCode(QString& markdownSource, const LintEntry& lint
         case 72:
         case 73: {
             const auto [file, type] = entityKindFor(lint.index);
-            static constexpr array<QL1SV, 2> keys = { "name"_L1, "icon_index"_L1 };
+            const array<QL1SV, 2> keys = { "name"_L1, iconKey(sets) };
             const FFIString keyUtf8 = buildPath(parseCaptured(lint.captured, 4, 1), Segment(keys));
 
             if (!fetchEntity(file, type, keyUtf8)) {
@@ -1093,7 +1104,7 @@ void LintTooltip::processReferences(
             label = ffitostr(out[0]).toString();
         } else {
             const auto [folder, type, hasIcon] = entityFileFor(kind);
-            static constexpr array<QL1SV, 2> NAME_AND_ICON = { "name"_L1, "icon_index"_L1 };
+            const array<QL1SV, 2> NAME_AND_ICON = { "name"_L1, iconKey(sets) };
 
             const FFIString key = hasIcon ? buildPath(Segment(qsv(qitos(idn))), Segment(NAME_AND_ICON))
                                           : buildPath(Segment(qsv(qitos(idn))), Segment("name"_L1));

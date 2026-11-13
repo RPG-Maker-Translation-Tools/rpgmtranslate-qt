@@ -82,6 +82,11 @@ MediaPlayer::MediaPlayer(QWidget* const parent) :
 
 MediaPlayer::~MediaPlayer() {
     reset();
+
+    if (nullContextOpen) {
+        ma_context_uninit(&nullContext);
+    }
+
     tsf_close(soundFont);
 }
 
@@ -308,7 +313,7 @@ auto MediaPlayer::openMidi(const QString& filePath) -> Result<void, Notice> {
     deviceConfig.dataCallback = MediaPlayer::audioDataCallback;
     deviceConfig.pUserData = this;
 
-    if (ma_device_init(nullptr, &deviceConfig, &device) != MA_SUCCESS) {
+    if (!initDevice()) {
         return Err(NOTICE("Failed to open audio device for: %1", Critical, Inline, filePath));
     }
 
@@ -455,7 +460,7 @@ auto MediaPlayer::openAudio(const AVCodec* const codec) -> bool {
     deviceConfig.dataCallback = MediaPlayer::audioDataCallback;
     deviceConfig.pUserData = this;
 
-    if (ma_device_init(nullptr, &deviceConfig, &device) != MA_SUCCESS) {
+    if (!initDevice()) {
         return false;
     }
 
@@ -465,6 +470,20 @@ auto MediaPlayer::openAudio(const AVCodec* const codec) -> bool {
     bytesPerSecond = static_cast<i64>(sampleRate) * channels * F32_SIZE;
 
     return true;
+}
+
+auto MediaPlayer::initDevice() -> bool {
+    if (nullAudioBackend && !nullContextOpen) {
+        static constexpr array<ma_backend, 1> backends{ ma_backend_null };
+
+        nullContextOpen = ma_context_init(backends.data(), backends.size(), nullptr, &nullContext) == MA_SUCCESS;
+
+        if (!nullContextOpen) {
+            return false;
+        }
+    }
+
+    return ma_device_init(nullContextOpen ? &nullContext : nullptr, &deviceConfig, &device) == MA_SUCCESS;
 }
 
 void MediaPlayer::reset() {

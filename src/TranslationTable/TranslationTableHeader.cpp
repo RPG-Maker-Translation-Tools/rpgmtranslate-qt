@@ -79,21 +79,23 @@ void TranslationTableHeader::mouseReleaseEvent(QMouseEvent* const event) {
 }
 
 void TranslationTableHeader::mouseMoveEvent(QMouseEvent* const event) {
-    const QRect buttonRect = getButtonRect();
-    const bool nowHovered = buttonRect.contains(event->pos());
+    // The base handler sets the cursor of the viewport on every move, so the hand goes after it
+    QHeaderView::mouseMoveEvent(event);
+
+    const bool nowHovered = getButtonRect().contains(event->pos());
 
     if (nowHovered != addButtonHovered) {
         addButtonHovered = nowHovered;
         viewport()->update();
 
-        if (addButtonHovered) {
-            setCursor(Qt::PointingHandCursor);
-        } else {
-            unsetCursor();
+        if (!addButtonHovered) {
+            viewport()->unsetCursor();
         }
     }
 
-    QHeaderView::mouseMoveEvent(event);
+    if (addButtonHovered) {
+        viewport()->setCursor(Qt::PointingHandCursor);
+    }
 }
 
 void TranslationTableHeader::mouseDoubleClickEvent(QMouseEvent* const event) {
@@ -121,7 +123,7 @@ void TranslationTableHeader::leaveEvent(QEvent* const event) {
     if (addButtonHovered) {
         addButtonHovered = false;
         viewport()->update();
-        unsetCursor();
+        viewport()->unsetCursor();
     }
 
     QHeaderView::leaveEvent(event);

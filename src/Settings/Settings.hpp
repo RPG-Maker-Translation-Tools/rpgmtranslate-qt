@@ -49,6 +49,8 @@ struct EndpointSettings {
     QString name;
     QString apiKey;
     QString yandexFolderId;
+    // Where the Yandex API is reached when it is not at its own address; the tests point it at a local server
+    QString yandexBaseUrl;
     QString scriptPath;
 
     bool useGlossary = false;

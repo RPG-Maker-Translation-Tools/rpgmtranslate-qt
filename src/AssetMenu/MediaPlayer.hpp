@@ -30,6 +30,9 @@ class MediaPlayer final : public QWidget {
     [[nodiscard]] auto open(const QString& filePath) -> Result<void, Notice>;
     void play();
 
+    // Test seam: plays through miniaudio's null backend, which needs no sound card. Set before `open()`.
+    static inline bool nullAudioBackend = false;
+
    protected:
     void hideEvent(QHideEvent* event) override;
     void changeEvent(QEvent* event) override;
@@ -67,6 +70,9 @@ class MediaPlayer final : public QWidget {
     void rewindTo(i32 second);
     void finishPlayback();
     void reset();
+
+    // Opens `device` from `deviceConfig`, on the null backend when `nullAudioBackend` is set.
+    [[nodiscard]] auto initDevice() -> bool;
 
     static void audioDataCallback(ma_device* device, void* output, const void* input, u32 frameCount);
 
@@ -113,6 +119,7 @@ class MediaPlayer final : public QWidget {
     // Decoded frame converted to interleaved float, before it is copied into the ring.
     vector<u8> convertBuffer;
 
+    ma_context nullContext;
     ma_device device;
     ma_device_config deviceConfig;
 
@@ -180,6 +187,7 @@ class MediaPlayer final : public QWidget {
 
     bool demuxEnded = false;
     bool audioDeviceOpen = false;
+    bool nullContextOpen = false;
 
     bool paused = false;
     bool finished = false;

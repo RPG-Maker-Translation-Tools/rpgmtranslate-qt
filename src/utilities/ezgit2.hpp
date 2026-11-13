@@ -354,6 +354,11 @@ class Repository final {
     }
 
     [[nodiscard]] auto commitHistory(const usize limit = 0) const -> Result<vector<CommitInfo>> {
+        // A repository with no commits has no history, and no HEAD to walk from
+        if (git_repository_head_unborn(repo.get()) == 1) {
+            return vector<CommitInfo>{};
+        }
+
         detail::RevwalkHandle walker;
 
         {
@@ -1749,6 +1754,7 @@ class Repository final {
         return idx;
     }
 
+   public:
     [[nodiscard]] auto currentBranch() const -> Result<string> {
         detail::RefHandle headRef;
         {
@@ -1771,6 +1777,8 @@ class Repository final {
 
         return string(branchCstr);
     }
+
+   private:
 
     [[nodiscard]] auto getHeadRef() const -> Result<detail::RefHandle> {
         git_reference* raw = nullptr;

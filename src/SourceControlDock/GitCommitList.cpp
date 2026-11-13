@@ -63,6 +63,12 @@ void GitCommitModel::appendCommit(GitCommit commit) {
     endInsertRows();
 }
 
+void GitCommitModel::removeFirst() {
+    beginRemoveRows({}, 0, 0);
+    commits.pop_front();
+    endRemoveRows();
+}
+
 void GitCommitModel::clear() {
     beginResetModel();
     commits.clear();

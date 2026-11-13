@@ -146,8 +146,8 @@ void MatchTableDelegate::paint(
     return { min(naturalWidth, MAX_WRAPPED_COLUMN_WIDTH) + (PAD_X * 2), static_cast<i32>(height) + (PAD_Y * 2) };
 }
 
-[[nodiscard]] auto LintTableModel::columnCount(const QModelIndex& /* parent */) const -> i32 {
-    return ColumnCount;
+[[nodiscard]] auto LintTableModel::columnCount(const QModelIndex& parent) const -> i32 {
+    return parent.isValid() ? 0 : ColumnCount;
 }
 
 [[nodiscard]] auto LintTableModel::flags(const QModelIndex& index) const -> Qt::ItemFlags {
